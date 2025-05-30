@@ -23,6 +23,8 @@ import URLSessionInstrumentation
 import OpenTelemetryProtocolExporterHttp
 
 /**
+ * Main entry point for the AWS OpenTelemetry SDK.
+ *
  * This class provides a singleton instance and methods to initialize
  * the OpenTelemetry SDK with AWS-specific configurations.
  */
@@ -42,13 +44,13 @@ import OpenTelemetryProtocolExporterHttp
   }
 
   /**
-   * Initializes the SDK with configurations defined as an AwsOpenTelemetryConfig object.
+   * Initializes the SDK with a custom configuration.
    *
    * @param config The configuration to use for initialization
    * @return true if initialization was successful, false otherwise
    */
   @objc @discardableResult
-  func initialize(config: AwsOpenTelemetryConfig) -> Bool {
+  public func initialize(config: AwsOpenTelemetryConfig) -> Bool {
     print("[AwsOpenTelemetry] Initializing with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
 
     do {
@@ -66,14 +68,13 @@ import OpenTelemetryProtocolExporterHttp
   /**
    * Initializes the SDK using the default JSON configuration file.
    *
-   * This method looks for aws_config.json in the main bundle and converts it into an
-   * AwsOpenTelemetryConfig object. The converted configurations are used to
-   * initialize the SDK.
+   * This method looks for aws_config.json in the main bundle and uses it
+   * to initialize the SDK.
    *
    * @return true if initialization was successful, false otherwise
    */
   @objc @discardableResult
-  @_spi(AwsOpenTelemetryAgent) public func initializeWithJsonConfig() -> Bool {
+  public func initializeWithJsonConfig() -> Bool {
     guard let config = AwsRumConfigReader.loadJsonConfig() else {
       return false
     }
