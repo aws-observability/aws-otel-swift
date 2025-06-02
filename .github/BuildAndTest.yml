@@ -1,0 +1,75 @@
+name: Build and Test
+
+on: 
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  FormattingLint: 
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v1
+      - name: SwiftFormat
+        run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
+
+  SwiftLint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: GitHub Action for SwiftLint (Only files changed in the PR)
+        uses: norio-nomura/action-swiftlint@3.2.1
+        env:
+          args: --strict
+          DIFF_BASE: ${{ github.base_ref }}
+  macOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build and Test for macOS
+      run: swift test --enable-code-coverage
+    - name: Upload Code coverage
+      run: |
+        curl -Os https://uploader.codecov.io/latest/macos/codecov
+        chmod +x codecov
+        xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/opentelemetry-swiftPackageTests.xctest/Contents/MacOS/opentelemetry-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
+        ./codecov -f .build/debug/codecov/coverage_report.lcov
+  iOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for iOS
+      run: make build-for-testing-ios
+    - name: Test for iOS
+      run: make test-without-building-ios
+  tvOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for tvOS
+      run: make build-for-testing-tvos
+    - name: Test for tvOS
+      run: make test-without-building-tvos
+  watchOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for watchOS
+      run: make build-for-testing-watchos
+    - name: Test for watchOS
+      run: make test-without-building-watchos
+  linux:
+    runs-on: ubuntu-latest
+    container: swift:5.10
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build tests for Linux
+        run: swift build --build-tests
+      - name: Run tests for Linux
+        run: swift test
