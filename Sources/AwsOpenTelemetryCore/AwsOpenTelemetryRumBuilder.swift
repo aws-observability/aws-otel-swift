@@ -23,6 +23,7 @@ import StdoutExporter
 import URLSessionInstrumentation
 
 /**
+ * Main entry point for the AWS OpenTelemetry SDK.
  * Builder for AWS OpenTelemetry RUM (Real User Monitoring) implementation.
  *
  * This class provides a fluent API for configuring and building the OpenTelemetry
