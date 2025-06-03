@@ -1,4 +1,4 @@
-# AWS OpenTelemetry for Swift
+# AWS Distro for OpenTelemetry - Instrumentation for Swift
 
 A Swift package for AWS OpenTelemetry.
 
