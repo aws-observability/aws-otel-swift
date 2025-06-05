@@ -1,0 +1,4 @@
+module AwsOpenTelemetryAgent {
+    header "include/AwsOpenTelemetryAgent.h"
+    export *
+}
