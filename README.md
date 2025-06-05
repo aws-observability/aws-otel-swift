@@ -9,8 +9,24 @@ A Swift package for AWS OpenTelemetry.
 Add the following to your `Package.swift` file:
 
 ```swift
+// In your package dependencies:
 dependencies: [
     .package(url: "https://github.com/aws-observability/aws-otel-swift.git", from: "1.0.0")
+]
+
+// In your target dependencies:
+targets: [
+    .target(
+        name: "YourAppTarget",
+        dependencies: [ 
+            .product(name: "AwsOpenTelemetryCore", package: "aws-otel-swift")
+            
+            // Only for automatic initialization
+            .product(name: "AwsOpenTelemetryAgent", package: "aws-otel-swift"),
+            
+            // Other dependencies...
+        ]
+    )
 ]
 ```
 
