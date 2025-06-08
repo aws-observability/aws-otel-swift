@@ -22,9 +22,12 @@ import Foundation
  * fixed values throughout the AWS OpenTelemetry SDK.
  */
 public enum AwsRumConstants {
-  /// Attribute key for the AWS Region
-  public static let AWS_REGION = "awsRegion"
-
-  /// Attribute key for the RUM App Monitor ID
-  public static let RUM_APP_MONITOR_ID = "awsRumAppMonitorId"
+    /// Attribute key for the AWS Region
+    public static let AWS_REGION = "awsRegion"
+    
+    /// Attribute key for the RUM App Monitor ID
+    public static let RUM_APP_MONITOR_ID = "awsRumAppMonitorId"
+    
+    /// Attribute key for the RUM alias
+    public static let RUM_ALIAS = "awsRumAlias"
 }
