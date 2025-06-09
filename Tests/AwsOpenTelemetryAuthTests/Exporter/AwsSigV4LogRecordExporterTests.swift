@@ -1,51 +1,49 @@
 import XCTest
-import Mockingbird
 @testable import AwsOpenTelemetryAuth
 import OpenTelemetrySdk
+import OpenTelemetryApi
 import AwsCommonRuntimeKit
 
-class AwsSigV4LogRecordExporterTest: AuthTestBase {
-    // Use a mock framework like Mockingbird or create a manual mock
-    private var mockParentExporter: LogRecordExporter!
+class AwsSigV4LogRecordExporterTest: XCTestCase {
+    private var mockParentExporter: LogRecordExporterMock!
     private var logRecordExporter: AwsSigV4LogRecordExporter!
+    let accessKey = "AccessKey"
+    let secret = "Secret"
+    let sessionToken = "Token"
     
     override func setUp() {
-                
-        // Create the exporter under test
         do {
+            mockParentExporter = LogRecordExporterMock()
+            let provider = try CredentialsProvider(
+                    source: .static(
+                      accessKey: accessKey,
+                      secret: secret,
+                      sessionToken: sessionToken))
             logRecordExporter = try AwsSigV4LogRecordExporter.builder()
                 .setEndpoint(endpoint: "dataplane.rum.us-east-1.amazonaws.com")
                 .setRegion(region: "us-east-1")
-                .setCredentialsProvider(credentialsProvider: credentialsProvider as! CredentialsProvider) // Cast if needed
+                .setCredentialsProvider(credentialsProvider: provider)
                 .setServiceName(serviceName: "rum")
                 .setParentExporter(parentExporter: mockParentExporter)
                 .build()
-            
         } catch {
             XCTFail("Failed to create exporter under test: \(error)")
         }
     }
     
-//    func testExportWithSingleMockedLogRecord() throws {
-//        // Call the method under test
-//        let result = logRecordExporter.export(logRecords: logData, explicitTimeout: nil)
-//        
-//        // Verify the results
-//        XCTAssertTrue(result.isSuccess)
-//        XCTAssertEqual(result, .success)
-//        XCTAssertEqual(mockParentExporter.exportCallCount, 1)
-//        XCTAssertEqual(mockParentExporter.exportLogRecordsArgument, logData)
-//    }
-//    
-//    func testExportWithParentExporterFailing() throws {
-//        // Configure the mock to return failure
-//        mockParentExporter.exportReturnValue = .failure
-//        
-//        // Call the method under test
-//        let result = logRecordExporter.export(logRecords: [], explicitTimeout: nil)
-//        
-//        // Verify the results
-//        XCTAssertFalse(result.isSuccess)
-//        XCTAssertEqual(result, .failure)
-//    }
+    func testExportWithSingleMockedLogRecord() throws {
+        let logdata = [ReadableLogRecord(resource: Resource(), instrumentationScopeInfo: InstrumentationScopeInfo(name: "default"), timestamp: Date(), attributes: [String: AttributeValue]())]
+        let result = logRecordExporter.export(logRecords: logdata, explicitTimeout: nil)
+        
+        XCTAssertEqual(result, .success)
+        XCTAssertEqual(mockParentExporter.exportCalledTimes, 1)
+        XCTAssertEqual(mockParentExporter.exportCalledData!.count, logdata.count)
+    }
+    
+    func testExportWithParentExporterFailing() throws {
+        mockParentExporter.returnValue = .failure
+        let result = logRecordExporter.export(logRecords: [], explicitTimeout: nil)
+        
+        XCTAssertEqual(result, .failure)
+    }
 }

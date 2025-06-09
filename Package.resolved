@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/awslabs/aws-crt-swift.git",
       "state" : {
-        "revision" : "7b42e0343f28b3451aab20840dc670abd12790bd",
-        "version" : "0.36.0"
+        "revision" : "5be6550f81c760cceb0a43c30d4149ac55c5640c",
+        "version" : "0.52.1"
       }
     },
     {
@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/awslabs/aws-sdk-swift",
       "state" : {
-        "revision" : "a41d3b3e01b9803a4a2e0c2273c2de4b3fd787a4",
-        "version" : "0.77.1"
+        "revision" : "131e738e8472a1f5d8080c76abf5445a21a3321c",
+        "version" : "1.3.32"
       }
     },
     {
@@ -25,15 +25,6 @@
       "state" : {
         "revision" : "8c5e99d0255c373e0330730d191a3423c57373fb",
         "version" : "1.24.2"
-      }
-    },
-    {
-      "identity" : "mockingbird",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/birdrides/mockingbird.git",
-      "state" : {
-        "revision" : "6e0d473df6b975719e145f6aebf90990c634700e",
-        "version" : "0.20.0"
       }
     },
     {
@@ -59,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/awslabs/smithy-swift.git",
       "state" : {
-        "revision" : "0ed3440f8c41e27a0937364d5035d2d4fefb8aa3",
-        "version" : "0.71.0"
+        "revision" : "e1638ed20eb1b08fd89b5ce02a55d0160a81e730",
+        "version" : "0.134.0"
       }
     },
     {
@@ -70,6 +61,15 @@
       "state" : {
         "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
         "version" : "1.2.1"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "011f0c765fb46d9cac61bca19be0527e99c98c8b",
+        "version" : "1.5.1"
       }
     },
     {

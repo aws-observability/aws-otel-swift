@@ -19,11 +19,9 @@ let package = Package(
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "1.14.0"),
-    .package(url: "https://github.com/awslabs/smithy-swift.git", from: "0.8.0"),
-    .package(url: "https://github.com/awslabs/aws-crt-swift.git", from: "0.10.0"),
-    .package(url: "https://github.com/birdrides/mockingbird.git", from: "0.20.0"),
-    .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "0.31.0")
-
+    .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
+    .package(url: "https://github.com/awslabs/smithy-swift.git", from: "0.134.0"),
+    .package(url: "https://github.com/awslabs/aws-crt-swift.git", from: "0.52.1"),
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -72,10 +70,7 @@ let package = Package(
     ),
     .testTarget(
         name: "AwsOpenTelemetryAuthTests",
-        dependencies: [
-            "AwsOpenTelemetryAuth",
-            .product(name: "Mockingbird", package: "mockingbird"),
-        ]
+        dependencies: ["AwsOpenTelemetryAuth"]
     )
   ]
 )
