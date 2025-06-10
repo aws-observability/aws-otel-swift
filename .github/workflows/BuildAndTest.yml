@@ -11,7 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1.2.0
       - name: SwiftFormat
-        run: echo swiftformat --lint `git diff --name-only HEAD^1 HEAD` --reporter github-actions-log
+        run: |
+          base_branch="${{ github.base_ref }}"
+          echo "swiftformat --lint $(git diff --name-only origin/$base_branch...HEAD) --reporter github-actions-log"
 
   SwiftLint:
     runs-on: ubuntu-latest
