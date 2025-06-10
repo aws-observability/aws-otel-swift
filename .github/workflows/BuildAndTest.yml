@@ -32,7 +32,7 @@ jobs:
       run: |
         curl -Os https://uploader.codecov.io/latest/macos/codecov
         chmod +x codecov
-        xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/aws-otel-swift-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swift-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
+        xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
         ./codecov -f .build/debug/codecov/coverage_report.lcov
   iOS:
     runs-on: macos-15
