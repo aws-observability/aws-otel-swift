@@ -69,33 +69,31 @@ final class AwsRumConfigReaderTests: XCTestCase {
     XCTAssertEqual(config.rum.overrideEndpoint?.traces, tracesEndpoint)
   }
 
-    func testParseConfigWithAlias() throws {
-      // Create a valid JSON configuration
-      let jsonString = """
-      {
-          "version": "\(version)",
-          "rum": {
-              "region": "\(region)",
-              "appMonitorId": "\(appMonitorId)",
-              "alias": "\(alias)"
-          },
-          "application": {
-              "applicationVersion": "\(appVersion)"
-          }
-      }
-      """
-
-      let data = jsonString.data(using: .utf8)!
-
-      // Parse the configuration
-      let config = try AwsRumConfigReader.parseConfig(from: data)
-
-      // Verify the alias
-        XCTAssertEqual(config.rum.alias, alias)
+  func testParseConfigWithAlias() throws {
+    // Create a valid JSON configuration
+    let jsonString = """
+    {
+        "version": "\(version)",
+        "rum": {
+            "region": "\(region)",
+            "appMonitorId": "\(appMonitorId)",
+            "alias": "\(alias)"
+        },
+        "application": {
+            "applicationVersion": "\(appVersion)"
+        }
     }
+    """
 
-    
-    
+    let data = jsonString.data(using: .utf8)!
+
+    // Parse the configuration
+    let config = try AwsRumConfigReader.parseConfig(from: data)
+
+    // Verify the alias
+    XCTAssertEqual(config.rum.alias, alias)
+  }
+
   func testParseInvalidJson() {
     // Define test value
     let invalidJson = "{ this is not valid JSON }"
