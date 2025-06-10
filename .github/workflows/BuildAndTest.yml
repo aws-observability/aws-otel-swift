@@ -1,0 +1,68 @@
+name: Build and Test
+
+on: 
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+jobs:
+  FormattingLint: 
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1.2.0
+      - name: SwiftFormat
+        run: |
+          base_branch="${{ github.base_ref }}"
+          echo "swiftformat --lint $(git diff --name-only origin/$base_branch...HEAD) --reporter github-actions-log"
+
+  SwiftLint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1.2.0
+      - name: GitHub Action for SwiftLint (Only files changed in the PR)
+        uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
+        env:
+          args: --strict
+          DIFF_BASE: ${{ github.base_ref }}
+  macOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - name: Build and Test for macOS
+      run: swift test --enable-code-coverage
+    - name: Upload Code coverage
+      run: |
+        curl -Os https://uploader.codecov.io/latest/macos/codecov
+        chmod +x codecov
+        xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
+        ./codecov -f .build/debug/codecov/coverage_report.lcov
+  iOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for iOS
+      run: make build-for-testing-ios
+    - name: Test for iOS
+      run: make test-without-building-ios
+  tvOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for tvOS
+      run: make build-for-testing-tvos
+    - name: Test for tvOS
+      run: make test-without-building-tvos
+  watchOS:
+    runs-on: macos-15
+    steps:
+    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
+    - name: Install Homebrew kegs
+      run: make setup-brew
+    - name: Build for watchOS
+      run: make build-for-testing-watchos
+    - name: Test for watchOS
+      run: make test-without-building-watchos

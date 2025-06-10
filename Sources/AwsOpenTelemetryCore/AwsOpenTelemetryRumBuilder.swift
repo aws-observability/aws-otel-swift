@@ -20,7 +20,6 @@ import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import ResourceExtension
 import StdoutExporter
-import URLSessionInstrumentation
 
 /**
  * Main entry point for the AWS OpenTelemetry SDK.

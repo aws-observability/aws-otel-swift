@@ -28,8 +28,6 @@ let package = Package(
         .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift"),
-        .product(name: "ResourceExtension", package: "opentelemetry-swift"),
-        .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
       ]
     ),
@@ -49,4 +47,14 @@ let package = Package(
       dependencies: ["AwsOpenTelemetryCore"]
     )
   ]
-)
+).addPlatformSpecific()
+
+extension Package {
+  func addPlatformSpecific() -> Self {
+    #if canImport(Darwin)
+      targets[0].dependencies
+        .append(.product(name: "ResourceExtension", package: "opentelemetry-swift"))
+    #endif
+    return self
+  }
+}
