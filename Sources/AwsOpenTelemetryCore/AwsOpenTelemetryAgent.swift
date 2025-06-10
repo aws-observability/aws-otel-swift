@@ -19,7 +19,6 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import StdoutExporter
 import ResourceExtension
-import URLSessionInstrumentation
 import OpenTelemetryProtocolExporterHttp
 
 /**
