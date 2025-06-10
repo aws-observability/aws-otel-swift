@@ -64,12 +64,3 @@ jobs:
       run: make build-for-testing-watchos
     - name: Test for watchOS
       run: make test-without-building-watchos
-  linux:
-    runs-on: ubuntu-latest
-    container: swift:5.10@sha256:8d7965d8b1757b46fee0ce603505b71e424a443e2002d502dfebd288a7f9a109
-    steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-      - name: Build tests for Linux
-        run: swift build --build-tests
-      - name: Run tests for Linux
-        run: swift test

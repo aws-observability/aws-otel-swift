@@ -15,12 +15,6 @@
 
 import Foundation
 
-import OpenTelemetryApi
-import OpenTelemetrySdk
-import StdoutExporter
-import ResourceExtension
-import OpenTelemetryProtocolExporterHttp
-
 /**
  * This class provides a singleton instance and methods to initialize
  * the OpenTelemetry SDK with AWS-specific configurations.
