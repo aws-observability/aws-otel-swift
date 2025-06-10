@@ -47,7 +47,7 @@ let package = Package(
       dependencies: ["AwsOpenTelemetryCore"]
     )
   ]
-)
+).addPlatformSpecific()
 
 extension Package {
   func addPlatformSpecific() -> Self {
