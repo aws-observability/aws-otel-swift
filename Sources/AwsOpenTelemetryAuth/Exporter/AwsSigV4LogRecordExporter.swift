@@ -21,13 +21,12 @@ import OpenTelemetryProtocolExporterHttp
 import OpenTelemetryProtocolExporterCommon
 
 public class AwsSigV4LogRecordExporter: LogRecordExporter {
-  private var endpoint: String
-  private var region: String
-  private var serviceName: String
-  private var credentialsProvider: CredentialsProvider
-  private var parentExporter: LogRecordExporter?
-
+  private let endpoint: String
+  private let region: String
+  private let serviceName: String
+  private let credentialsProvider: CredentialsProvider
   private let queue = DispatchQueue(label: "com.aws.opentelemetry.logDataQueue")
+  private var parentExporter: LogRecordExporter?
   private var logData: [ReadableLogRecord] = []
 
   public init(endpoint: String,
@@ -45,7 +44,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
         self.parentExporter = await createDefaultExporter()
       }
     }
-    AwsSigV4Authenticator.configure(endpoint: endpoint, credentialsProvider: credentialsProvider, region: region, serviceName: serviceName)
+    AwsSigV4Authenticator.configure(credentialsProvider: credentialsProvider, region: region, serviceName: serviceName)
   }
 
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
@@ -71,9 +70,9 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
     let otlpTracesConfig = OtlpConfiguration(
       compression: .none
     )
-    URLProtocol.registerClass(HttpRequestInterceptor.self)
+    URLProtocol.registerClass(AwsSigV4RequestInterceptor.self)
     let configuration = URLSessionConfiguration.default
-    configuration.protocolClasses = [HttpRequestInterceptor.self]
+    configuration.protocolClasses = [AwsSigV4RequestInterceptor.self]
     let session = URLSession(configuration: configuration)
 
     return OtlpHttpLogExporter(endpoint: endpointURL, config: otlpTracesConfig, useSession: session)

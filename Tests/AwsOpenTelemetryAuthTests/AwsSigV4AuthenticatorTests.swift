@@ -16,13 +16,13 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
         sessionToken: sessionToken
       ))
 
-    AwsSigV4Authenticator.configure(endpoint: endpoint, credentialsProvider: provider, region: "us-east-1",
+    AwsSigV4Authenticator.configure(credentialsProvider: provider, region: "us-east-1",
                                     serviceName: "rum")
 
     var request = URLRequest(url: URL(string: endpoint)!)
     request.httpBody = "test".data(using: .utf8)
 
-    let signedRequest = await AwsSigV4Authenticator.signHeaders(
+    let signedRequest = await AwsSigV4Authenticator.signURLRequest(
       urlRequest: request
     )
     let headers = signedRequest.allHTTPHeaderFields!
@@ -42,7 +42,7 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
           sessionToken: sessionToken
         ))
 
-      AwsSigV4Authenticator.configure(endpoint: endpoint, credentialsProvider: provider, region: "us-east-1",
+      AwsSigV4Authenticator.configure(credentialsProvider: provider, region: "us-east-1",
                                       serviceName: "rum")
 
       var request = URLRequest(url: URL(string: endpoint)!)

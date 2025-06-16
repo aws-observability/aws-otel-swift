@@ -23,24 +23,26 @@ import SmithyIdentity
 import Smithy
 
 public class AwsSigV4Authenticator {
-  private static var endpoint: String?
   private static var credentialsProvider: CredentialsProvider?
   private static var region: String?
   private static var serviceName: String?
 
-  public static func configure(endpoint: String,
-                               credentialsProvider: CredentialsProvider,
+  public static func configure(credentialsProvider: CredentialsProvider,
                                region: String,
                                serviceName: String) {
-    self.endpoint = endpoint
     self.credentialsProvider = credentialsProvider
     self.region = region
     self.serviceName = serviceName
   }
 
-  public static func signHeaders(urlRequest: URLRequest) async -> URLRequest {
-    guard let endpoint = endpoint,
-          let credentialsProvider = credentialsProvider,
+  /**
+   * Signs a URL request with AWS Signature Version 4 (SigV4) authentication.
+   *
+   * @param urlRequest The original URL request to be signed
+   * @returns A new URL request with AWS SigV4 authentication headers added
+   */
+  public static func signURLRequest(urlRequest: URLRequest) async -> URLRequest {
+    guard let credentialsProvider = credentialsProvider,
           let region = region,
           let serviceName = serviceName else {
       fatalError("AwsSigV4Authenticator not configured. Call configure() first.")
@@ -96,33 +98,33 @@ public class AwsSigV4Authenticator {
         signingAlgorithm: .sigv4
       )
 
+      // aws-crt-swift will crash or not generate signed header without CommonRuntimeKit init first.
       CommonRuntimeKit.initialize()
 
       let signer = AWSSigV4Signer()
       guard let signedRequest = await signer.sigV4SignedRequest(requestBuilder: requestBuilder, signingConfig: config) else {
         return urlRequest
       }
-
       let request = try await SmithyHTTPAPI.HTTPRequest.makeURLRequest(from: signedRequest)
-      return request
 
+      return request
     } catch {
       print("[AwsOpenTelemetryAuth] Error signing request: \(error)")
       return urlRequest
     }
   }
 
-  public static func signHeadersSync(urlRequest: URLRequest) -> URLRequest {
+  public static func signURLRequestSync(urlRequest: URLRequest) -> URLRequest {
     var signedRequest: URLRequest?
     let semaphore = DispatchSemaphore(value: 0)
 
     Task {
-      signedRequest = await signHeaders(urlRequest: urlRequest)
+      signedRequest = await signURLRequest(urlRequest: urlRequest)
       semaphore.signal()
     }
 
     semaphore.wait()
-    return signedRequest ?? URLRequest(url: URL(string: endpoint ?? "")!)
+    return signedRequest ?? urlRequest
   }
 
   public static func bodyStreamAsData(bodyStream: InputStream) -> Data? {
