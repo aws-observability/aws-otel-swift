@@ -20,8 +20,7 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "1.14.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
-    .package(url: "https://github.com/awslabs/smithy-swift.git", from: "0.134.0"),
-    .package(url: "https://github.com/awslabs/aws-crt-swift.git", from: "0.52.1")
+    .package(url: "https://github.com/awslabs/smithy-swift.git", from: "0.134.0")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -58,7 +57,6 @@ let package = Package(
         .product(name: "SmithyHTTPAuthAPI", package: "smithy-swift"),
         .product(name: "SmithyHTTPAPI", package: "smithy-swift"),
         .product(name: "Smithy", package: "smithy-swift"),
-        .product(name: "AwsCommonRuntimeKit", package: "aws-crt-swift"),
         .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift")
       ]
     ),
