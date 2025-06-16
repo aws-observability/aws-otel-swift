@@ -18,6 +18,7 @@ import AwsCommonRuntimeKit
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterHttp
+import OpenTelemetryProtocolExporterCommon
 
 public class AwsSigV4SpanExporter: SpanExporter {
   private var endpoint: String
@@ -44,6 +45,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
         self.parentExporter = await createDefaultExporter()
       }
     }
+    AwsSigV4Authenticator.configure(endpoint: endpoint, credentialsProvider: credentialsProvider, region: region, serviceName: serviceName)
   }
 
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
@@ -66,26 +68,14 @@ public class AwsSigV4SpanExporter: SpanExporter {
   private func createDefaultExporter() async -> SpanExporter {
     let endpointURL = URL(string: endpoint)!
 
-    let headers = await getHeaders()
-    let headerTuples = headers.map { ($0.key, $0.value) }
+    let otlpTracesConfig = OtlpConfiguration(
+      compression: .none
+    )
+    URLProtocol.registerClass(HttpRequestInterceptor.self)
+    let configuration = URLSessionConfiguration.default
+    configuration.protocolClasses = [HttpRequestInterceptor.self]
+    let session = URLSession(configuration: configuration)
 
-    return OtlpHttpTraceExporter(endpoint: endpointURL, envVarHeaders: headerTuples)
-  }
-
-  private func getHeaders() async -> [String: String] {
-    let body = queue.sync { self.spanData }
-    var jsonData: Data
-
-    do {
-      jsonData = try JSONEncoder().encode(body)
-      if let jsonString = String(data: jsonData, encoding: .utf8) {
-        print(jsonString)
-      }
-    } catch {
-      print("Failed to serialize SpanData as JSON: \(error)")
-      return [:]
-    }
-
-    return await AwsSigV4Authenticator.signHeaders(endpoint: endpoint, credentialsProvider: credentialsProvider, region: region, serviceName: serviceName, body: jsonData)
+    return OtlpHttpTraceExporter(endpoint: endpointURL, config: otlpTracesConfig, useSession: session)
   }
 }

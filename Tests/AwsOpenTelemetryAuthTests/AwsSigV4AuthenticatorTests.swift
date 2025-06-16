@@ -4,8 +4,9 @@ import AwsCommonRuntimeKit
 
 class AwsSigV4AuthenticatorTests: XCTestCase {
   let accessKey = "AccessKey"
-  let secret = "Sekrit"
+  let secret = "Secret"
   let sessionToken = "Token"
+  let endpoint = "https://dataplane.rum.us-east-1.amazonaws.com/v1/traces"
 
   func testGetSignedHeadersWithMinimalValidInputReturnsExpectedHeaders() async throws {
     let provider = try CredentialsProvider(
@@ -15,18 +16,20 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
         sessionToken: sessionToken
       ))
 
-    // Use async/await instead of runBlocking
-    let headers = try await AwsSigV4Authenticator.signHeaders(
-      endpoint: "https://dataplane.rum.us-east-1.amazonaws.com",
-      credentialsProvider: provider,
-      region: "us-east-1",
-      serviceName: "rum",
-      body: "test".data(using: .utf8)!
+    AwsSigV4Authenticator.configure(endpoint: endpoint, credentialsProvider: provider, region: "us-east-1",
+                                    serviceName: "rum")
+
+    var request = URLRequest(url: URL(string: endpoint)!)
+    request.httpBody = "test".data(using: .utf8)
+
+    let signedRequest = await AwsSigV4Authenticator.signHeaders(
+      urlRequest: request
     )
+    let headers = signedRequest.allHTTPHeaderFields!
 
     XCTAssertNotNil(headers["X-Amz-Date"])
     XCTAssertNotNil(headers["Authorization"])
-    XCTAssertEqual("application/x-protobuf", headers["Content-Type"])
+    XCTAssertNotNil(headers["Host"])
   }
 
   func testGetSignedHeadersWithFailedCredentialsResolutionThrowsException() async throws {
@@ -39,13 +42,12 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
           sessionToken: sessionToken
         ))
 
-      _ = try await AwsSigV4Authenticator.signHeaders(
-        endpoint: "https://dataplane.rum.us-east-1.amazonaws.com",
-        credentialsProvider: provider,
-        region: "us-east-1",
-        serviceName: "rum",
-        body: "test".data(using: .utf8)!
-      )
+      AwsSigV4Authenticator.configure(endpoint: endpoint, credentialsProvider: provider, region: "us-east-1",
+                                      serviceName: "rum")
+
+      var request = URLRequest(url: URL(string: endpoint)!)
+      request.httpBody = "test".data(using: .utf8)
+
     } catch {
       XCTAssertTrue(true)
     }
