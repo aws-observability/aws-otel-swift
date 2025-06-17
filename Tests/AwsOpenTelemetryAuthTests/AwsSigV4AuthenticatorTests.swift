@@ -7,6 +7,8 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
   let secret = "Secret"
   let sessionToken = "Token"
   let endpoint = "https://dataplane.rum.us-east-1.amazonaws.com/v1/traces"
+  let region = "us-east-1"
+  let serviceName = "rum"
 
   func testGetSignedHeadersWithMinimalValidInputReturnsExpectedHeaders() async throws {
     let provider = try CredentialsProvider(
@@ -16,13 +18,13 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
         sessionToken: sessionToken
       ))
 
-    AwsSigV4Authenticator.configure(credentialsProvider: provider, region: "us-east-1",
-                                    serviceName: "rum")
+    AwsSigV4Authenticator.configure(credentialsProvider: provider, region: region,
+                                    serviceName: serviceName)
 
     var request = URLRequest(url: URL(string: endpoint)!)
     request.httpBody = "test".data(using: .utf8)
 
-    let signedRequest = await AwsSigV4Authenticator.signURLRequest(
+    let signedRequest = AwsSigV4Authenticator.signURLRequestSync(
       urlRequest: request
     )
     let headers = signedRequest.allHTTPHeaderFields!
@@ -42,13 +44,14 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
           sessionToken: sessionToken
         ))
 
-      AwsSigV4Authenticator.configure(credentialsProvider: provider, region: "us-east-1",
-                                      serviceName: "rum")
+      AwsSigV4Authenticator.configure(credentialsProvider: provider, region: region,
+                                      serviceName: serviceName)
 
       var request = URLRequest(url: URL(string: endpoint)!)
       request.httpBody = "test".data(using: .utf8)
 
     } catch {
+      print(error)
       XCTAssertTrue(true)
     }
   }

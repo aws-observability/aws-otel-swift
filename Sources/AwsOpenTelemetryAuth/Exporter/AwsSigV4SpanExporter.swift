@@ -20,15 +20,44 @@ import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetryProtocolExporterCommon
 
+/**
+ * A span exporter that adds AWS SigV4 authentication to span export requests.
+ *
+ * This exporter wraps an OTLP HTTP exporter and ensures that all
+ * outgoing requests are signed with AWS SigV4 authentication.
+ * It can either use a provided parent exporter or create a default OTLP HTTP exporter.
+ */
 public class AwsSigV4SpanExporter: SpanExporter {
+  /// The endpoint URL for the AWS service
   private let endpoint: String
+
+  /// The AWS region where the service is located
   private let region: String
+
+  /// The name of the AWS service
   private let serviceName: String
+
+  /// The provider that supplies AWS credentials for signing
   private let credentialsProvider: CredentialsProvider
+
+  /// A serial dispatch queue for thread-safe access to span data
   private let queue = DispatchQueue(label: "com.aws.opentelemetry.spanDataQueue")
+
+  /// The underlying span exporter that handles the actual export
   private var parentExporter: SpanExporter?
+
+  /// The span data being processed
   private var spanData: [SpanData] = []
 
+  /**
+   * Creates a new AwsSigV4SpanExporter.
+   *
+   * @param endpoint The full URL of the AWS service endpoint
+   * @param region The AWS region code
+   * @param serviceName The AWS service name
+   * @param credentialsProvider The provider that supplies AWS credentials
+   * @param parentExporter Optional underlying exporter; if nil, a default OTLP HTTP exporter will be created
+   */
   public init(endpoint: String,
               region: String,
               serviceName: String,
@@ -47,23 +76,58 @@ public class AwsSigV4SpanExporter: SpanExporter {
     AwsSigV4Authenticator.configure(credentialsProvider: credentialsProvider, region: region, serviceName: serviceName)
   }
 
+  /**
+   * Exports the given spans.
+   *
+   * This method stores the spans locally and delegates the export operation
+   * to the parent exporter.
+   *
+   * @param spans The spans to export
+   * @param explicitTimeout Optional timeout for the export operation
+   * @returns The result code of the export operation
+   */
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     queue.sync { self.spanData = spans }
     return parentExporter!.export(spans: spanData, explicitTimeout: explicitTimeout)
   }
 
+  /**
+   * Forces a flush of any buffered spans.
+   *
+   * @param explicitTimeout Optional timeout for the flush operation
+   * @returns The result code of the flush operation
+   */
   public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     return parentExporter!.flush(explicitTimeout: explicitTimeout)
   }
 
+  /**
+   * Shuts down the exporter.
+   *
+   * @param explicitTimeout Optional timeout for the shutdown operation
+   */
   public func shutdown(explicitTimeout: TimeInterval?) {
     parentExporter!.shutdown(explicitTimeout: explicitTimeout)
   }
 
+  /**
+   * Creates a new builder for configuring an AwsSigV4SpanExporter.
+   *
+   * @returns A new builder instance
+   */
   public static func builder() -> AwsSigV4SpanExporterBuilder {
     return AwsSigV4SpanExporterBuilder()
   }
 
+  /**
+   * Creates a default OTLP HTTP trace exporter with SigV4 authentication.
+   *
+   * This method is called when no parent exporter is provided to the constructor.
+   * It creates an OTLP HTTP trace exporter that uses the AwsSigV4RequestInterceptor to
+   * sign all outgoing requests.
+   *
+   * @returns A configured OTLP HTTP trace exporter
+   */
   private func createDefaultExporter() async -> SpanExporter {
     let endpointURL = URL(string: endpoint)!
 

@@ -22,11 +22,32 @@ import SmithyHTTPAPI
 import SmithyIdentity
 import Smithy
 
+/**
+ * A utility class that provides AWS Signature Version 4 (SigV4) authentication functionality.
+ *
+ * This authenticator signs HTTP requests with AWS SigV4 signatures to authenticate
+ * requests to AWS services. It must be configured with credentials, region, and service
+ * information before use.
+ */
 public class AwsSigV4Authenticator {
+  /// The credentials provider used to obtain AWS credentials for signing
   private static var credentialsProvider: CredentialsProvider?
+
+  /// The AWS region where the service is located
   private static var region: String?
+
+  /// The name of the AWS service being accessed
   private static var serviceName: String?
 
+  /**
+   * Configures the authenticator with the necessary credentials and service information.
+   *
+   * This method must be called before attempting to sign any requests.
+   *
+   * @param credentialsProvider The provider that supplies AWS credentials for signing
+   * @param region The AWS region where the service is located
+   * @param serviceName The name of the AWS service being accessed
+   */
   public static func configure(credentialsProvider: CredentialsProvider,
                                region: String,
                                serviceName: String) {
@@ -38,10 +59,15 @@ public class AwsSigV4Authenticator {
   /**
    * Signs a URL request with AWS Signature Version 4 (SigV4) authentication.
    *
+   * This asynchronous method retrieves credentials and applies SigV4 signing to the provided
+   * URL request. It converts the URLRequest to a format compatible with the AWS signing libraries,
+   * applies the signature, and returns a new request with the appropriate authentication headers.
+   *
    * @param urlRequest The original URL request to be signed
    * @returns A new URL request with AWS SigV4 authentication headers added
    */
-  public static func signURLRequest(urlRequest: URLRequest) async -> URLRequest {
+  private static func signURLRequest(urlRequest: URLRequest) async -> URLRequest {
+    // Verify that the authenticator has been properly configured
     guard let credentialsProvider = credentialsProvider,
           let region = region,
           let serviceName = serviceName else {
@@ -50,6 +76,7 @@ public class AwsSigV4Authenticator {
     guard let url = urlRequest.url else { return urlRequest }
     let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)
 
+    // Convert URLRequest to HTTPRequestBuilder format for signing
     let requestBuilder = HTTPRequestBuilder()
     if let host = urlComponents?.host {
       requestBuilder
@@ -79,9 +106,11 @@ public class AwsSigV4Authenticator {
     }
 
     do {
+      // Retrieve credentials and create identity for signing
       let credentials = try await credentialsProvider.getCredentials()
       let identity = try AWSCredentialIdentity(crtAWSCredentialIdentity: credentials)
 
+      // Configure the signing parameters
       let config = AWSSigningConfig(
         credentials: identity,
         signedBodyHeader: .contentSha256,
@@ -101,6 +130,7 @@ public class AwsSigV4Authenticator {
       // aws-crt-swift will crash or not generate signed header without CommonRuntimeKit init first.
       CommonRuntimeKit.initialize()
 
+      // Sign the request and convert back to URLRequest
       let signer = AWSSigV4Signer()
       guard let signedRequest = await signer.sigV4SignedRequest(requestBuilder: requestBuilder, signingConfig: config) else {
         return urlRequest
@@ -114,6 +144,16 @@ public class AwsSigV4Authenticator {
     }
   }
 
+  /**
+   * Synchronously signs a URL request with AWS Signature Version 4 (SigV4) authentication.
+   *
+   * This method provides a synchronous wrapper around the asynchronous signing process,
+   * making it easier to use in contexts where async/await is not available or desired.
+   * It uses a semaphore to wait for the asynchronous signing operation to complete.
+   *
+   * @param urlRequest The original URL request to be signed
+   * @returns A new URL request with AWS SigV4 authentication headers added
+   */
   public static func signURLRequestSync(urlRequest: URLRequest) -> URLRequest {
     var signedRequest: URLRequest?
     let semaphore = DispatchSemaphore(value: 0)
@@ -127,7 +167,17 @@ public class AwsSigV4Authenticator {
     return signedRequest ?? urlRequest
   }
 
-  public static func bodyStreamAsData(bodyStream: InputStream) -> Data? {
+  /**
+   * Converts an InputStream to Data.
+   *
+   * This utility method reads the contents of an input stream and converts it to a Data object,
+   * which is needed for the request signing process. It handles the stream in chunks to efficiently
+   * process streams of any size.
+   *
+   * @param bodyStream The input stream containing the request body data
+   * @returns The contents of the stream as a Data object, or nil if reading fails
+   */
+  private static func bodyStreamAsData(bodyStream: InputStream) -> Data? {
     bodyStream.open()
     defer { bodyStream.close() }
 
