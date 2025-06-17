@@ -35,7 +35,7 @@ public class AwsSigV4SpanExporterBuilder {
   private var serviceName: String?
 
   /// The provider that supplies AWS credentials for signing
-  private var credentialsProvider: CredentialsProvider?
+  private var credentialsProvider: CredentialsProviding?
 
   /// The underlying span exporter that will be wrapped with SigV4 authentication
   private var parentExporter: SpanExporter?
@@ -84,7 +84,7 @@ public class AwsSigV4SpanExporterBuilder {
    * @param credentialsProvider The provider that supplies AWS credentials
    * @returns The builder instance for method chaining
    */
-  public func setCredentialsProvider(credentialsProvider: CredentialsProvider) -> AwsSigV4SpanExporterBuilder {
+  public func setCredentialsProvider(credentialsProvider: CredentialsProviding) -> AwsSigV4SpanExporterBuilder {
     self.credentialsProvider = credentialsProvider
     return self
   }

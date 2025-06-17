@@ -35,7 +35,7 @@ public class AwsSigV4LogRecordExporterBuilder {
   private var serviceName: String?
 
   /// The provider that supplies AWS credentials for signing
-  private var credentialsProvider: CredentialsProvider?
+  private var credentialsProvider: CredentialsProviding?
 
   /// The underlying log record exporter that will be wrapped with SigV4 authentication
   private var parentExporter: LogRecordExporter?
@@ -84,7 +84,7 @@ public class AwsSigV4LogRecordExporterBuilder {
    * @param credentialsProvider The provider that supplies AWS credentials
    * @returns The builder instance for method chaining
    */
-  public func setCredentialsProvider(credentialsProvider: CredentialsProvider) -> AwsSigV4LogRecordExporterBuilder {
+  public func setCredentialsProvider(credentialsProvider: CredentialsProviding) -> AwsSigV4LogRecordExporterBuilder {
     self.credentialsProvider = credentialsProvider
     return self
   }

@@ -57,7 +57,8 @@ let package = Package(
         .product(name: "SmithyHTTPAuthAPI", package: "smithy-swift"),
         .product(name: "SmithyHTTPAPI", package: "smithy-swift"),
         .product(name: "Smithy", package: "smithy-swift"),
-        .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift")
+        .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift"),
+        .product(name: "AWSCognitoIdentity", package: "aws-sdk-swift")
       ]
     ),
     .testTarget(
