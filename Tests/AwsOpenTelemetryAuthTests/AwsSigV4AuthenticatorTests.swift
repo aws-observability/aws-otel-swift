@@ -51,7 +51,6 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
       request.httpBody = "test".data(using: .utf8)
 
     } catch {
-      print(error)
       XCTAssertTrue(true)
     }
   }
