@@ -67,10 +67,6 @@ import Foundation
   /// Flag to enable debug logging for SDK integration
   public var debug: Bool?
 
-  /// Optional alias to add to all requests to compare against the rum:alias
-  ///  in appmonitors with resource based policies
-  public var alias: String?
-
   /**
    * Initializes a new RUM configuration instance.
    *
@@ -79,12 +75,11 @@ import Foundation
    * @param overrideEndpoint Optional endpoint overrides for the RUM service
    * @param debug Flag to enable debug logging (defaults to false)
    */
-  @objc public init(region: String, appMonitorId: String, overrideEndpoint: EndpointOverrides? = nil, debug: Bool = false, alias: String? = nil) {
+  @objc public init(region: String, appMonitorId: String, overrideEndpoint: EndpointOverrides? = nil, debug: Bool = false) {
     self.region = region
     self.appMonitorId = appMonitorId
     self.overrideEndpoint = overrideEndpoint
     self.debug = debug
-    self.alias = alias
     super.init()
   }
 }

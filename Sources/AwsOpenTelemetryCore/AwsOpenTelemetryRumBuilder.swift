@@ -212,14 +212,10 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A resource with AWS RUM attributes
    */
   private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
-    var rumResourceAttributes: [String: String] = [
+    let rumResourceAttributes: [String: String] = [
       AwsRumConstants.AWS_REGION: config.rum.region,
       AwsRumConstants.RUM_APP_MONITOR_ID: config.rum.appMonitorId
     ]
-
-    if config.rum.alias?.isEmpty == false {
-      rumResourceAttributes[AwsRumConstants.RUM_ALIAS] = config.rum.alias!
-    }
 
     let resource = DefaultResources().get()
       .merging(other: Resource(attributes: buildAttributeMap(rumResourceAttributes)))
