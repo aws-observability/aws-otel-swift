@@ -125,6 +125,7 @@ The configuration follows this JSON schema:
 | appMonitorId | String | Yes | Unique identifier for the RUM App Monitor |
 | overrideEndpoint | Object | No | Optional endpoint overrides for the RUM service |
 | debug | Boolean | No | Flag to enable debug logging (defaults to false) |
+| alias | String | No | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor |
 
 #### ApplicationConfig
 

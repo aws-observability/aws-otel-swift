@@ -27,4 +27,7 @@ public enum AwsRumConstants {
 
   /// Attribute key for the RUM App Monitor ID
   public static let RUM_APP_MONITOR_ID = "awsRumAppMonitorId"
+
+  /// Attribute key for the RUM alias
+  public static let RUM_ALIAS = "awsRumAlias"
 }

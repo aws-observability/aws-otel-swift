@@ -12,6 +12,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
   let tracesOnlyEndpoint = "https://traces-only.example.com"
   let debug = true
   let defaultVersion = "1.0.0"
+  let alias = "test-alias"
 
   func testConfigInitialization() {
     // Test basic initialization
@@ -25,6 +26,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(config.rum.region, region)
     XCTAssertEqual(config.rum.appMonitorId, appMonitorId)
     XCTAssertNil(config.rum.overrideEndpoint)
+    XCTAssertNil(config.rum.alias)
     XCTAssertEqual(config.rum.debug, false)
     XCTAssertEqual(config.application.applicationVersion, appVersion)
   }
@@ -42,7 +44,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
         region: region,
         appMonitorId: appMonitorId,
         overrideEndpoint: endpointOverrides,
-        debug: debug
+        debug: debug,
+        alias: alias
       ),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
@@ -51,8 +54,10 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(config.rum.region, region)
     XCTAssertEqual(config.rum.appMonitorId, appMonitorId)
     XCTAssertNotNil(config.rum.overrideEndpoint)
+    XCTAssertNotNil(config.rum.alias)
     XCTAssertEqual(config.rum.overrideEndpoint?.logs, logsEndpoint)
     XCTAssertEqual(config.rum.overrideEndpoint?.traces, tracesEndpoint)
+    XCTAssertEqual(config.rum.alias, alias)
     XCTAssertEqual(config.rum.debug, debug)
     XCTAssertEqual(config.application.applicationVersion, appVersion)
   }
