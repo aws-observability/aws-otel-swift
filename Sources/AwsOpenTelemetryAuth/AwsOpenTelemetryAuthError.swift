@@ -1,4 +1,4 @@
-/* Add commentMore actions
+/*
  * Copyright Amazon.com, Inc. or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
@@ -17,7 +17,7 @@ import Foundation
 
 /**
  * Error types that can occur when loading or processing AWS OpenTelemetry configurations.
- *Add commentMore actions
+ *
  * These errors provide specific information about what went wrong during
  * configuration loading or processing.
  */
