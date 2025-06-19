@@ -3,7 +3,7 @@
 A Swift package for AWS OpenTelemetry.
 
 ## Introduction
-This repository is a redistribution of the [OpenTelemetry Swift SDK](https://github.com/open-telemetry/opentelemetry-swift), preconfigured for use with AWS services. Please check out the upstream repository too to get a better understanding of the underlying internals. The upstream repository is still maturing so much of the instrumentation has been built in this repository. In addition, this also supports integration with CloudWatch RUM and Application Signals.
+This repository is a redistribution of the [OpenTelemetry Swift SDK](https://github.com/open-telemetry/opentelemetry-swift), preconfigured for use with AWS services. Please check out the upstream repository too to get a better understanding of the underlying internals. The upstream repository is still maturing so much of the instrumentation has been built in this repository. In addition, this also supports integration with CloudWatch RUM.
 
 We provide a Swift library that can be consumed within any Native iOS application using iOS 16+ (TODO: Update once version is finalized). We build convenience functions to onboard your application with OpenTelemetry and start ingesting telemetry into your CloudWatch RUM Application Monitors.
 

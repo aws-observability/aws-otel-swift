@@ -96,7 +96,7 @@ struct ContentView<T: AwsServiceHandlerProtocol>: View {
 struct ContentView_Previews: PreviewProvider {
   @MainActor
   final class MockHandler: AwsServiceHandlerProtocol {
-    // Default values are same as AwsServiceHandler
+    // Default values are same as the concrete AwsServiceHandler class
     @Published var isLoading: Bool = false
     @Published var resultMessage: String = "AWS API results will appear here"
 
