@@ -84,7 +84,10 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
    *   - `AwsOpenTelemetryAuthError.credentialsError` if unable to retrieve credentials
    */
   public func getCredentials() async throws -> Credentials {
-    if shouldUpdateCredentials() {
+    if Self.shouldUpdateCredentials(
+      cachedCredentials: cachedCredentials,
+      refreshBufferWindow: refreshBufferWindow
+    ) {
       let identityId = try await fetchIdentityId(client: cognitoIdentityClient)
       let credentials = try await fetchCredentials(client: cognitoIdentityClient, identityId: identityId)
 
@@ -145,23 +148,6 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
       throw AwsOpenTelemetryAuthError.credentialsError
     }
     return credentials
-  }
-
-  /**
-   * Determines whether cached credentials should be updated.
-   *
-   * This is a convenience method that delegates to the static version with the
-   * current instance's cached credentials and refresh buffer window.
-   *
-   * - Returns: `true` if credentials should be refreshed, `false` if cached credentials
-   *           are still valid
-   *
-   */
-  private func shouldUpdateCredentials() -> Bool {
-    return Self.shouldUpdateCredentials(
-      cachedCredentials: cachedCredentials,
-      refreshBufferWindow: refreshBufferWindow
-    )
   }
 }
 
