@@ -31,7 +31,7 @@ import Smithy
  */
 public class AwsSigV4Authenticator {
   /// The credentials provider used to obtain AWS credentials for signing
-  private static var credentialsProvider: CredentialsProvider?
+  private static var credentialsProvider: CredentialsProviding?
 
   /// The AWS region where the service is located
   private static var region: String?
@@ -48,7 +48,7 @@ public class AwsSigV4Authenticator {
    * @param region The AWS region where the service is located
    * @param serviceName The name of the AWS service being accessed
    */
-  public static func configure(credentialsProvider: CredentialsProvider,
+  public static func configure(credentialsProvider: CredentialsProviding,
                                region: String,
                                serviceName: String) {
     self.credentialsProvider = credentialsProvider

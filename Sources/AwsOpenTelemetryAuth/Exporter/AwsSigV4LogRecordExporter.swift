@@ -38,7 +38,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
   private let serviceName: String
 
   /// The provider that supplies AWS credentials for signing
-  private let credentialsProvider: CredentialsProvider
+  private let credentialsProvider: CredentialsProviding
 
   /// A serial dispatch queue for thread-safe access to log data
   private let queue = DispatchQueue(label: "com.aws.opentelemetry.logDataQueue")
@@ -60,8 +60,8 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    */
   public init(endpoint: String,
               region: String,
-              serviceName: String,
-              credentialsProvider: CredentialsProvider,
+              serviceName: String = "rum",
+              credentialsProvider: CredentialsProviding,
               parentExporter: LogRecordExporter? = nil) {
     self.endpoint = endpoint
     self.region = region

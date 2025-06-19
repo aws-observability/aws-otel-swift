@@ -38,7 +38,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
   private let serviceName: String
 
   /// The provider that supplies AWS credentials for signing
-  private let credentialsProvider: CredentialsProvider
+  private let credentialsProvider: CredentialsProviding
 
   /// A serial dispatch queue for thread-safe access to span data
   private let queue = DispatchQueue(label: "com.aws.opentelemetry.spanDataQueue")
@@ -60,8 +60,8 @@ public class AwsSigV4SpanExporter: SpanExporter {
    */
   public init(endpoint: String,
               region: String,
-              serviceName: String,
-              credentialsProvider: CredentialsProvider,
+              serviceName: String = "rum",
+              credentialsProvider: CredentialsProviding,
               parentExporter: SpanExporter? = nil) {
     self.endpoint = endpoint
     self.region = region
