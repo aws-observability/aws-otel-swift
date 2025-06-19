@@ -14,32 +14,20 @@
  */
 
 import SwiftUI
-import AWSCore
 import AwsOpenTelemetryCore
 
 @main
 struct SimpleAwsDemoApp: App {
-  // Replace these with your actual AWS credentials and configuration
   private let cognitoPoolId = "YOUR_IDENTITY_POOL_ID_FROM_OUTPUT"
-  private let awsRegion = "YOUR_REGION_FROM_OUTPUT"
+  private let region = "YOUR_REGION_FROM_OUTPUT"
 
-  // Create the AWS service as a StateObject so it persists for the lifetime of the app
-  @StateObject private var awsService: AwsService
-
-  // Initialize AWS services
   init() {
-    // Create the AWS service
-    let service = AwsService(cognitoPoolId: cognitoPoolId, awsRegion: awsRegion)
-    _awsService = StateObject(wrappedValue: service)
-
-    // Initialize AWS OpenTelemetry
     setupOpenTelemetry()
   }
 
   var body: some Scene {
     WindowGroup {
-      ContentView()
-        .environmentObject(awsService)
+      LoaderView(cognitoPoolId: cognitoPoolId, region: region)
     }
   }
 
@@ -58,8 +46,7 @@ struct SimpleAwsDemoApp: App {
     )
 
     do {
-      try AwsOpenTelemetryRumBuilder.create(config: config)
-        .build()
+      try AwsOpenTelemetryRumBuilder.create(config: config).build()
     } catch AwsOpenTelemetryConfigError.alreadyInitialized {
       print("SDK is already initialized")
     } catch {

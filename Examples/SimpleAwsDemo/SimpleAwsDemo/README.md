@@ -34,13 +34,13 @@ For more details, see the [CDK README](./cdk/README-CDK.md).
 
 ## Setup
 
-1. Install the AWS SDK for iOS using Swift Package Manager:
+1. Install the AWS SDK for Swift using Swift Package Manager:
    - In Xcode, go to File > Add Packages...
-   - Enter the URL: `https://github.com/aws-amplify/aws-sdk-ios-spm`
+   - Enter the URL: `https://github.com/awslabs/aws-sdk-swift`
    - Add the following Package Products to your application's target:
-     - `AWSCore`
+     - `AWSClientRuntime`
+     - `AWSCognitoIdentity`
      - `AWSS3`
-     - `AWSCognitoIdentityProvider`
 2. Follow the instructions in this repository's main `README.md` to install the ADOT Swift SDK
 3. Follow the instructions in the above section to deploy the CDK infrastructure
 4. Update AWS credentials in `SimpleAwsDemoApp.swift`:

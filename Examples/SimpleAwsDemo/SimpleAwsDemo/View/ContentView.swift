@@ -15,8 +15,13 @@
 
 import SwiftUI
 
+import AWSCognitoIdentity
+import AWSS3
+
+import SmithyIdentity
+
 struct ContentView: View {
-  @EnvironmentObject var awsService: AwsService
+  @EnvironmentObject var awsServiceHandler: AwsServiceHandler
 
   var body: some View {
     NavigationView {
@@ -29,8 +34,8 @@ struct ContentView: View {
 
         // AWS Operation Buttons
         VStack(spacing: 16) {
-          Button(action: {
-            awsService.listS3Buckets()
+          Button(action: { // You can't use await inside a Button's action closure directly — that's why we use .task { ... } right after the button.
+            Task { await awsServiceHandler.listS3Buckets() }
           }) {
             HStack {
               Image(systemName: "folder")
@@ -42,10 +47,10 @@ struct ContentView: View {
             .foregroundColor(.white)
             .cornerRadius(10)
           }
-          .disabled(awsService.isLoading)
+          .disabled(awsServiceHandler.isLoading)
 
-          Button(action: {
-            awsService.getCognitoIdentityId()
+          Button(action: { // You can't use await inside a Button's action closure directly — that's why we use .task { ... } right after the button.
+            Task { await awsServiceHandler.getCognitoIdentityId() }
           }) {
             HStack {
               Image(systemName: "person.badge.key")
@@ -57,19 +62,19 @@ struct ContentView: View {
             .foregroundColor(.white)
             .cornerRadius(10)
           }
-          .disabled(awsService.isLoading)
+          .disabled(awsServiceHandler.isLoading)
         }
         .padding(.horizontal)
 
         // Results Display
         ScrollView {
           VStack {
-            if awsService.isLoading {
+            if awsServiceHandler.isLoading {
               ProgressView()
                 .padding()
             }
 
-            Text(awsService.resultMessage)
+            Text(awsServiceHandler.resultMessage)
               .padding()
               .frame(maxWidth: .infinity, alignment: .leading)
           }
@@ -89,8 +94,20 @@ struct ContentView: View {
 }
 
 struct ContentView_Previews: PreviewProvider {
+  final class FakeHandler: AwsServiceHandlerPreviewShim {}
+
   static var previews: some View {
     ContentView()
-      .environmentObject(AwsService(cognitoPoolId: "us-east-1:sample-id", awsRegion: "us-east-1"))
+      .environmentObject(FakeHandler())
+  }
+
+  /// Separate class that mimics AwsServiceHandler interface
+  @MainActor
+  class AwsServiceHandlerPreviewShim: ObservableObject {
+    @Published var isLoading: Bool = false
+    @Published var resultMessage: String = "Preview: AWS API results will show here."
+
+    func listS3Buckets() async {}
+    func getCognitoIdentityId() async {}
   }
 }
