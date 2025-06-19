@@ -2,7 +2,18 @@
 
 A Swift package for AWS OpenTelemetry.
 
+## Introduction
+This repository is a redistribution of the [OpenTelemetry Swift SDK](https://github.com/open-telemetry/opentelemetry-swift), preconfigured for use with AWS services. Please check out the upstream repository too to get a better understanding of the underlying internals. The upstream repository is still maturing so much of the instrumentation has been built in this repository. In addition, this also supports integration with CloudWatch RUM and Application Signals.
+
+We provide a Swift library that can be consumed within any Native iOS application using iOS 16+ (TODO: Update once version is finalized). We build convenience functions to onboard your application with OpenTelemetry and start ingesting telemetry into your CloudWatch RUM Application Monitors.
+
 ## Installation
+
+### Xcode
+
+1. Go to File > Add Package Dependencies...
+2. Search for the ADOT Swift SDK package url (`https://github.com/aws-observability/aws-otel-swift`) and click the "Add Package" button.
+3. Add the `AwsOpenTelemetryCore` Package Product to your application's target.
 
 ### Swift Package Manager
 
@@ -29,6 +40,8 @@ targets: [
     )
 ]
 ```
+
+### CocoaPods (TODO: Update once Pod specs are created and tested)
 
 ## Initialization
 
@@ -137,13 +150,15 @@ The configuration follows this JSON schema:
 
 ### Git Hooks
 
-This repository uses Git hooks to ensure code quality. To set up the hooks:
+This repository uses Git hooks to ensure code quality. For a quick setup, run:
 
 ```bash
-./scripts/setup-git-hooks.sh
+./scripts/setup-all.sh
 ```
 
-This will install pre-commit hooks that automatically format and lint Swift code using SwiftFormat and SwiftLint.
+This will set up Git hooks and needed tools in one step.
+
+For more details about the individual scripts and how to set them up separately, see the [scripts README](./scripts/README.md).
 
 ## License
 
