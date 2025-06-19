@@ -97,5 +97,5 @@ class CognitoCachedCredentialsProviderTests: XCTestCase {
     )
 
     XCTAssertTrue(result, "Should update when within custom buffer window")
-  } Add commentMore actions
+  }
 }
