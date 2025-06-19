@@ -1,10 +1,6 @@
 import Foundation
 import AwsCommonRuntimeKit
 import AWSCognitoIdentity
-import SmithyIdentity
-import Smithy
-
-private let REFRESH_BUFFER_WINDOW_DEFAULT: TimeInterval = 10
 
 public class CognitoCachedCredentialsProvider: CredentialsProviding {
   private let cognitoPoolId: String
@@ -12,12 +8,16 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
   private let loginsMap: [Swift.String: Swift.String]?
   private var cachedCredentials: CognitoIdentityClientTypes.Credentials?
   private let refreshBufferWindow: TimeInterval
+  public static let REFRESH_BUFFER_WINDOW_DEFAULT: TimeInterval = 10
 
-  public init(cognitoPoolId: String, cognitoClient: CognitoIdentityClient, loginsMap: [Swift.String: Swift.String]? = nil, refreshBufferWindow: TimeInterval?) {
+  public init(cognitoPoolId: String,
+              cognitoClient: CognitoIdentityClient,
+              loginsMap: [Swift.String: Swift.String]? = nil,
+              refreshBufferWindow: TimeInterval = CognitoCachedCredentialsProvider.REFRESH_BUFFER_WINDOW_DEFAULT) {
     self.cognitoPoolId = cognitoPoolId
     cognitoIdentityClient = cognitoClient
     self.loginsMap = loginsMap
-    self.refreshBufferWindow = refreshBufferWindow ?? REFRESH_BUFFER_WINDOW_DEFAULT
+    self.refreshBufferWindow = refreshBufferWindow
   }
 
   public func getCredentials() async throws -> Credentials {
@@ -59,16 +59,22 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
   }
 
   private func shouldUpdateCredentials() -> Bool {
-    let checkCredentials = cachedCredentials
+    return Self.shouldUpdateCredentials(
+      cachedCredentials: cachedCredentials,
+      refreshBufferWindow: refreshBufferWindow
+    )
+  }
+}
 
-    if checkCredentials?.expiration == nil {
+extension CognitoCachedCredentialsProvider {
+  static func shouldUpdateCredentials(cachedCredentials: CognitoIdentityClientTypes.Credentials?,
+                                      refreshBufferWindow: TimeInterval,
+                                      currentDate: Date = Date()) -> Bool {
+    guard let credentials = cachedCredentials,
+          let expiration = credentials.expiration else {
       return true
     }
 
-    if Date().addingTimeInterval(refreshBufferWindow) >= checkCredentials!.expiration! {
-      return true
-    }
-
-    return false
+    return currentDate.addingTimeInterval(refreshBufferWindow) >= expiration
   }
 }
