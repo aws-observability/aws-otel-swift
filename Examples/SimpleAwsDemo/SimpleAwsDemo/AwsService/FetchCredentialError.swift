@@ -16,14 +16,25 @@
 import Foundation
 
 /**
- * Error types that can occur when fetch credentials
+ * Error types that can occur when fetching AWS credentials
  *
- * These errors provide specific information about what went wrong when retrieving credentials
+ * These errors provide specific information about what went wrong during
+ * the credential retrieval process from Amazon Cognito Identity.
  */
 public enum FetchCredentialError: Error, Equatable {
-  /// Indicates that there was no Cognito identity
+  /**
+   * Indicates that no Cognito identity ID was returned
+   *
+   * This can happen if the identity pool is misconfigured or if there
+   * are network connectivity issues when contacting the Cognito service.
+   */
   case noIdentityId
 
-  /// Indicates failure in retrieving credentials
+  /**
+   * Indicates failure in retrieving credentials for a valid identity ID
+   *
+   * This can happen if the identity doesn't have proper permissions or
+   * if there are issues with the Cognito identity pool configuration.
+   */
   case noCredentials
 }
