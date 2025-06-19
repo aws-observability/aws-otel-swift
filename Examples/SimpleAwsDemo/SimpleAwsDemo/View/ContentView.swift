@@ -20,8 +20,8 @@ import AWSS3
 
 import SmithyIdentity
 
-struct ContentView: View {
-  @EnvironmentObject var awsServiceHandler: AwsServiceHandler
+struct ContentView<T: AwsServiceHandlerProtocol>: View {
+  @EnvironmentObject var awsServiceHandler: T
 
   var body: some View {
     NavigationView {
@@ -94,20 +94,18 @@ struct ContentView: View {
 }
 
 struct ContentView_Previews: PreviewProvider {
-  final class FakeHandler: AwsServiceHandlerPreviewShim {}
-
-  static var previews: some View {
-    ContentView()
-      .environmentObject(FakeHandler())
-  }
-
-  /// Separate class that mimics AwsServiceHandler interface
   @MainActor
-  class AwsServiceHandlerPreviewShim: ObservableObject {
+  final class MockHandler: AwsServiceHandlerProtocol {
+    // Default values are same as AwsServiceHandler
     @Published var isLoading: Bool = false
-    @Published var resultMessage: String = "Preview: AWS API results will show here."
+    @Published var resultMessage: String = "AWS API results will appear here"
 
     func listS3Buckets() async {}
     func getCognitoIdentityId() async {}
+  }
+
+  static var previews: some View {
+    ContentView<MockHandler>()
+      .environmentObject(MockHandler())
   }
 }

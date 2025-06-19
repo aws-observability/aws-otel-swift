@@ -26,7 +26,7 @@ struct LoaderView: View {
   var body: some View {
     Group {
       if let awsServiceHandler = awsServiceHandler {
-        ContentView()
+        ContentView<AwsServiceHandler>()
           .environmentObject(awsServiceHandler)
       } else if let error = error {
         Text("Failed to initialize AWS: \(error.localizedDescription)")
