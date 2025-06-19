@@ -110,7 +110,7 @@ public class AwsSigV4SpanExporterBuilder {
     return AwsSigV4SpanExporter(
       endpoint: endpoint!,
       region: region!,
-      serviceName: serviceName!,
+      serviceName: serviceName ?? "rum",
       credentialsProvider: credentialsProvider!,
       parentExporter: parentExporter
     )

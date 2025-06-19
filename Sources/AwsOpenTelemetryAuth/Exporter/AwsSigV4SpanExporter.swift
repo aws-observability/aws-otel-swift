@@ -60,7 +60,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
    */
   public init(endpoint: String,
               region: String,
-              serviceName: String,
+              serviceName: String = "rum",
               credentialsProvider: CredentialsProviding,
               parentExporter: SpanExporter? = nil) {
     self.endpoint = endpoint

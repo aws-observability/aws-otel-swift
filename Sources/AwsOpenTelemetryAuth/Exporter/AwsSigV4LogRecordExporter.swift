@@ -60,7 +60,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    */
   public init(endpoint: String,
               region: String,
-              serviceName: String,
+              serviceName: String = "rum",
               credentialsProvider: CredentialsProviding,
               parentExporter: LogRecordExporter? = nil) {
     self.endpoint = endpoint

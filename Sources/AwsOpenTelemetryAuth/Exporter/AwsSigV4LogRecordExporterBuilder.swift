@@ -110,7 +110,7 @@ public class AwsSigV4LogRecordExporterBuilder {
     return AwsSigV4LogRecordExporter(
       endpoint: endpoint!,
       region: region!,
-      serviceName: serviceName!,
+      serviceName: serviceName ?? "rum",
       credentialsProvider: credentialsProvider!,
       parentExporter: parentExporter
     )
