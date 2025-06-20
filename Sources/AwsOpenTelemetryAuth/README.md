@@ -96,13 +96,3 @@ let logExporter = try AwsSigV4LogRecordExporterBuilder()
     .setCredentialsProvider(customCredentialsProvider)
     .build()
 ```
-
-## Dependencies
-
-This module depends on:
-- `AwsOpenTelemetryCore`: Core OpenTelemetry functionality
-- `AwsCommonRuntimeKit`: AWS common runtime utilities
-- `AWSCognitoIdentity`: Amazon Cognito Identity service client
-- `AWSSDKHTTPAuth`: AWS SDK HTTP authentication
-- `SmithyHTTPAuth`: Smithy HTTP authentication framework
-- OpenTelemetry SDK components for exporters

@@ -16,12 +16,15 @@
 import Foundation
 
 /**
- * Error types that can occur when loading or processing AWS OpenTelemetry configurations.
+ * Errors that can occur during AWS OpenTelemetry authentication operations.
  *
- * These errors provide specific information about what went wrong during
- * configuration loading or processing.
+ * This enum represents various authentication-related errors that may be encountered
+ * when working with AWS Cognito Identity and credential providers in the AWS OpenTelemetry SDK.
  */
 public enum AwsOpenTelemetryAuthError: Error, Equatable {
+  /// Indicates that no identity ID could be retrieved from AWS Cognito Identity.
   case noIdentityId
+
+  /// Indicates that AWS credentials could not be retrieved for the identity.
   case credentialsError
 }

@@ -89,7 +89,7 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
       refreshBufferWindow: refreshBufferWindow
     ) {
       let identityId = try await fetchIdentityId(client: cognitoIdentityClient)
-      let credentials = try await fetchCredentials(client: cognitoIdentityClient, identityId: identityId)
+      let credentials = try await fetchCredentialsForIdentity(client: cognitoIdentityClient, identityId: identityId)
 
       cachedCredentials = credentials
     }
@@ -139,7 +139,7 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
    * - Throws:
    *   - `AwsOpenTelemetryAuthError.credentialsError` if the response doesn't contain credentials
    */
-  private func fetchCredentials(client: CognitoIdentityClient, identityId: String) async throws -> CognitoIdentityClientTypes.Credentials {
+  private func fetchCredentialsForIdentity(client: CognitoIdentityClient, identityId: String) async throws -> CognitoIdentityClientTypes.Credentials {
     let credentialsOutput = try await client.getCredentialsForIdentity(
       input: GetCredentialsForIdentityInput(identityId: identityId)
     )
@@ -155,15 +155,21 @@ extension CognitoCachedCredentialsProvider {
   /**
    * Static utility method to determine if credentials should be updated.
    *
-   * This method implements the core logic for credential refresh timing. It's exposed
-   * as a static method to enable easier unit testing with controlled date inputs.
+   * ## Logic Flow
+   *
+   * The function evaluates credentials refresh necessity using the following decision tree:
+   *
+   * 1. **No cached credentials**: Returns `true` (immediate refresh needed)
+   * 2. **No expiration date**: Returns `true` (cannot determine validity, refresh for safety)
+   * 3. **Has expiration date**: Compares `currentDate + refreshBufferWindow >= expiration`
+   *    - If true: Returns `true` (refresh needed - within buffer window or expired)
+   *    - If false: Returns `false` (credentials still valid outside buffer window)
    *
    * - Parameters:
    *   - cachedCredentials: The currently cached credentials, or nil if none exist
-   *   - refreshBufferWindow: Time interval in seconds before expiration when refresh should occur
-   *   - currentDate: The current date/time to compare against expiration (defaults to Date())
-   * - Returns: `true` if credentials should be refreshed, `false` otherwise
-   *
+   *   - refreshBufferWindow: Time interval in seconds before expiration when refresh should occur.
+   *   - currentDate: The current date/time to compare against expiration (defaults to Date()).
+   * - Returns: `true` if credentials should be refreshed, `false` if they're still valid
    */
   static func shouldUpdateCredentials(cachedCredentials: CognitoIdentityClientTypes.Credentials?,
                                       refreshBufferWindow: TimeInterval,
