@@ -95,3 +95,6 @@ fastlane/test_output
 iOSInjectionProject/
 
 .DS_Store
+
+# Prettier
+.prettierrc

@@ -48,7 +48,7 @@
     {
       "identity" : "smithy-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/awslabs/smithy-swift.git",
+      "location" : "https://github.com/smithy-lang/smithy-swift",
       "state" : {
         "revision" : "e1638ed20eb1b08fd89b5ce02a55d0160a81e730",
         "version" : "0.134.0"

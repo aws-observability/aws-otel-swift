@@ -17,8 +17,8 @@ for hook in "$CUSTOM_HOOKS_DIR"/*; do
     hook_name=$(basename "$hook")
     ln -sf "$hook" "$HOOKS_DIR/$hook_name"
     chmod +x "$HOOKS_DIR/$hook_name"
-    echo "✅ Installed: $hook_name"
+    echo "Installed: $hook_name"
   fi
 done
 
-echo "Git hooks setup complete! 🎉"
+echo "Git hooks setup complete!"
