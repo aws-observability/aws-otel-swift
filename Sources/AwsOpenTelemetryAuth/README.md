@@ -75,6 +75,26 @@ let spanExporter = try AwsSigV4SpanExporterBuilder()
     .build()
 ```
 
+### Using CognitoCachedCredentialsProvider with loginsMap
+
+The `loginsMap` parameter allows you to provide tokens from federated identity providers such as Amazon, Facebook, Google, or any OpenID Connect-compatible provider.
+
+```swift
+import AwsOpenTelemetryAuth
+
+// Example with Amazon Login
+let amazonLoginsMap = [
+    "www.amazon.com": "amazon-access-token-here"
+]
+
+let amazonCredentialsProvider = CognitoCachedCredentialsProvider(
+    identityPoolId: "us-west-2:your-identity-pool-id",
+    region: "us-west-2",
+    loginsMap: amazonLoginsMap
+)
+
+```
+
 ### Using with Custom Credentials
 
 ```swift
