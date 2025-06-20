@@ -93,6 +93,42 @@ do {
 ### Thread Safety
 You should only import the "AwsOpenTelemetryAgent" module if you would like the agent to auto initialize. If you are manually initializing the SDK, you should **not** import the "AwsOpenTelemetryAgent" module. The SDK ensures thread safety by only allowing initialization once. Given the auto-initialization occurs early on during class loading, the manual initialization will throw an `AwsOpenTelemetryConfigError.alreadyInitialized` error.
 
+## Error Handling
+
+The SDK defines several error types to help you handle different failure scenarios:
+
+### AwsOpenTelemetryConfigError
+
+| Error Case | Description |
+|------------|-------------|
+| `alreadyInitialized` | Thrown when attempting to initialize the SDK multiple times |
+
+### AwsOpenTelemetryAuthError
+
+Authentication-related errors that may occur when working with AWS Cognito Identity:
+
+| Error Case | Description | Common Causes |
+|------------|-------------|---------------|
+| `noIdentityId` | Failed to retrieve Cognito Identity ID | Identity pool misconfiguration, incorrect region, network issues |
+| `credentialsError` | Failed to retrieve AWS credentials for the identity | IAM role misconfiguration, insufficient permissions, invalid identity ID |
+
+Example error handling:
+
+```swift
+import AwsOpenTelemetryAuth
+
+do {
+    let credentials = try await provider.getCredentials()
+    // Use credentials...
+} catch AwsOpenTelemetryAuthError.noIdentityId {
+    print("Failed to retrieve Cognito Identity ID - check your identity pool configuration")
+} catch AwsOpenTelemetryAuthError.credentialsError {
+    print("Failed to retrieve AWS credentials - check your IAM role configuration")
+} catch {
+    print("Unexpected error: \(error)")
+}
+```
+
 ## Configuration Schema
 
 The configuration follows this JSON schema:
