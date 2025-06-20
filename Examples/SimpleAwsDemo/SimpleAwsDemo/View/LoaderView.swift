@@ -15,40 +15,35 @@
 
 import SwiftUI
 
+/**
+ * Entry point view responsible for initializing AWS and passing dependencies to child views.
+ *
+ * Displays a progress indicator while initializing, an error message on failure,
+ * or the main content on successful AWS setup.
+ */
 @MainActor
 struct LoaderView: View {
-  @State private var awsServiceHandler: AwsServiceHandler?
-  @State private var error: Error?
+  @StateObject private var viewModel: LoaderViewModel
 
-  let cognitoPoolId: String
-  let region: String
+  /// Initializes the loader with AWS configuration
+  init(cognitoPoolId: String, region: String) {
+    _viewModel = StateObject(wrappedValue: LoaderViewModel(cognitoPoolId: cognitoPoolId, region: region))
+  }
 
   var body: some View {
     Group {
-      if let awsServiceHandler = awsServiceHandler {
-        ContentView<AwsServiceHandler>()
-          .environmentObject(awsServiceHandler)
-      } else if let error = error {
-        Text("Failed to initialize AWS: \(error.localizedDescription)")
-      } else {
+      if viewModel.isLoading {
         ProgressView("Initializing AWS...")
-          .task {
-            do {
-              // 1. Create the credentials provider
-              let awsCredentialsProvider = try await AwsCredentialsProvider(
-                cognitoPoolId: cognitoPoolId,
-                region: region
-              )
-              // 2. Create the AWS service handler with resolver
-              self.awsServiceHandler = try await AwsServiceHandler(
-                region: region,
-                awsCredentialsProvider: awsCredentialsProvider
-              )
-            } catch {
-              self.error = error
-            }
-          }
+      } else if let error = viewModel.error {
+        Text("Failed to initialize AWS: \(error.localizedDescription)")
+          .foregroundColor(.red)
+          .padding()
+      } else {
+        ContentView(viewModel: viewModel)
       }
+    }
+    .task {
+      await viewModel.initialize()
     }
   }
 }

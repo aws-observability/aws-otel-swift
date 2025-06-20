@@ -15,18 +15,17 @@
 
 import SwiftUI
 
-import AWSCognitoIdentity
-import AWSS3
-
-import SmithyIdentity
-
-struct ContentView<T: AwsServiceHandlerProtocol>: View {
-  @EnvironmentObject var awsServiceHandler: T
+/**
+ * Main app view that allows users to trigger AWS operations like
+ * listing S3 buckets and retrieving Cognito Identity.
+ */
+struct ContentView: View {
+  @ObservedObject var viewModel: LoaderViewModel
 
   var body: some View {
     NavigationView {
       VStack(spacing: 20) {
-        // Title
+        // App title
         Text("AWS OpenTelemetry Demo")
           .font(.largeTitle)
           .fontWeight(.bold)
@@ -34,47 +33,25 @@ struct ContentView<T: AwsServiceHandlerProtocol>: View {
 
         // AWS Operation Buttons
         VStack(spacing: 16) {
-          Button(action: { // You can't use await inside a Button's action closure directly — that's why we use .task { ... } right after the button.
-            Task { await awsServiceHandler.listS3Buckets() }
-          }) {
-            HStack {
-              Image(systemName: "folder")
-              Text("List S3 Buckets")
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+          awsButton(icon: "folder", title: "List S3 Buckets") {
+            await viewModel.listS3Buckets()
           }
-          .disabled(awsServiceHandler.isLoading)
 
-          Button(action: { // You can't use await inside a Button's action closure directly — that's why we use .task { ... } right after the button.
-            Task { await awsServiceHandler.getCognitoIdentityId() }
-          }) {
-            HStack {
-              Image(systemName: "person.badge.key")
-              Text("Get Cognito Identity")
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.blue)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+          awsButton(icon: "person.badge.key", title: "Get Cognito Identity") {
+            await viewModel.getCognitoIdentityId()
           }
-          .disabled(awsServiceHandler.isLoading)
         }
         .padding(.horizontal)
 
-        // Results Display
+        // Result Display
         ScrollView {
           VStack {
-            if awsServiceHandler.isLoading {
+            if viewModel.isLoading {
               ProgressView()
                 .padding()
             }
 
-            Text(awsServiceHandler.resultMessage)
+            Text(viewModel.resultMessage)
               .padding()
               .frame(maxWidth: .infinity, alignment: .leading)
           }
@@ -91,21 +68,47 @@ struct ContentView<T: AwsServiceHandlerProtocol>: View {
       .padding(.bottom)
     }
   }
+
+  /// Reusable AWS action button with loading state
+  @ViewBuilder
+  func awsButton(icon: String, title: String, action: @escaping () async -> Void) -> some View {
+    Button(action: {
+      Task { await action() }
+    }) {
+      HStack {
+        Image(systemName: icon)
+        Text(title)
+      }
+      .frame(maxWidth: .infinity)
+      .padding()
+      .background(Color.blue)
+      .foregroundColor(.white)
+      .cornerRadius(10)
+    }
+    .disabled(viewModel.isLoading)
+  }
 }
 
-struct ContentView_Previews: PreviewProvider {
-  @MainActor
-  final class MockHandler: AwsServiceHandlerProtocol {
-    // Default values are same as the concrete AwsServiceHandler class
-    @Published var isLoading: Bool = false
-    @Published var resultMessage: String = "AWS API results will appear here"
+// MARK: - Preview
 
-    func listS3Buckets() async {}
-    func getCognitoIdentityId() async {}
+struct ContentView_Previews: PreviewProvider {
+  /// A lightweight mock view model for preview/testing
+  @MainActor
+  final class MockLoaderViewModel: LoaderViewModel {
+    init() {
+      // Provide dummy values to satisfy superclass init
+      super.init(cognitoPoolId: "mock-pool-id", region: "us-west-2")
+      isLoading = false
+      resultMessage = "AWS API results will appear here"
+    }
+
+    override func listS3Buckets() async {}
+    override func getCognitoIdentityId() async {}
   }
 
   static var previews: some View {
-    ContentView<MockHandler>()
-      .environmentObject(MockHandler())
+    ContentView(viewModel: MockLoaderViewModel())
+      .previewDisplayName("Landing View")
+      .padding()
   }
 }
