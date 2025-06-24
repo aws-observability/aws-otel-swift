@@ -342,17 +342,22 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
     var rumResourceAttributes: [String: String] = [
-      AwsRumConstants.AWS_REGION: config.aws.region,
-      AwsRumConstants.RUM_APP_MONITOR_ID: config.aws.rumAppMonitorId,
-      AwsRumConstants.RUM_SDK_VERSION: AwsOpenTelemetryAgent.version
+      AwsRumAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId,
     ]
 
     if config.aws.rumAlias?.isEmpty == false {
-      rumResourceAttributes[AwsRumConstants.RUM_ALIAS] = config.aws.rumAlias!
+      rumResourceAttributes[AwsRumAttributes.rumAppMonitorAlias.rawValue] = config.aws.rumAlias!
     }
+    
+    let cloudResourceAttributes: [String: String] = [
+      ResourceAttributes.cloudRegion.rawValue: config.aws.region,
+      ResourceAttributes.cloudProvider.rawValue: StringConstants.awsCloudProvider.rawValue,
+      ResourceAttributes.cloudPlatform.rawValue: StringConstants.awsRumCloudPlatform.rawValue,
+    ]
 
     let resource = DefaultResources().get()
       .merging(other: Resource(attributes: buildAttributeMap(rumResourceAttributes)))
+      .merging(other: Resource(attributes: buildAttributeMap(cloudResourceAttributes)))
 
     return resource
   }
