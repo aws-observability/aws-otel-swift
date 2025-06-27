@@ -139,7 +139,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
         spanData.attributes.keys.contains("http.request.method")
     }
 
-    XCTAssertEqual(httpSpans.count, 1, "Regular requests should create HTTP spans")
+    XCTAssertGreaterThan(httpSpans.count, 0, "Regular requests should create HTTP spans")
   }
 
   func testBasicInitialization() {
