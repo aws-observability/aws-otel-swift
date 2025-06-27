@@ -47,7 +47,7 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
   public init(config: RumConfig) {
     self.config = config
     // Get OTLP endpoints from config but don't create instrumentation yet
-    otlpEndpoints = Self.buildOtlpEndpoints(config: config)
+    otlpEndpoints = buildOtlpEndpoints(config: config)
   }
 
   /**
@@ -65,8 +65,6 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
         return shouldInstrument
       }
     )
-
-    // Create and discard reference (like original working pattern)
     _ = URLSessionInstrumentation(configuration: urlSessionConfig)
 
     isApplied = true
@@ -91,29 +89,5 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
       }
     }
     return false
-  }
-
-  /**
-   * Gets the set of OTLP endpoint URLs that should be excluded from instrumentation
-   * to avoid creating telemetry about telemetry.
-   *
-   * @return Set of OTLP endpoint URLs
-   */
-  private static func buildOtlpEndpoints(config: RumConfig) -> Set<String> {
-    let tracesEndpoint = config.overrideEndpoint?.traces ?? buildRumEndpoint(region: config.region)
-    let logsEndpoint = config.overrideEndpoint?.logs ?? buildRumEndpoint(region: config.region)
-    let endpoints = Set([tracesEndpoint, logsEndpoint])
-
-    return endpoints
-  }
-
-  /**
-   * Builds the base RUM endpoint URL for a given region.
-   *
-   * @param region The AWS region
-   * @return The base RUM endpoint URL
-   */
-  private static func buildRumEndpoint(region: String) -> String {
-    return "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
   }
 }

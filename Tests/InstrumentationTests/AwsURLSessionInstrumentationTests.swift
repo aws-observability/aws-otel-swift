@@ -40,7 +40,6 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
     // Register the shared tracer provider globally ONCE
     OpenTelemetry.registerTracerProvider(tracerProvider: sharedTracerProvider!)
 
-    // Create instrumentation but don't apply it yet (matches new pattern)
     let rumConfig = RumConfig(
       region: "us-west-2",
       appMonitorId: "test-app-monitor-id"
@@ -140,9 +139,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
         spanData.attributes.keys.contains("http.request.method")
     }
 
-    if httpSpans.count > 0 {
-      XCTAssertGreaterThan(httpSpans.count, 0, "Regular requests should create HTTP spans")
-    }
+    XCTAssertEqual(httpSpans.count, 1, "Regular requests should create HTTP spans")
   }
 
   func testBasicInitialization() {
@@ -152,7 +149,6 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
       appMonitorId: "test-initialization"
     )
 
-    // Test the new pattern: create then apply
     XCTAssertNoThrow({
       let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
       instrumentation.apply()

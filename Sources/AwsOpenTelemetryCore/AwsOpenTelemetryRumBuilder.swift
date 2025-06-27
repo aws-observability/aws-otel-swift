@@ -262,36 +262,6 @@ public class AwsOpenTelemetryRumBuilder {
   }
 
   /**
-   * Builds the base RUM endpoint URL for a given region.
-   *
-   * @param region The AWS region
-   * @return The base RUM endpoint URL
-   */
-  private func buildRumEndpoint(region: String) -> String {
-    return "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
-  }
-
-  /**
-   * Builds the traces endpoint URL.
-   *
-   * @param config The RUM configuration
-   * @return The traces endpoint URL
-   */
-  private func buildTracesEndpoint(config: RumConfig) -> String {
-    return config.overrideEndpoint?.traces ?? buildRumEndpoint(region: config.region)
-  }
-
-  /**
-   * Builds the logs endpoint URL.
-   *
-   * @param config The RUM configuration
-   * @return The logs endpoint URL
-   */
-  private func buildLogsEndpoint(config: RumConfig) -> String {
-    return config.overrideEndpoint?.logs ?? buildRumEndpoint(region: config.region)
-  }
-
-  /**
    * Builds the span exporter.
    *
    * @param tracesEndpointURL The traces endpoint URL
