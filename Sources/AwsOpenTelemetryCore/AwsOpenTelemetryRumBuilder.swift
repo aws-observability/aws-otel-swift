@@ -40,6 +40,9 @@ public class AwsOpenTelemetryRumBuilder {
 
   private var resource: Resource
 
+  // Track instrumentations to add
+  private var instrumentations: [AwsOpenTelemetryInstrumentationProtocol] = []
+
   // MARK: - Initialization Methods
 
   /**
@@ -74,6 +77,21 @@ public class AwsOpenTelemetryRumBuilder {
     resource = Self.buildResource(config: config)
   }
 
+  // MARK: - Instrumentation Methods
+
+  /**
+   * Adds an instrumentation instance to the RUM configuration.
+   * The instrumentation will be applied when build() is called.
+   *
+   * @param instrumentation The instrumentation instance to add
+   * @return This builder instance for method chaining
+   */
+  @discardableResult
+  public func addInstrumentation<T: AwsOpenTelemetryInstrumentationProtocol>(_ instrumentation: T) -> Self {
+    instrumentations.append(instrumentation)
+    return self
+  }
+
   /**
    * Builds and registers the OpenTelemetry components.
    * This method marks the SDK as initialized when successful.
@@ -105,7 +123,23 @@ public class AwsOpenTelemetryRumBuilder {
     AwsOpenTelemetryAgent.shared.isInitialized = true
     print("[AwsOpenTelemetry] AwsOpenTelemetry initialized successfully")
 
+    // Apply all stored instrumentations after OpenTelemetry is fully initialized
+    applyInstrumentations()
+
     return self
+  }
+
+  /**
+   * Applies all stored instrumentations after OpenTelemetry is initialized.
+   */
+  private func applyInstrumentations() {
+    print("[AwsOpenTelemetry] Applying \(instrumentations.count) instrumentations")
+
+    for instrumentation in instrumentations {
+      instrumentation.apply()
+    }
+
+    print("[AwsOpenTelemetry] All instrumentations applied successfully")
   }
 
   // MARK: - Resource methods

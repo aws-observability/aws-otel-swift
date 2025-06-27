@@ -57,14 +57,14 @@ struct ContentView: View {
           }
         }
         .frame(maxWidth: .infinity)
-        .background(Color(UIColor.systemBackground))
+        .background(.white)
         .cornerRadius(10)
         .shadow(radius: 2)
         .padding()
 
         Spacer()
       }
-      .navigationBarTitle("", displayMode: .inline)
+      .navigationTitle("Title")
       .padding(.bottom)
     }
   }

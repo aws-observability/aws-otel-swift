@@ -10,30 +10,17 @@
 		30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */; };
 		30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C362E047FB0000DFBF5 /* AWSS3 */; };
 		30BF3C3A2E0481DF000DFBF5 /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */; };
-		30BFE5D52E05D76B000DFBF5 /* URLSessionInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = 30BFE5D42E05D76B000DFBF5 /* URLSessionInstrumentation */; };
 		30FA4FFE2E0C5E2100198CFF /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 30FA4FFD2E0C5E2100198CFF /* AwsOpenTelemetryCore */; };
+		5EC1E43B2E0E18C5001B79E3 /* AwsURLSessionInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC1E43A2E0E18C5001B79E3 /* AwsURLSessionInstrumentation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleAwsDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		306BC6C82E00CE2200F19E48 /* Exceptions for "SimpleAwsDemo" folder in "SimpleAwsDemo" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"cdk/demo-cdk.sh",
-			);
-			target = 306BC6972E00C6AA00F19E48 /* SimpleAwsDemo */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		306BC69A2E00C6AA00F19E48 /* SimpleAwsDemo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				306BC6C82E00CE2200F19E48 /* Exceptions for "SimpleAwsDemo" folder in "SimpleAwsDemo" target */,
-			);
 			path = SimpleAwsDemo;
 			sourceTree = "<group>";
 		};
@@ -44,10 +31,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EC1E43B2E0E18C5001B79E3 /* AwsURLSessionInstrumentation in Frameworks */,
 				30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */,
 				30BF3C3A2E0481DF000DFBF5 /* AWSClientRuntime in Frameworks */,
 				30FA4FFE2E0C5E2100198CFF /* AwsOpenTelemetryCore in Frameworks */,
-				30BFE5D52E05D76B000DFBF5 /* URLSessionInstrumentation in Frameworks */,
 				30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -102,8 +89,9 @@
 				30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */,
 				30BF3C362E047FB0000DFBF5 /* AWSS3 */,
 				30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */,
-				30BFE5D42E05D76B000DFBF5 /* URLSessionInstrumentation */,
 				30FA4FFD2E0C5E2100198CFF /* AwsOpenTelemetryCore */,
+				5EC1E3952E0E0335001B79E3 /* AwsOpenTelemetryInstrumentation */,
+				5EC1E43A2E0E18C5001B79E3 /* AwsURLSessionInstrumentation */,
 			);
 			productName = SimpleAwsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */;
@@ -135,7 +123,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
-				30BFE5D32E05D76B000DFBF5 /* XCRemoteSwiftPackageReference "opentelemetry-swift" */,
 				30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -396,14 +383,6 @@
 				minimumVersion = 1.3.39;
 			};
 		};
-		30BFE5D32E05D76B000DFBF5 /* XCRemoteSwiftPackageReference "opentelemetry-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/open-telemetry/opentelemetry-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.16.1;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -422,15 +401,20 @@
 			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
 			productName = AWSClientRuntime;
 		};
-		30BFE5D42E05D76B000DFBF5 /* URLSessionInstrumentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 30BFE5D32E05D76B000DFBF5 /* XCRemoteSwiftPackageReference "opentelemetry-swift" */;
-			productName = URLSessionInstrumentation;
-		};
 		30FA4FFD2E0C5E2100198CFF /* AwsOpenTelemetryCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
 			productName = AwsOpenTelemetryCore;
+		};
+		5EC1E3952E0E0335001B79E3 /* AwsOpenTelemetryInstrumentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
+			productName = AwsOpenTelemetryInstrumentation;
+		};
+		5EC1E43A2E0E18C5001B79E3 /* AwsURLSessionInstrumentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
+			productName = AwsURLSessionInstrumentation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
