@@ -83,4 +83,11 @@ Note: If you would like to use the OpenTelemetry Collector for local development
     - Verify there are no internet connection issues.
     
 - **No data written to text files**
-    - Run `ls -l file.sh` to verify the system has access to write to the text files. If the value in the first column for the text files contains `w`, this indicates that the system has at least write permissions. If there is no `w`, run `chmod +w filename` to add write permissions. 
+    - Run `ls -l file.sh` to verify the system has access to write to the text files. If the value in the first column for the text files contains `w`, this indicates that the system has at least write permissions. If there is no `w`, run `chmod +w filename` to add write permissions.
+
+- **Sandbox errors on macOS**
+    - Ensure the app has network client entitlements in the `.entitlements` file:
+    ```xml
+    <key>com.apple.security.network.client</key>
+    <true/>
+    ```

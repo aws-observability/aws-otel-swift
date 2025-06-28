@@ -29,14 +29,13 @@ import AwsOpenTelemetryCore
  * Usage: Add this instrumentation via the RUM builder:
  * ```
  * try AwsOpenTelemetryRumBuilder.create(config: config)
- *   .addInstrumentation(AwsURLSessionInstrumentation())
+ *   .addInstrumentation(AwsURLSessionInstrumentation(config: config.rum))
  *   .build()
  * ```
  */
 public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtocol {
   /// Set of OTLP endpoint URLs that should be excluded from instrumentation
-  /// to prevent recursive telemetry collection
-  private let otlpEndpoints: Set<String>
+  private let ignoreEndpointsList: Set<String>
   private let config: RumConfig
   private var isApplied = false
 
@@ -47,7 +46,7 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
   public init(config: RumConfig) {
     self.config = config
     // Get OTLP endpoints from config but don't create instrumentation yet
-    otlpEndpoints = buildOtlpEndpoints(config: config)
+    ignoreEndpointsList = buildOtlpEndpoints(config: config)
   }
 
   /**
@@ -61,7 +60,7 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
 
     let urlSessionConfig = URLSessionInstrumentationConfiguration(
       shouldInstrument: { request in
-        let shouldInstrument = !self.isOtlpEndpoint(request)
+        let shouldInstrument = !self.shouldIgnoreEndpoint(request)
         return shouldInstrument
       }
     )
@@ -74,16 +73,15 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
 
   /**
    * Determines whether a URLRequest should be excluded from instrumentation
-   * based on the configured OTLP endpoints.
    */
-  private func isOtlpEndpoint(_ request: URLRequest) -> Bool {
+  private func shouldIgnoreEndpoint(_ request: URLRequest) -> Bool {
     guard let url = request.url else {
       return false
     }
 
     let requestURL = url.absoluteString
 
-    for endpoint in otlpEndpoints {
+    for endpoint in ignoreEndpointsList {
       if requestURL.hasPrefix(endpoint) {
         return true
       }

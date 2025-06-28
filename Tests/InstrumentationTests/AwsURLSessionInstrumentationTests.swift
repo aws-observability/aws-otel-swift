@@ -130,16 +130,26 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
 
     let spans = spanProcessor.getFinishedSpans()
 
-    // Look for HTTP spans
-    let httpSpans = spans.filter { span in
+    // Filter for spans that are specifically from our test request
+    let testSpans = spans.filter { span in
       let spanData = span.toSpanData()
-      return spanData.name.contains("GET") ||
+
+      // Check if this span is related to our test URL
+      let hasTestUrl = spanData.attributes.values.contains { value in
+        value.description.contains("httpbin.org/status/200")
+      }
+
+      // Check if it's an HTTP span
+      let isHttpSpan = spanData.name.contains("GET") ||
         spanData.name.contains("HTTP") ||
         spanData.attributes.keys.contains("http.method") ||
         spanData.attributes.keys.contains("http.request.method")
+
+      return hasTestUrl && isHttpSpan
     }
 
-    XCTAssertGreaterThan(httpSpans.count, 0, "Regular requests should create HTTP spans")
+    // Assert on test-specific spans only
+    XCTAssertGreaterThan(testSpans.count, 0, "Test-specific HTTP spans should be created")
   }
 
   func testBasicInitialization() {
@@ -155,7 +165,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
     }, "AwsURLSessionInstrumentation should initialize and apply without throwing")
   }
 
-  func testApplyIdempotency() {
+  func testApplyIdempotency() async throws {
     // Test that calling apply() multiple times is safe
     let rumConfig = RumConfig(
       region: "eu-west-1",
@@ -170,6 +180,49 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
       instrumentation.apply()
       instrumentation.apply()
     }, "Multiple apply() calls should be safe")
+
+    guard let spanProcessor = Self.sharedSpanProcessor else {
+      XCTFail("Shared span processor should exist")
+      return
+    }
+    spanProcessor.clear()
+
+    // Make request to regular endpoint (should be instrumented)
+    let testURL = URL(string: "https://httpbin.org/status/200")!
+    let request = URLRequest(url: testURL)
+
+    let expectation = XCTestExpectation(description: "Regular request completed")
+
+    let task = URLSession.shared.dataTask(with: request) { _, _, _ in
+      expectation.fulfill()
+    }
+    task.resume()
+
+    await fulfillment(of: [expectation], timeout: 10.0)
+    try await Task.sleep(nanoseconds: 2_000_000_000)
+
+    let spans = spanProcessor.getFinishedSpans()
+
+    // Filter for spans that are specifically from our test request
+    let testSpans = spans.filter { span in
+      let spanData = span.toSpanData()
+
+      // Check if this span is related to our test URL
+      let hasTestUrl = spanData.attributes.values.contains { value in
+        value.description.contains("httpbin.org/status/200")
+      }
+
+      // Check if it's an HTTP span
+      let isHttpSpan = spanData.name.contains("GET") ||
+        spanData.name.contains("HTTP") ||
+        spanData.attributes.keys.contains("http.method") ||
+        spanData.attributes.keys.contains("http.request.method")
+
+      return hasTestUrl && isHttpSpan
+    }
+
+    // Assert on test-specific spans only
+    XCTAssertGreaterThan(testSpans.count, 0, "Test-specific HTTP spans should be created")
   }
 }
 
