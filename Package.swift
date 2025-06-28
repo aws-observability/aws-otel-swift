@@ -15,7 +15,8 @@ let package = Package(
     // Products define the executables and libraries a package produces, making them visible to other packages.
     .library(name: "AwsOpenTelemetryCore", targets: ["AwsOpenTelemetryCore"]),
     .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"]),
-    .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
+    .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"]),
+    .library(name: "AwsOpenTelemetryUIKitInstrumentation", targets: ["AwsOpenTelemetryUIKitInstrumentation"])
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "1.14.0"),
@@ -31,7 +32,8 @@ let package = Package(
         .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift"),
-        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
+        "AwsOpenTelemetryUIKitInstrumentation"
       ]
     ),
     .target(
@@ -61,6 +63,14 @@ let package = Package(
         .product(name: "AWSCognitoIdentity", package: "aws-sdk-swift")
       ]
     ),
+    .target(
+      name: "AwsOpenTelemetryUIKitInstrumentation",
+      dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift")
+      ],
+      path: "Sources/Instrumentation/UIKit"
+    ),
     .testTarget(
       name: "AwsOpenTelemetryTests",
       dependencies: ["AwsOpenTelemetryCore"]
@@ -68,6 +78,11 @@ let package = Package(
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
+    ),
+    .testTarget(
+      name: "AwsOpenTelemetryUIKitInstrumentationTests",
+      dependencies: ["AwsOpenTelemetryUIKitInstrumentation"],
+      path: "Tests/UIKitInstrumentationTests"
     )
   ]
 ).addPlatformSpecific()

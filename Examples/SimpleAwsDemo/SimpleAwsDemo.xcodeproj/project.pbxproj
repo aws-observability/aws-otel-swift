@@ -387,6 +387,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		305A9A582E0DF6470049469F /* AwsOpenTelemetryUIKitInstrumentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
+			productName = AwsOpenTelemetryUIKitInstrumentation;
+		};
 		30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;

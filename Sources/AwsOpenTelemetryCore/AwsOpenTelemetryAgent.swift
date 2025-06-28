@@ -15,30 +15,79 @@
 
 import Foundation
 
+#if canImport(UIKit) && !os(watchOS)
+  import AwsOpenTelemetryUIKitInstrumentation
+#endif
+
 /**
- * This class provides a singleton instance and methods to initialize
- * the OpenTelemetry SDK with AWS-specific configurations.
+ * The central agent for AWS OpenTelemetry SDK initialization and management.
+ *
+ * This singleton class provides the main entry point for initializing the AWS OpenTelemetry SDK
+ * with RUM (Real User Monitoring) capabilities. It manages the SDK lifecycle and provides
+ * access to instrumentation components.
+ *
+ * ## Usage
+ *
+ * The agent is typically initialized automatically when using `AwsOpenTelemetryAgent` module,
+ * or manually using `AwsOpenTelemetryRumBuilder`:
+ *
+ * ```swift
+ * let config = AwsOpenTelemetryConfig(
+ *   rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
+ *   application: ApplicationConfig(applicationVersion: "1.0.0")
+ * )
+ *
+ * let success = AwsOpenTelemetryAgent.shared.initialize(config: config)
+ * ```
+ *
+ * ## Thread Safety
+ *
+ * This class is thread-safe and can be accessed from multiple threads concurrently.
+ * However, initialization should only be performed once during the application lifecycle.
  */
 @objc public class AwsOpenTelemetryAgent: NSObject {
-  /// Shared singleton instance
+  /// Shared singleton instance for global access to the AWS OpenTelemetry agent
   @objc public static let shared = AwsOpenTelemetryAgent()
 
-  /// Current active configuration
+  /// The current active configuration used to initialize the SDK
+  /// This is set during initialization and remains immutable afterwards
   public internal(set) var configuration: AwsOpenTelemetryConfig?
 
-  /// Flag indicating whether the SDK has been initialized
+  /// Flag indicating whether the SDK has been successfully initialized
+  /// Once set to true, subsequent initialization attempts will be ignored
   @objc public internal(set) var isInitialized: Bool = false
 
+  #if canImport(UIKit) && !os(watchOS)
+    /// UIKit view instrumentation for automatic view controller lifecycle tracking
+    /// This is created when UIKit instrumentation is enabled in the telemetry configuration
+    /// and provides automatic span creation for view controller lifecycle events
+    public internal(set) var uiKitViewInstrumentation: UIKitViewInstrumentation?
+  #endif
+
   /// Private initializer to enforce singleton pattern
+  /// Use `AwsOpenTelemetryAgent.shared` to access the singleton instance
   override private init() {
     super.init()
   }
 
   /**
-   * Initializes the SDK with configurations defined as an AwsOpenTelemetryConfig object.
+   * Initializes the AWS OpenTelemetry SDK with the provided configuration.
    *
-   * @param config The configuration to use for initialization
-   * @return true if initialization was successful, false otherwise
+   * This method sets up the complete OpenTelemetry pipeline including:
+   * - Tracer and logger providers
+   * - Exporters for sending data to AWS services
+   * - UIKit instrumentation (if enabled and available)
+   * - Resource attributes and service identification
+   *
+   * ## Important Notes
+   *
+   * - This method can only be called once successfully per application lifecycle
+   * - Subsequent calls will return `false` without making changes
+   * - The configuration becomes immutable after successful initialization
+   * - UIKit instrumentation is automatically enabled based on telemetry configuration
+   *
+   * @param config The configuration object containing RUM, application, and telemetry settings
+   * @return `true` if initialization was successful, `false` if already initialized or if an error occurred
    */
   @objc @discardableResult
   func initialize(config: AwsOpenTelemetryConfig) -> Bool {
