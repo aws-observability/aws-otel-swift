@@ -40,6 +40,9 @@ public class AwsOpenTelemetryRumBuilder {
 
   private var resource: Resource
 
+  // Track instrumentations to add
+  private var instrumentations: [AwsOpenTelemetryInstrumentationProtocol] = []
+
   // MARK: - Initialization Methods
 
   /**
@@ -74,6 +77,21 @@ public class AwsOpenTelemetryRumBuilder {
     resource = Self.buildResource(config: config)
   }
 
+  // MARK: - Instrumentation Methods
+
+  /**
+   * Adds an instrumentation instance to the RUM configuration.
+   * The instrumentation will be applied when build() is called.
+   *
+   * @param instrumentation The instrumentation instance to add
+   * @return This builder instance for method chaining
+   */
+  @discardableResult
+  public func addInstrumentation<T: AwsOpenTelemetryInstrumentationProtocol>(_ instrumentation: T) -> Self {
+    instrumentations.append(instrumentation)
+    return self
+  }
+
   /**
    * Builds and registers the OpenTelemetry components.
    * This method marks the SDK as initialized when successful.
@@ -105,7 +123,23 @@ public class AwsOpenTelemetryRumBuilder {
     AwsOpenTelemetryAgent.shared.isInitialized = true
     print("[AwsOpenTelemetry] AwsOpenTelemetry initialized successfully")
 
+    // Apply all stored instrumentations after OpenTelemetry is fully initialized
+    applyInstrumentations()
+
     return self
+  }
+
+  /**
+   * Applies all stored instrumentations after OpenTelemetry is initialized.
+   */
+  private func applyInstrumentations() {
+    print("[AwsOpenTelemetry] Applying \(instrumentations.count) instrumentations")
+
+    for instrumentation in instrumentations {
+      instrumentation.apply()
+    }
+
+    print("[AwsOpenTelemetry] All instrumentations applied successfully")
   }
 
   // MARK: - Resource methods
@@ -225,36 +259,6 @@ public class AwsOpenTelemetryRumBuilder {
       .merging(other: Resource(attributes: buildAttributeMap(rumResourceAttributes)))
 
     return resource
-  }
-
-  /**
-   * Builds the base RUM endpoint URL for a given region.
-   *
-   * @param region The AWS region
-   * @return The base RUM endpoint URL
-   */
-  private func buildRumEndpoint(region: String) -> String {
-    return "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
-  }
-
-  /**
-   * Builds the traces endpoint URL.
-   *
-   * @param config The RUM configuration
-   * @return The traces endpoint URL
-   */
-  private func buildTracesEndpoint(config: RumConfig) -> String {
-    return config.overrideEndpoint?.traces ?? buildRumEndpoint(region: config.region)
-  }
-
-  /**
-   * Builds the logs endpoint URL.
-   *
-   * @param config The RUM configuration
-   * @return The logs endpoint URL
-   */
-  private func buildLogsEndpoint(config: RumConfig) -> String {
-    return config.overrideEndpoint?.logs ?? buildRumEndpoint(region: config.region)
   }
 
   /**

@@ -15,6 +15,7 @@
 
 import SwiftUI
 import AwsOpenTelemetryCore
+import AwsURLSessionInstrumentation
 
 @main
 struct SimpleAwsDemoApp: App {
@@ -46,7 +47,9 @@ struct SimpleAwsDemoApp: App {
     )
 
     do {
-      try AwsOpenTelemetryRumBuilder.create(config: config).build()
+      try AwsOpenTelemetryRumBuilder.create(config: config)
+        .addInstrumentation(AwsURLSessionInstrumentation(config: config.rum))
+        .build()
     } catch AwsOpenTelemetryConfigError.alreadyInitialized {
       print("SDK is already initialized")
     } catch {
