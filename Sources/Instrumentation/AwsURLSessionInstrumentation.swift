@@ -34,8 +34,8 @@ import AwsOpenTelemetryCore
  * ```
  */
 public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtocol {
-  /// Set of OTLP endpoint URLs that should be excluded from instrumentation
-  private let ignoreEndpointsList: Set<String>
+  /// Set of URLs that should be excluded from instrumentation
+  private let urlsToExclude: Set<String>
   private let config: RumConfig
   private var isApplied = false
 
@@ -46,7 +46,7 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
   public init(config: RumConfig) {
     self.config = config
     // Get OTLP endpoints from config but don't create instrumentation yet
-    ignoreEndpointsList = buildOtlpEndpoints(config: config)
+    urlsToExclude = buildOtlpEndpoints(config: config)
   }
 
   /**
@@ -60,7 +60,7 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
 
     let urlSessionConfig = URLSessionInstrumentationConfiguration(
       shouldInstrument: { request in
-        let shouldInstrument = !self.shouldIgnoreEndpoint(request)
+        let shouldInstrument = !self.shouldExcludeURL(request)
         return shouldInstrument
       }
     )
@@ -74,15 +74,15 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
   /**
    * Determines whether a URLRequest should be excluded from instrumentation
    */
-  private func shouldIgnoreEndpoint(_ request: URLRequest) -> Bool {
+  private func shouldExcludeURL(_ request: URLRequest) -> Bool {
     guard let url = request.url else {
       return false
     }
 
     let requestURL = url.absoluteString
 
-    for endpoint in ignoreEndpointsList {
-      if requestURL.hasPrefix(endpoint) {
+    for url in urlsToExclude {
+      if requestURL.hasPrefix(url) {
         return true
       }
     }
