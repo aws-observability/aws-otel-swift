@@ -38,7 +38,6 @@ For more details, see the [CDK README](./cdk/README-CDK.md).
    - In Xcode, go to File > Add Packages...
    - Enter the URL: `https://github.com/awslabs/aws-sdk-swift`
    - Add the following Package Products to your application's target:
-     - `AWSClientRuntime`
      - `AWSCognitoIdentity`
      - `AWSS3`
 2. Follow the instructions in this repository's main `README.md` to install the ADOT Swift SDK
