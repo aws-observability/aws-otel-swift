@@ -15,6 +15,8 @@
 
 import Foundation
 import SwiftUI
+import AwsOpenTelemetryAuth
+import AWSCognitoIdentity
 
 /**
  * View model responsible for initializing AWS services and handling API calls.
@@ -54,14 +56,19 @@ class LoaderViewModel: ObservableObject {
   /// Initializes the `AwsServiceHandler` instance and prepares AWS SDK for use
   func initialize() async {
     do {
-      let credentialsProvider = try await AwsCredentialsProvider(
-        cognitoPoolId: cognitoPoolId,
-        region: region
+      // Configure and initialize the Cognito Identity client
+      let cognitoConfig = try await CognitoIdentityClient.CognitoIdentityClientConfiguration(region: region)
+      let cognitoIdentityClient = CognitoIdentityClient(config: cognitoConfig)
+
+      let credentialsProvider = CognitoCachedCredentialsProvider(
+        cognitoPoolId: cognitoPoolId, cognitoClient: cognitoIdentityClient
       )
 
       awsServiceHandler = try await AwsServiceHandler(
         region: region,
-        awsCredentialsProvider: credentialsProvider
+        awsCredentialsProvider: credentialsProvider,
+        cognitoIdentityClient: cognitoIdentityClient,
+        cognitoPoolId: cognitoPoolId
       )
 
       isLoading = false

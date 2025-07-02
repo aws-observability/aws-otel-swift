@@ -9,9 +9,9 @@
 /* Begin PBXBuildFile section */
 		30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */; };
 		30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C362E047FB0000DFBF5 /* AWSS3 */; };
-		30BF3C3A2E0481DF000DFBF5 /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */; };
-		30FA4FFE2E0C5E2100198CFF /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 30FA4FFD2E0C5E2100198CFF /* AwsOpenTelemetryCore */; };
-		5EC1E43B2E0E18C5001B79E3 /* AwsURLSessionInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = 5EC1E43A2E0E18C5001B79E3 /* AwsURLSessionInstrumentation */; };
+		5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */; };
+		5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */; };
+		5E6803F72E1306FC00D1DBD3 /* AwsURLSessionInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803F62E1306FC00D1DBD3 /* AwsURLSessionInstrumentation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,10 +31,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5EC1E43B2E0E18C5001B79E3 /* AwsURLSessionInstrumentation in Frameworks */,
 				30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */,
-				30BF3C3A2E0481DF000DFBF5 /* AWSClientRuntime in Frameworks */,
-				30FA4FFE2E0C5E2100198CFF /* AwsOpenTelemetryCore in Frameworks */,
+				5E6803F72E1306FC00D1DBD3 /* AwsURLSessionInstrumentation in Frameworks */,
+				5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */,
+				5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */,
 				30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -89,9 +89,10 @@
 				30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */,
 				30BF3C362E047FB0000DFBF5 /* AWSS3 */,
 				30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */,
-				30FA4FFD2E0C5E2100198CFF /* AwsOpenTelemetryCore */,
-				5EC1E3952E0E0335001B79E3 /* AwsOpenTelemetryInstrumentation */,
-				5EC1E43A2E0E18C5001B79E3 /* AwsURLSessionInstrumentation */,
+				5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */,
+				5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */,
+				5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */,
+				5E6803F62E1306FC00D1DBD3 /* AwsURLSessionInstrumentation */,
 			);
 			productName = SimpleAwsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */;
@@ -123,7 +124,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
-				30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */,
+				5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 306BC6992E00C6AA00F19E48 /* Products */;
@@ -368,7 +369,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */ = {
+		5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../../aws-otel-swift";
 		};
@@ -401,19 +402,20 @@
 			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
 			productName = AWSClientRuntime;
 		};
-		30FA4FFD2E0C5E2100198CFF /* AwsOpenTelemetryCore */ = {
+		5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
+			productName = AwsOpenTelemetryAuth;
+		};
+		5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */ = {
+			isa = XCSwiftPackageProductDependency;
 			productName = AwsOpenTelemetryCore;
 		};
-		5EC1E3952E0E0335001B79E3 /* AwsOpenTelemetryInstrumentation */ = {
+		5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
-			productName = AwsOpenTelemetryInstrumentation;
+			productName = AwsOpenTelemetryAuth;
 		};
-		5EC1E43A2E0E18C5001B79E3 /* AwsURLSessionInstrumentation */ = {
+		5E6803F62E1306FC00D1DBD3 /* AwsURLSessionInstrumentation */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
 			productName = AwsURLSessionInstrumentation;
 		};
 /* End XCSwiftPackageProductDependency section */

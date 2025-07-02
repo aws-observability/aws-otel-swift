@@ -15,7 +15,7 @@
 
 import Foundation
 
-import AWSClientRuntime
+import AwsCommonRuntimeKit
 import AWSCognitoIdentity
 import AWSS3
 
@@ -33,7 +33,13 @@ public class AwsServiceHandler {
   let s3Client: S3Client
 
   /// Provider for AWS credentials used by service clients
-  let awsCredentialsProvider: AwsCredentialsProvider
+  let awsCredentialsProvider: CredentialsProviding
+
+  /// Client for interacting with the Amazon Cognito Identity service
+  let cognitoIdentityClient: CognitoIdentityClient
+
+  /// The Cognito identity pool ID used for authentication
+  let cognitoPoolId: String
 
   /**
    * Initializes the AWS service handler with region and credentials provider
@@ -44,11 +50,13 @@ public class AwsServiceHandler {
    *
    * - Throws: Error if unable to initialize the S3 client with valid credentials
    */
-  public init(region: String, awsCredentialsProvider: AwsCredentialsProvider) async throws {
+  public init(region: String, awsCredentialsProvider: CredentialsProviding, cognitoIdentityClient: CognitoIdentityClient, cognitoPoolId: String) async throws {
     self.awsCredentialsProvider = awsCredentialsProvider
+    self.cognitoIdentityClient = cognitoIdentityClient
+    self.cognitoPoolId = cognitoPoolId
 
-    // Get the credential identity resolver from the provider
-    let credentialIdentityResolver = try await awsCredentialsProvider.getCredentialIdentityResolver()
+    // Get the credential identity resolver using static method
+    let credentialIdentityResolver = try await Self.createCredentialIdentityResolver(from: awsCredentialsProvider)
 
     // Configure and initialize the S3 client with credentials and region
     let s3Config = try await S3Client.S3ClientConfiguration(
@@ -99,8 +107,8 @@ public class AwsServiceHandler {
    */
   public func getCognitoIdentityId() async throws -> String {
     // Create request to get the identity ID from the Cognito identity pool
-    let input = GetIdInput(identityPoolId: awsCredentialsProvider.cognitoPoolId)
-    let output = try await awsCredentialsProvider.cognitoIdentityClient.getId(input: input)
+    let input = GetIdInput(identityPoolId: cognitoPoolId)
+    let output = try await cognitoIdentityClient.getId(input: input)
 
     // Return the identity ID if available, otherwise throw an error
     guard let identityId = output.identityId else {
@@ -112,5 +120,28 @@ public class AwsServiceHandler {
     }
 
     return identityId
+  }
+
+  /**
+   * Creates an AWS credential identity resolver from a credentials provider
+   *
+   * This static method handles the complete flow of getting credentials and creating
+   * a resolver that can be used with AWS service clients.
+   *
+   * - Parameter credentialsProvider: The credentials provider to get credentials from
+   * - Returns: A StaticAWSCredentialIdentityResolver that can be used to configure AWS service clients
+   * - Throws: Errors from getCredentials() if credential retrieval fails
+   */
+  private static func createCredentialIdentityResolver(from credentialsProvider: CredentialsProviding) async throws -> StaticAWSCredentialIdentityResolver {
+    // Get credentials from the provider
+    let creds = try await credentialsProvider.getCredentials()
+
+    // Create and return the credential identity resolver
+    let awsCredentials = AWSCredentialIdentity(
+      accessKey: creds.getAccessKey() ?? "",
+      secret: creds.getSecret() ?? "",
+      sessionToken: creds.getSessionToken()
+    )
+    return StaticAWSCredentialIdentityResolver(awsCredentials)
   }
 }
