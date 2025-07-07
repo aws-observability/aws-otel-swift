@@ -38,34 +38,6 @@ import StdoutExporter
  * - **Resources**: For identifying the application and runtime environment
  * - **UIKit Instrumentation**: For automatic view controller lifecycle tracking (iOS only)
  *
- * ## Basic Usage
- *
- * ```swift
- * let config = AwsOpenTelemetryConfig(
- *   rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
- *   application: ApplicationConfig(applicationVersion: "1.0.0")
- * )
- *
- * try AwsOpenTelemetryRumBuilder.create(config: config).build()
- * ```
- *
- * ## Advanced Customization
- *
- * ```swift
- * try AwsOpenTelemetryRumBuilder.create(config: config)
- *   .addSpanExporterCustomizer { exporter in
- *     // Add custom span processing
- *     return MultiSpanExporter(spanExporters: [exporter, CustomExporter()])
- *   }
- *   .addTracerProviderCustomizer { builder in
- *     // Add custom span processors
- *     return builder.add(spanProcessor: CustomSpanProcessor())
- *   }
- *   .build()
- * ```
- *
- * ## Thread Safety
- *
  * This builder is not thread-safe and should be used from a single thread.
  * However, the resulting OpenTelemetry components are thread-safe once built.
  */

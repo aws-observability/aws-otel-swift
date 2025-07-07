@@ -26,19 +26,6 @@
    * - Opt out of instrumentation for specific view controllers
    * - Override default instrumentation behavior
    *
-   * ## Example Usage
-   *
-   * ```swift
-   * class LoginViewController: UIViewController, ViewControllerCustomization {
-   *   var customViewName: String? { return "Login Screen" }
-   *   var shouldCaptureView: Bool { return true }
-   * }
-   *
-   * class DebugViewController: UIViewController, ViewControllerCustomization {
-   *   var shouldCaptureView: Bool { return false } // Skip instrumentation
-   * }
-   * ```
-   *
    * ## Default Behavior
    *
    * If you don't implement this protocol, the instrumentation will:

@@ -26,36 +26,6 @@ import Foundation
  * - **Telemetry Features**: Control over automatic instrumentation capabilities
  * - **Schema Versioning**: Configuration format version for compatibility
  *
- * ## JSON Configuration
- *
- * This configuration can be loaded from JSON files (typically `aws_config.json`):
- *
- * ```json
- * {
- *   "version": "1.0.0",
- *   "rum": {
- *     "region": "us-west-2",
- *     "appMonitorId": "your-app-monitor-id",
- *     "debug": false
- *   },
- *   "application": {
- *     "applicationVersion": "1.0.0"
- *   },
- *   "telemetry": {
- *     "isUiKitViewInstrumentationEnabled": true
- *   }
- * }
- * ```
- *
- * ## Programmatic Configuration
- *
- * ```swift
- * let config = AwsOpenTelemetryConfig(
- *   rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
- *   application: ApplicationConfig(applicationVersion: "1.0.0"),
- *   telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: true)
- * )
- * ```
  */
 @objc public class AwsOpenTelemetryConfig: NSObject, Codable {
   /// Schema version of the configuration
@@ -138,15 +108,6 @@ import Foundation
  * - **debug**: Enable verbose logging for troubleshooting SDK integration
  * - **alias**: Additional identifier for request routing and access control
  *
- * ## Example
- *
- * ```swift
- * let rumConfig = RumConfig(
- *   region: "us-west-2",
- *   appMonitorId: "12345678-1234-1234-1234-123456789012",
- *   debug: false
- * )
- * ```
  */
 @objc public class RumConfig: NSObject, Codable {
   /// AWS region where the RUM service is deployed
@@ -245,16 +206,6 @@ import Foundation
  *
  * By default, all instrumentation features are **enabled** to provide comprehensive
  * observability out of the box. You can selectively disable features if needed.
- *
- * ## Example
- *
- * ```swift
- * // Enable all features (default)
- * let telemetry = TelemetryConfig()
- *
- * // Disable UIKit instrumentation
- * let customTelemetry = TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
- * ```
  *
  * ## Platform Availability
  *

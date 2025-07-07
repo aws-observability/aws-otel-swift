@@ -51,39 +51,10 @@
    * - **Performance**: Minimal overhead with efficient span management
    * - **Filtering**: Automatically filters system view controllers and supports custom filtering
    *
-   * ## Automatic Integration
-   *
    * UIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
-   * is initialized with UIKit instrumentation enabled (default behavior):
-   *
-   * ```swift
-   * let config = AwsOpenTelemetryConfig(
-   *   rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
-   *   application: ApplicationConfig(applicationVersion: "1.0.0")
-   *   // telemetry.isUiKitViewInstrumentationEnabled defaults to true
-   * )
-   * ```
-   *
-   * ## Manual Integration
-   *
-   * For advanced use cases, you can create and configure the instrumentation manually:
-   *
-   * ```swift
-   * let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "my-app")
-   * let instrumentation = UIKitViewInstrumentation(tracer: tracer)
-   * instrumentation.install()
-   * ```
-   *
-   * ## Customization
-   *
-   * View controllers can implement `ViewControllerCustomization` to control instrumentation:
-   *
-   * ```swift
-   * class MyViewController: UIViewController, ViewControllerCustomization {
-   *   var shouldCaptureView: Bool { return true }
-   *   var customViewName: String? { return "CustomScreenName" }
-   * }
-   * ```
+   * is initialized with UIKit instrumentation enabled (default behavior). For advanced use cases, you can create
+   * and configure the instrumentation manually. View controllers can implement `ViewControllerCustomization`
+   * to control instrumentation.
    *
    * ## Platform Support
    *

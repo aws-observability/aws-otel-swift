@@ -26,24 +26,12 @@ import Foundation
  * with RUM (Real User Monitoring) capabilities. It manages the SDK lifecycle and provides
  * access to instrumentation components.
  *
- * ## Usage
- *
  * The agent is typically initialized automatically when using `AwsOpenTelemetryAgent` module,
  * or manually using `AwsOpenTelemetryRumBuilder`:
  *
- * ```swift
- * let config = AwsOpenTelemetryConfig(
- *   rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
- *   application: ApplicationConfig(applicationVersion: "1.0.0")
- * )
- *
- * let success = AwsOpenTelemetryAgent.shared.initialize(config: config)
- * ```
- *
- * ## Thread Safety
- *
  * This class is thread-safe and can be accessed from multiple threads concurrently.
  * However, initialization should only be performed once during the application lifecycle.
+ * If done more than once, only the first initialization will be successful.
  */
 @objc public class AwsOpenTelemetryAgent: NSObject {
   /// Shared singleton instance for global access to the AWS OpenTelemetry agent
