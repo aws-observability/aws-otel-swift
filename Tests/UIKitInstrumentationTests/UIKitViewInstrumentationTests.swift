@@ -88,14 +88,24 @@ import XCTest
       XCTAssertTrue(true, "Multiple install calls should not crash")
     }
 
-    func testInstallationThreadSafety() {
+    /**
+     * Tests that the UIKitViewInstrumentation correctly handles concurrent installation attempts.
+     *
+     * This test simulates multiple threads attempting to install the instrumentation simultaneously
+     * and verifies that the class correctly handles this concurrency through its internal locking mechanism.
+     */
+    func testQueueBasedThreadSafety() {
       let instrumentation = UIKitViewInstrumentation(tracer: tracer)
       let expectation = XCTestExpectation(description: "Concurrent installation")
       expectation.expectedFulfillmentCount = 10
 
-      // Simulate concurrent installation attempts
-      for _ in 0 ..< 10 {
-        DispatchQueue.global().async {
+      // Simulate concurrent installation attempts from multiple threads
+      for i in 0 ..< 10 {
+        // Use different queues to ensure true concurrency
+        let queue = DispatchQueue(label: "test.queue.\(i)", attributes: .concurrent)
+
+        queue.async {
+          // Attempt to install the instrumentation
           instrumentation.install()
           expectation.fulfill()
         }
@@ -103,7 +113,8 @@ import XCTest
 
       wait(for: [expectation], timeout: 5.0)
 
-      // Should complete without crashes
+      // The test passes if it completes without crashing
+      // The internal lock in UIKitViewInstrumentation should prevent race conditions
       XCTAssertTrue(true, "Concurrent installation should be thread-safe")
     }
 

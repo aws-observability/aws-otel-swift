@@ -47,7 +47,8 @@
    * ## Implementation Details
    *
    * - **Method Swizzling**: Uses runtime method swizzling to intercept lifecycle methods
-   * - **Thread Safety**: All operations are thread-safe and can handle concurrent access
+   * - **Thread Safety**: All operations are thread-safe through the use of a serial dispatch queue in the handler
+   *   and an NSLock for installation state, ensuring safe concurrent access from multiple threads
    * - **Performance**: Minimal overhead with efficient span management
    * - **Filtering**: Automatically filters system view controllers and supports custom filtering
    *

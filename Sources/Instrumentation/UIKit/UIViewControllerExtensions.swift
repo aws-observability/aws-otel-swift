@@ -31,7 +31,7 @@
    * - **Span Creation**: Creates spans for each lifecycle event with appropriate attributes
    * - **Bundle Filtering**: Automatically filters out system view controllers
    * - **Customization Support**: Allows view controllers to customize or opt out of instrumentation
-   * - **Thread Safety**: All operations are thread-safe and handle concurrent access
+   * - **Thread Safety**: All operations are thread-safe through the use of a serial dispatch queue in the handler
    *
    * ## Lifecycle Methods Instrumented
    *

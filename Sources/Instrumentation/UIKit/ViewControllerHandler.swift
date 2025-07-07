@@ -59,9 +59,14 @@
    *
    * ## Thread Safety
    *
-   * This class is designed to be thread-safe for the specific use case of UIKit
-   * lifecycle events, which always occur on the main thread. Internal state
-   * is protected where necessary.
+   * This class uses a dedicated serial dispatch queue to ensure thread safety.
+   * All operations on internal state (span dictionaries) are performed on this queue,
+   * which serializes access and prevents race conditions. While UIKit lifecycle events
+   * typically occur on the main thread, this approach ensures safety even when the handler
+   * is accessed from background threads.
+   *
+   * The `parentSpan` method uses a synchronous queue operation to safely retrieve
+   * span information while maintaining thread safety.
    *
    * ## Integration
    *
@@ -105,19 +110,20 @@
 
     // MARK: - Span Storage
 
-    // Thread-safe dictionaries for tracking spans by view controller identifier
+    // Dictionaries for tracking spans by view controller identifier
+    // All access to these dictionaries is performed on the serial queue for thread safety
 
     /// Parent spans for the view.load lifecycle (viewDidLoad → viewDidAppear)
-    @ThreadSafe var parentSpans: [String: Span] = [:]
+    private var parentSpans: [String: Span] = [:]
 
     /// Individual lifecycle method spans
-    @ThreadSafe var viewDidLoadSpans: [String: Span] = [:]
-    @ThreadSafe var viewWillAppearSpans: [String: Span] = [:]
-    @ThreadSafe var viewIsAppearingSpans: [String: Span] = [:]
-    @ThreadSafe var viewDidAppearSpans: [String: Span] = [:]
+    private var viewDidLoadSpans: [String: Span] = [:]
+    private var viewWillAppearSpans: [String: Span] = [:]
+    private var viewIsAppearingSpans: [String: Span] = [:]
+    private var viewDidAppearSpans: [String: Span] = [:]
 
     /// Duration spans for tracking view visibility (viewDidAppear → viewDidDisappear)
-    @ThreadSafe var visibilitySpans: [String: Span] = [:]
+    private var visibilitySpans: [String: Span] = [:]
 
     // MARK: - Initialization
 
@@ -157,11 +163,28 @@
       self.uiKitViewInstrumentation = uiKitViewInstrumentation
     }
 
+    /**
+     * Retrieves the parent span for a given view controller.
+     *
+     * This method is used to establish span hierarchies and ensure proper parent-child
+     * relationships between spans created for the same view controller's lifecycle events.
+     *
+     * Note: This method performs a synchronous operation on the queue to ensure thread safety.
+     *
+     * @param viewController The view controller to get the parent span for
+     * @return The parent span if one exists, nil otherwise
+     */
     func parentSpan(for viewController: UIViewController) -> Span? {
       guard let id = viewController.instrumentationState?.identifier else {
         return nil
       }
-      return parentSpans[id]
+
+      // Use sync to perform a thread-safe read operation
+      var result: Span?
+      queue.sync {
+        result = self.parentSpans[id]
+      }
+      return result
     }
 
     @objc func applicationDidEnterBackground(_ notification: Notification? = nil) {

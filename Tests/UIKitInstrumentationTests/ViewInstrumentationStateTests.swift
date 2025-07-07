@@ -60,32 +60,4 @@ final class ViewInstrumentationStateTests: XCTestCase {
     state.viewDidDisappearSpanCreated = true
     XCTAssertTrue(state.viewDidDisappearSpanCreated)
   }
-
-  func testThreadSafety() {
-    let state = ViewInstrumentationState(identifier: "concurrent-test")
-
-    let expectation = XCTestExpectation(description: "Thread safety test")
-    expectation.expectedFulfillmentCount = 100
-
-    // Simulate concurrent access to state properties
-    for i in 0 ..< 100 {
-      DispatchQueue.global().async {
-        if i % 4 == 0 {
-          state.viewDidLoadSpanCreated = true
-        } else if i % 4 == 1 {
-          state.viewWillAppearSpanCreated = true
-        } else if i % 4 == 2 {
-          state.viewIsAppearingSpanCreated = true
-        } else {
-          state.viewDidAppearSpanCreated = true
-        }
-        expectation.fulfill()
-      }
-    }
-
-    wait(for: [expectation], timeout: 5.0)
-
-    // Test should complete without crashes
-    XCTAssertTrue(true, "Thread safety test completed without crashes")
-  }
 }

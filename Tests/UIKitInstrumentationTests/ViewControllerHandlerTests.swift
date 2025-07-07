@@ -77,12 +77,9 @@ import XCTest
 
     // Test timeouts and expectations
     private static let defaultTimeout: TimeInterval = 2.0
-    private static let threadSafetyTimeout: TimeInterval = 5.0
     private static let minimumSpanDuration: TimeInterval = 0.1
+    private static let concurrentTestTimeout: TimeInterval = 5.0
     private static let concurrentOperationCount = 10
-
-    // Test descriptions
-    private static let threadSafetyTestDescription = "Thread safety test"
 
     // MARK: - Test Properties
 
@@ -318,24 +315,62 @@ import XCTest
       }
     }
 
-    func testThreadSafety() {
-      let viewController = TestViewController()
-      let expectation = XCTestExpectation(description: Self.threadSafetyTestDescription)
-      expectation.expectedFulfillmentCount = Self.concurrentOperationCount
+    /**
+     * Tests that the queue-based thread safety approach correctly handles concurrent access.
+     *
+     * This test simulates multiple threads accessing the ViewControllerHandler simultaneously
+     * and verifies that the handler correctly serializes access to its internal state through
+     * the dispatch queue, preventing race conditions and data corruption.
+     */
+    func testQueueBasedThreadSafety() {
+      // Create multiple view controllers to simulate concurrent access
+      let viewControllers = (0 ..< Self.concurrentOperationCount).map { _ in TestViewController() }
 
-      // Simulate concurrent access
-      for _ in 0 ..< Self.concurrentOperationCount {
-        DispatchQueue.global().async {
+      // Create an expectation for concurrent operations
+      let expectation = XCTestExpectation(description: "Concurrent handler operations")
+      expectation.expectedFulfillmentCount = Self.concurrentOperationCount * 2 // Start and end operations
+
+      // Simulate concurrent access from multiple threads
+      for i in 0 ..< Self.concurrentOperationCount {
+        let viewController = viewControllers[i]
+
+        // Use different queues to ensure true concurrency
+        let queue = DispatchQueue(label: "test.queue.\(i)", attributes: .concurrent)
+
+        queue.async {
+          // Start the view lifecycle
           self.handler.onViewDidLoadStart(viewController)
+          expectation.fulfill()
+
+          // Small delay to increase chance of thread interleaving
+          Thread.sleep(forTimeInterval: 0.001 * Double.random(in: 1 ... 10))
+
+          // End the view lifecycle
           self.handler.onViewDidLoadEnd(viewController)
           expectation.fulfill()
         }
       }
 
-      wait(for: [expectation], timeout: Self.threadSafetyTimeout)
+      // Wait for all operations to complete
+      wait(for: [expectation], timeout: Self.concurrentTestTimeout)
 
-      // Should not crash and should handle concurrent access gracefully
-      XCTAssertTrue(true, "Should handle concurrent access without crashing")
+      // Verify that spans were created correctly
+      let startedSpans = mockSpanProcessor.getStartedSpans()
+      let endedSpans = mockSpanProcessor.getEndedSpans()
+
+      // We should have at least one span per view controller
+      XCTAssertGreaterThanOrEqual(startedSpans.count, Self.concurrentOperationCount)
+      XCTAssertGreaterThanOrEqual(endedSpans.count, Self.concurrentOperationCount)
+
+      // Verify that we have matching parent-child relationships
+      let parentSpans = startedSpans.filter { $0.name == Self.spanNameViewLoad }
+      let childSpans = startedSpans.filter { $0.name == Self.spanNameViewDidLoad }
+
+      // Each child span should have a valid parent
+      for childSpan in childSpans {
+        let hasValidParent = parentSpans.contains { $0.spanId == childSpan.parentSpanId }
+        XCTAssertTrue(hasValidParent, "Child span should have a valid parent span")
+      }
     }
 
     // MARK: - Helper Methods

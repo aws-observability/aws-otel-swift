@@ -138,8 +138,8 @@ The instrumentation prioritizes application stability and performance:
 - **Original Method Preservation**: Always calls original methods before adding instrumentation
 
 #### Thread Safety
-- **Serial Queue**: All span operations use a dedicated serial queue
-- **Thread-Safe Storage**: Span dictionaries use `@ThreadSafe` property wrapper
+- **Serial Queue**: All span operations use a dedicated serial queue for thread safety
+- **Synchronous Access**: Critical operations use synchronous queue access when needed
 - **Main Thread Lifecycle**: Respects UIKit's main thread requirements
 
 #### Memory Management

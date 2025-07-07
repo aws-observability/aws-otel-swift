@@ -16,7 +16,9 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   override func tearDown() {
     AwsOpenTelemetryAgent.shared.isInitialized = false
     AwsOpenTelemetryAgent.shared.configuration = nil
-    AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
+    #if canImport(UIKit) && !os(watchOS)
+      AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
+    #endif
     super.tearDown()
   }
 
