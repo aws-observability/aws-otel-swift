@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3027D2272E1CA219008C31DA /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */; };
+		3027D2282E1CA219008C31DA /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */; };
 		30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */; };
 		30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C362E047FB0000DFBF5 /* AWSS3 */; };
 		5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */; };
@@ -31,6 +33,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3027D2282E1CA219008C31DA /* AwsOpenTelemetryAuth in Frameworks */,
+				3027D2272E1CA219008C31DA /* AWSClientRuntime in Frameworks */,
 				30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */,
 				5E6803F72E1306FC00D1DBD3 /* AwsURLSessionInstrumentation in Frameworks */,
 				5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */,
@@ -387,11 +391,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		305A9A582E0DF6470049469F /* AwsOpenTelemetryUIKitInstrumentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 30BFE6182E05DB07000DFBF5 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
-			productName = AwsOpenTelemetryUIKitInstrumentation;
-		};
 		30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
