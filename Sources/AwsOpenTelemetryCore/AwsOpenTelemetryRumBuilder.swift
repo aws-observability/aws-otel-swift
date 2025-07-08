@@ -23,7 +23,6 @@ import StdoutExporter
 
 #if canImport(UIKit) && !os(watchOS)
   import UIKit
-  import AwsOpenTelemetryUIKitInstrumentation
 #endif
 
 /**
@@ -54,7 +53,7 @@ public class AwsOpenTelemetryRumBuilder {
 
   // Track instrumentations to add
   private var instrumentations: [AwsOpenTelemetryInstrumentationProtocol] = []
-  
+
   #if canImport(UIKit) && !os(watchOS)
     private var uiKitViewInstrumentation: UIKitViewInstrumentation?
   #endif

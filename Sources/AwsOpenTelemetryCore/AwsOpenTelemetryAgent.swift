@@ -15,10 +15,6 @@
 
 import Foundation
 
-#if canImport(UIKit) && !os(watchOS)
-  import AwsOpenTelemetryUIKitInstrumentation
-#endif
-
 /**
  * The central agent for AWS OpenTelemetry SDK initialization and management.
  *

@@ -14,7 +14,7 @@
  */
 
 import XCTest
-@testable import AwsOpenTelemetryUIKitInstrumentation
+@testable import AwsOpenTelemetryCore
 
 /**
  * Tests for ViewInstrumentationState functionality.

@@ -14,7 +14,7 @@
  */
 
 import XCTest
-@testable import AwsOpenTelemetryUIKitInstrumentation
+@testable import AwsOpenTelemetryCore
 
 #if canImport(UIKit) && !os(watchOS)
   import UIKit
@@ -82,7 +82,7 @@ import XCTest
       UIViewController.setInstrumentationHandler(handler)
 
       // Create a view controller and verify it can access the handler
-      let viewController = UIViewController()
+      _ = UIViewController()
 
       // The handler should be accessible through the static method
       // Note: We can't directly test the private static property,
