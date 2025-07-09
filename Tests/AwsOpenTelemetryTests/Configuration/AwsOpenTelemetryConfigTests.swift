@@ -11,6 +11,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
   let tracesEndpoint = "https://custom-traces.example.com"
   let debug = true
   let alias = "test-alias"
+  let sessionLength: NSNumber = 100
 
   func testBasicConfigInitialization() {
     // Test basic initialization with defaults
@@ -40,7 +41,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
         appMonitorId: appMonitorId,
         overrideEndpoint: EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint),
         debug: debug,
-        alias: alias
+        alias: alias,
+        sessionLength: sessionLength
       ),
       application: ApplicationConfig(applicationVersion: appVersion),
       telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)

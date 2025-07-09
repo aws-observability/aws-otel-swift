@@ -41,7 +41,8 @@ struct SimpleAwsDemoApp: App {
           logs: "http://localhost:4318/v1/logs",
           traces: "http://localhost:4318/v1/traces"
         ),
-        debug: true
+        debug: true,
+        sessionLength: 30 // just 30 seconds for demo purposes
       ),
       application: ApplicationConfig(applicationVersion: "1.0.0")
     )

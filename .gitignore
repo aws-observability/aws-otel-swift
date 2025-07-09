@@ -99,5 +99,4 @@ iOSInjectionProject/
 # Prettier
 .prettierrc
 
-## Local Development with OpenTelemetry Collector
-Examples/out/
+Examples/out

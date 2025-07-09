@@ -57,6 +57,16 @@ struct ContentView: View {
             .cornerRadius(10)
           }
           .disabled(viewModel.isLoading)
+
+          // Sessions
+          awsButton(icon: "info.circle", title: "Peek session") {
+            viewModel.showSessionDetails()
+          }
+
+          awsButton(icon: "arrow.clockwise", title: "Renew session") {
+            viewModel.renewSession()
+            viewModel.showSessionDetails()
+          }
         }
         .padding(.horizontal)
 
@@ -81,7 +91,6 @@ struct ContentView: View {
 
         Spacer()
       }
-      .navigationTitle("Title")
       .padding(.bottom)
       .sheet(isPresented: $showingDemoViewController) {
         DemoViewControllerRepresentable()
@@ -124,6 +133,8 @@ struct ContentView_Previews: PreviewProvider {
 
     override func listS3Buckets() async {}
     override func getCognitoIdentityId() async {}
+    override func showSessionDetails() {}
+    override func renewSession() {}
   }
 
   static var previews: some View {

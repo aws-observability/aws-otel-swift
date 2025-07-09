@@ -3,6 +3,7 @@
 A Swift package for AWS OpenTelemetry.
 
 ## Introduction
+
 This repository is a redistribution of the [OpenTelemetry Swift SDK](https://github.com/open-telemetry/opentelemetry-swift), preconfigured for use with AWS services. Please check out the upstream repository too to get a better understanding of the underlying internals. The upstream repository is still maturing so much of the instrumentation has been built in this repository. In addition, this also supports integration with CloudWatch RUM.
 
 We provide a Swift library that can be consumed within any Native iOS application using iOS 16+ (TODO: Update once version is finalized). We build convenience functions to onboard your application with OpenTelemetry and start ingesting telemetry into your CloudWatch RUM Application Monitors.
@@ -29,12 +30,12 @@ dependencies: [
 targets: [
     .target(
         name: "YourAppTarget",
-        dependencies: [ 
+        dependencies: [
             .product(name: "AwsOpenTelemetryCore", package: "aws-otel-swift")
-            
+
             // Only for automatic initialization
             .product(name: "AwsOpenTelemetryAgent", package: "aws-otel-swift"),
-            
+
             // Other dependencies...
         ]
     )
@@ -104,6 +105,7 @@ do {
 ```
 
 ### Thread Safety
+
 You should only import the "AwsOpenTelemetryAgent" module if you would like the agent to auto initialize. If you are manually initializing the SDK, you should **not** import the "AwsOpenTelemetryAgent" module. The SDK ensures thread safety by only allowing initialization once. Given the auto-initialization occurs early on during class loading, the manual initialization will throw an `AwsOpenTelemetryConfigError.alreadyInitialized` error.
 
 ## Error Handling
@@ -112,17 +114,17 @@ The SDK defines several error types to help you handle different failure scenari
 
 ### AwsOpenTelemetryConfigError
 
-| Error Case | Description |
-|------------|-------------|
+| Error Case           | Description                                                 |
+| -------------------- | ----------------------------------------------------------- |
 | `alreadyInitialized` | Thrown when attempting to initialize the SDK multiple times |
 
 ### AwsOpenTelemetryAuthError
 
 Authentication-related errors that may occur when working with AWS Cognito Identity:
 
-| Error Case | Description | Common Causes |
-|------------|-------------|---------------|
-| `noIdentityId` | Failed to retrieve Cognito Identity ID | Identity pool misconfiguration, incorrect region, network issues |
+| Error Case         | Description                                         | Common Causes                                                            |
+| ------------------ | --------------------------------------------------- | ------------------------------------------------------------------------ |
+| `noIdentityId`     | Failed to retrieve Cognito Identity ID              | Identity pool misconfiguration, incorrect region, network issues         |
 | `credentialsError` | Failed to retrieve AWS credentials for the identity | IAM role misconfiguration, insufficient permissions, invalid identity ID |
 
 Example error handling:
@@ -172,19 +174,20 @@ The configuration follows this JSON schema:
 
 #### RumConfig
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| region | String | Yes | AWS region where the RUM service is deployed |
-| appMonitorId | String | Yes | Unique identifier for the RUM App Monitor |
-| overrideEndpoint | Object | No | Optional endpoint overrides for the RUM service |
-| debug | Boolean | No | Flag to enable debug logging (defaults to false) |
-| alias | String | No | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor |
+| Field            | Type    | Required | Description                                                                                                                                        |
+| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| region           | String  | Yes      | AWS region where the RUM service is deployed                                                                                                       |
+| appMonitorId     | String  | Yes      | Unique identifier for the RUM App Monitor                                                                                                          |
+| overrideEndpoint | Object  | No       | Optional endpoint overrides for the RUM service                                                                                                    |
+| debug            | Boolean | No       | Flag to enable debug logging (defaults to false)                                                                                                   |
+| alias            | String  | No       | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor |
+| sessionLength    | Number  | No       | The duration (in seconds) after which an inactive session expires. Default 1800 seconds (30 minutes)                                               |
 
 #### ApplicationConfig
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| applicationVersion | String | Yes | Version of the application being monitored |
+| Field              | Type   | Required | Description                                |
+| ------------------ | ------ | -------- | ------------------------------------------ |
+| applicationVersion | String | Yes      | Version of the application being monitored |
 
 #### TelemetryConfig
 
