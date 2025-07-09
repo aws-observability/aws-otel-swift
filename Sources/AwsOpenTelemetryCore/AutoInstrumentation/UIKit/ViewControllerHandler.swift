@@ -50,7 +50,7 @@
    * view.load (Root Span)
    * ├── viewDidLoad
    * ├── viewWillAppear
-   * ├── viewIsAppearing (iOS 13+)
+   * ├── viewIsAppearing
    * └── viewDidAppear
    *
    * view.duration (Root Span)
@@ -134,7 +134,7 @@
      * to properly handle span cleanup when the app is backgrounded.
      *
      * @param tracer The OpenTelemetry tracer to use for span creation
-     * @param queue The dispatch queue for span operations (defaults to a utility queue)
+     * @param queue The dispatch queue for span operations
      */
     init(tracer: Tracer, queue: DispatchQueue = DispatchQueue(label: ViewControllerHandler.queueLabel, qos: .utility)) {
       self.tracer = tracer

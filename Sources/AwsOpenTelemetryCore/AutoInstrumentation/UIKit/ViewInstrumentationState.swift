@@ -34,7 +34,7 @@ import Foundation
  * The state tracks span creation for these lifecycle events:
  * - `viewDidLoad` - Initial view setup
  * - `viewWillAppear` - Pre-appearance preparation
- * - `viewIsAppearing` - Appearance animation (iOS 13+)
+ * - `viewIsAppearing` - Appearance animation
  * - `viewDidAppear` - View fully visible
  * - `viewDidDisappear` - View no longer visible
  *
@@ -55,7 +55,7 @@ class ViewInstrumentationState: NSObject {
   /// Tracks whether a span has been created for viewWillAppear
   var viewWillAppearSpanCreated = false
 
-  /// Tracks whether a span has been created for viewIsAppearing (iOS 13+)
+  /// Tracks whether a span has been created for viewIsAppearing
   var viewIsAppearingSpanCreated = false
 
   /// Tracks whether a span has been created for viewDidAppear

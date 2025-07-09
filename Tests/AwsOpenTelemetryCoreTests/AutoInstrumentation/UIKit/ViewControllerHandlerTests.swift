@@ -15,6 +15,7 @@
 
 import XCTest
 @testable import AwsOpenTelemetryCore
+import Atomics
 
 #if canImport(UIKit) && !os(watchOS)
   import UIKit
@@ -235,6 +236,7 @@ import XCTest
 
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewDidLoad), "Should create viewDidLoad span")
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewWillAppear), "Should create viewWillAppear span")
+      XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewIsAppearing), "Should create viewIsAppearing span")
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewDidAppear), "Should create viewDidAppear span")
       XCTAssertTrue(startedSpanNames.contains(Self.spanNameViewDuration), "Should create view.duration span")
     }
@@ -326,9 +328,8 @@ import XCTest
       // Create multiple view controllers to simulate concurrent access
       let viewControllers = (0 ..< Self.concurrentOperationCount).map { _ in TestViewController() }
 
-      // Create an expectation for concurrent operations
-      let expectation = XCTestExpectation(description: "Concurrent handler operations")
-      expectation.expectedFulfillmentCount = Self.concurrentOperationCount * 2 // Start and end operations
+      // Use an atomic counter to track operation completion
+      let operationCounter = ManagedAtomic<Int>(0)
 
       // Simulate concurrent access from multiple threads
       for i in 0 ..< Self.concurrentOperationCount {
@@ -340,19 +341,31 @@ import XCTest
         queue.async {
           // Start the view lifecycle
           self.handler.onViewDidLoadStart(viewController)
-          expectation.fulfill()
+          operationCounter.wrappingIncrement(ordering: .relaxed)
 
           // Small delay to increase chance of thread interleaving
           Thread.sleep(forTimeInterval: 0.001 * Double.random(in: 1 ... 10))
 
           // End the view lifecycle
           self.handler.onViewDidLoadEnd(viewController)
-          expectation.fulfill()
+          operationCounter.wrappingIncrement(ordering: .relaxed)
         }
       }
 
-      // Wait for all operations to complete
-      wait(for: [expectation], timeout: Self.concurrentTestTimeout)
+      // Wait for both operations to complete AND spans to be processed
+      wait(timeout: Self.concurrentTestTimeout) {
+        // Check if all operations have completed
+        let operationsCompleted = operationCounter.load(ordering: .relaxed) == Self.concurrentOperationCount * 2
+
+        // Check if spans have been processed (both started and ended)
+        let startedSpans = self.mockSpanProcessor.getStartedSpans()
+        let endedSpans = self.mockSpanProcessor.getEndedSpans()
+        let spansProcessed = startedSpans.count >= Self.concurrentOperationCount &&
+          endedSpans.count >= Self.concurrentOperationCount
+
+        // Only return true when both conditions are met
+        return operationsCompleted && spansProcessed
+      }
 
       // Verify that spans were created correctly
       let startedSpans = mockSpanProcessor.getStartedSpans()
@@ -370,71 +383,6 @@ import XCTest
       for childSpan in childSpans {
         let hasValidParent = parentSpans.contains { $0.spanId == childSpan.parentSpanId }
         XCTAssertTrue(hasValidParent, "Child span should have a valid parent span")
-      }
-    }
-
-    // MARK: - Helper Methods
-
-    private func validateViewDidLoadSpans(vc: UIViewController) {
-      handler.onViewDidLoadStart(vc)
-
-      // Wait for spans to be created
-      wait {
-        let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        let parentSpan = startedSpans.first { $0.name == Self.spanNameViewLoad }
-        let childSpan = startedSpans.first { $0.name == Self.spanNameViewDidLoad }
-        return parentSpan != nil && childSpan != nil && childSpan?.parentSpanId == parentSpan?.spanId
-      }
-
-      handler.onViewDidLoadEnd(vc)
-
-      // Wait for viewDidLoad span to be ended
-      wait {
-        let endedSpans = self.mockSpanProcessor.getEndedSpans()
-        return endedSpans.contains { $0.name == Self.spanNameViewDidLoad }
-      }
-    }
-
-    private func validateViewWillAppearSpans(vc: UIViewController) {
-      handler.onViewWillAppearStart(vc)
-
-      // Wait for spans to be created
-      wait {
-        let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        return startedSpans.contains { $0.name == Self.spanNameViewWillAppear }
-      }
-
-      handler.onViewWillAppearEnd(vc)
-
-      // Wait for viewWillAppear span to be ended
-      wait {
-        let endedSpans = self.mockSpanProcessor.getEndedSpans()
-        return endedSpans.contains { $0.name == Self.spanNameViewWillAppear }
-      }
-    }
-
-    private func validateViewIsAppearingSpans(vc: UIViewController) {
-      // Note: ViewIsAppearing methods are not available in the current implementation
-      // This method is kept for potential future use
-    }
-
-    private func validateViewDidAppearSpans(vc: UIViewController) {
-      handler.onViewDidAppearStart(vc)
-
-      // Wait for spans to be created
-      wait {
-        let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        return startedSpans.contains { $0.name == Self.spanNameViewDidAppear } &&
-          startedSpans.contains { $0.name == Self.spanNameViewDuration }
-      }
-
-      handler.onViewDidAppearEnd(vc)
-
-      // Wait for viewDidAppear span to be ended
-      wait {
-        let endedSpans = self.mockSpanProcessor.getEndedSpans()
-        return endedSpans.contains { $0.name == Self.spanNameViewDidAppear } &&
-          endedSpans.contains { $0.name == Self.spanNameViewDuration }
       }
     }
 

@@ -16,7 +16,7 @@
 #import "include/AwsOpenTelemetryAgent.h"
 
 // Define a constant for the log prefix
-static NSString * const kLogPrefix = @"[AwsOpenTelemetry";
+static NSString * const kLogPrefix = @"[AwsOpenTelemetry]";
 
 @implementation AwsOpenTelemetryAutoInit
 

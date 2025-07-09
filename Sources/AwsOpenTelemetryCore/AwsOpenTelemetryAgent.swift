@@ -60,15 +60,14 @@ import Foundation
    * This method sets up the complete OpenTelemetry pipeline including:
    * - Tracer and logger providers
    * - Exporters for sending data to AWS services
-   * - UIKit instrumentation (if enabled and available)
    * - Resource attributes and service identification
+   * - Automatically instrumentation e.g. UIKit
    *
    * ## Important Notes
    *
    * - This method can only be called once successfully per application lifecycle
    * - Subsequent calls will return `false` without making changes
    * - The configuration becomes immutable after successful initialization
-   * - UIKit instrumentation is automatically enabled based on telemetry configuration
    *
    * @param config The configuration object containing RUM, application, and telemetry settings
    * @return `true` if initialization was successful, `false` if already initialized or if an error occurred

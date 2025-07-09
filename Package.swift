@@ -20,7 +20,8 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "1.14.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
-    .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0")
+    .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
+    .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -32,7 +33,8 @@ let package = Package(
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
-      ]
+      ],
+      exclude: ["AutoInstrumentation/UIKit/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -59,11 +61,15 @@ let package = Package(
         .product(name: "Smithy", package: "smithy-swift"),
         .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift"),
         .product(name: "AWSCognitoIdentity", package: "aws-sdk-swift")
-      ]
+      ],
+      exclude: ["README.md"]
     ),
     .testTarget(
       name: "AwsOpenTelemetryCoreTests",
-      dependencies: ["AwsOpenTelemetryCore"]
+      dependencies: [
+        "AwsOpenTelemetryCore",
+        .product(name: "Atomics", package: "swift-atomics")
+      ]
     ),
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",

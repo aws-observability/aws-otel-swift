@@ -16,26 +16,14 @@ This module automatically instruments UIViewController lifecycle methods to coll
 ## Features
 
 - **Zero-Code Integration** - Automatic instrumentation with no code changes required
-- **Comprehensive Lifecycle Tracking** - Monitors all major view controller lifecycle events
+- **Comprehensive Lifecycle Tracking** - Monitors the following view controller lifecycle events: `viewDidLoad`, `viewWillAppear`, `viewIsAppearing`, `viewDidAppear`, `viewDidDisappear`
 - **Custom Naming Support** - Override default class names for better observability
 - **Selective Opt-Out** - Disable instrumentation for specific view controllers
-- **Thread-Safe Operations** - Handles concurrent view controller operations safely
-- **Background State Handling** - Properly manages spans during app backgrounding
 - **Bundle Filtering** - Only instruments your app's view controllers, not system ones
 
 ## Automatic Setup
 
-View instrumentation is **enabled by default** when you initialize the AWS OpenTelemetry SDK:
-
-```swift
-let config = AwsOpenTelemetryConfig(
-  rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
-  application: ApplicationConfig(applicationVersion: "1.0.0")
-  // telemetry.isUiKitViewInstrumentationEnabled defaults to true
-)
-
-try AwsOpenTelemetryRumBuilder.create(config: config).build()
-```
+View instrumentation is **enabled by default** when you initialize the AWS OpenTelemetry SDK. Refer below to disable this instrumenation.
 
 ## Configuration Options
 
@@ -43,7 +31,7 @@ try AwsOpenTelemetryRumBuilder.create(config: config).build()
 
 ```swift
 let config = AwsOpenTelemetryConfig(
-  rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
+  rum: RumConfig(region: "your-region", appMonitorId: "your-app-monitor-id"),
   application: ApplicationConfig(applicationVersion: "1.0.0"),
   telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
 )
@@ -51,7 +39,7 @@ let config = AwsOpenTelemetryConfig(
 
 ### JSON Configuration
 
-You can also configure instrumentation via `aws_config.json`:
+You can also disable instrumentation via `aws_config.json`:
 
 ```json
 {
@@ -64,7 +52,7 @@ You can also configure instrumentation via `aws_config.json`:
     "applicationVersion": "1.0.0"
   },
   "telemetry": {
-    "isUiKitViewInstrumentationEnabled": true
+    "isUiKitViewInstrumentationEnabled": false
   }
 }
 ```
@@ -100,11 +88,10 @@ class DebugViewController: UIViewController, ViewControllerCustomization {
 view.load (Root Span - measures complete loading time)
 ├── viewDidLoad (Child Span)
 ├── viewWillAppear (Child Span)
-├── viewIsAppearing (Child Span - iOS 13+)
+├── viewIsAppearing (Child Span)
 └── viewDidAppear (Child Span)
 
-view.duration (Root Span - measures visibility time)
-└── (Duration from viewDidAppear to viewDidDisappear)
+view.duration (Root Span - measures view duration time, from viewDidAppear to viewDidDisappear)
 ```
 
 ### Span Attributes
@@ -116,36 +103,7 @@ Each span includes contextual information:
 | `view.name` | Display name for the view | "Login Screen" or "LoginViewController" |
 | `view.class` | Actual class name | "LoginViewController" |
 
-## Platform Support
-
-- **iOS 13.0+**: Full support including `viewIsAppearing`
-- **iOS 12.0+**: Support without `viewIsAppearing` method
-- **tvOS**: Full support for all lifecycle methods
-- **Mac Catalyst**: Full support for all lifecycle methods
-- **watchOS**: Not supported (UIKit not available)
-
 ## Implementation Details
-
-### Safety and Reliability
-
-The instrumentation prioritizes application stability and performance:
-
-#### Safety Features
-- **Bundle Filtering**: Only instruments your app's view controllers, never system ones
-- **State Tracking**: Prevents duplicate instrumentation attempts
-- **Error Isolation**: Comprehensive error handling prevents crashes
-- **Graceful Degradation**: App continues normally even if instrumentation fails
-- **Original Method Preservation**: Always calls original methods before adding instrumentation
-
-#### Thread Safety
-- **Serial Queue**: All span operations use a dedicated serial queue for thread safety
-- **Synchronous Access**: Critical operations use synchronous queue access when needed
-- **Main Thread Lifecycle**: Respects UIKit's main thread requirements
-
-#### Memory Management
-- **Automatic Cleanup**: Spans are automatically cleaned up when view controllers are deallocated
-- **Background Handling**: Properly handles app backgrounding to prevent memory leaks
-- **Weak References**: Uses weak references to prevent retain cycles
 
 ### Method Swizzling
 
@@ -162,39 +120,9 @@ guard let originalMethod = class_getInstanceMethod(UIViewController.self, origin
 method_exchangeImplementations(originalMethod, swizzledMethod)
 ```
 
-## Troubleshooting
-
-### Common Issues
-
-1. **No spans appearing**: Ensure UIKit instrumentation is enabled in your configuration
-2. **System view controllers being instrumented**: Check bundle filtering is working correctly
-3. **Memory issues**: Verify proper cleanup in background/foreground transitions
-
-### Debug Logging
-
-Enable debug logging to troubleshoot instrumentation issues:
-
-```swift
-let config = AwsOpenTelemetryConfig(
-  rum: RumConfig(
-    region: "us-west-2", 
-    appMonitorId: "your-app-monitor-id",
-    debug: true  // Enable debug logging
-  ),
-  application: ApplicationConfig(applicationVersion: "1.0.0")
-)
-```
-
 ## Best Practices
 
 1. **Use Custom Names**: Provide meaningful names for better observability
 2. **Selective Opt-Out**: Only disable instrumentation when necessary
 3. **Monitor Performance**: Watch for any performance impact in your app
 4. **Test Thoroughly**: Verify instrumentation works correctly with your view controller patterns
-
-## Requirements
-
-- iOS 13.0+ (iOS 12.0+ with limited functionality)
-- UIKit framework
-- AWS OpenTelemetry Swift SDK
-- OpenTelemetry Swift SDK dependencies

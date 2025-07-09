@@ -38,7 +38,7 @@ import Foundation
   public var application: ApplicationConfig
 
   /// Telemetry feature configuration settings
-  public var telemetry: TelemetryConfig
+  public var telemetry: TelemetryConfig?
 
   /**
    * Initializes a new configuration instance.
@@ -51,43 +51,12 @@ import Foundation
   @objc public init(version: String? = "1.0.0",
                     rum: RumConfig,
                     application: ApplicationConfig,
-                    telemetry: TelemetryConfig = TelemetryConfig()) {
+                    telemetry: TelemetryConfig? = TelemetryConfig()) {
     self.version = version
     self.rum = rum
     self.application = application
     self.telemetry = telemetry
     super.init()
-  }
-
-  // MARK: - Codable Implementation
-
-  private enum CodingKeys: String, CodingKey {
-    case version
-    case rum
-    case application
-    case telemetry
-  }
-
-  public required init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-
-    version = try container.decodeIfPresent(String.self, forKey: .version)
-    rum = try container.decode(RumConfig.self, forKey: .rum)
-    application = try container.decode(ApplicationConfig.self, forKey: .application)
-
-    // telemetry is optional in JSON, defaults to enabled features if not present
-    telemetry = try container.decodeIfPresent(TelemetryConfig.self, forKey: .telemetry) ?? TelemetryConfig()
-
-    super.init()
-  }
-
-  public func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-
-    try container.encodeIfPresent(version, forKey: .version)
-    try container.encode(rum, forKey: .rum)
-    try container.encode(application, forKey: .application)
-    try container.encode(telemetry, forKey: .telemetry)
   }
 }
 
@@ -207,11 +176,6 @@ import Foundation
  * By default, all instrumentation features are **enabled** to provide comprehensive
  * observability out of the box. You can selectively disable features if needed.
  *
- * ## Platform Availability
- *
- * Some features are platform-specific:
- * - UIKit instrumentation is only available on iOS, tvOS, and Mac Catalyst
- * - Features are automatically disabled on unsupported platforms
  */
 @objc public class TelemetryConfig: NSObject, Codable {
   /// Enable UIKit view instrumentation (default: true)

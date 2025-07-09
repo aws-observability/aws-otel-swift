@@ -20,53 +20,19 @@
 
   /**
    * Main orchestrator for automatic UIKit view controller lifecycle instrumentation.
+   * UIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
+   * is initialized with UIKit instrumentation enabled (default behavior).
    *
    * This class provides comprehensive instrumentation of UIViewController lifecycle events,
    * automatically creating OpenTelemetry spans to track view performance and user navigation
    * patterns without requiring manual instrumentation code.
    *
-   * ## Automatic Span Creation
-   *
-   * The instrumentation creates two types of root spans for each view controller:
-   *
-   * ### 1. View Load Span (`view.load`)
-   * Tracks the complete view loading process from `viewDidLoad` to `viewDidAppear`:
-   * - **Parent Span**: `view.load` (measures total load time)
-   * - **Child Spans**: Individual lifecycle methods
-   *   - `viewDidLoad` - View controller and view setup
-   *   - `viewWillAppear` - Pre-appearance preparation
-   *   - `viewIsAppearing` - Appearance transition (iOS 13+)
-   *   - `viewDidAppear` - View fully visible and interactive
-   *
-   * ### 2. View Duration Span (`view.duration`)
-   * Tracks how long the view remains visible:
-   * - **Starts**: When `viewDidAppear` completes
-   * - **Ends**: When `viewDidDisappear` is called
-   * - **Purpose**: Measures user engagement and screen time
-   *
-   * ## Implementation Details
-   *
-   * - **Method Swizzling**: Uses runtime method swizzling to intercept lifecycle methods
-   * - **Thread Safety**: All operations are thread-safe through the use of a serial dispatch queue in the handler
-   *   and an NSLock for installation state, ensuring safe concurrent access from multiple threads
-   * - **Performance**: Minimal overhead with efficient span management
-   * - **Filtering**: Automatically filters system view controllers and supports custom filtering
-   *
-   * UIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
-   * is initialized with UIKit instrumentation enabled (default behavior). For advanced use cases, you can create
-   * and configure the instrumentation manually. View controllers can implement `ViewControllerCustomization`
+   * For advanced use cases, you can create and configure the instrumentation manually.
+   * View controllers can implement `ViewControllerCustomization`
    * to control instrumentation.
-   *
-   * ## Platform Support
-   *
-   * - **iOS**: Full support for all lifecycle methods
-   * - **tvOS**: Full support for all lifecycle methods
-   * - **Mac Catalyst**: Full support for all lifecycle methods
-   * - **watchOS**: Not supported (UIKit not available)
    */
   public final class UIKitViewInstrumentation {
     /// The OpenTelemetry tracer used for creating spans
-    /// This tracer is configured with the appropriate instrumentation name and version
     public let tracer: Tracer
 
     /// The handler responsible for processing view controller lifecycle events
@@ -130,7 +96,7 @@
      *
      * ## What Gets Installed
      *
-     * - Method swizzling for `viewDidLoad`, `viewWillAppear`, `viewIsAppearing`,
+     * - Method swizzling for `viewDidLoad`, `viewWillAppear`,
      *   `viewDidAppear`, and `viewDidDisappear`
      * - Static handler registration for span management
      * - Bundle-based filtering for automatic view controller detection

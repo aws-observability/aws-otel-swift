@@ -35,7 +35,7 @@ import StdoutExporter
  * - **Logger Provider**: For structured logging with OpenTelemetry context
  * - **Exporters**: For sending telemetry data to AWS CloudWatch RUM
  * - **Resources**: For identifying the application and runtime environment
- * - **UIKit Instrumentation**: For automatic view controller lifecycle tracking (iOS only)
+ * - **Instrumentation**: For configuring and creating specific instrumentation modules
  *
  * This builder is not thread-safe and should be used from a single thread.
  * However, the resulting OpenTelemetry components are thread-safe once built.
@@ -160,7 +160,7 @@ public class AwsOpenTelemetryRumBuilder {
 
     #if canImport(UIKit) && !os(watchOS)
       // Initialize view instrumentation if enabled
-      if config.telemetry.isUiKitViewInstrumentationEnabled {
+      if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
         let tracer = tracerProvider.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion)
         uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: tracer)
         uiKitViewInstrumentation?.install()

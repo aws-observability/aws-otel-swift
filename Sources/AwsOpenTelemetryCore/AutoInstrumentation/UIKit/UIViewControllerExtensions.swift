@@ -22,31 +22,9 @@
    *
    * These extensions enable automatic instrumentation of UIViewController lifecycle methods
    * by using method swizzling to intercept key lifecycle events and create OpenTelemetry spans.
-   * The implementation carefully handles edge cases like recursive calls and maintains proper
+   * The implementation handles edge cases like recursive calls and maintains proper
    * span hierarchies for accurate performance tracking.
    *
-   * ## Key Features
-   *
-   * - **Method Swizzling**: Intercepts lifecycle methods without modifying application code
-   * - **Span Creation**: Creates spans for each lifecycle event with appropriate attributes
-   * - **Bundle Filtering**: Automatically filters out system view controllers
-   * - **Customization Support**: Allows view controllers to customize or opt out of instrumentation
-   * - **Thread Safety**: All operations are thread-safe through the use of a serial dispatch queue in the handler
-   *
-   * ## Lifecycle Methods Instrumented
-   *
-   * - `viewDidLoad`: Initial view setup
-   * - `viewWillAppear`: Pre-appearance preparation
-   * - `viewDidAppear`: View fully visible
-   * - `viewDidDisappear`: View no longer visible
-   *
-   * ## Implementation Details
-   *
-   * The extensions use Objective-C runtime features to:
-   * 1. Store instrumentation state as associated objects
-   * 2. Swap method implementations at runtime
-   * 3. Track span creation to prevent duplicate spans
-   * 4. Maintain proper parent-child relationships between spans
    */
   extension UIViewController {
     /**
@@ -297,7 +275,7 @@
      * method swizzling is installed. It creates spans before and after calling
      * the original implementation to measure the execution time.
      *
-     * The implementation carefully handles recursive calls and prevents duplicate
+     * The implementation handles recursive calls and prevents duplicate
      * span creation by checking the instrumentation state.
      */
     @objc func traceViewDidLoad() {
@@ -325,7 +303,7 @@
      * method swizzling is installed. It creates spans before and after calling
      * the original implementation to measure the execution time.
      *
-     * The implementation carefully handles recursive calls and prevents duplicate
+     * The implementation handles recursive calls and prevents duplicate
      * span creation by checking the instrumentation state.
      *
      * @param animated Whether the appearance is animated
@@ -354,7 +332,7 @@
      * method swizzling is installed. It creates spans before and after calling
      * the original implementation to measure the execution time.
      *
-     * The implementation carefully handles recursive calls and prevents duplicate
+     * The implementation handles recursive calls and prevents duplicate
      * span creation by checking the instrumentation state.
      *
      * @param animated Whether the appearance is animated
