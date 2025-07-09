@@ -61,7 +61,7 @@ import Foundation
    * - Tracer and logger providers
    * - Exporters for sending data to AWS services
    * - Resource attributes and service identification
-   * - Automatically instrumentation e.g. UIKit
+   * - Automatic instrumentation e.g. UIKit
    *
    * ## Important Notes
    *
