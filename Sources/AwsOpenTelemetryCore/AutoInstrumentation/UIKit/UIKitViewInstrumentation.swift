@@ -117,7 +117,7 @@
       defer { lock.unlock() }
 
       guard !isInstalled else {
-        print("[UIKitViewInstrumentation] Already installed")
+        AwsOpenTelemetryLogger.debug("[UIKitViewInstrumentation] Already installed")
         return
       }
 
@@ -125,7 +125,7 @@
       UIViewController.installViewInstrumentation(handler: handler)
 
       isInstalled = true
-      print("[UIKitViewInstrumentation] Successfully installed view instrumentation")
+      AwsOpenTelemetryLogger.debug("[UIKitViewInstrumentation] Successfully installed view instrumentation")
     }
 
     /**

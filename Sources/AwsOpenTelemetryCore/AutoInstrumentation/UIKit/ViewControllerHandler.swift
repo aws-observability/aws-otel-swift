@@ -205,7 +205,7 @@
         // Clear all cached spans
         self.clearAllSpans()
 
-        print("[ViewControllerHandler] Cleaned up spans due to app backgrounding")
+        AwsOpenTelemetryLogger.debug("[ViewControllerHandler] Cleaned up spans due to app backgrounding")
       }
     }
 
@@ -214,7 +214,7 @@
         // Reset any remaining state when returning to foreground
         self.clearAllSpans()
 
-        print("[ViewControllerHandler] Reset state due to app foregrounding")
+        AwsOpenTelemetryLogger.debug("[ViewControllerHandler] Reset state due to app foregrounding")
       }
     }
 

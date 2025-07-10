@@ -15,6 +15,7 @@
 
 import Foundation
 import AwsCommonRuntimeKit
+import AwsOpenTelemetryCore
 import AWSSDKHTTPAuth
 import SmithyHTTPAuth
 import SmithyHTTPAuthAPI
@@ -139,7 +140,7 @@ public class AwsSigV4Authenticator {
 
       return request
     } catch {
-      print("[AwsOpenTelemetryAuth] Error signing request: \(error)")
+      AwsOpenTelemetryLogger.error("[AwsOpenTelemetryAuth] Error signing request: \(error)")
       return urlRequest
     }
   }
