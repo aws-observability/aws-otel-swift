@@ -9,108 +9,93 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
   let appVersion = "1.2.3"
   let logsEndpoint = "https://custom-logs.example.com"
   let tracesEndpoint = "https://custom-traces.example.com"
-  let tracesOnlyEndpoint = "https://traces-only.example.com"
   let debug = true
-  let defaultVersion = "1.0.0"
   let alias = "test-alias"
 
-  func testConfigInitialization() {
-    // Test basic initialization
+  func testBasicConfigInitialization() {
+    // Test basic initialization with defaults
     let config = AwsOpenTelemetryConfig(
-      version: version,
       rum: RumConfig(region: region, appMonitorId: appMonitorId),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
 
-    XCTAssertEqual(config.version, version)
+    XCTAssertEqual(config.version, "1.0.0") // Default version
     XCTAssertEqual(config.rum.region, region)
     XCTAssertEqual(config.rum.appMonitorId, appMonitorId)
     XCTAssertNil(config.rum.overrideEndpoint)
     XCTAssertNil(config.rum.alias)
     XCTAssertEqual(config.rum.debug, false)
     XCTAssertEqual(config.application.applicationVersion, appVersion)
+
+    // Test default telemetry configuration
+    XCTAssertTrue(config.telemetry.isUiKitViewInstrumentationEnabled, "UIKit instrumentation should be enabled by default")
   }
 
-  func testConfigWithOptionalFields() {
+  func testFullConfigInitialization() {
     // Test initialization with all optional fields
-    let endpointOverrides = EndpointOverrides(
-      logs: logsEndpoint,
-      traces: tracesEndpoint
-    )
-
     let config = AwsOpenTelemetryConfig(
       version: version,
       rum: RumConfig(
         region: region,
         appMonitorId: appMonitorId,
-        overrideEndpoint: endpointOverrides,
+        overrideEndpoint: EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint),
         debug: debug,
         alias: alias
       ),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      application: ApplicationConfig(applicationVersion: appVersion),
+      telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
     )
 
     XCTAssertEqual(config.version, version)
     XCTAssertEqual(config.rum.region, region)
     XCTAssertEqual(config.rum.appMonitorId, appMonitorId)
-    XCTAssertNotNil(config.rum.overrideEndpoint)
-    XCTAssertNotNil(config.rum.alias)
     XCTAssertEqual(config.rum.overrideEndpoint?.logs, logsEndpoint)
     XCTAssertEqual(config.rum.overrideEndpoint?.traces, tracesEndpoint)
     XCTAssertEqual(config.rum.alias, alias)
     XCTAssertEqual(config.rum.debug, debug)
     XCTAssertEqual(config.application.applicationVersion, appVersion)
+    XCTAssertFalse(config.telemetry.isUiKitViewInstrumentationEnabled, "Custom telemetry config should be respected")
   }
 
-  func testDefaultVersionValue() {
-    // Test that version defaults to "1.0.0" when not provided
-    let config = AwsOpenTelemetryConfig(
+  func testTelemetryConfigVariations() {
+    // Test TelemetryConfig standalone and integration
+    let defaultTelemetry = TelemetryConfig()
+    let disabledTelemetry = TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
+
+    XCTAssertTrue(defaultTelemetry.isUiKitViewInstrumentationEnabled)
+    XCTAssertFalse(disabledTelemetry.isUiKitViewInstrumentationEnabled)
+
+    // Test integration with main config
+    let configWithDisabled = AwsOpenTelemetryConfig(
       rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      application: ApplicationConfig(applicationVersion: appVersion),
+      telemetry: disabledTelemetry
     )
 
-    XCTAssertEqual(config.version, defaultVersion)
+    XCTAssertFalse(configWithDisabled.telemetry.isUiKitViewInstrumentationEnabled)
   }
 
-  func testEndpointOverridesInitialization() {
-    // Test EndpointOverrides initialization
-    let overrides = EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint)
-
-    XCTAssertEqual(overrides.logs, logsEndpoint)
-    XCTAssertEqual(overrides.traces, tracesEndpoint)
-
-    // Test with nil values
-    let partialOverrides = EndpointOverrides(logs: nil, traces: tracesOnlyEndpoint)
-
-    XCTAssertNil(partialOverrides.logs)
-    XCTAssertEqual(partialOverrides.traces, tracesOnlyEndpoint)
-  }
-
-  func testCodable() throws {
-    // Create a config
+  func testJSONSerialization() throws {
+    // Test complete JSON serialization including telemetry
     let originalConfig = AwsOpenTelemetryConfig(
       version: version,
       rum: RumConfig(
         region: region,
         appMonitorId: appMonitorId,
-        overrideEndpoint: EndpointOverrides(
-          logs: logsEndpoint,
-          traces: tracesEndpoint
-        ),
+        overrideEndpoint: EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint),
         debug: debug
       ),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      application: ApplicationConfig(applicationVersion: appVersion),
+      telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
     )
 
-    // Encode to JSON
+    // Encode and decode
     let encoder = JSONEncoder()
     let jsonData = try encoder.encode(originalConfig)
-
-    // Decode back
     let decoder = JSONDecoder()
     let decodedConfig = try decoder.decode(AwsOpenTelemetryConfig.self, from: jsonData)
 
-    // Verify all properties match
+    // Verify all properties including telemetry
     XCTAssertEqual(decodedConfig.version, version)
     XCTAssertEqual(decodedConfig.rum.region, region)
     XCTAssertEqual(decodedConfig.rum.appMonitorId, appMonitorId)
@@ -118,5 +103,40 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(decodedConfig.rum.overrideEndpoint?.traces, tracesEndpoint)
     XCTAssertEqual(decodedConfig.rum.debug, debug)
     XCTAssertEqual(decodedConfig.application.applicationVersion, appVersion)
+    XCTAssertFalse(decodedConfig.telemetry.isUiKitViewInstrumentationEnabled)
+  }
+
+  func testJSONWithMissingTelemetry() throws {
+    // Test that telemetry defaults when missing from JSON
+    let jsonString = """
+    {
+      "version": "1.0.0",
+      "rum": {
+        "region": "us-west-2",
+        "appMonitorId": "test-monitor"
+      },
+      "application": {
+        "applicationVersion": "1.0.0"
+      }
+    }
+    """
+
+    let jsonData = jsonString.data(using: .utf8)!
+    let decoder = JSONDecoder()
+    let config = try decoder.decode(AwsOpenTelemetryConfig.self, from: jsonData)
+
+    // Should use default telemetry config when not present in JSON
+    XCTAssertTrue(config.telemetry.isUiKitViewInstrumentationEnabled, "Should default to enabled when telemetry not in JSON")
+  }
+
+  func testEndpointOverrides() {
+    // Test EndpointOverrides variations
+    let fullOverrides = EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint)
+    let partialOverrides = EndpointOverrides(logs: nil, traces: tracesEndpoint)
+
+    XCTAssertEqual(fullOverrides.logs, logsEndpoint)
+    XCTAssertEqual(fullOverrides.traces, tracesEndpoint)
+    XCTAssertNil(partialOverrides.logs)
+    XCTAssertEqual(partialOverrides.traces, tracesEndpoint)
   }
 }

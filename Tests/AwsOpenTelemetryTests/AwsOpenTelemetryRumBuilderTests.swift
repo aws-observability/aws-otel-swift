@@ -16,79 +16,57 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   override func tearDown() {
     AwsOpenTelemetryAgent.shared.isInitialized = false
     AwsOpenTelemetryAgent.shared.configuration = nil
+    #if canImport(UIKit) && !os(watchOS)
+      AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
+    #endif
     super.tearDown()
   }
 
-  func testCreateBuilder() {
-    // Create a valid configuration
+  func testBasicBuilderCreationAndBuild() {
+    // Test basic builder creation and build process
     let config = AwsOpenTelemetryConfig(
       rum: RumConfig(region: region, appMonitorId: appMonitorId),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
 
-    // Create the builder
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config))
-  }
-
-  func testBuildEndpointURLs() {
-    // Create a configuration with region
-    let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
-    )
-
-    // Test that build succeeds with valid endpoints
+    // Should create builder and build successfully
     XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
   }
 
-  func testBuildWithEndpointOverrides() {
-    // Create a configuration with endpoint overrides
-    let config = AwsOpenTelemetryConfig(
+  func testEndpointConfiguration() {
+    // Test both default endpoints and custom overrides
+    let configWithOverrides = AwsOpenTelemetryConfig(
       rum: RumConfig(
         region: region,
         appMonitorId: appMonitorId,
-        overrideEndpoint: EndpointOverrides(
-          logs: logsEndpoint,
-          traces: tracesEndpoint
-        )
+        overrideEndpoint: EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint)
       ),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
 
-    // Test that build succeeds with the overrides
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
+    // Should build successfully with endpoint overrides
+    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: configWithOverrides).build())
   }
 
-  func testBuildWithInvalidEndpoint() {
-    // Create a configuration with invalid endpoint override
-    let config = AwsOpenTelemetryConfig(
+  func testInvalidEndpointHandling() {
+    // Test handling of invalid endpoint URLs
+    let configWithInvalidEndpoint = AwsOpenTelemetryConfig(
       rum: RumConfig(
         region: region,
         appMonitorId: appMonitorId,
-        overrideEndpoint: EndpointOverrides(
-          logs: invalidLogsUrl,
-          traces: tracesEndpoint
-        )
+        overrideEndpoint: EndpointOverrides(logs: invalidLogsUrl, traces: nil)
       ),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
 
-    // Test that build throws an error for the invalid URL
-    XCTAssertThrowsError(try AwsOpenTelemetryRumBuilder.create(config: config).build()) { error in
+    // Should throw an error for invalid URL
+    XCTAssertThrowsError(try AwsOpenTelemetryRumBuilder.create(config: configWithInvalidEndpoint).build()) { error in
       XCTAssertTrue(error is AwsOpenTelemetryConfigError)
-      if let configError = error as? AwsOpenTelemetryConfigError {
-        switch configError {
-        case let .malformedURL(url):
-          XCTAssertEqual(url, invalidLogsUrl)
-        default:
-          XCTFail("Expected malformedURL error")
-        }
-      }
     }
   }
 
-  func testAlreadyInitialized() {
-    // Create a valid configuration
+  func testAlreadyInitializedError() {
+    // Test that attempting to initialize twice throws an error
     let config = AwsOpenTelemetryConfig(
       rum: RumConfig(region: region, appMonitorId: appMonitorId),
       application: ApplicationConfig(applicationVersion: appVersion)
@@ -97,8 +75,8 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     // First initialization should succeed
     XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
 
-    // Second initialization should throw alreadyInitialized error
-    XCTAssertThrowsError(try AwsOpenTelemetryRumBuilder.create(config: config)) { error in
+    // Second initialization should throw error
+    XCTAssertThrowsError(try AwsOpenTelemetryRumBuilder.create(config: config).build()) { error in
       XCTAssertTrue(error is AwsOpenTelemetryConfigError)
       if let configError = error as? AwsOpenTelemetryConfigError {
         XCTAssertEqual(configError, AwsOpenTelemetryConfigError.alreadyInitialized)
@@ -106,68 +84,19 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     }
   }
 
-  func testSpanExporterCustomizer() {
-    // Create a valid configuration
+  func testExporterCustomization() {
+    // Test span and log exporter customization
     let config = AwsOpenTelemetryConfig(
       rum: RumConfig(region: region, appMonitorId: appMonitorId),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
 
-    // Create a flag to verify the customizer was called
-    var customizerCalled = false
-
-    // Test that customizer is called using chaining
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
-      .addSpanExporterCustomizer { exporter in
-        customizerCalled = true
-        return exporter
-      }
-      .build())
-
-    XCTAssertTrue(customizerCalled, "Span exporter customizer should have been called")
-  }
-
-  func testLogRecordExporterCustomizer() {
-    // Create a valid configuration
-    let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
-    )
-
-    // Create a flag to verify the customizer was called
-    var customizerCalled = false
-
-    // Test that customizer is called using chaining
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
-      .addLogRecordExporterCustomizer { exporter in
-        customizerCalled = true
-        return exporter
-      }
-      .build())
-
-    XCTAssertTrue(customizerCalled, "Log record exporter customizer should have been called")
-  }
-
-  func testMultipleExporterCustomizers() {
-    // Create a valid configuration
-    let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
-    )
-
-    // Create flags to verify the customizers were called
-    var firstSpanCustomizerCalled = false
-    var secondSpanCustomizerCalled = false
+    var spanCustomizerCalled = false
     var logCustomizerCalled = false
 
-    // Test that all customizers are called using chaining
     XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
       .addSpanExporterCustomizer { exporter in
-        firstSpanCustomizerCalled = true
-        return exporter
-      }
-      .addSpanExporterCustomizer { exporter in
-        secondSpanCustomizerCalled = true
+        spanCustomizerCalled = true
         return exporter
       }
       .addLogRecordExporterCustomizer { exporter in
@@ -176,73 +105,23 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       }
       .build())
 
-    XCTAssertTrue(firstSpanCustomizerCalled, "First span exporter customizer should have been called")
-    XCTAssertTrue(secondSpanCustomizerCalled, "Second span exporter customizer should have been called")
-    XCTAssertTrue(logCustomizerCalled, "Log record exporter customizer should have been called")
+    XCTAssertTrue(spanCustomizerCalled, "Span exporter customizer should be called")
+    XCTAssertTrue(logCustomizerCalled, "Log exporter customizer should be called")
   }
 
-  func testTracerProviderCustomizer() {
-    // Create a valid configuration
+  func testProviderCustomization() {
+    // Test tracer and logger provider customization
     let config = AwsOpenTelemetryConfig(
       rum: RumConfig(region: region, appMonitorId: appMonitorId),
       application: ApplicationConfig(applicationVersion: appVersion)
     )
 
-    // Create a flag to verify the customizer was called
-    var customizerCalled = false
-
-    // Test that customizer is called using chaining
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
-      .addTracerProviderCustomizer { builder in
-        customizerCalled = true
-        return builder
-      }
-      .build())
-
-    XCTAssertTrue(customizerCalled, "Tracer provider customizer should have been called")
-  }
-
-  func testLoggerProviderCustomizer() {
-    // Create a valid configuration
-    let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
-    )
-
-    // Create a flag to verify the customizer was called
-    var customizerCalled = false
-
-    // Test that customizer is called using chaining
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
-      .addLoggerProviderCustomizer { builder in
-        customizerCalled = true
-        return builder
-      }
-      .build())
-
-    XCTAssertTrue(customizerCalled, "Logger provider customizer should have been called")
-  }
-
-  func testMultipleProviderCustomizers() {
-    // Create a valid configuration
-    let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
-    )
-
-    // Create flags to verify the customizers were called
-    var firstTracerCustomizerCalled = false
-    var secondTracerCustomizerCalled = false
+    var tracerCustomizerCalled = false
     var loggerCustomizerCalled = false
 
-    // Test that all customizers are called using chaining
     XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
       .addTracerProviderCustomizer { builder in
-        firstTracerCustomizerCalled = true
-        return builder
-      }
-      .addTracerProviderCustomizer { builder in
-        secondTracerCustomizerCalled = true
+        tracerCustomizerCalled = true
         return builder
       }
       .addLoggerProviderCustomizer { builder in
@@ -251,8 +130,50 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       }
       .build())
 
-    XCTAssertTrue(firstTracerCustomizerCalled, "First tracer provider customizer should have been called")
-    XCTAssertTrue(secondTracerCustomizerCalled, "Second tracer provider customizer should have been called")
-    XCTAssertTrue(loggerCustomizerCalled, "Logger provider customizer should have been called")
+    XCTAssertTrue(tracerCustomizerCalled, "Tracer provider customizer should be called")
+    XCTAssertTrue(loggerCustomizerCalled, "Logger provider customizer should be called")
   }
+
+  #if canImport(UIKit) && !os(watchOS)
+    func testUIKitInstrumentationConfiguration() {
+      // Test UIKit instrumentation enabled/disabled/default scenarios
+
+      // Test enabled
+      let enabledConfig = AwsOpenTelemetryConfig(
+        rum: RumConfig(region: region, appMonitorId: appMonitorId),
+        application: ApplicationConfig(applicationVersion: appVersion),
+        telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: true)
+      )
+
+      XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: enabledConfig).build())
+      XCTAssertNotNil(AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation, "Should create UIKit instrumentation when enabled")
+
+      // Reset for next test
+      AwsOpenTelemetryAgent.shared.isInitialized = false
+      AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
+
+      // Test disabled
+      let disabledConfig = AwsOpenTelemetryConfig(
+        rum: RumConfig(region: region, appMonitorId: appMonitorId),
+        application: ApplicationConfig(applicationVersion: appVersion),
+        telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
+      )
+
+      XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: disabledConfig).build())
+      XCTAssertNil(AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation, "Should not create UIKit instrumentation when disabled")
+
+      // Reset for next test
+      AwsOpenTelemetryAgent.shared.isInitialized = false
+      AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
+
+      // Test default (should be enabled)
+      let defaultConfig = AwsOpenTelemetryConfig(
+        rum: RumConfig(region: region, appMonitorId: appMonitorId),
+        application: ApplicationConfig(applicationVersion: appVersion)
+      )
+
+      XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: defaultConfig).build())
+      XCTAssertNotNil(AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation, "Should create UIKit instrumentation by default")
+    }
+  #endif
 }

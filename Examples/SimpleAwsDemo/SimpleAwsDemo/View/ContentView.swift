@@ -21,6 +21,7 @@ import SwiftUI
  */
 struct ContentView: View {
   @ObservedObject var viewModel: LoaderViewModel
+  @State private var showingDemoViewController = false
 
   var body: some View {
     NavigationView {
@@ -40,6 +41,22 @@ struct ContentView: View {
           awsButton(icon: "person.badge.key", title: "Get Cognito Identity") {
             await viewModel.getCognitoIdentityId()
           }
+
+          // UIKit Demo Button
+          Button(action: {
+            showingDemoViewController = true
+          }) {
+            HStack {
+              Image(systemName: "chart.line.uptrend.xyaxis")
+              Text("Show UIKit Demo")
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.green)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+          }
+          .disabled(viewModel.isLoading)
         }
         .padding(.horizontal)
 
@@ -66,6 +83,9 @@ struct ContentView: View {
       }
       .navigationTitle("Title")
       .padding(.bottom)
+      .sheet(isPresented: $showingDemoViewController) {
+        DemoViewControllerRepresentable()
+      }
     }
   }
 

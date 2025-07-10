@@ -16,10 +16,16 @@
 import Foundation
 
 /**
- * Configuration model for AWS OpenTelemetry SDK.
+ * Root configuration object for the AWS OpenTelemetry SDK.
  *
- * This class defines the structure for configuring the AWS OpenTelemetry SDK,
- * including RUM (Real User Monitoring) settings and application information.
+ * This class serves as the main configuration container for initializing the AWS OpenTelemetry SDK
+ * with Real User Monitoring (RUM) capabilities. It encompasses all necessary settings for:
+ *
+ * - **RUM Configuration**: AWS region, app monitor ID, and endpoint overrides
+ * - **Application Metadata**: Version information and application identification
+ * - **Telemetry Features**: Control over automatic instrumentation capabilities
+ * - **Schema Versioning**: Configuration format version for compatibility
+ *
  */
 @objc public class AwsOpenTelemetryConfig: NSObject, Codable {
   /// Schema version of the configuration
@@ -31,28 +37,46 @@ import Foundation
   /// Application-specific configuration settings
   public var application: ApplicationConfig
 
+  /// Telemetry feature configuration settings
+  public var telemetry: TelemetryConfig?
+
   /**
    * Initializes a new configuration instance.
    *
    * @param version The schema version of the configuration (defaults to "1.0.0")
    * @param rum The RUM configuration settings
    * @param application The application configuration settings
+   * @param telemetry The telemetry configuration settings (defaults to enabled features)
    */
   @objc public init(version: String? = "1.0.0",
                     rum: RumConfig,
-                    application: ApplicationConfig) {
+                    application: ApplicationConfig,
+                    telemetry: TelemetryConfig? = TelemetryConfig()) {
     self.version = version
     self.rum = rum
     self.application = application
+    self.telemetry = telemetry
     super.init()
   }
 }
 
 /**
- * Configuration for AWS RUM (Real User Monitoring).
+ * Configuration for AWS CloudWatch RUM (Real User Monitoring) service integration.
  *
- * Contains settings specific to the AWS RUM service, including region,
- * app monitor identifier, and optional configuration overrides.
+ * This class contains all settings required to connect your application to AWS CloudWatch RUM,
+ * including service endpoints, authentication parameters, and debugging options.
+ *
+ * ## Required Settings
+ *
+ * - **region**: The AWS region where your RUM App Monitor is deployed
+ * - **appMonitorId**: The unique identifier of your RUM App Monitor
+ *
+ * ## Optional Settings
+ *
+ * - **overrideEndpoint**: Custom endpoints for traces and logs (useful for testing)
+ * - **debug**: Enable verbose logging for troubleshooting SDK integration
+ * - **alias**: Additional identifier for request routing and access control
+ *
  */
 @objc public class RumConfig: NSObject, Codable {
   /// AWS region where the RUM service is deployed
@@ -131,6 +155,47 @@ import Foundation
    */
   @objc public init(applicationVersion: String) {
     self.applicationVersion = applicationVersion
+    super.init()
+  }
+}
+
+/**
+ * Configuration for controlling automatic telemetry instrumentation features.
+ *
+ * This class allows you to enable or disable specific automatic instrumentation
+ * capabilities provided by the AWS OpenTelemetry SDK. Each feature can be
+ * controlled independently to match your application's requirements.
+ *
+ * ## Available Features
+ *
+ * - **UIKit View Instrumentation**: Automatically creates spans for view controller
+ *   lifecycle events (viewDidLoad, viewWillAppear, viewDidAppear, etc.)
+ *
+ * ## Default Behavior
+ *
+ * By default, all instrumentation features are **enabled** to provide comprehensive
+ * observability out of the box. You can selectively disable features if needed.
+ *
+ */
+@objc public class TelemetryConfig: NSObject, Codable {
+  /// Enable UIKit view instrumentation (default: true)
+  @objc public var isUiKitViewInstrumentationEnabled: Bool
+
+  /**
+   * Initializes telemetry configuration with default values.
+   */
+  @objc override public init() {
+    isUiKitViewInstrumentationEnabled = true
+    super.init()
+  }
+
+  /**
+   * Initializes telemetry configuration with custom values.
+   *
+   * @param isUiKitViewInstrumentationEnabled Enable UIKit view instrumentation
+   */
+  @objc public init(isUiKitViewInstrumentationEnabled: Bool) {
+    self.isUiKitViewInstrumentationEnabled = isUiKitViewInstrumentationEnabled
     super.init()
   }
 }

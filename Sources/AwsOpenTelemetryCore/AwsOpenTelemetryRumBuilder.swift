@@ -21,13 +21,24 @@ import OpenTelemetrySdk
 import ResourceExtension
 import StdoutExporter
 
+#if canImport(UIKit) && !os(watchOS)
+  import UIKit
+#endif
+
 /**
- * Main entry point for the AWS OpenTelemetry SDK.
- * Builder for AWS OpenTelemetry RUM (Real User Monitoring) implementation.
+ * Builder for configuring and initializing the AWS OpenTelemetry SDK with RUM capabilities.
  *
- * This class provides a fluent API for configuring and building the OpenTelemetry
- * components needed for AWS RUM, including tracer and logger providers, exporters,
- * and resources.
+ * This class provides a fluent API for setting up the complete OpenTelemetry pipeline
+ * optimized for AWS Real User Monitoring (RUM). It handles the configuration of:
+ *
+ * - **Tracer Provider**: For creating and managing distributed traces
+ * - **Logger Provider**: For structured logging with OpenTelemetry context
+ * - **Exporters**: For sending telemetry data to AWS CloudWatch RUM
+ * - **Resources**: For identifying the application and runtime environment
+ * - **Instrumentation**: For configuring and creating instrumentation modules
+ *
+ * This builder is not thread-safe and should be used from a single thread.
+ * However, the resulting OpenTelemetry components are thread-safe once built.
  */
 public class AwsOpenTelemetryRumBuilder {
   private var tracerProviderCustomizers: [(TracerProviderBuilder) -> TracerProviderBuilder] = []
@@ -42,6 +53,10 @@ public class AwsOpenTelemetryRumBuilder {
 
   // Track instrumentations to add
   private var instrumentations: [AwsOpenTelemetryInstrumentationProtocol] = []
+
+  #if canImport(UIKit) && !os(watchOS)
+    private var uiKitViewInstrumentation: UIKitViewInstrumentation?
+  #endif
 
   // MARK: - Initialization Methods
 
@@ -93,14 +108,38 @@ public class AwsOpenTelemetryRumBuilder {
   }
 
   /**
-   * Builds and registers the OpenTelemetry components.
-   * This method marks the SDK as initialized when successful.
+   * Builds and initializes the complete AWS OpenTelemetry SDK pipeline.
    *
-   * @throws AwsOpenTelemetryConfigError if endpoint URLs are malformed
-   * @return Self for method chaining
+   * This method performs the following operations:
+   * 1. Validates and constructs endpoint URLs for traces and logs
+   * 2. Creates and configures span and log record exporters
+   * 3. Applies any registered exporter customizations
+   * 4. Builds tracer and logger providers with customizations
+   * 5. Registers providers with the global OpenTelemetry instance
+   * 6. Initializes UIKit instrumentation (if enabled and available)
+   * 7. Marks the SDK as initialized to prevent duplicate initialization
+   *
+   * ## Error Handling
+   *
+   * This method will throw an error if:
+   * - Endpoint URLs are malformed or invalid
+   * - Required configuration parameters are missing
+   * - The SDK has already been initialized
+   *
+   * ## Thread Safety
+   *
+   * This method is not thread-safe and should only be called once during
+   * application initialization, typically from the main thread.
+   *
+   * @throws AwsOpenTelemetryConfigError.malformedURL if endpoint URLs are invalid
+   * @return This builder instance for method chaining
    */
   @discardableResult
   public func build() throws -> Self {
+    // AWS OpenTelemetry Swift SDK instrumentation constants
+    let instrumentationName = "aws-opentelemetry-swift"
+    let instrumentationVersion = "1.0.0"
+
     let tracesEndpoint = buildTracesEndpoint(config: config.rum)
     guard let tracesEndpointURL = URL(string: tracesEndpoint) else {
       throw AwsOpenTelemetryConfigError.malformedURL(tracesEndpoint)
@@ -118,6 +157,18 @@ public class AwsOpenTelemetryRumBuilder {
 
     OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
     OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
+
+    #if canImport(UIKit) && !os(watchOS)
+      // Initialize view instrumentation (enabled by default)
+      if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
+        let tracer = tracerProvider.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion)
+        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: tracer)
+        uiKitViewInstrumentation?.install()
+
+        // Store the UIKitViewInstrumentation in the agent for global access
+        AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
+      }
+    #endif
 
     // Mark the SDK as initialized
     AwsOpenTelemetryAgent.shared.isInitialized = true
@@ -160,7 +211,16 @@ public class AwsOpenTelemetryRumBuilder {
   /**
    * Adds a customizer for the span exporter.
    *
-   * @param customizer A function that transforms a span exporter
+   * This allows you to wrap or replace the default span exporter with custom logic.
+   * Common use cases include:
+   * - Adding multiple exporters using `MultiSpanExporter`
+   * - Filtering spans before export
+   * - Adding custom headers or authentication
+   * - Implementing custom retry logic
+   *
+   * Multiple customizers can be chained and will be applied in the order they were added.
+   *
+   * @param customizer A function that takes the current span exporter and returns a modified version
    * @return This builder instance for method chaining
    */
   @discardableResult
@@ -178,7 +238,16 @@ public class AwsOpenTelemetryRumBuilder {
   /**
    * Adds a customizer for the log record exporter.
    *
-   * @param customizer A function that transforms a log record exporter
+   * This allows you to wrap or replace the default log record exporter with custom logic.
+   * Common use cases include:
+   * - Adding multiple exporters for logs
+   * - Filtering log records before export
+   * - Adding custom formatting or enrichment
+   * - Implementing custom batching strategies
+   *
+   * Multiple customizers can be chained and will be applied in the order they were added.
+   *
+   * @param customizer A function that takes the current log record exporter and returns a modified version
    * @return This builder instance for method chaining
    */
   @discardableResult
@@ -198,7 +267,16 @@ public class AwsOpenTelemetryRumBuilder {
   /**
    * Adds a customizer for the tracer provider builder.
    *
-   * @param customizer A function that transforms a tracer provider builder
+   * This allows you to customize the tracer provider configuration before it's built.
+   * Common use cases include:
+   * - Adding custom span processors for filtering or enrichment
+   * - Configuring sampling strategies
+   * - Adding custom resource attributes
+   * - Setting up span limits and timeouts
+   *
+   * Multiple customizers can be added and will be applied in the order they were added.
+   *
+   * @param customizer A function that takes the tracer provider builder and returns a modified version
    * @return This builder instance for method chaining
    */
   @discardableResult
@@ -212,7 +290,16 @@ public class AwsOpenTelemetryRumBuilder {
   /**
    * Adds a customizer for the logger provider builder.
    *
-   * @param customizer A function that transforms a logger provider builder
+   * This allows you to customize the logger provider configuration before it's built.
+   * Common use cases include:
+   * - Adding custom log record processors
+   * - Configuring log level filtering
+   * - Setting up custom resource attributes for logs
+   * - Implementing custom log record enrichment
+   *
+   * Multiple customizers can be added and will be applied in the order they were added.
+   *
+   * @param customizer A function that takes the logger provider builder and returns a modified version
    * @return This builder instance for method chaining
    */
   @discardableResult

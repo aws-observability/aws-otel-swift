@@ -156,10 +156,14 @@ The configuration follows this JSON schema:
       "logs": "optional-logs-endpoint",
       "traces": "optional-traces-endpoint"
     },
-    "debug": false
+    "debug": false,
+    "alias": "optional-alias"
   },
   "application": {
     "applicationVersion": "app-version"
+  },
+  "telemetry": {
+    "isUiKitViewInstrumentationEnabled": true
   }
 }
 ```
@@ -181,6 +185,23 @@ The configuration follows this JSON schema:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | applicationVersion | String | Yes | Version of the application being monitored |
+
+#### TelemetryConfig
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| isUiKitViewInstrumentationEnabled | Boolean | No | Enable automatic UIKit view controller instrumentation (defaults to true) |
+
+**Note**: The `telemetry` section is optional in JSON configuration. If not provided, all telemetry features will be enabled by default.
+
+## Testing
+
+This project includes comprehensive test suites. For detailed testing instructions, troubleshooting, and contributor guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md#testing).
+
+**Quick Test Command:**
+```bash
+xcodebuild test -scheme aws-otel-swift-Package -destination 'platform=iOS Simulator,name=iPhone 16'
+```
 
 ## Development Setup
 
