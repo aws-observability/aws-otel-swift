@@ -10,7 +10,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
   let logsEndpoint = "https://logs.example.com"
   let tracesEndpoint = "https://traces.example.com"
   let alias = "test-alias"
-  let sessionLength: Double = 100
+  let sessionTimeout: Int = 100
 
   func testParseValidConfig() throws {
     // Create a valid JSON configuration
@@ -103,7 +103,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "rum": {
             "region": "\(region)",
             "appMonitorId": "\(appMonitorId)",
-            "sessionLength": \(sessionLength)
+            "sessionTimeout": \(sessionTimeout)
         },
         "application": {
             "applicationVersion": "\(appVersion)"
@@ -117,7 +117,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
     let config = try AwsRumConfigReader.parseConfig(from: data)
 
     // Verify the alias
-    XCTAssertEqual(config.rum.sessionLength, sessionLength)
+    XCTAssertEqual(config.rum.sessionTimeout, sessionTimeout)
   }
 
   func testParseInvalidJson() {

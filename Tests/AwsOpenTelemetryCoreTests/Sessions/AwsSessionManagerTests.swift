@@ -48,7 +48,7 @@ final class AwsSessionManagerTests: XCTestCase {
 
   // when session is expired then new session is created
   func testGetSessionExpired() {
-    sessionManager.configure(sessionLength: 0)
+    sessionManager.configure(sessionTimeout: 0)
     let id1 = sessionManager.getSession().id
     let id2 = sessionManager.getSession().id
     XCTAssertNotEqual(id1, id2)
@@ -123,7 +123,7 @@ final class AwsSessionManagerTests: XCTestCase {
 
   func testConfigureWithCustomSessionLength() {
     let customLength = 60 // 1 minute
-    sessionManager.configure(sessionLength: customLength)
+    sessionManager.configure(sessionTimeout: customLength)
 
     let session1 = sessionManager.getSession()
     let expectedExpiry = Date(timeIntervalSinceNow: Double(customLength))
@@ -133,7 +133,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   func testConfigureWithNilUsesDefault() {
-    sessionManager.configure(sessionLength: nil)
+    sessionManager.configure(sessionTimeout: nil)
 
     let session = sessionManager.getSession()
     let expectedExpiry = Date(timeIntervalSinceNow: Double(AwsSessionManager.defaultSessionLength))
@@ -176,7 +176,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   func testExpiredSessionCreatesPreviousId() {
-    sessionManager.configure(sessionLength: 0)
+    sessionManager.configure(sessionTimeout: 0)
     let firstSession = sessionManager.peekSession()!
     let secondSession = sessionManager.getSession()
     let thirdSession = sessionManager.getSession()

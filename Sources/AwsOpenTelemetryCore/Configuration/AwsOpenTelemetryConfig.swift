@@ -96,7 +96,7 @@ import Foundation
   public var alias: String?
 
   // The user session will expire if inactive for the specified length (default 30 minutes)
-  public var sessionLength: Int?
+  public var sessionTimeout: Int?
 
   /**
    * Initializes a new RUM configuration instance.
@@ -111,13 +111,13 @@ import Foundation
                     overrideEndpoint: EndpointOverrides? = nil,
                     debug: Bool = false,
                     alias: String? = nil,
-                    sessionLength: NSNumber? = nil) {
+                    sessionTimeout: NSNumber? = nil) {
     self.region = region
     self.appMonitorId = appMonitorId
     self.overrideEndpoint = overrideEndpoint
     self.debug = debug
     self.alias = alias
-    self.sessionLength = (sessionLength as? Int) ?? AwsSessionManager.defaultSessionLength
+    self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionManager.defaultSessionLength
     super.init()
   }
 }

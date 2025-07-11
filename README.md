@@ -181,7 +181,7 @@ The configuration follows this JSON schema:
 | overrideEndpoint | Object  | No       | Optional endpoint overrides for the RUM service                                                                                                    |
 | debug            | Boolean | No       | Flag to enable debug logging (defaults to false)                                                                                                   |
 | alias            | String  | No       | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor |
-| sessionLength    | Number  | No       | The duration (in seconds) after which an inactive session expires. Default 1800 seconds (30 minutes)                                               |
+| sessionTimeout   | Number  | No       | The duration (in seconds) after which an inactive session expires. Default 1800 seconds (30 minutes)                                               |
 
 #### ApplicationConfig
 
@@ -191,9 +191,9 @@ The configuration follows this JSON schema:
 
 #### TelemetryConfig
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| isUiKitViewInstrumentationEnabled | Boolean | No | Enable automatic UIKit view controller instrumentation (defaults to true) |
+| Field                             | Type    | Required | Description                                                               |
+| --------------------------------- | ------- | -------- | ------------------------------------------------------------------------- |
+| isUiKitViewInstrumentationEnabled | Boolean | No       | Enable automatic UIKit view controller instrumentation (defaults to true) |
 
 **Note**: The `telemetry` section is optional in JSON configuration. If not provided, all telemetry features will be enabled by default.
 
@@ -202,6 +202,7 @@ The configuration follows this JSON schema:
 This project includes comprehensive test suites. For detailed testing instructions, troubleshooting, and contributor guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md#testing).
 
 **Quick Test Command:**
+
 ```bash
 xcodebuild test -scheme aws-otel-swift-Package -destination 'platform=iOS Simulator,name=iPhone 16'
 ```

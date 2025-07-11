@@ -4,7 +4,7 @@ import Foundation
 /// Provides thread-safe access to session information and handles session lifecycle.
 /// Sessions are automatically extended on access and persisted to UserDefaults.
 public class AwsSessionManager {
-  private var sessionLength: Int
+  private var sessionTimeout: Int
   private var session: AwsSession?
   private var lock = NSLock()
 
@@ -15,17 +15,17 @@ public class AwsSessionManager {
   public static var defaultSessionLength: Int = 30 * 60
 
   /// Initializes the session manager and restores any previous session from disk
-  /// - Parameter sessionLength: Duration in seconds for session validity
-  init(sessionLength: Int? = defaultSessionLength
+  /// - Parameter sessionTimeout: Duration in seconds for session validity
+  init(sessionTimeout: Int? = defaultSessionLength
   ) {
-    self.sessionLength = sessionLength!
+    self.sessionTimeout = sessionTimeout!
     restoreSessionFromDisk()
   }
 
   /// Configures the session manager with new settings at runtime
-  /// - Parameter sessionLength: New session length in seconds, or nil to use default
-  public func configure(sessionLength: Int?) {
-    self.sessionLength = sessionLength ?? AwsSessionManager.defaultSessionLength
+  /// - Parameter sessionTimeout: New session length in seconds, or nil to use default
+  public func configure(sessionTimeout: Int?) {
+    self.sessionTimeout = sessionTimeout ?? AwsSessionManager.defaultSessionLength
     // Adjust existing session with the new length
     getSession()
   }
@@ -52,7 +52,7 @@ public class AwsSessionManager {
   private func startSession() {
     session = AwsSession(
       id: UUID().uuidString,
-      expires: Date(timeIntervalSinceNow: Double(sessionLength)),
+      expires: Date(timeIntervalSinceNow: Double(sessionTimeout)),
       previousId: session?.id
     )
   }
@@ -64,7 +64,7 @@ public class AwsSessionManager {
       startSession()
     } else {
       // Otherwise, extend the existing session
-      session = AwsSession(id: session!.id, expires: Date(timeIntervalSinceNow: Double(sessionLength)), previousId: session!.previousId)
+      session = AwsSession(id: session!.id, expires: Date(timeIntervalSinceNow: Double(sessionTimeout)), previousId: session!.previousId)
     }
     saveSessionToDisk()
   }

@@ -90,7 +90,7 @@ public class AwsOpenTelemetryRumBuilder {
   private init(config: AwsOpenTelemetryConfig) {
     self.config = config
     resource = Self.buildResource(config: config)
-    AwsSessionManager.shared.configure(sessionLength: config.rum.sessionLength)
+    AwsSessionManager.shared.configure(sessionTimeout: config.rum.sessionTimeout)
   }
 
   // MARK: - Instrumentation Methods
