@@ -159,6 +159,7 @@ class LoaderViewModel: ObservableObject {
     var currentTime = timeFormatter.string(from: Date())
     var session = AwsSessionManager.shared.peekSession()!
     var sessionId = session.id
+    var sessionPrevId = session.previousId ?? "nil"
     var sessionExpires = timeFormatter.string(from: session.expires)
     var sessionIsExpired = session.isExpired()
 
@@ -166,7 +167,8 @@ class LoaderViewModel: ObservableObject {
       "current_time=: \(currentTime)",
       "session.expires=\(sessionExpires)",
       "session.isExpired=\(sessionIsExpired)",
-      "session.id=\(sessionId)"
+      "session.id=\(sessionId)",
+      "session.previous_id=\(sessionPrevId)"
     ]
 
     resultMessage = lines.joined(separator: "\n")

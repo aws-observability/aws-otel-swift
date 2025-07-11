@@ -10,7 +10,8 @@ class AwsSessionSpanProcessor: SpanProcessor {
   /// Indicates that this processor doesn't need to be called when spans end
   var isEndRequired: Bool = false
   /// The attribute key used to store session ID in spans
-  var sessionSpanKey = "session.id"
+  var sessionIdKey = "session.id"
+  var prevSessionIdKey = "session.previous_id"
   /// Reference to the session manager for retrieving current session ID
   private var sessionManager: AwsSessionManager
 
@@ -25,7 +26,11 @@ class AwsSessionSpanProcessor: SpanProcessor {
   ///   - parentContext: The parent span context (unused)
   ///   - span: The span being started
   func onStart(parentContext: SpanContext?, span: ReadableSpan) {
-    span.setAttribute(key: sessionSpanKey, value: sessionManager.getSessionId())
+    let session = sessionManager.getSession()
+    span.setAttribute(key: sessionIdKey, value: session.id)
+    if session.previousId != nil {
+      span.setAttribute(key: prevSessionIdKey, value: session.previousId!)
+    }
   }
 
   /// Called when a span ends - no action needed for session tracking

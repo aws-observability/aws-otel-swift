@@ -4,7 +4,7 @@ import Foundation
 /// Provides thread-safe access to session information and handles session lifecycle.
 /// Sessions are automatically extended on access and persisted to UserDefaults.
 public class AwsSessionManager {
-  private var sessionLength: Double
+  private var sessionLength: Int
   private var session: AwsSession?
   private var lock = NSLock()
 
@@ -12,11 +12,11 @@ public class AwsSessionManager {
   public static var shared = AwsSessionManager()
 
   /// Default session length in seconds (30 minutes)
-  public static var defaultSessionLength: Double = 30 * 60
+  public static var defaultSessionLength: Int = 30 * 60
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter sessionLength: Duration in seconds for session validity
-  init(sessionLength: Double? = defaultSessionLength
+  init(sessionLength: Int? = defaultSessionLength
   ) {
     self.sessionLength = sessionLength!
     restoreSessionFromDisk()
@@ -24,7 +24,7 @@ public class AwsSessionManager {
 
   /// Configures the session manager with new settings at runtime
   /// - Parameter sessionLength: New session length in seconds, or nil to use default
-  public func configure(sessionLength: Double?) {
+  public func configure(sessionLength: Int?) {
     self.sessionLength = sessionLength ?? AwsSessionManager.defaultSessionLength
     // Adjust existing session with the new length
     getSession()
@@ -42,30 +42,18 @@ public class AwsSessionManager {
     }
   }
 
-  /// Gets the current session ID, creating or extending the session as needed
-  /// - Returns: The ID of the current active session
-  public func getSessionId() -> String {
-    return getSession().id
-  }
-
   /// Gets the current session without extending its expires time
   /// - Returns: The current session if one exists, nil otherwise
   public func peekSession() -> AwsSession? {
     return session
   }
 
-  /// Gets the current session ID without extending the session
-  /// - Returns: The current session ID if one exists, nil otherwise
-  public func peekSessionId() -> String? {
-    return session?.id
-  }
-
   /// Creates a new session with a unique identifier
-  /// - Parameter uid: Optional custom session ID, generates UUID if nil
-  private func startSession(uid: String? = nil) {
+  private func startSession() {
     session = AwsSession(
-      id: uid ?? UUID().uuidString,
-      expires: Date(timeIntervalSinceNow: sessionLength)
+      id: UUID().uuidString,
+      expires: Date(timeIntervalSinceNow: Double(sessionLength)),
+      previousId: session?.id
     )
   }
 
@@ -76,15 +64,15 @@ public class AwsSessionManager {
       startSession()
     } else {
       // Otherwise, extend the existing session
-      session = AwsSession(id: session!.id, expires: Date(timeIntervalSinceNow: sessionLength))
+      session = AwsSession(id: session!.id, expires: Date(timeIntervalSinceNow: Double(sessionLength)), previousId: session!.previousId)
     }
     saveSessionToDisk()
   }
 
-  /// Persists the current session to UserDefaults
+  /// Schedules the current session to be persisted to UserDefaults
   private func saveSessionToDisk() {
     if session != nil {
-      AwsSessionStore.save(session: session!)
+      AwsSessionStore.scheduleSave(session: session!)
     }
   }
 

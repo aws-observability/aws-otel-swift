@@ -18,7 +18,8 @@ final class AwsSessionSpanProcessorTests: XCTestCase {
   func testInitialization() {
     XCTAssertTrue(spanProcessor.isStartRequired)
     XCTAssertFalse(spanProcessor.isEndRequired)
-    XCTAssertEqual(spanProcessor.sessionSpanKey, "session.id")
+    XCTAssertEqual(spanProcessor.sessionIdKey, "session.id")
+    XCTAssertEqual(spanProcessor.prevSessionIdKey, "session.previous_id")
   }
 
   func testOnStartAddsSessionId() {
@@ -67,15 +68,57 @@ final class AwsSessionSpanProcessorTests: XCTestCase {
     spanProcessor.forceFlush(timeout: 5.0)
     // No assertions needed - just verify it doesn't crash
   }
+
+  func testOnStartAddsPreviousSessionId() {
+    let expectedSessionId = "current-session-123"
+    let expectedPreviousSessionId = "previous-session-456"
+    mockSessionManager.sessionId = expectedSessionId
+    mockSessionManager.previousSessionId = expectedPreviousSessionId
+
+    spanProcessor.onStart(parentContext: nil, span: mockSpan)
+
+    if case let .string(sessionId) = mockSpan.capturedAttributes["session.id"] {
+      XCTAssertEqual(sessionId, expectedSessionId)
+    } else {
+      XCTFail("Expected session.id attribute to be a string value")
+    }
+
+    if case let .string(previousSessionId) = mockSpan.capturedAttributes["session.previous_id"] {
+      XCTAssertEqual(previousSessionId, expectedPreviousSessionId)
+    } else {
+      XCTFail("Expected session.previous_id attribute to be a string value")
+    }
+  }
+
+  func testOnStartWithoutPreviousSessionId() {
+    let expectedSessionId = "current-session-123"
+    mockSessionManager.sessionId = expectedSessionId
+    mockSessionManager.previousSessionId = nil
+
+    spanProcessor.onStart(parentContext: nil, span: mockSpan)
+
+    if case let .string(sessionId) = mockSpan.capturedAttributes["session.id"] {
+      XCTAssertEqual(sessionId, expectedSessionId)
+    } else {
+      XCTFail("Expected session.id attribute to be a string value")
+    }
+
+    XCTAssertNil(mockSpan.capturedAttributes["session.previous_id"], "Previous session ID should not be set when nil")
+  }
 }
 
 // MARK: - Mock Classes
 
 class MockSessionManager: AwsSessionManager {
   var sessionId: String = "default-session-id"
+  var previousSessionId: String?
 
-  override func getSessionId() -> String {
-    return sessionId
+  override func getSession() -> AwsSession {
+    return AwsSession(
+      id: sessionId,
+      expires: Date(timeIntervalSinceNow: 1800),
+      previousId: previousSessionId
+    )
   }
 }
 
