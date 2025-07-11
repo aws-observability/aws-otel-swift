@@ -21,7 +21,7 @@ public struct AwsSession: Equatable {
     self.previousId = previousId
   }
 
-  /// Two sessions are considered equal if they have the same ID
+  /// Two sessions are considered equal if they have the same ID, prevID, and expiry timestamp
   /// - Parameters:
   ///   - lhs: Left-hand side session
   ///   - rhs: Right-hand side session

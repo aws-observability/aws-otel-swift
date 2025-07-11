@@ -11,6 +11,7 @@ class AwsSessionSpanProcessor: SpanProcessor {
   var isEndRequired: Bool = false
   /// The attribute key used to store session ID in spans
   var sessionIdKey = "session.id"
+  /// The attribute key used to store the previous session ID in spans
   var prevSessionIdKey = "session.previous_id"
   /// Reference to the session manager for retrieving current session ID
   private var sessionManager: AwsSessionManager

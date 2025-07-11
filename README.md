@@ -32,10 +32,10 @@ targets: [
         name: "YourAppTarget",
         dependencies: [
             .product(name: "AwsOpenTelemetryCore", package: "aws-otel-swift")
-
+            
             // Only for automatic initialization
             .product(name: "AwsOpenTelemetryAgent", package: "aws-otel-swift"),
-
+            
             // Other dependencies...
         ]
     )
