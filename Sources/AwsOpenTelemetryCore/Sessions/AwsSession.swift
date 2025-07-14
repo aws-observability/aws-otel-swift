@@ -14,7 +14,7 @@ public struct AwsSession: Equatable {
   /// - Parameters:
   ///   - id: Unique identifier for the session
   ///   - expires: Expiration time for the session
-  /// .  - previousId: Unique identifier of the user's previous session, if any
+  ///   - previousId: Unique identifier of the user's previous session, if any
   public init(id: String, expires: Date, previousId: String? = nil) {
     self.id = id
     self.expires = expires

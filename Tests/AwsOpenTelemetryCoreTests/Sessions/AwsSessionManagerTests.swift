@@ -10,7 +10,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   override func tearDown() {
-    AwsSessionStore.teardown()
+    AwsSessionStore.testOnlyTeardown()
     super.tearDown()
   }
 

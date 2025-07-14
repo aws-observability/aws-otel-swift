@@ -68,17 +68,6 @@ final class AwsSessionTests: XCTestCase {
     XCTAssertEqual(session.expires, expires)
   }
 
-  func testSessionWithoutPreviousId() {
-    let id = "current-session"
-    let expires = Date(timeIntervalSinceNow: 1800)
-
-    let session = AwsSession(id: id, expires: expires)
-
-    XCTAssertEqual(session.id, id)
-    XCTAssertNil(session.previousId)
-    XCTAssertEqual(session.expires, expires)
-  }
-
   func testSessionInequalityWithDifferentPreviousId() {
     let id = "test-session"
     let expires = Date()

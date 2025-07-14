@@ -7,13 +7,20 @@ class AwsSessionStore {
   static let idKey = "aws-rum-session-id"
   /// UserDefaults key for storing previous session ID
   static let previousIdKey = "aws-rum-session-previous-id"
-  /// UserDefaults key for storing session expires
+  /// UserDefaults key for storing session expiry timestamp
   static let expiryKey = "aws-rum-session-expires"
 
+  /// To avoid writing to disk too often, AwsSessionStore only keeps the current session
+  /// in memory and saves to disk on an interval (every 30 seconds).
+
+  /// The most recent session to be saved to disk
   private static var pendingSession: AwsSession?
+  /// The previous session
   private static var prevSession: AwsSession?
-  private static var saveTimer: Timer?
+  /// The interval period after which the current session is saved to disk
   private static let saveInterval: TimeInterval = 30 // in seconds
+  /// The timer responsible for saving the currenet session to disk
+  private static var saveTimer: Timer?
 
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save
@@ -26,6 +33,7 @@ class AwsSessionStore {
 
       // save future sessions on a interval
       saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
+        // only write to disk if it is a new sesssion
         if pendingSession != nil, prevSession != pendingSession {
           saveImmediately(session: pendingSession!)
         }
@@ -56,12 +64,14 @@ class AwsSessionStore {
       return nil
     }
 
+    // reset sessions so it does not get overridden in the next scheduled save
+    pendingSession = nil
     prevSession = AwsSession(id: id, expires: expires, previousId: UserDefaults.standard.string(forKey: previousIdKey))
     return prevSession
   }
 
   /// Cleans up timer and UserDefaults for testing
-  static func teardown() {
+  static func testOnlyTeardown() {
     saveTimer?.invalidate()
     saveTimer = nil
     pendingSession = nil

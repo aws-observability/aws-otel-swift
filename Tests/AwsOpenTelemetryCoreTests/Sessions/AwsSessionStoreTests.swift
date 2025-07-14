@@ -7,7 +7,7 @@ final class AwsSessionStoreTests: XCTestCase {
   }
 
   override func tearDown() {
-    AwsSessionStore.teardown()
+    AwsSessionStore.testOnlyTeardown()
     super.tearDown()
   }
 
@@ -120,7 +120,8 @@ final class AwsSessionStoreTests: XCTestCase {
     AwsSessionStore.saveImmediately(session: sessionWithoutPrevious)
 
     let loadedSession = AwsSessionStore.load()
-    XCTAssertNil(loadedSession?.previousId, "Previous ID should be removed when saving session with nil previousId")
+    XCTAssertNotNil(loadedSession, "Loaded session should not be nil")
+    XCTAssertNil(loadedSession!.previousId, "Previous ID should be removed when saving session with nil previousId")
   }
 
   func testScheduleSaveImmediatelySavesFirstSession() {
@@ -147,7 +148,7 @@ final class AwsSessionStoreTests: XCTestCase {
 
     XCTAssertNotNil(UserDefaults.standard.string(forKey: AwsSessionStore.idKey))
 
-    AwsSessionStore.teardown()
+    AwsSessionStore.testOnlyTeardown()
 
     XCTAssertNil(UserDefaults.standard.string(forKey: AwsSessionStore.idKey))
     XCTAssertNil(UserDefaults.standard.object(forKey: AwsSessionStore.expiryKey))
@@ -158,7 +159,7 @@ final class AwsSessionStoreTests: XCTestCase {
     let session = AwsSession(id: "test-session", expires: Date(timeIntervalSinceNow: 1800))
     AwsSessionStore.scheduleSave(session: session)
 
-    AwsSessionStore.teardown()
+    AwsSessionStore.testOnlyTeardown()
 
     let session2 = AwsSession(id: "test-session-2", expires: Date(timeIntervalSinceNow: 1800))
     AwsSessionStore.scheduleSave(session: session2)
