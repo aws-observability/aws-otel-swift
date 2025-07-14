@@ -71,13 +71,13 @@ public class AwsOpenTelemetryRumBuilder {
   public static func create(config: AwsOpenTelemetryConfig) throws -> AwsOpenTelemetryRumBuilder {
     // Check if the SDK is already initialized
     guard !AwsOpenTelemetryAgent.shared.isInitialized else {
-      print("[AwsOpenTelemetry] SDK is already initialized.")
+      AwsOpenTelemetryLogger.debug("SDK is already initialized.")
       throw AwsOpenTelemetryConfigError.alreadyInitialized
     }
 
     // Store the configuration in the shared instance
     AwsOpenTelemetryAgent.shared.configuration = config
-    print("[AwsOpenTelemetry] Creating builder with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
+    AwsOpenTelemetryLogger.info("Creating builder with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
 
     return AwsOpenTelemetryRumBuilder(config: config)
   }
@@ -172,7 +172,7 @@ public class AwsOpenTelemetryRumBuilder {
 
     // Mark the SDK as initialized
     AwsOpenTelemetryAgent.shared.isInitialized = true
-    print("[AwsOpenTelemetry] AwsOpenTelemetry initialized successfully")
+    AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
 
     // Apply all stored instrumentations after OpenTelemetry is fully initialized
     applyInstrumentations()
@@ -184,13 +184,13 @@ public class AwsOpenTelemetryRumBuilder {
    * Applies all stored instrumentations after OpenTelemetry is initialized.
    */
   private func applyInstrumentations() {
-    print("[AwsOpenTelemetry] Applying \(instrumentations.count) instrumentations")
+    AwsOpenTelemetryLogger.debug("Applying \(instrumentations.count) instrumentations")
 
     for instrumentation in instrumentations {
       instrumentation.apply()
     }
 
-    print("[AwsOpenTelemetry] All instrumentations applied successfully")
+    AwsOpenTelemetryLogger.debug("All instrumentations applied successfully")
   }
 
   // MARK: - Resource methods

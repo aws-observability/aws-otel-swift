@@ -32,7 +32,7 @@ import Foundation
    */
   @objc public static func loadJsonConfig() -> AwsOpenTelemetryConfig? {
     guard let configURL = Bundle.main.url(forResource: defaultConfigFileName, withExtension: nil) else {
-      print("[AwsOpenTelemetry] Configuration file \(defaultConfigFileName) not found in the main bundle")
+      AwsOpenTelemetryLogger.debug("Configuration file \(defaultConfigFileName) not found in the main bundle")
       return nil
     }
 
@@ -50,7 +50,7 @@ import Foundation
       let data = try Data(contentsOf: url)
       return try parseConfig(from: data)
     } catch {
-      print("[AwsOpenTelemetry] Failed to load configuration: \(error)")
+      AwsOpenTelemetryLogger.error("Failed to load configuration: \(error)")
       return nil
     }
   }

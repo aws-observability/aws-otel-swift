@@ -74,16 +74,16 @@ import Foundation
    */
   @objc @discardableResult
   func initialize(config: AwsOpenTelemetryConfig) -> Bool {
-    print("[AwsOpenTelemetry] Initializing with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
+    AwsOpenTelemetryLogger.info("Initializing with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
 
     do {
       try AwsOpenTelemetryRumBuilder.create(config: config).build()
       return true
     } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      print("[AwsOpenTelemetry] SDK is already initialized.")
+      AwsOpenTelemetryLogger.debug("SDK is already initialized.")
       return false
     } catch {
-      print("[AwsOpenTelemetry] Error starting OpenTelemetrySDK: \(error.localizedDescription)")
+      AwsOpenTelemetryLogger.error("Error starting OpenTelemetrySDK: \(error.localizedDescription)")
       return false
     }
   }

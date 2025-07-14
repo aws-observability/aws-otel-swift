@@ -129,7 +129,7 @@
 
       guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
             let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
-        print("[UIViewController] Error: Could not find viewDidLoad methods for swizzling")
+        AwsOpenTelemetryLogger.error("[UIViewController] Error: Could not find viewDidLoad methods for swizzling")
         return
       }
 
@@ -148,7 +148,7 @@
 
       guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
             let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
-        print("[UIViewController] Error: Could not find viewWillAppear methods for swizzling")
+        AwsOpenTelemetryLogger.error("[UIViewController] Error: Could not find viewWillAppear methods for swizzling")
         return
       }
 
@@ -167,7 +167,7 @@
 
       guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
             let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
-        print("[UIViewController] Error: Could not find viewDidAppear methods for swizzling")
+        AwsOpenTelemetryLogger.error("[UIViewController] Error: Could not find viewDidAppear methods for swizzling")
         return
       }
 
@@ -186,7 +186,7 @@
 
       guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
             let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
-        print("[UIViewController] Error: Could not find viewDidDisappear methods for swizzling")
+        AwsOpenTelemetryLogger.error("[UIViewController] Error: Could not find viewDidDisappear methods for swizzling")
         return
       }
 
