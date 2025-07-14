@@ -19,7 +19,7 @@ class AwsSessionStore {
   private static var prevSession: AwsSession?
   /// The interval period after which the current session is saved to disk
   private static let saveInterval: TimeInterval = 30 // in seconds
-  /// The timer responsible for saving the currenet session to disk
+  /// The timer responsible for saving the current session to disk
   private static var saveTimer: Timer?
 
   /// Schedules a session to be saved to UserDefaults on the next timer interval
