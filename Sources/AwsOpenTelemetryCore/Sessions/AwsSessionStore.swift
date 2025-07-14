@@ -70,8 +70,8 @@ class AwsSessionStore {
     return prevSession
   }
 
-  /// Cleans up timer and UserDefaults for testing
-  static func testOnlyTeardown() {
+  /// Cleans up timer and UserDefaults
+  static func teardown() {
     saveTimer?.invalidate()
     saveTimer = nil
     pendingSession = nil
