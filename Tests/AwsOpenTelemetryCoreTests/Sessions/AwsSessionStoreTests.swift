@@ -7,7 +7,7 @@ final class AwsSessionStoreTests: XCTestCase {
   }
 
   override func tearDown() {
-    AwsSessionStore.testOnlyTeardown()
+    AwsSessionStore.teardown()
     super.tearDown()
   }
 
@@ -148,7 +148,7 @@ final class AwsSessionStoreTests: XCTestCase {
 
     XCTAssertNotNil(UserDefaults.standard.string(forKey: AwsSessionStore.idKey))
 
-    AwsSessionStore.testOnlyTeardown()
+    AwsSessionStore.teardown()
 
     XCTAssertNil(UserDefaults.standard.string(forKey: AwsSessionStore.idKey))
     XCTAssertNil(UserDefaults.standard.object(forKey: AwsSessionStore.expiryKey))
@@ -159,7 +159,7 @@ final class AwsSessionStoreTests: XCTestCase {
     let session = AwsSession(id: "test-session", expires: Date(timeIntervalSinceNow: 1800))
     AwsSessionStore.scheduleSave(session: session)
 
-    AwsSessionStore.testOnlyTeardown()
+    AwsSessionStore.teardown()
 
     let session2 = AwsSession(id: "test-session-2", expires: Date(timeIntervalSinceNow: 1800))
     AwsSessionStore.scheduleSave(session: session2)
