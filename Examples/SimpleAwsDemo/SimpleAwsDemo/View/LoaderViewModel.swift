@@ -17,6 +17,8 @@ import Foundation
 import SwiftUI
 import AwsOpenTelemetryAuth
 import AWSCognitoIdentity
+import AwsOpenTelemetryCore
+import Combine
 
 /**
  * View model responsible for initializing AWS services and handling API calls.
@@ -35,11 +37,22 @@ class LoaderViewModel: ObservableObject {
   /// Message displayed to the user representing the result of AWS operations
   @Published var resultMessage: String = "AWS API results will appear here"
 
+  /// Timer for updating the digital clock
+  private var clockTimer: AnyCancellable?
+
   /// Instance of the AWS service handler (non-observable)
   private(set) var awsServiceHandler: AwsServiceHandler?
 
   private let cognitoPoolId: String
   private let region: String
+
+  /// Date formatter for the digital clock
+  private let timeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm:ss"
+    formatter.timeZone = TimeZone(abbreviation: "UTC")
+    return formatter
+  }()
 
   /**
    * Initializes the view model with required AWS configuration
@@ -80,6 +93,7 @@ class LoaderViewModel: ObservableObject {
 
   /// Performs the "List S3 Buckets" operation and updates UI state
   func listS3Buckets() async {
+    stopClock()
     guard let awsServiceHandler else { return }
 
     isLoading = true
@@ -98,6 +112,7 @@ class LoaderViewModel: ObservableObject {
 
   /// Performs the "Get Cognito Identity" operation and updates UI state
   func getCognitoIdentityId() async {
+    stopClock()
     guard let awsServiceHandler else { return }
 
     isLoading = true
@@ -109,6 +124,68 @@ class LoaderViewModel: ObservableObject {
       resultMessage = "Cognito Identity ID: \(identityId)"
     } catch {
       resultMessage = "Error getting Cognito identity: \(error.localizedDescription)"
+    }
+  }
+
+  func showSessionDetails() {
+    resultMessage = "Session Details\n\n"
+
+    // Start the digital clock
+    startClock()
+  }
+
+  func renewSession() {
+    AwsSessionManager.shared.getSession()
+  }
+
+  /// Starts the digital clock timer
+  private func startClock() {
+    // Update time immediately
+    updateSessionDetails()
+
+    // Cancel existing timer if it exists
+    clockTimer?.cancel()
+
+    // Create a new timer that fires every second
+    clockTimer = Timer.publish(every: 1, on: .main, in: .common)
+      .autoconnect()
+      .sink { [weak self] _ in
+        self?.updateSessionDetails()
+      }
+  }
+
+  /// Updates the current time string
+  private func updateSessionDetails() {
+    var currentTime = timeFormatter.string(from: Date())
+    var session = AwsSessionManager.shared.peekSession()!
+    var sessionId = session.id
+    var sessionPrevId = session.previousId ?? "nil"
+    var sessionExpires = timeFormatter.string(from: session.expires)
+    var sessionIsExpired = session.isExpired()
+
+    var lines = [
+      "current_time=: \(currentTime)",
+      "session.expires=\(sessionExpires)",
+      "session.isExpired=\(sessionIsExpired)",
+      "session.id=\(sessionId)",
+      "session.previous_id=\(sessionPrevId)"
+    ]
+
+    resultMessage = lines.joined(separator: "\n")
+  }
+
+  /// Stops the digital clock timer
+  func stopClock() {
+    clockTimer?.cancel()
+    clockTimer = nil
+  }
+
+  // Teardown
+  deinit {
+    // Use Task to call MainActor-isolated method from deinit
+    Task { @MainActor in
+      clockTimer?.cancel()
+      clockTimer = nil
     }
   }
 }

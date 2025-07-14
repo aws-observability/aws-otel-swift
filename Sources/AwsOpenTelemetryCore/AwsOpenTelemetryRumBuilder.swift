@@ -90,6 +90,7 @@ public class AwsOpenTelemetryRumBuilder {
   private init(config: AwsOpenTelemetryConfig) {
     self.config = config
     resource = Self.buildResource(config: config)
+    AwsSessionManager.shared.configure(sessionTimeout: config.rum.sessionTimeout)
   }
 
   // MARK: - Instrumentation Methods
@@ -402,6 +403,7 @@ public class AwsOpenTelemetryRumBuilder {
       .add(spanProcessor: MultiSpanProcessor(
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
+      .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManager.shared))
       .with(resource: resource)
 
     // Apply all customizers in order
