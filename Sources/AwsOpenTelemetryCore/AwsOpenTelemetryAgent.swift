@@ -14,6 +14,7 @@
  */
 
 import Foundation
+import OpenTelemetryApi
 
 /**
  * The central agent for AWS OpenTelemetry SDK initialization and management.
@@ -30,6 +31,14 @@ import Foundation
  * If done more than once, only the first initialization will be successful.
  */
 @objc public class AwsOpenTelemetryAgent: NSObject {
+  /// The instrumentation name used to identify this AWS OpenTelemetry Swift SDK
+  /// when creating tracers and other telemetry components
+  static let name = "aws-otel-swift"
+
+  /// The version of the AWS OpenTelemetry Swift SDK instrumentation
+  /// This is automatically managed by scripts/bump-version.sh
+  static let version = "0.0.0"
+
   /// Shared singleton instance for global access to the AWS OpenTelemetry agent
   @objc public static let shared = AwsOpenTelemetryAgent()
 
@@ -104,5 +113,18 @@ import Foundation
     }
 
     return initialize(config: config)
+  }
+
+  /**
+   * Gets a tracer instance configured with AWS OpenTelemetry instrumentation details.
+   *
+   * This function returns a tracer from the global OpenTelemetry instance, automatically
+   * configured with the AWS OpenTelemetry Swift SDK's instrumentation name and version.
+   * The tracer can be used to create spans for distributed tracing.
+   *
+   * @return A Tracer instance configured with AWS instrumentation metadata
+   */
+  static func getTracer() -> Tracer {
+    return OpenTelemetry.instance.tracerProvider.get(instrumentationName: name, instrumentationVersion: version)
   }
 }

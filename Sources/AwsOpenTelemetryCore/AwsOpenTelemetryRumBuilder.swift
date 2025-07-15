@@ -138,8 +138,6 @@ public class AwsOpenTelemetryRumBuilder {
   @discardableResult
   public func build() throws -> Self {
     // AWS OpenTelemetry Swift SDK instrumentation constants
-    let instrumentationName = "aws-opentelemetry-swift"
-    let instrumentationVersion = "1.0.0"
 
     let tracesEndpoint = buildTracesEndpoint(config: config.rum)
     guard let tracesEndpointURL = URL(string: tracesEndpoint) else {
@@ -162,8 +160,7 @@ public class AwsOpenTelemetryRumBuilder {
     #if canImport(UIKit) && !os(watchOS)
       // Initialize view instrumentation (enabled by default)
       if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
-        let tracer = tracerProvider.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion)
-        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: tracer)
+        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: AwsOpenTelemetryAgent.getTracer())
         uiKitViewInstrumentation?.install()
 
         // Store the UIKitViewInstrumentation in the agent for global access
