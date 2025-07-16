@@ -58,6 +58,20 @@ import Foundation
     self.telemetry = telemetry
     super.init()
   }
+
+  // Custom decoder implementation to handle default values
+  public required init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+
+    version = try container.decodeIfPresent(String.self, forKey: .version)
+    rum = try container.decode(RumConfig.self, forKey: .rum)
+    application = try container.decode(ApplicationConfig.self, forKey: .application)
+
+    // Set default telemetry config if not present in JSON
+    telemetry = try container.decodeIfPresent(TelemetryConfig.self, forKey: .telemetry) ?? TelemetryConfig()
+
+    super.init()
+  }
 }
 
 /**
@@ -203,7 +217,7 @@ import Foundation
    *
    * @param isUiKitViewInstrumentationEnabled Enable UIKit view instrumentation
    */
-  @objc public init(isUiKitViewInstrumentationEnabled: Bool) {
+  @objc public init(isUiKitViewInstrumentationEnabled: Bool = true) {
     self.isUiKitViewInstrumentationEnabled = isUiKitViewInstrumentationEnabled
     super.init()
   }

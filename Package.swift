@@ -74,6 +74,10 @@ let package = Package(
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
+    ),
+    .testTarget(
+      name: "AwsOpenTelemetryAgentTests",
+      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
     )
   ]
 ).addPlatformSpecific()

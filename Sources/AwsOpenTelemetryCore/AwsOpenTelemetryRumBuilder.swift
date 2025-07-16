@@ -161,7 +161,7 @@ public class AwsOpenTelemetryRumBuilder {
       // Initialize view instrumentation (enabled by default)
       if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
         uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: AwsOpenTelemetryAgent.getTracer())
-        uiKitViewInstrumentation?.install()
+        uiKitViewInstrumentation!.install()
 
         // Store the UIKitViewInstrumentation in the agent for global access
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
