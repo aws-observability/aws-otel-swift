@@ -83,9 +83,11 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
 
     for url in urlsToExclude {
       if requestURL.hasPrefix(url) {
+        AwsOpenTelemetryLogger.debug("Excluding requestUrl=\(url)")
         return true
       }
     }
+    AwsOpenTelemetryLogger.debug("Recording requestUrl=\(url)")
     return false
   }
 }

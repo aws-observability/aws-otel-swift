@@ -85,8 +85,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
     }
     task.resume()
 
-    await fulfillment(of: [expectation], timeout: 10.0)
-    try await Task.sleep(nanoseconds: 1_000_000_000)
+    await fulfillment(of: [expectation], timeout: 10)
 
     let spans = spanProcessor.getFinishedSpans()
 
@@ -121,13 +120,11 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
   }
 
   func testApplyIdempotency() async throws {
-    // Test that calling apply() multiple times is safe
-    let rumConfig = RumConfig(
-      region: "eu-west-1",
-      appMonitorId: "test-idempotency"
-    )
-
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    // Use the shared instrumentation instance to ensure we're testing the same URLSession
+    guard let instrumentation = Self.sharedInstrumentation else {
+      XCTFail("Shared instrumentation should exist")
+      return
+    }
 
     // Should be safe to call apply() multiple times
     XCTAssertNoThrow({
@@ -157,8 +154,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
     }
     task.resume()
 
-    await fulfillment(of: [expectation], timeout: 10.0)
-    try await Task.sleep(nanoseconds: 2_000_000_000)
+    await fulfillment(of: [expectation], timeout: 10)
 
     let spans = spanProcessor.getFinishedSpans()
 

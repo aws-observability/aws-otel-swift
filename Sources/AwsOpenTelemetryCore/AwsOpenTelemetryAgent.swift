@@ -127,4 +127,8 @@ import OpenTelemetryApi
   static func getTracer() -> Tracer {
     return OpenTelemetry.instance.tracerProvider.get(instrumentationName: name, instrumentationVersion: version)
   }
+
+  static func getLogger() -> Logger {
+    return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: "\(name)-v\(version)")
+  }
 }

@@ -35,7 +35,7 @@ let package = Package(
         .product(name: "StdoutExporter", package: "opentelemetry-swift"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
       ],
-      exclude: ["AutoInstrumentation/UIKit/README.md"]
+      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -65,10 +65,19 @@ let package = Package(
       ],
       exclude: ["README.md"]
     ),
+    .target(
+      name: "TestUtils",
+      dependencies: [
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift")
+      ],
+      path: "Tests/TestUtils"
+    ),
     .testTarget(
       name: "AwsOpenTelemetryCoreTests",
       dependencies: [
         "AwsOpenTelemetryCore",
+        "TestUtils",
         .product(name: "Atomics", package: "swift-atomics")
       ]
     ),
