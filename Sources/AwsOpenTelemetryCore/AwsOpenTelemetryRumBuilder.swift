@@ -333,7 +333,8 @@ public class AwsOpenTelemetryRumBuilder {
   private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
     var rumResourceAttributes: [String: String] = [
       AwsRumConstants.AWS_REGION: config.rum.region,
-      AwsRumConstants.RUM_APP_MONITOR_ID: config.rum.appMonitorId
+      AwsRumConstants.RUM_APP_MONITOR_ID: config.rum.appMonitorId,
+      AwsRumConstants.RUM_SDK_VERSION: AwsOpenTelemetryAgent.version
     ]
 
     if config.rum.alias?.isEmpty == false {

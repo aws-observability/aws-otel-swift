@@ -30,4 +30,8 @@ public enum AwsRumConstants {
 
   /// Attribute key for the RUM alias
   public static let RUM_ALIAS = "awsRumAlias"
+
+  /// SDK version
+  /// https://github.com/open-telemetry/opentelemetry-android/blob/52ac8adea62fac1206a2eeda97b4ef0ccdcaf95f/common/src/main/java/io/opentelemetry/android/common/RumConstants.java#L24
+  public static let RUM_SDK_VERSION = "rum.sdk.version"
 }
