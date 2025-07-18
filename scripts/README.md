@@ -62,7 +62,7 @@ The `bump-version.sh` script helps manage version updates for the AWS OpenTeleme
 ### Usage
 
 ```bash
-./scripts/bump-version.sh [major|minor|patch|VERSION]
+./scripts/bump-version.sh [major|minor|patch|VERSION] [--commit] [--tag] [--commit-tag]
 ```
 
 ### Options
@@ -71,15 +71,19 @@ The `bump-version.sh` script helps manage version updates for the AWS OpenTeleme
 - `minor` - Bump minor version (x.y.0)
 - `patch` - Bump patch version (x.y.z)
 - `2.1.3` - Set specific version (e.g., 2.1.3)
+- `--commit` - Automatically commit the version bump
+- `--tag` - Automatically create a git tag for the version
+- `--commit-tag` - Automatically commit and tag the version bump
 - '--help' - Prints details on how to use this script
 
 ### Examples
 
 ```bash
-./scripts/bump-version.sh patch      # 1.0.0 -> 1.0.1
-./scripts/bump-version.sh minor      # 1.0.0 -> 1.1.0
-./scripts/bump-version.sh major      # 1.0.0 -> 2.0.0
-./scripts/bump-version.sh 1.2.3      # Set version to 1.2.3
+./scripts/bump-version.sh patch                # 1.0.0 -> 1.0.1
+./scripts/bump-version.sh minor                # 1.0.0 -> 1.1.0
+./scripts/bump-version.sh major                # 1.0.0 -> 2.0.0
+./scripts/bump-version.sh 1.2.3                # Set version to 1.2.3
+./scripts/bump-version.sh patch --commit-tag   # Bump patch version, commit and tag
 ```
 
 ## Requirements

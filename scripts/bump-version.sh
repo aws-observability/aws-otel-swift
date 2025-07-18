@@ -25,19 +25,23 @@ print_color() {
 
 # Function to show usage
 show_usage() {
-    echo "Usage: $0 [major|minor|patch|VERSION]"
+    echo "Usage: $0 [major|minor|patch|VERSION] [--commit] [--tag] [--commit-tag]"
     echo ""
     echo "Options:"
-    echo "  major    Bump major version (x.0.0)"
-    echo "  minor    Bump minor version (x.y.0)"
-    echo "  patch    Bump patch version (x.y.z)"
-    echo "  VERSION  Set specific version (e.g., 2.1.3)"
+    echo "  major        Bump major version (x.0.0)"
+    echo "  minor        Bump minor version (x.y.0)"
+    echo "  patch        Bump patch version (x.y.z)"
+    echo "  VERSION      Set specific version (e.g., 2.1.3)"
+    echo "  --commit     Automatically commit the version bump"
+    echo "  --tag        Automatically create a git tag for the version"
+    echo "  --commit-tag Automatically commit and tag the version bump"
     echo ""
     echo "Examples:"
-    echo "  $0 patch      # 1.0.0 -> 1.0.1"
-    echo "  $0 minor      # 1.0.0 -> 1.1.0"
-    echo "  $0 major      # 1.0.0 -> 2.0.0"
-    echo "  $0 1.2.3      # Set version to 1.2.3"
+    echo "  $0 patch                # 1.0.0 -> 1.0.1"
+    echo "  $0 minor                # 1.0.0 -> 1.1.0"
+    echo "  $0 major                # 1.0.0 -> 2.0.0"
+    echo "  $0 1.2.3                # Set version to 1.2.3"
+    echo "  $0 patch --commit-tag   # Bump patch version, commit and tag"
 }
 
 # Function to validate semantic version format
@@ -164,11 +168,49 @@ update_version_in_readme_file() {
     update_version_in_file "$README_FILE" "$old_pattern" "$new_pattern"
 }
 
+# Function to commit and tag the version bump
+commit_and_tag_version() {
+    local version=$1
+    local do_commit=$2
+    local do_tag=$3
+    
+    if [[ "$do_commit" == true ]]; then
+        print_color $BLUE "Committing version bump..."
+        git add "$AGENT_FILE" "$README_FILE"
+        git commit -m "chore(release): v$version"
+        print_color $GREEN "✓ Committed version bump with message: 'chore(release): v$version'"
+    fi
+    
+    if [[ "$do_tag" == true ]]; then
+        print_color $BLUE "Creating git tag..."
+        git tag "v$version"
+        print_color $GREEN "✓ Created git tag: v$version"
+    fi
+}
+
 # Main function
 main() {
     local bump_arg=${1:-}
+    local do_commit=false
+    local do_tag=false
     
-    if [[ -z "$bump_arg" ]]; then
+    # Parse arguments
+    for arg in "$@"; do
+        case $arg in
+            --commit)
+                do_commit=true
+                ;;
+            --tag)
+                do_tag=true
+                ;;
+            --commit-tag)
+                do_commit=true
+                do_tag=true
+                ;;
+        esac
+    done
+    
+    if [[ -z "$bump_arg" || "$bump_arg" == "--commit" || "$bump_arg" == "--tag" || "$bump_arg" == "--commit-tag" ]]; then
         show_usage
         exit 1
     fi
@@ -243,10 +285,17 @@ main() {
         if [[ "$readme_success" == true ]]; then
             print_color $BLUE "  - $README_FILE (package dependency)"
         fi
-        print_color $BLUE "Don't forget to:"
-        print_color $BLUE "  1. Review the changes: git diff"
-        print_color $BLUE "  2. Commit the version bump: git add . && git commit -m 'chore(release): $new_version'"
-        print_color $BLUE "  3. Create a git tag: git tag v$new_version"
+        
+        # Commit and tag if requested
+        if [[ "$do_commit" == true || "$do_tag" == true ]]; then
+            commit_and_tag_version "$new_version" "$do_commit" "$do_tag"
+        else
+            print_color $BLUE "To commit and tag this version bump, you can:"
+            print_color $BLUE "  1. Review the changes: git diff"
+            print_color $BLUE "  2. Commit the version bump: git add . && git commit -m 'chore(release): v$new_version'"
+            print_color $BLUE "  3. Create a git tag: git tag v$new_version"
+            print_color $BLUE "Or run this script with --commit-tag option to do both automatically."
+        fi
     else
         print_color $RED "Version bump failed!"
         exit 1
