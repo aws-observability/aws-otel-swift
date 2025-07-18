@@ -426,7 +426,7 @@ public class AwsOpenTelemetryRumBuilder {
                                    resource: Resource) -> LoggerProvider {
     // Create initial builder
     let builder = LoggerProviderBuilder()
-      .with(processors: [SimpleLogRecordProcessor(logRecordExporter: logExporter)])
+      .with(processors: [BatchLogRecordProcessor(logRecordExporter: logExporter)])
       .with(resource: resource)
 
     // Apply all customizers in order
