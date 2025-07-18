@@ -197,4 +197,33 @@ final class AwsRumConfigReaderTests: XCTestCase {
     // Verify the configuration is nil
     XCTAssertNil(config)
   }
+
+  func testLoadConfigWithMissingTelemetry() throws {
+    // Create a temporary JSON file
+    let tempDir = FileManager.default.temporaryDirectory
+    let tempFileURL = tempDir.appendingPathComponent("test_config.json")
+
+    // Test that telemetry defaults when missing from JSON
+    let jsonString = """
+    {
+      "version": "1.0.0",
+      "rum": {
+        "region": "us-west-2",
+        "appMonitorId": "test-monitor"
+      },
+      "application": {
+        "applicationVersion": "1.0.0"
+      }
+    }
+    """
+
+    try jsonString.write(to: tempFileURL, atomically: true, encoding: .utf8)
+
+    let config = AwsRumConfigReader.loadConfig(from: tempFileURL)
+
+    // Should use default telemetry config when not present in JSON
+    XCTAssertNotNil(config)
+    XCTAssertNotNil(config!.telemetry)
+    XCTAssertTrue(config!.telemetry!.isUiKitViewInstrumentationEnabled, "Should default to enabled when telemetry not in JSON")
+  }
 }

@@ -138,8 +138,6 @@ public class AwsOpenTelemetryRumBuilder {
   @discardableResult
   public func build() throws -> Self {
     // AWS OpenTelemetry Swift SDK instrumentation constants
-    let instrumentationName = "aws-opentelemetry-swift"
-    let instrumentationVersion = "1.0.0"
 
     let tracesEndpoint = buildTracesEndpoint(config: config.rum)
     guard let tracesEndpointURL = URL(string: tracesEndpoint) else {
@@ -162,9 +160,8 @@ public class AwsOpenTelemetryRumBuilder {
     #if canImport(UIKit) && !os(watchOS)
       // Initialize view instrumentation (enabled by default)
       if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
-        let tracer = tracerProvider.get(instrumentationName: instrumentationName, instrumentationVersion: instrumentationVersion)
-        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: tracer)
-        uiKitViewInstrumentation?.install()
+        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: AwsOpenTelemetryAgent.getTracer())
+        uiKitViewInstrumentation!.install()
 
         // Store the UIKitViewInstrumentation in the agent for global access
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
@@ -336,7 +333,8 @@ public class AwsOpenTelemetryRumBuilder {
   private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
     var rumResourceAttributes: [String: String] = [
       AwsRumConstants.AWS_REGION: config.rum.region,
-      AwsRumConstants.RUM_APP_MONITOR_ID: config.rum.appMonitorId
+      AwsRumConstants.RUM_APP_MONITOR_ID: config.rum.appMonitorId,
+      AwsRumConstants.RUM_SDK_VERSION: AwsOpenTelemetryAgent.version
     ]
 
     if config.rum.alias?.isEmpty == false {

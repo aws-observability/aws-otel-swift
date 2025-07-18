@@ -29,7 +29,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(config.application.applicationVersion, appVersion)
 
     // Test default telemetry configuration
-    XCTAssertTrue(config.telemetry.isUiKitViewInstrumentationEnabled, "UIKit instrumentation should be enabled by default")
+    XCTAssertNotNil(config.telemetry, "Telemetry config should not be nil")
+    XCTAssertTrue(config.telemetry!.isUiKitViewInstrumentationEnabled, "UIKit instrumentation should be enabled by default")
   }
 
   func testFullConfigInitialization() {
@@ -56,7 +57,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(config.rum.alias, alias)
     XCTAssertEqual(config.rum.debug, debug)
     XCTAssertEqual(config.application.applicationVersion, appVersion)
-    XCTAssertFalse(config.telemetry.isUiKitViewInstrumentationEnabled, "Custom telemetry config should be respected")
+    XCTAssertNotNil(config.telemetry, "Telemetry config should not be nil")
+    XCTAssertFalse(config.telemetry!.isUiKitViewInstrumentationEnabled, "Custom telemetry config should be respected")
   }
 
   func testTelemetryConfigVariations() {
@@ -74,7 +76,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
       telemetry: disabledTelemetry
     )
 
-    XCTAssertFalse(configWithDisabled.telemetry.isUiKitViewInstrumentationEnabled)
+    XCTAssertNotNil(configWithDisabled.telemetry, "Telemetry config should not be nil")
+    XCTAssertFalse(configWithDisabled.telemetry!.isUiKitViewInstrumentationEnabled)
   }
 
   func testJSONSerialization() throws {
@@ -105,7 +108,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(decodedConfig.rum.overrideEndpoint?.traces, tracesEndpoint)
     XCTAssertEqual(decodedConfig.rum.debug, debug)
     XCTAssertEqual(decodedConfig.application.applicationVersion, appVersion)
-    XCTAssertFalse(decodedConfig.telemetry.isUiKitViewInstrumentationEnabled)
+    XCTAssertNotNil(decodedConfig.telemetry, "Telemetry config should not be nil")
+    XCTAssertFalse(decodedConfig.telemetry!.isUiKitViewInstrumentationEnabled)
   }
 
   func testJSONWithMissingTelemetry() throws {
@@ -128,7 +132,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     let config = try decoder.decode(AwsOpenTelemetryConfig.self, from: jsonData)
 
     // Should use default telemetry config when not present in JSON
-    XCTAssertTrue(config.telemetry.isUiKitViewInstrumentationEnabled, "Should default to enabled when telemetry not in JSON")
+    XCTAssertNotNil(config.telemetry, "Telemetry config should not be nil when not in JSON")
+    XCTAssertTrue(config.telemetry!.isUiKitViewInstrumentationEnabled, "UIKit instrumentation should be enabled by default")
   }
 
   func testEndpointOverrides() {
