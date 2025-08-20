@@ -160,6 +160,13 @@ public class AwsOpenTelemetryRumBuilder {
     AwsOpenTelemetryAgent.shared.isInitialized = true
     AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
 
+    // // Initialize SwiftUI instrumentation
+    // #if canImport(SwiftUI)
+    //   if #available(iOS 13, macOS 10.15, tvOS 13, watchOS 6.0, *) {
+    //     SwiftUIInstrumentation.shared.initialize(with: config.telemetry)
+    //   }
+    // #endif
+
     buildInstrumentations(plan: instrumentationPlan)
 
     return self

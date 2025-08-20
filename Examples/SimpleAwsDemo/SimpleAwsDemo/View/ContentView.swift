@@ -14,6 +14,7 @@
  */
 
 import SwiftUI
+import AwsOpenTelemetryCore
 
 /**
  * Main app view that allows users to trigger AWS operations like
@@ -135,14 +136,14 @@ struct ContentView: View {
         }
         .accessibilityIdentifier("SampleScrollView")
 
-        // Fixed result display at bottom
-        VStack {
-          if viewModel.isLoading {
-            ProgressView()
-              .padding(.top, 8)
-          }
+        // Result Display
+        ScrollView {
+          VStack {
+            if viewModel.isLoading {
+              ProgressView()
+                .padding()
+            }
 
-          ScrollView {
             Text(viewModel.resultMessage)
               .frame(maxWidth: .infinity, alignment: .leading)
               .padding()
