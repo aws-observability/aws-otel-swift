@@ -1,0 +1,50 @@
+# AWS OpenTelemetry CodeQL - Code Quality checks
+# Runs SwiftFormat and SwiftLint on changed files
+# Triggered on: PR creation/updates, manual dispatch
+
+name: CodeQL
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  FormattingLint:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+      - name: SwiftFormat
+        run: |
+          git fetch origin main
+          swift_files=$(git diff --name-only origin/main...HEAD | grep '\.swift$' || true)
+          if [ -n "$swift_files" ]; then
+            swiftformat --lint $swift_files --reporter github-actions-log
+          else
+            echo "No Swift files to check"
+          fi
+
+  SwiftLint:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - name: SwiftLint
+        run: |
+          git fetch origin main
+          swift_files=$(git diff --name-only origin/main...HEAD | grep '\.swift$' || true)
+          if [ -n "$swift_files" ]; then
+            swiftlint lint --strict $swift_files
+          else
+            echo "No Swift files to check"
+          fi

@@ -1,68 +1,126 @@
+# AWS OpenTelemetry Swift - Build and Test Pipeline
+# Runs builds and tests on iOS, watchOS, and macOS
+# (visionOS not supported by aws-sdk-swift)
+# Triggered on: PR creation/updates, manual dispatch
+
 name: Build and Test
 
-on: 
+on:
   pull_request:
     types: [opened, synchronize]
   workflow_dispatch:
 
-jobs:
-  FormattingLint: 
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1.2.0
-      - name: SwiftFormat
-        run: |
-          base_branch="${{ github.base_ref }}"
-          echo "swiftformat --lint $(git diff --name-only origin/$base_branch...HEAD) --reporter github-actions-log"
+permissions:
+  contents: read
 
-  SwiftLint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@50fbc622fc4ef5163becd7fab6573eac35f8462e # v1.2.0
-      - name: GitHub Action for SwiftLint (Only files changed in the PR)
-        uses: norio-nomura/action-swiftlint@9f4dcd7fd46b4e75d7935cf2f4df406d5cae3684 # 3.2.1
-        env:
-          args: --strict
-          DIFF_BASE: ${{ github.base_ref }}
+jobs:
   macOS:
+    name: macOS (with coverage)
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    - name: Build and Test for macOS
-      run: swift test --enable-code-coverage
-    - name: Upload Code coverage
-      run: |
-        curl -Os https://uploader.codecov.io/latest/macos/codecov
-        chmod +x codecov
-        xcrun llvm-cov export -ignore-filename-regex="pb\.swift|grpc\.swift" -format="lcov" .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata > .build/debug/codecov/coverage_report.lcov
-        ./codecov -f .build/debug/codecov/coverage_report.lcov
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Build and Test
+        run: |
+          swift test --enable-code-coverage
+          xcrun llvm-cov report .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata --format=text > coverage.txt
+      - name: Check Repository Coverage
+        run: |
+          grep "^Sources/" coverage.txt
+          # Filter only Sources directory files and calculate coverage
+          sources_coverage=$(grep "^Sources/" coverage.txt | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
+          echo "Sources directory code coverage: ${sources_coverage}%"
+          if (( $(echo "$sources_coverage < 70" | bc -l) )); then
+            echo "❌ Sources coverage ${sources_coverage}% is below minimum threshold of 70%"
+            exit 1
+          else
+            echo "✅ Sources coverage ${sources_coverage}% meets minimum threshold of 70%"
+          fi
+      - name: Check PR Coverage
+        run: |
+          # Get changed Swift files in Sources directory
+          git fetch origin main
+          changed_sources=$(git diff --name-only origin/main...HEAD | grep '^Sources/.*\.swift$' || true)
+
+          if [ -n "$changed_sources" ]; then
+            echo "Checking coverage for changed files:"
+            echo "$changed_sources"
+            echo "Coverage for changed files:"
+            echo "$changed_sources" | while read file; do grep "^$file" coverage.txt || true; done
+            
+            # Calculate coverage for changed files only
+            changed_coverage=$(echo "$changed_sources" | while read file; do grep "^$file" coverage.txt || true; done | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
+            echo "Changed files coverage: ${changed_coverage}%"
+            
+            if (( $(echo "$changed_coverage < 70" | bc -l) )); then
+              echo "❌ Changed files coverage ${changed_coverage}% is below minimum threshold of 70%"
+              exit 1
+            else
+              echo "✅ Changed files coverage ${changed_coverage}% meets minimum threshold of 70%"
+            fi
+          else
+            echo "No Swift files changed in Sources directory"
+          fi
+
   iOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    - name: Install Homebrew kegs
-      run: make setup-brew
-    - name: Build for iOS
-      run: make build-for-testing-ios
-    - name: Test for iOS
-      run: make test-without-building-ios
+      - uses: actions/checkout@v5
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for iOS
+        run: make build-for-testing-ios
+      - name: Test for iOS
+        run: make test-without-building-ios
+
   tvOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    - name: Install Homebrew kegs
-      run: make setup-brew
-    - name: Build for tvOS
-      run: make build-for-testing-tvos
-    - name: Test for tvOS
-      run: make test-without-building-tvos
+      - uses: actions/checkout@v5
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for tvOS
+        run: make build-for-testing-tvos
+      - name: Test for tvOS
+        run: make test-without-building-tvos
+
   watchOS:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
-    - name: Install Homebrew kegs
-      run: make setup-brew
-    - name: Build for watchOS
-      run: make build-for-testing-watchos
-    - name: Test for watchOS
-      run: make test-without-building-watchos
+      - uses: actions/checkout@v5
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for watchOS
+        run: make build-for-testing-watchos
+      - name: Test for watchOS
+        run: make test-without-building-watchos
+# visionOS:
+#   Temporarily disabled due to dependency compatibility issues with aws-sdk-swift
+#   https://github.com/awslabs/aws-sdk-swift/blob/main/Package.swift#L493-L500
+#
+# visionOS:
+#   runs-on: macos-15
+#   steps:
+#     - uses: actions/checkout@v5
+#     - uses: maxim-lobanov/setup-xcode@v1
+#       with:
+#         xcode-version: latest-stable
+#     - name: Install Homebrew kegs
+#       run: make setup-brew
+#     - name: Build for visionOS
+#       run: make build-for-testing-visionos
+#     - name: Test for visionOS
+#       run: make test-without-building-visionos
