@@ -81,11 +81,9 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
 
     let requestURL = url.absoluteString
 
-    for url in urlsToExclude {
-      if requestURL.hasPrefix(url) {
-        AwsOpenTelemetryLogger.debug("Excluding requestUrl=\(url)")
-        return true
-      }
+    for url in urlsToExclude where requestURL.hasPrefix(url) {
+      AwsOpenTelemetryLogger.debug("Excluding requestUrl=\(url)")
+      return true
     }
     AwsOpenTelemetryLogger.debug("Recording requestUrl=\(url)")
     return false
