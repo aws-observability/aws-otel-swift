@@ -171,7 +171,7 @@ class MockReadableSpan: ReadableSpan {
   }
 
   func setAttribute(key: String, value: AttributeValue?) {
-    if let value = value {
+    if let value {
       capturedAttributes[key] = value
     }
   }
