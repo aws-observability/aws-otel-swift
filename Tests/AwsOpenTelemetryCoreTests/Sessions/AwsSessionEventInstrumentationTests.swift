@@ -329,4 +329,109 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
     XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
   }
+
+  // MARK: - Max Queue Size Tests
+
+  func testMaxQueueSizeConstant() {
+    XCTAssertEqual(AwsSessionEventInstrumentation.maxQueueSize, 20)
+  }
+
+  func testQueueEnforcesMaxSize() {
+    // Add sessions up to max capacity
+    for i in 1 ... 20 {
+      let session = AwsSession(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      AwsSessionEventInstrumentation.addSession(session: session)
+    }
+
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 20)
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.first?.id, "session-1")
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.last?.id, "session-20")
+  }
+
+  func testQueueDropsNewEventsWhenExceedingMaxSize() {
+    // Add sessions beyond max capacity
+    for i in 1 ... 25 {
+      let session = AwsSession(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      AwsSessionEventInstrumentation.addSession(session: session)
+    }
+
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 20)
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.first?.id, "session-1")
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.last?.id, "session-20")
+  }
+
+  func testMaxQueueSizeWithMixedSessionTypes() {
+    // Add mix of active and expired sessions beyond max capacity
+    for i in 1 ... 25 {
+      let session: AwsSession
+      if i % 3 == 0 {
+        // Every third session is expired
+        session = AwsSession(
+          id: "session-\(i)",
+          expireTime: Date().addingTimeInterval(-3600)
+        )
+      } else {
+        session = AwsSession(
+          id: "session-\(i)",
+          expireTime: Date().addingTimeInterval(3600)
+        )
+      }
+      AwsSessionEventInstrumentation.addSession(session: session)
+    }
+
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 20)
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.first?.id, "session-1")
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.last?.id, "session-20")
+  }
+
+  func testQueueDoesNotEnforceMaxSizeAfterInstrumentationApplied() {
+    let _ = AwsSessionEventInstrumentation()
+
+    // Add sessions after instrumentation is applied
+    for i in 1 ... 15 {
+      let session = AwsSession(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      AwsSessionEventInstrumentation.addSession(session: session)
+    }
+
+    // Queue should remain empty as sessions are processed via notifications
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
+
+    // All sessions should be processed
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 15)
+  }
+
+  func testProcessingQueuedSessionsAfterMaxSizeEnforcement() {
+    // Add sessions beyond max capacity
+    for i in 1 ... 25 {
+      let session = AwsSession(
+        id: "session-\(i)",
+        expireTime: Date().addingTimeInterval(3600)
+      )
+      AwsSessionEventInstrumentation.addSession(session: session)
+    }
+
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 20)
+
+    // Apply instrumentation to process queued sessions
+    let _ = AwsSessionEventInstrumentation()
+
+    // Only the first 20 sessions should be processed (sessions 21-25 were dropped)
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 20)
+
+    // Verify the first processed session is session-1 (first added)
+    XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string("session-1"))
+    // Verify the last processed session is session-20 (last one that fit in queue)
+    XCTAssertEqual(logRecords[19].attributes["session.id"], AttributeValue.string("session-20"))
+  }
 }

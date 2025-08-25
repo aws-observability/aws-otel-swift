@@ -23,7 +23,11 @@ public class AwsSessionEventInstrumentation {
   /// Queue for storing sessions that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
   /// the OpenTelemetry SDK is fully initialized.
+  /// Limited to 10 items to prevent memory issues.
   static var queue: [AwsSession] = []
+
+  /// Maximum number of sessions that can be queued before instrumentation is applied
+  static let maxQueueSize = 20
 
   /// Notification name for new session events.
   /// Used to broadcast session creation and expiration events after instrumentation is applied.
@@ -161,7 +165,7 @@ public class AwsSessionEventInstrumentation {
   /// Add a session to the queue or send notification if instrumentation is already applied.
   ///
   /// This static method is the main entry point for handling new sessions. It either:
-  /// - Adds the session to the static queue if instrumentation hasn't been applied yet
+  /// - Adds the session to the static queue if instrumentation hasn't been applied yet (max 10 items)
   /// - Posts a notification with the session if instrumentation has been applied
   ///
   /// - Parameter session: The session to process
@@ -175,6 +179,10 @@ public class AwsSessionEventInstrumentation {
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
+      if queue.count >= maxQueueSize {
+        AwsOpenTelemetryLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping new session: \(session.id)")
+        return
+      }
       AwsOpenTelemetryLogger.debug("Queueing session event for later processing: \(session.id)")
       queue.append(session)
     }
