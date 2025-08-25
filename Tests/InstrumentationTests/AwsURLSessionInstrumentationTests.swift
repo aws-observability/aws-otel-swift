@@ -26,7 +26,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
   static var sharedSpanProcessor: TestSpanProcessor?
   static var sharedTracerProvider: TracerProvider?
 
-  override class func setUp() {
+  override static func setUp() {
     super.setUp()
 
     // Create shared span processor
@@ -50,7 +50,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
     sharedInstrumentation?.apply()
   }
 
-  override class func tearDown() {
+  override static func tearDown() {
     sharedInstrumentation = nil
     sharedSpanProcessor = nil
     sharedTracerProvider = nil
