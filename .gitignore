@@ -101,3 +101,6 @@ iOSInjectionProject/
 
 ## Local Development with OpenTelemetry Collector
 Examples/out/
+
+## Check coverage
+coverage.txt

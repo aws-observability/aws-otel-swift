@@ -10,6 +10,7 @@ let package = Package(
     .macOS(.v12),
     .tvOS(.v13),
     .watchOS(.v6)
+    // .visionOS(.v1) // not supported by aws-sdk-swift
   ],
   products: [
     // Products define the executables and libraries a package produces, making them visible to other packages.
