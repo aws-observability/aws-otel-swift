@@ -16,6 +16,18 @@
 import Foundation
 import OpenTelemetryApi
 
+/// Enum to specify the type of session event
+public enum SessionEventType {
+  case start
+  case end
+}
+
+/// Represents a session event with its associated session and event type
+public struct AwsSessionEvent {
+  let session: AwsSession
+  let eventType: SessionEventType
+}
+
 /// Instrumentation for tracking and logging session lifecycle events.
 ///
 /// This class is responsible for creating OpenTelemetry log records for session start and end events.
@@ -30,11 +42,11 @@ import OpenTelemetryApi
 public class AwsSessionEventInstrumentation {
   private let logger: Logger
 
-  /// Queue for storing sessions that were created before instrumentation was initialized.
+  /// Queue for storing session events that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
   /// the OpenTelemetry SDK is fully initialized.
-  /// Limited to 10 items to prevent memory issues.
-  static var queue: [AwsSession] = []
+  /// Limited to 20 items to prevent memory issues.
+  static var queue: [AwsSessionEvent] = []
 
   /// Maximum number of sessions that can be queued before instrumentation is applied
   static let maxQueueSize = 20
@@ -69,8 +81,8 @@ public class AwsSessionEventInstrumentation {
       object: nil,
       queue: nil
     ) { notification in
-      if let session = notification.object as? AwsSession {
-        self.createSessionEvent(session: session)
+      if let sessionEvent = notification.object as? AwsSessionEvent {
+        self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
       }
     }
     AwsOpenTelemetryLogger.info("AwsSessionEventInstrumentation applied successfully")
@@ -82,31 +94,33 @@ public class AwsSessionEventInstrumentation {
   /// were created before the instrumentation was initialized. It creates log records
   /// for all queued sessions and then clears the queue.
   private func processQueuedSessions() {
-    let sessions = AwsSessionEventInstrumentation.queue
-    AwsOpenTelemetryLogger.debug("Processing \(sessions.count) queued sessions")
+    let sessionEvents = AwsSessionEventInstrumentation.queue
+    AwsOpenTelemetryLogger.debug("Processing \(sessionEvents.count) queued session events")
 
-    if sessions.isEmpty {
-      AwsOpenTelemetryLogger.debug("No queued sessions to process")
+    if sessionEvents.isEmpty {
+      AwsOpenTelemetryLogger.debug("No queued session events to process")
       return
     }
 
-    for session in sessions {
-      createSessionEvent(session: session)
+    for sessionEvent in sessionEvents {
+      createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
     }
 
     AwsSessionEventInstrumentation.queue.removeAll()
-    AwsOpenTelemetryLogger.debug("All queued sessions processed successfully")
+    AwsOpenTelemetryLogger.debug("All queued session events processed successfully")
   }
 
-  /// Create session start or end log record, depending on if the session is expired.
+  /// Create session start or end log record based on the specified event type.
   ///
-  /// This method routes the session to the appropriate handler based on its expiration status.
-  /// - Parameter session: The session to create an event for
-  private func createSessionEvent(session: AwsSession) {
-    if session.isExpired() {
-      createSessionEndEvent(session: session)
-    } else {
+  /// - Parameters:
+  ///   - session: The session to create an event for
+  ///   - eventType: The type of event to create (start or end)
+  private func createSessionEvent(session: AwsSession, eventType: SessionEventType) {
+    switch eventType {
+    case .start:
       createSessionStartEvent(session: session)
+    case .end:
+      createSessionEndEvent(session: session)
     }
   }
 
@@ -141,13 +155,9 @@ public class AwsSessionEventInstrumentation {
   /// end time, duration, and previous session ID (if available).
   /// - Parameter session: The expired session
   private func createSessionEndEvent(session: AwsSession) {
-    guard session.isExpired() else {
-      AwsOpenTelemetryLogger.debug("Skipping session.end event for non-expired session ID: \(session.id)")
-      return
-    }
-
     guard let endTime = session.endTime,
           let duration = session.duration else {
+      AwsOpenTelemetryLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
       return
     }
 
@@ -179,22 +189,22 @@ public class AwsSessionEventInstrumentation {
   /// - Posts a notification with the session if instrumentation has been applied
   ///
   /// - Parameter session: The session to process
-  static func addSession(session: AwsSession) {
+  static func addSession(session: AwsSession, eventType: SessionEventType) {
     if isApplied {
-      AwsOpenTelemetryLogger.debug("Posting notification for new session event: \(session.id)")
+      AwsOpenTelemetryLogger.debug("Posting notification for \(eventType) session event: \(session.id)")
       NotificationCenter.default.post(
         name: sessionEventNotification,
-        object: session
+        object: AwsSessionEvent(session: session, eventType: eventType)
       )
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
       if queue.count >= maxQueueSize {
-        AwsOpenTelemetryLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping new session: \(session.id)")
+        AwsOpenTelemetryLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping new session event: \(session.id)")
         return
       }
-      AwsOpenTelemetryLogger.debug("Queueing session event for later processing: \(session.id)")
-      queue.append(session)
+      AwsOpenTelemetryLogger.debug("Queueing \(eventType) session event for later processing: \(session.id)")
+      queue.append(AwsSessionEvent(session: session, eventType: eventType))
     }
   }
 }

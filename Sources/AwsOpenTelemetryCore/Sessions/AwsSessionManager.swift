@@ -60,8 +60,8 @@ public class AwsSessionManager {
     AwsOpenTelemetryLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
 
     /// Queue the previous session for a `session.end` event
-    if session != nil {
-      AwsSessionEventInstrumentation.addSession(session: session!)
+    if let previousSession = session {
+      AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
     }
 
     session = AwsSession(
@@ -73,7 +73,7 @@ public class AwsSessionManager {
     )
 
     // Queue the new session for a `session.start`` event
-    AwsSessionEventInstrumentation.addSession(session: session!)
+    AwsSessionEventInstrumentation.addSession(session: session!, eventType: .start)
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one

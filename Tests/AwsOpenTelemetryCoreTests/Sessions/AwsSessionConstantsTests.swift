@@ -10,6 +10,6 @@ final class AwsSessionConstantsTests: XCTestCase {
     XCTAssertEqual(AwsSessionConstants.startTime, "session.start_time")
     XCTAssertEqual(AwsSessionConstants.endTime, "session.end_time")
     XCTAssertEqual(AwsSessionConstants.duration, "session.duration")
-    XCTAssertEqual(AwsSessionConstants.sessionEventNotification, "AwsSessionEventInstrumentation.SessionEvent")
+    XCTAssertEqual(AwsSessionConstants.sessionEventNotification, "aws-otel-swift.AwsSessionEvent")
   }
 }

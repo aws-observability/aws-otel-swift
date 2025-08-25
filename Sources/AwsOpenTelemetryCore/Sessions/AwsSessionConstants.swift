@@ -43,5 +43,5 @@ public class AwsSessionConstants {
   // MARK: - Internal Constants
 
   /// Notification name for session events
-  public static let sessionEventNotification = "AwsSessionEventInstrumentation.SessionEvent"
+  public static let sessionEventNotification = "aws-otel-swift.AwsSessionEvent"
 }

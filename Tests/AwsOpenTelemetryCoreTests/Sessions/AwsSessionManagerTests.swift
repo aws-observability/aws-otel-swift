@@ -136,7 +136,7 @@ final class AwsSessionManagerTests: XCTestCase {
     let session = sessionManager.getSession()
 
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 1)
-    XCTAssertEqual(AwsSessionEventInstrumentation.queue[0].id, session.id)
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue[0].session.id, session.id)
   }
 
   func testStartSessionTriggersNotificationWhenInstrumentationApplied() {
@@ -144,14 +144,14 @@ final class AwsSessionManagerTests: XCTestCase {
     AwsSessionEventInstrumentation.isApplied = true
 
     let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSession: AwsSession?
+    var receivedSessionEvent: AwsSessionEvent?
 
     let observer = NotificationCenter.default.addObserver(
       forName: AwsSessionEventInstrumentation.sessionEventNotification,
       object: nil,
       queue: nil
     ) { notification in
-      receivedSession = notification.object as? AwsSession
+      receivedSessionEvent = notification.object as? AwsSessionEvent
       expectation.fulfill()
     }
 
@@ -159,8 +159,8 @@ final class AwsSessionManagerTests: XCTestCase {
 
     wait(for: [expectation], timeout: 0.1)
 
-    XCTAssertNotNil(receivedSession)
-    XCTAssertEqual(receivedSession?.id, session.id)
+    XCTAssertNotNil(receivedSessionEvent)
+    XCTAssertEqual(receivedSessionEvent?.session.id, session.id)
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
 
     NotificationCenter.default.removeObserver(observer)
