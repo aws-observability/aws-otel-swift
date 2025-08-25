@@ -91,7 +91,7 @@ public class AwsOpenTelemetryRumBuilder {
     self.config = config
     resource = Self.buildResource(config: config)
     // Configure session manager with timeout from config
-    let sessionConfig = AwsSessionConfiguration(sessionTimeout: config.rum.sessionTimeout ?? AwsSessionConfiguration.default.sessionTimeout)
+    let sessionConfig = AwsSessionConfig(sessionTimeout: config.rum.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
     let sessionManager = AwsSessionManager(configuration: sessionConfig)
     AwsSessionManagerProvider.register(sessionManager: sessionManager)
   }

@@ -14,7 +14,7 @@ final class AwsSessionManagerProviderTests: XCTestCase {
   }
 
   func testRegisterAndGetInstance() {
-    let customManager = AwsSessionManager(configuration: AwsSessionConfiguration(sessionTimeout: 3600))
+    let customManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 3600))
     AwsSessionManagerProvider.register(sessionManager: customManager)
 
     let retrievedManager = AwsSessionManagerProvider.getInstance()

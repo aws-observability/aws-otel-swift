@@ -429,7 +429,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testSessionManagerTenSessionChain() {
     let _ = AwsSessionEventInstrumentation()
-    let sessionManager = AwsSessionManager(configuration: AwsSessionConfiguration(sessionTimeout: 0))
+    let sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
 
     var sessions: [AwsSession] = []
 

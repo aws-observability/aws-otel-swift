@@ -19,13 +19,13 @@ import Foundation
 /// Provides thread-safe access to session information and handles session lifecycle.
 /// Sessions are automatically extended on access and persisted to UserDefaults.
 public class AwsSessionManager {
-  private var configuration: AwsSessionConfiguration
+  private var configuration: AwsSessionConfig
   private var session: AwsSession?
   private var lock = NSLock()
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
-  public init(configuration: AwsSessionConfiguration = .default) {
+  public init(configuration: AwsSessionConfig = .default) {
     AwsOpenTelemetryLogger.debug("Initializing AwsSessionManager with timeout: \(configuration.sessionTimeout)s")
     self.configuration = configuration
     restoreSessionFromDisk()

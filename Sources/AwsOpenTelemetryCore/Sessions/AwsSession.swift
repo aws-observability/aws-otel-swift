@@ -56,7 +56,7 @@ public struct AwsSession: Equatable {
               expireTime: Date,
               previousId: String? = nil,
               startTime: Date = Date(),
-              sessionTimeout: Int = AwsSessionConfiguration.default.sessionTimeout) {
+              sessionTimeout: Int = AwsSessionConfig.default.sessionTimeout) {
     self.id = id
     self.expireTime = expireTime
     self.previousId = previousId

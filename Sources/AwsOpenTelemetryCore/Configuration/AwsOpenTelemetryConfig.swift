@@ -131,7 +131,7 @@ import Foundation
     self.overrideEndpoint = overrideEndpoint
     self.debug = debug
     self.alias = alias
-    self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionConfiguration.default.sessionTimeout
+    self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionConfig.default.sessionTimeout
     super.init()
   }
 }

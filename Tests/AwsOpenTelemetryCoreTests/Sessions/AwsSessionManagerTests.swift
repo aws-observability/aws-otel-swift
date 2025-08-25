@@ -46,7 +46,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   func testGetSessionExpired() {
-    sessionManager = AwsSessionManager(configuration: AwsSessionConfiguration(sessionTimeout: 0))
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
     let session1 = sessionManager.getSession()
     Thread.sleep(forTimeInterval: 0.1)
     let session2 = sessionManager.getSession()
@@ -104,7 +104,7 @@ final class AwsSessionManagerTests: XCTestCase {
 
   func testCustomSessionLength() {
     let customLength = 60
-    sessionManager = AwsSessionManager(configuration: AwsSessionConfiguration(sessionTimeout: customLength))
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: customLength))
 
     let session1 = sessionManager.getSession()
     let expectedExpiry = Date(timeIntervalSinceNow: Double(customLength))
@@ -119,7 +119,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   func testExpiredSessionCreatesPreviousId() {
-    sessionManager = AwsSessionManager(configuration: AwsSessionConfiguration(sessionTimeout: 0))
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
     let firstSession = sessionManager.getSession()
     let secondSession = sessionManager.getSession()
     let thirdSession = sessionManager.getSession()
