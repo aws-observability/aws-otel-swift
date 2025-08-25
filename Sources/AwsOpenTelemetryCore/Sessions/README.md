@@ -40,6 +40,9 @@ AwsSessionManagerProvider.register(sessionManager: sessionManager)
 **Getting Session Information**:
 
 ```swift
+// Get globally registered session manager
+let sessionManager = AwsSessionManagerProvider.getInstance()
+
 // Get current session (extends session if active)
 let session = sessionManager.getSession()
 print("Session ID: \(session.id)")
@@ -47,6 +50,52 @@ print("Session ID: \(session.id)")
 // Peek at session without extending it
 if let session = sessionManager.peekSession() {
     print("Current session: \(session.id)")
+}
+```
+
+## Configuration
+
+### AwsSessionConfig
+
+| Field            | Type  | Description                                                        | Default         | Required |
+| ---------------- | ----- | ------------------------------------------------------------------ | --------------- | -------- |
+| `sessionTimeout` | `Int` | Duration in seconds after which a session expires if left inactive | `1800` (30 min) | No       |
+
+### Session Timeout Behavior
+
+- Sessions automatically expire after the configured timeout period of inactivity
+- Accessing a session via `getSession()` extends the expiration time
+- Expired sessions trigger `session.end` events and create new sessions with `previous_id` links
+
+## Session Events
+
+Emits OpenTelemetry log records following semantic conventions:
+
+**session.start Event**:
+
+```json
+{
+  "body": "session.start",
+  "attributes": {
+    "session.id": "550e8400-e29b-41d4-a716-446655440000",
+    "session.start_time": 1692123456.789,
+    "session.previous_id": "previous-session-id"
+  }
+}
+```
+
+**session.end Event**:
+
+```json
+{
+  "body": "session.end",
+  "attributes": {
+    "session.id": "550e8400-e29b-41d4-a716-446655440000",
+    "session.start_time": 1692123456.789,
+    "session.end_time": 1692125256.789,
+    "session.duration": 1800.0,
+    "session.previous_id": "previous-session-id"
+  }
 }
 ```
 
@@ -119,51 +168,12 @@ print("Expired: \(session.isExpired)")
 print("Duration: \(session.duration ?? 0)")
 ```
 
-## Configuration
+## Best Practices
 
-### AwsSessionConfig
-
-| Field            | Type  | Description                                                        | Default         | Required |
-| ---------------- | ----- | ------------------------------------------------------------------ | --------------- | -------- |
-| `sessionTimeout` | `Int` | Duration in seconds after which a session expires if left inactive | `1800` (30 min) | No       |
-
-### Session Timeout Behavior
-
-- Sessions automatically expire after the configured timeout period of inactivity
-- Accessing a session via `getSession()` extends the expiration time
-- Expired sessions trigger `session.end` events and create new sessions with `previous_id` links
-
-## Session Events
-
-Emits OpenTelemetry log records following semantic conventions:
-
-**session.start Event**:
-
-```json
-{
-  "body": "session.start",
-  "attributes": {
-    "session.id": "550e8400-e29b-41d4-a716-446655440000",
-    "session.start_time": 1692123456.789,
-    "session.previous_id": "previous-session-id"
-  }
-}
-```
-
-**session.end Event**:
-
-```json
-{
-  "body": "session.end",
-  "attributes": {
-    "session.id": "550e8400-e29b-41d4-a716-446655440000",
-    "session.start_time": 1692123456.789,
-    "session.end_time": 1692125256.789,
-    "session.duration": 1800.0,
-    "session.previous_id": "previous-session-id"
-  }
-}
-```
+1. **Use AwsSessionManagerProvider** - Register your session manager as a singleton for consistent access across your app
+2. **Configure Appropriate Timeouts** - Set session timeouts based on your app's usage patterns
+3. **Add Span Processor Early** - Register the AwsSessionSpanProcessor before creating spans
+4. **Handle Session Events** - Set up AwsSessionEventInstrumentation to capture session lifecycle
 
 ## Persistence
 
@@ -179,10 +189,3 @@ All components are designed for concurrent access:
 
 - `AwsSessionManager` uses locks for thread-safe session access
 - `AwsSessionStore` handles concurrent persistence operations safely
-
-## Best Practices
-
-1. **Use AwsSessionManagerProvider** - Register your session manager as a singleton for consistent access across your app
-2. **Configure Appropriate Timeouts** - Set session timeouts based on your app's usage patterns
-3. **Add Span Processor Early** - Register the AwsSessionSpanProcessor before creating spans
-4. **Handle Session Events** - Set up AwsSessionEventInstrumentation to capture session lifecycle
