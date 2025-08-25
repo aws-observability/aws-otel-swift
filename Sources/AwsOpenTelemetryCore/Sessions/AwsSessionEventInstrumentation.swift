@@ -134,7 +134,7 @@ public class AwsSessionEventInstrumentation {
 
     var attributes: [String: AttributeValue] = [
       AwsSessionConstants.id: AttributeValue.string(session.id),
-      AwsSessionConstants.startTime: AttributeValue.double(session.startTime.timeIntervalSince1970)
+      AwsSessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds))
     ]
 
     if let previousId = session.previousId {
@@ -165,9 +165,9 @@ public class AwsSessionEventInstrumentation {
 
     var attributes: [String: AttributeValue] = [
       AwsSessionConstants.id: AttributeValue.string(session.id),
-      AwsSessionConstants.startTime: AttributeValue.double(session.startTime.timeIntervalSince1970),
-      AwsSessionConstants.endTime: AttributeValue.double(endTime.timeIntervalSince1970),
-      AwsSessionConstants.duration: AttributeValue.double(duration)
+      AwsSessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds)),
+      AwsSessionConstants.endTime: AttributeValue.double(Double(endTime.timeIntervalSince1970.toNanoseconds)),
+      AwsSessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
     ]
 
     if let previousId = session.previousId {
