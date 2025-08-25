@@ -207,6 +207,13 @@ This project includes comprehensive test suites. For detailed testing instructio
 xcodebuild test -scheme aws-otel-swift-Package -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
+**Test Coverage:**
+
+```bash
+# Run tests with coverage analysis (requires 70% repository, 80% PR changes)
+make check-coverage
+```
+
 ## Development Setup
 
 ### Git Hooks

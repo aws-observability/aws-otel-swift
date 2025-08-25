@@ -48,6 +48,11 @@ XCODEBUILD_OPTIONS_WATCHOS=\
 setup-brew:  ## Install required tools (xcbeautify)
 	brew update && brew install xcbeautify
 
+# Coverage Commands
+.PHONY: check-coverage
+check-coverage:  ## Run tests with coverage and check thresholds
+	./scripts/check-coverage.sh
+
 # Build Commands - Compile code for each platform
 .PHONY: build-ios
 build-ios:  ## Build for iOS
