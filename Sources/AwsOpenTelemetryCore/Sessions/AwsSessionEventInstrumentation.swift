@@ -49,7 +49,7 @@ public class AwsSessionEventInstrumentation {
   static var queue: [AwsSessionEvent] = []
 
   /// Maximum number of sessions that can be queued before instrumentation is applied
-  static let maxQueueSize = 20
+  static let maxQueueSize: UInt8 = 32
 
   /// Notification name for new session events.
   /// Used to broadcast session creation and expiration events after instrumentation is applied.
