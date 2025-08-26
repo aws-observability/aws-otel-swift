@@ -382,9 +382,10 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testQueueDoesNotEnforceMaxSizeAfterInstrumentationApplied() {
     _ = AwsSessionEventInstrumentation()
+    let max: UInt8 = AwsSessionEventInstrumentation.maxQueueSize + 1
 
     // Add sessions after instrumentation is applied
-    for i in 1 ... 15 {
+    for i in 1 ... max {
       let session = AwsSession(
         id: "session-\(i)",
         expireTime: Date().addingTimeInterval(3600)
@@ -397,7 +398,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     // All sessions should be processed
     let logRecords = logExporter.getFinishedLogRecords()
-    XCTAssertEqual(logRecords.count, 15)
+    XCTAssertEqual(logRecords.count, Int(max))
   }
 
   func testProcessingQueuedSessionsAfterMaxSizeEnforcement() {
