@@ -103,7 +103,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return This builder instance for method chaining
    */
   @discardableResult
-  public func addInstrumentation<T: AwsOpenTelemetryInstrumentationProtocol>(_ instrumentation: T) -> Self {
+  public func addInstrumentation(_ instrumentation: some AwsOpenTelemetryInstrumentationProtocol) -> Self {
     instrumentations.append(instrumentation)
     return self
   }
@@ -402,6 +402,7 @@ public class AwsOpenTelemetryRumBuilder {
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManager.shared))
+      .add(spanProcessor: AwsUIDSpanProcessor())
       .with(resource: resource)
 
     // Apply all customizers in order
