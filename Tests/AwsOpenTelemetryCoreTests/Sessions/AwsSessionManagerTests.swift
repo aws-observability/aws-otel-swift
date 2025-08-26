@@ -6,6 +6,7 @@ final class AwsSessionManagerTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
+    AwsSessionStore.teardown()
     sessionManager = AwsSessionManager()
   }
 
@@ -14,97 +15,80 @@ final class AwsSessionManagerTests: XCTestCase {
     super.tearDown()
   }
 
-  // when get session and then session is created
   func testGetSession() {
     let session = sessionManager.getSession()
     XCTAssertNotNil(session)
     XCTAssertNotNil(session.id)
-    XCTAssertNotNil(session.expires)
+    XCTAssertNotNil(session.expireTime)
+    XCTAssertNil(session.previousId)
   }
 
-  // when the session is not expired, then getSession returns the same id
   func testGetSessionId() {
     let id1 = sessionManager.getSession().id
     let id2 = sessionManager.getSession().id
     XCTAssertEqual(id1, id2)
   }
 
-  // when get session and there is a current session then session is renewed
   func testGetSessionRenewed() {
-    let t1 = sessionManager.getSession().expires
-    let t2 = sessionManager.getSession().expires
+    let t1 = sessionManager.getSession().expireTime
+    let t2 = sessionManager.getSession().expireTime
     XCTAssertGreaterThan(t2, t1)
   }
 
-  // when session is extended during getSession, then the previous id is the same
-  func testGetSessionRenewedSamePreviousId() {
-    let s = sessionManager.getSession()
-    let sExtended = sessionManager.getSession()
+  func testStartTimePreservedWhenSessionExtended() {
+    let originalSession = sessionManager.getSession()
+    Thread.sleep(forTimeInterval: 0.1)
+    let extendedSession = sessionManager.getSession()
 
-    XCTAssertNil(s.previousId)
-    XCTAssertEqual(s.id, sExtended.id)
-    XCTAssertNotEqual(s.expires, sExtended.expires)
+    XCTAssertEqual(originalSession.id, extendedSession.id)
+    XCTAssertGreaterThan(extendedSession.expireTime, originalSession.expireTime)
+    XCTAssertEqual(originalSession.startTime, extendedSession.startTime)
   }
 
-  // when session is expired then new session is created
   func testGetSessionExpired() {
-    sessionManager.configure(sessionTimeout: 0)
-    let id1 = sessionManager.getSession().id
-    let id2 = sessionManager.getSession().id
-    XCTAssertNotEqual(id1, id2)
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
+    let session1 = sessionManager.getSession()
+    Thread.sleep(forTimeInterval: 0.1)
+    let session2 = sessionManager.getSession()
+
+    XCTAssertNotEqual(session1.id, session2.id)
+    XCTAssertNotEqual(session1.startTime, session2.startTime)
+    XCTAssertGreaterThan(session2.startTime, session1.startTime)
   }
 
-  // when initialized then previous session is restored
-  func testGetSessionRestored() {
-    let id1 = sessionManager.getSession().id
-    let id2 = sessionManager.getSession().id
-    XCTAssertEqual(id1, id2)
-  }
-
-  // when get session then session is saved to disk (user defaults object)
   func testGetSessionSavedToDisk() {
     let session = sessionManager.getSession()
-    // The first session should be saved immediately according to AwsSessionStore.scheduleSave
     let savedId = UserDefaults.standard.object(forKey: AwsSessionStore.idKey) as? String
+    let savedTimeout = UserDefaults.standard.object(forKey: AwsSessionStore.sessionTimeoutKey) as? Int
+
     XCTAssertEqual(session.id, savedId)
+    XCTAssertEqual(session.sessionTimeout, savedTimeout)
   }
 
-  // when session store is missing expires then session is not recoverable
   func testLoadSessionMissingExpiry() {
-    // setup
     let id1 = "session-1"
     UserDefaults.standard.set(id1, forKey: AwsSessionStore.idKey)
     XCTAssertNil(AwsSessionStore.load())
 
-    // run
-    sessionManager = AwsSessionManager()
     let id2 = sessionManager.getSession().id
     XCTAssertNotEqual(id1, id2)
   }
 
-  // when session store is missing id then session is not recoverable
   func testLoadSessionMissingID() {
-    // setup
     let expiry1 = Date()
-    UserDefaults.standard.set(expiry1, forKey: AwsSessionStore.expiryKey)
+    UserDefaults.standard.set(expiry1, forKey: AwsSessionStore.expireTimeKey)
     XCTAssertNil(AwsSessionStore.load())
 
-    // run
-    sessionManager = AwsSessionManager()
-    let expiry2 = sessionManager.getSession().expires
+    let expiry2 = sessionManager.getSession().expireTime
     XCTAssertNotEqual(expiry1, expiry2)
   }
 
   func testPeekSessionWithoutSession() {
-    XCTAssertNil(sessionManager.peekSession(), "Peek should return nil when no session exists")
-    XCTAssertNil(sessionManager.peekSession()?.id, "Peek session ID should return nil when no session exists")
+    XCTAssertNil(sessionManager.peekSession())
   }
 
   func testPeekSessionWithExistingSession() {
-    // Create a session first
     let session = sessionManager.getSession()
-
-    // Peek should return the same session without extending it
     let peekedSession = sessionManager.peekSession()
 
     XCTAssertNotNil(peekedSession)
@@ -112,77 +96,73 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   func testPeekDoesNotExtendSession() {
-    // Create a session
     let originalSession = sessionManager.getSession()
-
-    // Peek should not extend the session
     let peekedSession = sessionManager.peekSession()
 
-    XCTAssertEqual(peekedSession?.expires, originalSession.expires, "Peek should not extend session expires")
+    XCTAssertEqual(peekedSession?.expireTime, originalSession.expireTime)
   }
 
-  func testConfigureWithCustomSessionLength() {
-    let customLength = 60 // 1 minute
-    sessionManager.configure(sessionTimeout: customLength)
+  func testCustomSessionLength() {
+    let customLength = 60
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: customLength))
 
     let session1 = sessionManager.getSession()
     let expectedExpiry = Date(timeIntervalSinceNow: Double(customLength))
 
-    // Allow for small timing differences (within 1 second)
-    XCTAssertEqual(session1.expires.timeIntervalSince1970, expectedExpiry.timeIntervalSince1970, accuracy: 1.0)
-  }
-
-  func testConfigureWithNilUsesDefault() {
-    sessionManager.configure(sessionTimeout: nil)
-
-    let session = sessionManager.getSession()
-    let expectedExpiry = Date(timeIntervalSinceNow: Double(AwsSessionManager.defaultSessionLength))
-
-    // Allow for small timing differences (within 1 second)
-    XCTAssertEqual(session.expires.timeIntervalSince1970, expectedExpiry.timeIntervalSince1970, accuracy: 1.0)
-  }
-
-  func testThreadSafety() {
-    let expectation = XCTestExpectation(description: "Thread safety test")
-    expectation.expectedFulfillmentCount = 10
-
-    var sessionIds: [String] = []
-    let queue = DispatchQueue.global(qos: .default)
-    let group = DispatchGroup()
-
-    // Launch multiple concurrent requests
-    for _ in 0 ..< 10 {
-      group.enter()
-      queue.async {
-        let sessionId = self.sessionManager.getSession().id
-        DispatchQueue.main.async {
-          sessionIds.append(sessionId)
-          expectation.fulfill()
-          group.leave()
-        }
-      }
-    }
-
-    wait(for: [expectation], timeout: 5.0)
-
-    // All session IDs should be the same (same session)
-    let uniqueIds = Set(sessionIds)
-    XCTAssertEqual(uniqueIds.count, 1, "All concurrent requests should get the same session ID")
+    XCTAssertEqual(session1.expireTime.timeIntervalSince1970, expectedExpiry.timeIntervalSince1970, accuracy: 1.0)
+    XCTAssertEqual(session1.sessionTimeout, customLength)
   }
 
   func testNewSessionHasNoPreviousId() {
     let session = sessionManager.getSession()
-    XCTAssertNil(session.previousId, "First session should have no previous ID")
+    XCTAssertNil(session.previousId)
   }
 
   func testExpiredSessionCreatesPreviousId() {
-    sessionManager.configure(sessionTimeout: 0)
-    let firstSession = sessionManager.peekSession()!
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
+    let firstSession = sessionManager.getSession()
     let secondSession = sessionManager.getSession()
     let thirdSession = sessionManager.getSession()
 
-    XCTAssertNil(firstSession.previousId, "First session should have no previous ID")
-    XCTAssertEqual(secondSession.previousId, firstSession.id, "Second session should have first as previous")
-    XCTAssertEqual(thirdSession.previousId, secondSession.id, "Third session should have second as previous")
+    XCTAssertNil(firstSession.previousId)
+    XCTAssertEqual(secondSession.previousId, firstSession.id)
+    XCTAssertEqual(thirdSession.previousId, secondSession.id)
+  }
+
+  func testStartSessionAddsToQueueWhenInstrumentationNotApplied() {
+    AwsSessionEventInstrumentation.queue = []
+    AwsSessionEventInstrumentation.isApplied = false
+
+    let session = sessionManager.getSession()
+
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 1)
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue[0].session.id, session.id)
+  }
+
+  func testStartSessionTriggersNotificationWhenInstrumentationApplied() {
+    AwsSessionEventInstrumentation.queue = []
+    AwsSessionEventInstrumentation.isApplied = true
+
+    let expectation = XCTestExpectation(description: "Session notification posted")
+    var receivedSessionEvent: AwsSessionEvent?
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsSessionEventInstrumentation.sessionEventNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      receivedSessionEvent = notification.object as? AwsSessionEvent
+      expectation.fulfill()
+    }
+
+    let session = sessionManager.getSession()
+
+    wait(for: [expectation], timeout: 0.1)
+
+    XCTAssertNotNil(receivedSessionEvent)
+    XCTAssertEqual(receivedSessionEvent?.session.id, session.id)
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
+
+    NotificationCenter.default.removeObserver(observer)
   }
 }

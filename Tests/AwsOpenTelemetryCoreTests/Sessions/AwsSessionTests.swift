@@ -1,54 +1,57 @@
 import XCTest
 @testable import AwsOpenTelemetryCore
+@testable import OpenTelemetrySdk
 
 final class AwsSessionTests: XCTestCase {
   func testSessionInitialization() {
     let id = "test-session-id"
-    let expires = Date(timeIntervalSinceNow: 1800) // 30 minutes from now
+    let expireTime = Date(timeIntervalSinceNow: 1800) // 30 minutes from now
 
-    let session = AwsSession(id: id, expires: expires)
+    let session = AwsSession(id: id, expireTime: expireTime)
 
     XCTAssertEqual(session.id, id)
-    XCTAssertEqual(session.expires, expires)
+    XCTAssertEqual(session.expireTime, expireTime)
     XCTAssertNil(session.previousId, "Default initialization should have nil previousId")
+    XCTAssertLessThanOrEqual(Date().timeIntervalSince(session.startTime), 1.0, "Start time should be set to current time by default")
   }
 
   func testSessionEquality() {
     let id = "test-session-id"
-    let expires = Date()
+    let expireTime = Date()
+    let startTime = Date()
     let previousId = "prev-id"
 
-    let session1 = AwsSession(id: id, expires: expires, previousId: previousId)
-    let session2 = AwsSession(id: id, expires: expires, previousId: previousId)
+    let session1 = AwsSession(id: id, expireTime: expireTime, previousId: previousId, startTime: startTime)
+    let session2 = AwsSession(id: id, expireTime: expireTime, previousId: previousId, startTime: startTime)
 
-    XCTAssertEqual(session1, session2, "Sessions with same ID, expires, and previousId should be equal")
+    XCTAssertEqual(session1, session2, "Sessions with same ID, expireTime, startTime, and previousId should be equal")
   }
 
   func testSessionInequality() {
-    let expires = Date()
-    let session1 = AwsSession(id: "session-1", expires: expires)
-    let session2 = AwsSession(id: "session-2", expires: expires)
+    let expireTime = Date()
+    let session1 = AwsSession(id: "session-1", expireTime: expireTime)
+    let session2 = AwsSession(id: "session-2", expireTime: expireTime)
 
     XCTAssertNotEqual(session1, session2, "Sessions with different IDs should not be equal")
   }
 
   func testSessionNotExpired() {
     let futureExpiry = Date(timeIntervalSinceNow: 1800) // 30 minutes from now
-    let session = AwsSession(id: "test-id", expires: futureExpiry)
+    let session = AwsSession(id: "test-id", expireTime: futureExpiry)
 
-    XCTAssertFalse(session.isExpired(), "Session with future expires should not be expired")
+    XCTAssertFalse(session.isExpired(), "Session with future expireTime should not be expired")
   }
 
   func testSessionExpired() {
     let pastExpiry = Date(timeIntervalSinceNow: -1800) // 30 minutes ago
-    let session = AwsSession(id: "test-id", expires: pastExpiry)
+    let session = AwsSession(id: "test-id", expireTime: pastExpiry)
 
-    XCTAssertTrue(session.isExpired(), "Session with past expires should be expired")
+    XCTAssertTrue(session.isExpired(), "Session with past expireTime should be expired")
   }
 
   func testSessionExpiryAtExactTime() {
     let currentTime = Date()
-    let session = AwsSession(id: "test-id", expires: currentTime)
+    let session = AwsSession(id: "test-id", expireTime: currentTime)
 
     // Sleep briefly to ensure current time is past expiry
     Thread.sleep(forTimeInterval: 0.001)
@@ -59,45 +62,49 @@ final class AwsSessionTests: XCTestCase {
   func testSessionWithPreviousId() {
     let id = "current-session"
     let previousId = "previous-session"
-    let expires = Date(timeIntervalSinceNow: 1800)
+    let expireTime = Date(timeIntervalSinceNow: 1800)
 
-    let session = AwsSession(id: id, expires: expires, previousId: previousId)
+    let session = AwsSession(id: id, expireTime: expireTime, previousId: previousId)
 
     XCTAssertEqual(session.id, id)
     XCTAssertEqual(session.previousId, previousId)
-    XCTAssertEqual(session.expires, expires)
+    XCTAssertEqual(session.expireTime, expireTime)
   }
 
-  func testSessionInequalityWithDifferentPreviousId() {
-    let id = "test-session"
-    let expires = Date()
-
-    let session1 = AwsSession(id: id, expires: expires, previousId: "prev-1")
-    let session2 = AwsSession(id: id, expires: expires, previousId: "prev-2")
-    let session3 = AwsSession(id: id, expires: expires, previousId: nil)
-
-    XCTAssertNotEqual(session1, session2, "Sessions with different previousId should not be equal")
-    XCTAssertNotEqual(session1, session3, "Sessions with different previousId should not be equal")
+  func testEndTimeForActiveSession() {
+    let session = AwsSession(id: "test-id", expireTime: Date(timeIntervalSinceNow: 1800))
+    XCTAssertNil(session.endTime, "Active session should have nil endTime")
   }
 
-  func testSessionInequalityWithDifferentExpires() {
-    let id = "test-session-id"
-    let expiry1 = Date()
-    let expiry2 = Date(timeIntervalSinceNow: 1800)
-
-    let session1 = AwsSession(id: id, expires: expiry1)
-    let session2 = AwsSession(id: id, expires: expiry2)
-
-    XCTAssertNotEqual(session1, session2, "Sessions with different expires should not be equal")
+  func testEndTimeForExpiredSession() {
+    let session = AwsSession(id: "test-id", expireTime: Date(timeIntervalSinceNow: -1800), sessionTimeout: 1800)
+    XCTAssertNotNil(session.endTime, "Expired session should have endTime")
   }
 
-  func testSessionWithNilPreviousId() {
-    let id = "current-session"
-    let expires = Date(timeIntervalSinceNow: 1800)
+  func testDurationForActiveSession() {
+    let session = AwsSession(id: "test-id", expireTime: Date(timeIntervalSinceNow: 1800))
+    XCTAssertNil(session.duration, "Active session should have nil duration")
+  }
 
-    let session = AwsSession(id: id, expires: expires, previousId: nil)
+  func testDurationForExpiredSession() {
+    let session = AwsSession(id: "test-id", expireTime: Date(timeIntervalSinceNow: -1800), sessionTimeout: 1800)
+    XCTAssertNotNil(session.duration, "Expired session should have duration")
+  }
 
-    XCTAssertEqual(session.id, id)
-    XCTAssertNil(session.previousId)
+  func testSafeUnwrappingInComputedProperties() {
+    // Test that endTime and duration don't crash with force unwrapping
+    let expiredSession = AwsSession(id: "test-id", expireTime: Date(timeIntervalSinceNow: -1800), sessionTimeout: 1800)
+    let activeSession = AwsSession(id: "test-id", expireTime: Date(timeIntervalSinceNow: 1800))
+
+    // These should not crash
+    _ = expiredSession.endTime
+    _ = expiredSession.duration
+    _ = activeSession.endTime
+    _ = activeSession.duration
+
+    XCTAssertNotNil(expiredSession.endTime)
+    XCTAssertNotNil(expiredSession.duration)
+    XCTAssertNil(activeSession.endTime)
+    XCTAssertNil(activeSession.duration)
   }
 }

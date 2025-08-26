@@ -135,7 +135,7 @@ class LoaderViewModel: ObservableObject {
   }
 
   func renewSession() {
-    AwsSessionManager.shared.getSession()
+    AwsSessionManagerProvider.getInstance().getSession()
   }
 
   /// Starts the digital clock timer
@@ -156,19 +156,28 @@ class LoaderViewModel: ObservableObject {
 
   /// Updates the current time string
   private func updateSessionDetails() {
-    var currentTime = timeFormatter.string(from: Date())
-    var session = AwsSessionManager.shared.peekSession()!
-    var sessionId = session.id
-    var sessionPrevId = session.previousId ?? "nil"
-    var sessionExpires = timeFormatter.string(from: session.expires)
-    var sessionIsExpired = session.isExpired()
+    let currentTime = timeFormatter.string(from: Date())
+    guard let session = AwsSessionManagerProvider.getInstance().peekSession() else {
+      resultMessage = "no session"
+      return
+    }
+    let sessionId = session.id
+    let sessionPrevId = session.previousId ?? "nil"
+    let sessionExpires = timeFormatter.string(from: session.expireTime)
+    let sessionIsExpired = session.isExpired()
+    let startTime = timeFormatter.string(from: session.startTime)
+    let duration = session.duration == nil ? "nil" : String(format: "%.2f seconds", session.duration!)
+    let endTime = session.endTime == nil ? "nil" : timeFormatter.string(from: session.endTime!)
 
-    var lines = [
+    let lines = [
       "current_time=: \(currentTime)",
-      "session.expires=\(sessionExpires)",
+      "session.expireTime=\(sessionExpires)",
       "session.isExpired=\(sessionIsExpired)",
+      "session.startTime=\(startTime)",
       "session.id=\(sessionId)",
-      "session.previous_id=\(sessionPrevId)"
+      "session.previous_id=\(sessionPrevId)",
+      "session.duration=\(duration)",
+      "session.endTime=\(endTime)"
     ]
 
     resultMessage = lines.joined(separator: "\n")

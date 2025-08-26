@@ -18,8 +18,6 @@ final class AwsSessionSpanProcessorTests: XCTestCase {
   func testInitialization() {
     XCTAssertTrue(spanProcessor.isStartRequired)
     XCTAssertFalse(spanProcessor.isEndRequired)
-    XCTAssertEqual(spanProcessor.sessionIdKey, "session.id")
-    XCTAssertEqual(spanProcessor.prevSessionIdKey, "session.previous_id")
   }
 
   func testOnStartAddsSessionId() {
@@ -105,6 +103,12 @@ final class AwsSessionSpanProcessorTests: XCTestCase {
 
     XCTAssertNil(mockSpan.capturedAttributes["session.previous_id"], "Previous session ID should not be set when nil")
   }
+
+  func testInitializationWithNilSessionManager() {
+    let processor = AwsSessionSpanProcessor(sessionManager: nil)
+    XCTAssertTrue(processor.isStartRequired)
+    XCTAssertFalse(processor.isEndRequired)
+  }
 }
 
 // MARK: - Mock Classes
@@ -112,12 +116,14 @@ final class AwsSessionSpanProcessorTests: XCTestCase {
 class MockSessionManager: AwsSessionManager {
   var sessionId: String = "default-session-id"
   var previousSessionId: String?
+  var startTime: Date = .init()
 
   override func getSession() -> AwsSession {
     return AwsSession(
       id: sessionId,
-      expires: Date(timeIntervalSinceNow: 1800),
-      previousId: previousSessionId
+      expireTime: Date(timeIntervalSinceNow: 1800),
+      previousId: previousSessionId,
+      startTime: startTime
     )
   }
 }
@@ -134,6 +140,14 @@ class MockReadableSpan: ReadableSpan {
   var isRecording: Bool = true
   var status: Status = .unset
   var description: String = "MockReadableSpan"
+
+  func getAttributes() -> [String: AttributeValue] {
+    return capturedAttributes
+  }
+
+  func setAttributes(_ attributes: [String: AttributeValue]) {
+    capturedAttributes.merge(attributes) { _, new in new }
+  }
 
   func end() {}
   func end(time: Date) {}
@@ -157,7 +171,7 @@ class MockReadableSpan: ReadableSpan {
   }
 
   func setAttribute(key: String, value: AttributeValue?) {
-    if let value = value {
+    if let value {
       capturedAttributes[key] = value
     }
   }

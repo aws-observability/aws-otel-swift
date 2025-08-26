@@ -1,40 +1,42 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 import Foundation
 
-/// Manages AWS RUM sessions with automatic expiration and persistence.
+/// Manages OpenTelemetry sessions with automatic expiration and persistence.
 /// Provides thread-safe access to session information and handles session lifecycle.
 /// Sessions are automatically extended on access and persisted to UserDefaults.
 public class AwsSessionManager {
-  private var sessionTimeout: Int
+  private var configuration: AwsSessionConfig
   private var session: AwsSession?
   private var lock = NSLock()
 
-  /// Shared singleton instance
-  public static var shared = AwsSessionManager()
-
-  /// Default session length in seconds (30 minutes)
-  public static var defaultSessionLength: Int = 30 * 60
-
   /// Initializes the session manager and restores any previous session from disk
-  /// - Parameter sessionTimeout: Duration in seconds for session validity
-  init(sessionTimeout: Int? = defaultSessionLength
-  ) {
-    self.sessionTimeout = sessionTimeout!
+  /// - Parameter configuration: Session configuration settings
+  public init(configuration: AwsSessionConfig = .default) {
+    AwsOpenTelemetryLogger.debug("Initializing AwsSessionManager with timeout: \(configuration.sessionTimeout)s")
+    self.configuration = configuration
     restoreSessionFromDisk()
   }
 
-  /// Configures the session manager with new settings at runtime
-  /// - Parameter sessionTimeout: New session length in seconds, or nil to use default
-  public func configure(sessionTimeout: Int?) {
-    self.sessionTimeout = sessionTimeout ?? AwsSessionManager.defaultSessionLength
-    // Adjust existing session with the new length
-    getSession()
-  }
-
   /// Gets the current session, creating or extending it as needed
-  /// This method is thread-safe and will extend the session expires time
+  /// This method is thread-safe and will extend the session expireTime time
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> AwsSession {
+    AwsOpenTelemetryLogger.debug("Getting current session: id=$\(session?.id ?? "nil")")
     // We only lock once when fetching the current session to expire with thread safety
     return lock.withLock {
       refreshSession()
@@ -42,29 +44,58 @@ public class AwsSessionManager {
     }
   }
 
-  /// Gets the current session without extending its expires time
+  /// Gets the current session without extending its expireTime time
   /// - Returns: The current session if one exists, nil otherwise
   public func peekSession() -> AwsSession? {
+    AwsOpenTelemetryLogger.debug("Peeking at current session: \(session?.id ?? "nil")")
     return session
   }
 
   /// Creates a new session with a unique identifier
   private func startSession() {
+    let now = Date()
+    let previousId = session?.id
+    let newId = UUID().uuidString
+
+    AwsOpenTelemetryLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
+
+    /// Queue the previous session for a `session.end` event
+    if let previousSession = session {
+      AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+    }
+
     session = AwsSession(
-      id: UUID().uuidString,
-      expires: Date(timeIntervalSinceNow: Double(sessionTimeout)),
-      previousId: session?.id
+      id: newId,
+      expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
+      previousId: previousId,
+      startTime: now,
+      sessionTimeout: configuration.sessionTimeout
     )
+
+    // Queue the new session for a `session.start`` event
+    AwsSessionEventInstrumentation.addSession(session: session!, eventType: .start)
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one
   private func refreshSession() {
     if session == nil || session!.isExpired() {
-      // Start new session if none exists
+      // Start new session if none exists or expired
+      if session == nil {
+        AwsOpenTelemetryLogger.debug("No session exists, creating new one")
+      } else {
+        AwsOpenTelemetryLogger.debug("Session expired, creating new one")
+      }
       startSession()
     } else {
-      // Otherwise, extend the existing session
-      session = AwsSession(id: session!.id, expires: Date(timeIntervalSinceNow: Double(sessionTimeout)), previousId: session!.previousId)
+      // Otherwise, extend the existing session but preserve the startTime
+      AwsOpenTelemetryLogger.debug("Extending existing session: \(session!.id)")
+      session = AwsSession(
+        id: session!.id,
+        expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
+        previousId: session!.previousId,
+        startTime: session!.startTime,
+        sessionTimeout: configuration.sessionTimeout
+      )
     }
     saveSessionToDisk()
   }
@@ -79,5 +110,6 @@ public class AwsSessionManager {
   /// Restores a previously saved session from UserDefaults
   private func restoreSessionFromDisk() {
     session = AwsSessionStore.load()
+    AwsOpenTelemetryLogger.info("Attempted to restore session from disk id=\(session?.id ?? "none")")
   }
 }

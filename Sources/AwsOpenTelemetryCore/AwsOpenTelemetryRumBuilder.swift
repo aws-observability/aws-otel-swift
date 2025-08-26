@@ -90,7 +90,10 @@ public class AwsOpenTelemetryRumBuilder {
   private init(config: AwsOpenTelemetryConfig) {
     self.config = config
     resource = Self.buildResource(config: config)
-    AwsSessionManager.shared.configure(sessionTimeout: config.rum.sessionTimeout)
+    // Configure session manager with timeout from config
+    let sessionConfig = AwsSessionConfig(sessionTimeout: config.rum.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
+    let sessionManager = AwsSessionManager(configuration: sessionConfig)
+    AwsSessionManagerProvider.register(sessionManager: sessionManager)
   }
 
   // MARK: - Instrumentation Methods
@@ -157,6 +160,26 @@ public class AwsOpenTelemetryRumBuilder {
     OpenTelemetry.registerTracerProvider(tracerProvider: tracerProvider)
     OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
 
+    // Mark the SDK as initialized
+    AwsOpenTelemetryAgent.shared.isInitialized = true
+    AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
+
+    addAutoInstrumentations()
+
+    // Apply all stored instrumentations after OpenTelemetry is fully initialized
+    applyInstrumentations()
+
+    return self
+  }
+
+  /// Add default instrumentations that are provided out of the vox.
+  /// 1. SessionEvents
+  /// 2. UIKitViews
+  private func addAutoInstrumentations() {
+    // Session Events
+    // Initialize session event instrumentation
+    _ = AwsSessionEventInstrumentation()
+    // UIKitViews
     #if canImport(UIKit) && !os(watchOS)
       // Initialize view instrumentation (enabled by default)
       if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
@@ -167,15 +190,6 @@ public class AwsOpenTelemetryRumBuilder {
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
       }
     #endif
-
-    // Mark the SDK as initialized
-    AwsOpenTelemetryAgent.shared.isInitialized = true
-    AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
-
-    // Apply all stored instrumentations after OpenTelemetry is fully initialized
-    applyInstrumentations()
-
-    return self
   }
 
   /**
@@ -401,7 +415,7 @@ public class AwsOpenTelemetryRumBuilder {
       .add(spanProcessor: MultiSpanProcessor(
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
-      .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManager.shared))
+      .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
       .add(spanProcessor: AwsUIDSpanProcessor())
       .with(resource: resource)
 
