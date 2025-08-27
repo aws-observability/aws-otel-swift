@@ -15,16 +15,6 @@
 
 import Foundation
 
-/**
- * AWS OpenTelemetry Utilities
- *
- * This file contains utility functions for AWS RUM (Real User Monitoring) configuration
- * and OpenTelemetry Protocol (OTLP) management. These utilities provide common functionality
- * used throughout the AWS OpenTelemetry SDK for configuration management, URL construction,
- * telemetry data routing, and instrumentation support.
- *
- */
-
 // MARK: - RUM Endpoint Construction
 
 /**

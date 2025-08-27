@@ -57,6 +57,10 @@ import OpenTelemetryApi
     public internal(set) var uiKitViewInstrumentation: UIKitViewInstrumentation?
   #endif
 
+  #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
+    public internal(set) var metricKitSubscriber: Any? // Any? to prevent compile time error to `AwsMetricKitSubscriber`
+  #endif
+
   /// Private initializer to enforce singleton pattern
   /// Use `AwsOpenTelemetryAgent.shared` to access the singleton instance
   override private init() {

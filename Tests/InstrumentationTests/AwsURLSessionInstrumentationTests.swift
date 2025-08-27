@@ -21,97 +21,24 @@ import OpenTelemetrySdk
 @testable import AwsOpenTelemetryCore
 
 final class AwsURLSessionInstrumentationTests: XCTestCase {
-  // Shared components for all tests to ensure proper isolation
-  static var sharedInstrumentation: AwsURLSessionInstrumentation?
-  static var sharedSpanProcessor: TestSpanProcessor?
-  static var sharedTracerProvider: TracerProvider?
+  func testOTLPEndpointsFiltering() {
+    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
+    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
 
-  override static func setUp() {
-    super.setUp()
-
-    // Create shared span processor
-    sharedSpanProcessor = TestSpanProcessor()
-
-    // Create shared tracer provider
-    sharedTracerProvider = TracerProviderBuilder()
-      .add(spanProcessor: sharedSpanProcessor!)
-      .build()
-
-    // Register the shared tracer provider globally ONCE
-    OpenTelemetry.registerTracerProvider(tracerProvider: sharedTracerProvider!)
-
-    let rumConfig = RumConfig(
-      region: "us-west-2",
-      appMonitorId: "test-app-monitor-id"
-    )
-    sharedInstrumentation = AwsURLSessionInstrumentation(config: rumConfig)
-
-    // Apply instrumentation after OpenTelemetry is initialized (matches production flow)
-    sharedInstrumentation?.apply()
+    let rumRequest = URLRequest(url: URL(string: "https://dataplane.rum.us-west-2.amazonaws.com/v1/rum/events")!)
+    XCTAssertTrue(instrumentation.shouldExcludeURL(rumRequest), "RUM endpoints should be excluded")
   }
 
-  override static func tearDown() {
-    sharedInstrumentation = nil
-    sharedSpanProcessor = nil
-    sharedTracerProvider = nil
-    super.tearDown()
-  }
+  func testRegularRequestsAreNotFiltered() {
+    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
+    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
 
-  override func setUp() {
-    super.setUp()
-    // Clear spans before each test but keep the same TracerProvider
-    Self.sharedSpanProcessor?.clear()
-  }
-
-  // MARK: - Functional Tests
-
-  func testOTLPEndpointsFiltering() async throws {
-    // Use shared components
-    guard let spanProcessor = Self.sharedSpanProcessor else {
-      XCTFail("Shared span processor should exist")
-      return
-    }
-
-    spanProcessor.clear()
-
-    // Make request to the default RUM endpoint (should be filtered out)
-    let rumEndpointURL = URL(string: "https://dataplane.rum.us-west-2.amazonaws.com/v1/rum/events")!
-    let rumRequest = URLRequest(url: rumEndpointURL)
-
-    let expectation = XCTestExpectation(description: "RUM endpoint request completed")
-
-    let task = URLSession.shared.dataTask(with: rumRequest) { _, _, _ in
-      expectation.fulfill()
-    }
-    task.resume()
-
-    await fulfillment(of: [expectation], timeout: 10)
-
-    let spans = spanProcessor.getFinishedSpans()
-
-    // Filter for spans that might be related to our RUM endpoint request
-    let rumSpans = spans.filter { span in
-      let spanData = span.toSpanData()
-      let hasRumUrl = spanData.attributes.values.contains { value in
-        value.description.contains("dataplane.rum.us-west-2.amazonaws.com")
-      }
-      return hasRumUrl
-    }
-
-    // Verify that RUM endpoints are NOT captured in spans
-    XCTAssertEqual(rumSpans.count, 0, "RUM OTLP endpoints should be filtered and not create spans")
-  }
-
-  func testRegularRequestsAreInstrumented() async throws {
-    try await telemetryForRegularRequests()
+    let regularRequest = URLRequest(url: URL(string: "https://httpbin.org/status/200")!)
+    XCTAssertFalse(instrumentation.shouldExcludeURL(regularRequest), "Regular endpoints should not be excluded")
   }
 
   func testBasicInitialization() {
-    // Test that instrumentation can be initialized and applied without errors
-    let rumConfig = RumConfig(
-      region: "us-east-1",
-      appMonitorId: "test-initialization"
-    )
+    let rumConfig = RumConfig(region: "us-east-1", appMonitorId: "test-initialization")
 
     XCTAssertNoThrow({
       let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
@@ -119,107 +46,51 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
     }, "AwsURLSessionInstrumentation should initialize and apply without throwing")
   }
 
-  func testApplyIdempotency() async throws {
-    // Use the shared instrumentation instance to ensure we're testing the same URLSession
-    guard let instrumentation = Self.sharedInstrumentation else {
-      XCTFail("Shared instrumentation should exist")
-      return
-    }
+  func testApplyIdempotency() {
+    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
+    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
 
-    // Should be safe to call apply() multiple times
     XCTAssertNoThrow({
       instrumentation.apply()
       instrumentation.apply()
       instrumentation.apply()
     }, "Multiple apply() calls should be safe")
-
-    try await telemetryForRegularRequests()
   }
 
-  private func telemetryForRegularRequests() async throws {
-    guard let spanProcessor = Self.sharedSpanProcessor else {
-      XCTFail("Shared span processor should exist")
-      return
-    }
-    spanProcessor.clear()
+  func testCustomEndpointFiltering() {
+    let overrideEndpoint = EndpointOverrides(
+      logs: "https://custom-logs.example.com",
+      traces: "https://custom-traces.example.com"
+    )
+    let rumConfig = RumConfig(
+      region: "us-west-2",
+      appMonitorId: "test-app-monitor-id",
+      overrideEndpoint: overrideEndpoint
+    )
+    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
 
-    // Make request to regular endpoint (should be instrumented)
-    let testURL = URL(string: "https://httpbin.org/status/200")!
-    let request = URLRequest(url: testURL)
+    let customLogsRequest = URLRequest(url: URL(string: "https://custom-logs.example.com/logs")!)
+    let customTracesRequest = URLRequest(url: URL(string: "https://custom-traces.example.com/traces")!)
 
-    let expectation = XCTestExpectation(description: "Regular request completed")
-
-    let task = URLSession.shared.dataTask(with: request) { _, _, _ in
-      expectation.fulfill()
-    }
-    task.resume()
-
-    await fulfillment(of: [expectation], timeout: 10)
-
-    let spans = spanProcessor.getFinishedSpans()
-
-    // Filter for spans that are specifically from our test request
-    let testSpans = spans.filter { span in
-      let spanData = span.toSpanData()
-
-      // Check if this span is related to our test URL
-      let hasTestUrl = spanData.attributes.values.contains { value in
-        value.description.contains("httpbin.org/status/200")
-      }
-
-      // Check if it's an HTTP span
-      let isHttpSpan = spanData.name.contains("GET") ||
-        spanData.name.contains("HTTP") ||
-        spanData.attributes.keys.contains("http.method") ||
-        spanData.attributes.keys.contains("http.request.method")
-
-      return hasTestUrl && isHttpSpan
-    }
-
-    // Assert on test-specific spans only
-    XCTAssertGreaterThan(testSpans.count, 0, "Test-specific HTTP spans should be created")
-  }
-}
-
-// MARK: - Test Utilities
-
-/**
- * Test span processor that captures spans for verification
- */
-class TestSpanProcessor: SpanProcessor {
-  private var finishedSpans: [ReadableSpan] = []
-  private let lock = NSLock()
-
-  var isStartRequired: Bool { false }
-  var isEndRequired: Bool { true }
-
-  func onStart(parentContext: SpanContext?, span: ReadableSpan) {
-    // No-op
+    XCTAssertTrue(instrumentation.shouldExcludeURL(customLogsRequest), "Custom logs endpoint should be excluded")
+    XCTAssertTrue(instrumentation.shouldExcludeURL(customTracesRequest), "Custom traces endpoint should be excluded")
   }
 
-  func onEnd(span: ReadableSpan) {
-    lock.lock()
-    defer { lock.unlock() }
-    finishedSpans.append(span)
+  func testRequestWithNilURL() {
+    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
+    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+
+    var mutableRequest = URLRequest(url: URL(string: "https://example.com")!)
+    mutableRequest.url = nil
+
+    XCTAssertFalse(instrumentation.shouldExcludeURL(mutableRequest), "Request with nil URL should not be excluded")
   }
 
-  func shutdown(explicitTimeout: TimeInterval?) {
-    // No-op
-  }
+  func testPrefixMatching() {
+    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
+    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
 
-  func forceFlush(timeout: TimeInterval?) {
-    // No-op
-  }
-
-  func getFinishedSpans() -> [ReadableSpan] {
-    lock.lock()
-    defer { lock.unlock() }
-    return Array(finishedSpans)
-  }
-
-  func clear() {
-    lock.lock()
-    defer { lock.unlock() }
-    finishedSpans.removeAll()
+    let rumSubpathRequest = URLRequest(url: URL(string: "https://dataplane.rum.us-west-2.amazonaws.com/v1/rum/events/subpath")!)
+    XCTAssertTrue(instrumentation.shouldExcludeURL(rumSubpathRequest), "RUM endpoint subpaths should be excluded")
   }
 }

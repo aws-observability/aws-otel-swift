@@ -92,8 +92,8 @@ import XCTest
         FullyCustomViewController()
       ]
 
-      let customNames = controllers.map { $0.customViewName }
-      let shouldCapture = controllers.map { $0.shouldCaptureView }
+      let customNames = controllers.map(\.customViewName)
+      let shouldCapture = controllers.map(\.shouldCaptureView)
 
       XCTAssertEqual(customNames, [nil, "MyCustomName", nil, "FullyCustom"])
       XCTAssertEqual(shouldCapture, [true, true, false, true])

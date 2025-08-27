@@ -69,9 +69,9 @@ public class AwsSigV4Authenticator {
    */
   private static func signURLRequest(urlRequest: URLRequest) async -> URLRequest {
     // Verify that the authenticator has been properly configured
-    guard let credentialsProvider = credentialsProvider,
-          let region = region,
-          let serviceName = serviceName else {
+    guard let credentialsProvider,
+          let region,
+          let serviceName else {
       fatalError("AwsSigV4Authenticator not configured. Call configure() first.")
     }
     guard let url = urlRequest.url else { return urlRequest }

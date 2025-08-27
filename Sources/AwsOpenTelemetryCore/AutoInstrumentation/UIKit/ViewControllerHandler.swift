@@ -221,7 +221,7 @@
     // MARK: - Lifecycle Event Handlers
 
     func onViewDidLoadStart(_ viewController: UIViewController, now: Date = Date()) {
-      guard let uiKitViewInstrumentation = uiKitViewInstrumentation,
+      guard let uiKitViewInstrumentation,
             viewController.shouldCaptureView(using: uiKitViewInstrumentation) else {
         return
       }
@@ -426,7 +426,7 @@
         .setAttribute(key: attributeKeyViewClass, value: className)
         .setStartTime(time: startTime)
 
-      if let parent = parent {
+      if let parent {
         builder.setParent(parent)
       }
 

@@ -190,6 +190,22 @@ public class AwsOpenTelemetryRumBuilder {
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
       }
     #endif
+
+    #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
+      // Initialize MetricKit subscriber on iOS 14+
+      if #available(iOS 15.0, *) {
+        let metricKitSubscriber = AwsMetricKitSubscriber()
+        metricKitSubscriber.subscribe()
+        AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
+      }
+    #endif
+
+    _ = AwsSessionEventInstrumentation()
+
+    // Apply all stored instrumentations after OpenTelemetry is fully initialized
+    applyInstrumentations()
+
+    return
   }
 
   /**

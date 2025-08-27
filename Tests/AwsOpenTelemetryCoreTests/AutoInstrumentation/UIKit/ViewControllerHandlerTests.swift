@@ -26,7 +26,7 @@ import Atomics
    * Test view controller that conforms to ViewControllerCustomization
    */
   class TestViewController: UIViewController, ViewControllerCustomization {
-    var customViewName: String? = nil
+    var customViewName: String?
 
     // Implement the protocol method directly, don't override
     var shouldCaptureView: Bool { return true }
@@ -36,7 +36,7 @@ import Atomics
    * Test view controller that opts out of instrumentation
    */
   class OptOutViewController: UIViewController, ViewControllerCustomization {
-    var customViewName: String? = nil
+    var customViewName: String?
 
     // Implement the protocol method directly, don't override
     var shouldCaptureView: Bool { return false }
@@ -166,12 +166,12 @@ import Atomics
       // Wait for spans to be created
       wait(timeout: Self.defaultTimeout) {
         let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        let spanNames = startedSpans.map { $0.name }
+        let spanNames = startedSpans.map(\.name)
         return spanNames.contains(Self.spanNameViewLoad) && spanNames.contains(Self.spanNameViewDidLoad)
       }
 
       let startedSpans = mockSpanProcessor.getStartedSpans()
-      let spanNames = startedSpans.map { $0.name }
+      let spanNames = startedSpans.map(\.name)
 
       XCTAssertTrue(spanNames.contains(Self.spanNameViewDidLoad), "Should create viewDidLoad span")
       XCTAssertTrue(spanNames.contains(Self.spanNameViewLoad), "Should create parent view.load span")
@@ -216,7 +216,7 @@ import Atomics
       // Wait for all lifecycle spans to be created
       wait(timeout: Self.defaultTimeout) {
         let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        let spanNames = startedSpans.map { $0.name }
+        let spanNames = startedSpans.map(\.name)
         return spanNames.contains(Self.spanNameViewDidLoad) &&
           spanNames.contains(Self.spanNameViewWillAppear) &&
           spanNames.contains(Self.spanNameViewDidAppear)
@@ -225,14 +225,14 @@ import Atomics
       // Wait for view.duration span to be created
       wait(timeout: Self.defaultTimeout) {
         let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        let spanNames = startedSpans.map { $0.name }
+        let spanNames = startedSpans.map(\.name)
         return spanNames.contains(Self.spanNameViewDuration)
       }
 
       let startedSpans = mockSpanProcessor.getStartedSpans()
       let endedSpans = mockSpanProcessor.getEndedSpans()
-      let startedSpanNames = startedSpans.map { $0.name }
-      let endedSpanNames = endedSpans.map { $0.name }
+      let startedSpanNames = startedSpans.map(\.name)
+      let endedSpanNames = endedSpans.map(\.name)
 
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewDidLoad), "Should create viewDidLoad span")
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewWillAppear), "Should create viewWillAppear span")
@@ -312,7 +312,7 @@ import Atomics
       let span = startedSpans.first { $0.name == Self.spanNameViewDidLoad }
 
       XCTAssertNotNil(span, "Should create span for custom view controller")
-      if let span = span {
+      if let span {
         XCTAssertEqual(span.attributes[Self.attributeKeyViewClass]?.description, Self.customViewControllerClassName)
       }
     }
