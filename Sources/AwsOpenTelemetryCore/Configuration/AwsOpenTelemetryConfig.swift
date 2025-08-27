@@ -94,44 +94,108 @@ import Foundation
  */
 @objc public class RumConfig: NSObject, Codable {
   /// AWS region where the RUM service is deployed
-  public var region: String
+  public private(set) var region: String
 
   /// Unique identifier for the RUM App Monitor
-  public var appMonitorId: String
+  public private(set) var appMonitorId: String
 
   /// Optional endpoint overrides for the RUM service
-  public var overrideEndpoint: EndpointOverrides?
+  public private(set) var overrideEndpoint: EndpointOverrides?
 
   /// Flag to enable debug logging for SDK integration
-  public var debug: Bool?
+  public private(set) var debug: Bool?
 
   /// Optional alias to add to all requests to compare against the rum:alias
   ///  in appmonitors with resource based policies
-  public var alias: String?
+  public private(set) var alias: String?
 
   // The user session will expire if inactive for the specified length (default 30 minutes)
-  public var sessionTimeout: Int?
+  public private(set) var sessionTimeout: Int?
+
+  public private(set) var crashes: Bool
 
   /**
-   * Initializes a new RUM configuration instance.
+   * Initializes a new RUM configuration instance (Objective-C compatible).
+   *
+   * This initializer is exposed to Objective-C and uses non-optional types
+   * for better Objective-C interoperability.
    *
    * @param region AWS region where the RUM service is deployed
    * @param appMonitorId Unique identifier for the RUM App Monitor
    * @param overrideEndpoint Optional endpoint overrides for the RUM service
    * @param debug Flag to enable debug logging (defaults to false)
+   * @param alias Optional alias for request routing and access control
+   * @param sessionTimeout Session timeout in seconds (defaults to 30 minutes)
+   * @param crashes Enable crash reporting (defaults to true)
    */
   @objc public init(region: String,
                     appMonitorId: String,
                     overrideEndpoint: EndpointOverrides? = nil,
                     debug: Bool = false,
                     alias: String? = nil,
-                    sessionTimeout: NSNumber? = nil) {
+                    sessionTimeout: NSNumber? = nil,
+                    crashes: Bool = true) {
     self.region = region
     self.appMonitorId = appMonitorId
     self.overrideEndpoint = overrideEndpoint
     self.debug = debug
     self.alias = alias
     self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionConfig.default.sessionTimeout
+    self.crashes = crashes
+    super.init()
+  }
+
+  /**
+   * Initializes a new RUM configuration instance (Swift-only).
+   *
+   * This initializer is Swift-only and uses optional types for booleans
+   * that may need to be nil in certain contexts. The dummy parameter
+   * `_swiftOnly` is used to differentiate from the Objective-C initializer.
+   *
+   * @param region AWS region where the RUM service is deployed
+   * @param appMonitorId Unique identifier for the RUM App Monitor
+   * @param overrideEndpoint Optional endpoint overrides for the RUM service
+   * @param debug Optional flag to enable debug logging (defaults to false)
+   * @param alias Optional alias for request routing and access control
+   * @param sessionTimeout Session timeout in seconds (defaults to 30 minutes)
+   * @param crashes Optional flag to enable crash reporting (defaults to true)
+   * @param _swiftOnly Dummy parameter to differentiate from Objective-C initializer
+   */
+  public init(region: String,
+              appMonitorId: String,
+              overrideEndpoint: EndpointOverrides? = nil,
+              debug: Bool? = false,
+              alias: String? = nil,
+              sessionTimeout: NSNumber? = nil,
+              crashes: Bool? = true,
+              _swiftOnly: Bool? = nil) {
+    self.region = region
+    self.appMonitorId = appMonitorId
+    self.overrideEndpoint = overrideEndpoint
+    self.debug = debug ?? false
+    self.alias = alias
+    self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionConfig.default.sessionTimeout
+    self.crashes = crashes ?? true
+    super.init()
+  }
+
+  /**
+   * Initializes RUM configuration from JSON data (Codable decoder).
+   *
+   * Automatically called during JSON deserialization. Handles default values
+   * for optional fields like crashes (defaults to true) and sessionTimeout.
+   */
+  public required init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+
+    region = try container.decode(String.self, forKey: .region)
+    appMonitorId = try container.decode(String.self, forKey: .appMonitorId)
+    overrideEndpoint = try container.decodeIfPresent(EndpointOverrides.self, forKey: .overrideEndpoint)
+    debug = try container.decodeIfPresent(Bool.self, forKey: .debug) ?? false
+    alias = try container.decodeIfPresent(String.self, forKey: .alias)
+    sessionTimeout = try container.decodeIfPresent(Int.self, forKey: .sessionTimeout) ?? AwsSessionConfig.default.sessionTimeout
+    crashes = try container.decodeIfPresent(Bool.self, forKey: .crashes) ?? true
+
     super.init()
   }
 }

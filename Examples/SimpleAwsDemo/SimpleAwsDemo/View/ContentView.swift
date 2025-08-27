@@ -67,6 +67,22 @@ struct ContentView: View {
             viewModel.renewSession()
             viewModel.showSessionDetails()
           }
+
+          // Crash Button
+          Button(action: {
+            let array = []
+            _ = array[10] // Index out of bounds
+          }) {
+            HStack {
+              Image(systemName: "exclamationmark.triangle")
+              Text("Trigger Crash")
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.red)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+          }
         }
         .padding(.horizontal)
 
