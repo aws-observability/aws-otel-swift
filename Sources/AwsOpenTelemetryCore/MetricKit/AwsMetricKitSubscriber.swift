@@ -3,6 +3,11 @@
   import MetricKit
   import OpenTelemetryApi
 
+  /*
+   * MetriKit is supported in iOSv14, but only iOSv15 support real time monitoring for MXDiagnosticPaylods.
+   * From documentation, MetrcKit "delivers diagnostic reports immediately in iOS 15 and later and macOS 12 and later".
+   * https://developer.apple.com/documentation/metrickit?language=objc
+   */
   @available(iOS 15.0, *)
   class AwsMetricKitSubscriber: NSObject, MXMetricManagerSubscriber {
     private let config: AwsMetricKitConfig
