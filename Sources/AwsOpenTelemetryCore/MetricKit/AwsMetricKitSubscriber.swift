@@ -25,7 +25,7 @@
       AwsOpenTelemetryLogger.debug("Successfully deinitialized")
     }
 
-    public func didReceive(_ payloads: [MXDiagnosticPayload]) {
+    func didReceive(_ payloads: [MXDiagnosticPayload]) {
       AwsOpenTelemetryLogger.debug("Received \(payloads.count) diagnostic payload(s)")
       for payload in payloads {
         AwsOpenTelemetryLogger.debug("Processing diagnostic payload from \(payload.timeStampBegin) to \(payload.timeStampEnd)")
