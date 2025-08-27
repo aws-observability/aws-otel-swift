@@ -79,7 +79,7 @@
   @available(iOS 14.0, *)
   private class MockMXCallStackTree: MXCallStackTree {
     override func jsonRepresentation() -> Data {
-      return "{\"test\":\"stacktrace\"}".data(using: .utf8) ?? Data()
+      return Data("{\"test\":\"stacktrace\"}".utf8)
     }
   }
 #endif
