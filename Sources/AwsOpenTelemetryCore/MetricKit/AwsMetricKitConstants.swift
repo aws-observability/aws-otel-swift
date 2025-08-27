@@ -1,3 +1,3 @@
 class AwsMetricKitConstants {
-  static let CRASHES_SCOPE = "aws-otel-swift.crash"
+  static let CRASHES_SCOPE = "aws-otel-swift.MXCrashDiagnostic"
 }

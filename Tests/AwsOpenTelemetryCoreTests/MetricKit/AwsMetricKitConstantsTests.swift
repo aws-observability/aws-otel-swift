@@ -3,6 +3,6 @@ import XCTest
 
 final class AwsMetricKitConstantsTests: XCTestCase {
   func testCrashesScope() {
-    XCTAssertEqual(AwsMetricKitConstants.CRASHES_SCOPE, "aws-otel-swift.crash")
+    XCTAssertEqual(AwsMetricKitConstants.CRASHES_SCOPE, "aws-otel-swift.MXCrashDiagnostic")
   }
 }
