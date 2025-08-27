@@ -7,13 +7,13 @@
   class AwsMetricKitSubscriber: NSObject, MXMetricManagerSubscriber {
     private let config: AwsMetricKitConfig
 
-    public init(config: AwsMetricKitConfig = .default) {
+    init(config: AwsMetricKitConfig = .default) {
       self.config = config
       super.init()
       AwsOpenTelemetryLogger.debug("Successfully initialized")
     }
 
-    public func subscribe() {
+    func subscribe() {
       AwsOpenTelemetryLogger.debug("Registering with MXMetricManager")
       MXMetricManager.shared.add(self)
       AwsOpenTelemetryLogger.debug("Successfully registered with MXMetricManager")
