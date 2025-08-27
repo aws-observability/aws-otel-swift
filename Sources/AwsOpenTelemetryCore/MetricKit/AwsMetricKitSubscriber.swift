@@ -86,9 +86,9 @@
           attributes["crash.vm_region.info"] = AttributeValue.string(vmRegionInfo)
         }
 
-        attributes["crash.stacktrace"] = AttributeValue.string(
-          String(decoding: crash.callStackTree.jsonRepresentation(), as: UTF8.self)
-        )
+        if let stacktrace = String(bytes: crash.callStackTree.jsonRepresentation(), encoding: .utf8) {
+          attributes["crash.stacktrace"] = AttributeValue.string(stacktrace)
+        }
 
         AwsOpenTelemetryLogger.debug("Emitting crash log record with \(attributes.count) attributes")
         logger.logRecordBuilder()

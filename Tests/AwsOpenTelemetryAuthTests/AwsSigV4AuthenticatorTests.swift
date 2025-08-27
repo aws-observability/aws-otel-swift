@@ -22,7 +22,7 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
                                     serviceName: serviceName)
 
     var request = URLRequest(url: URL(string: endpoint)!)
-    request.httpBody = "test".data(using: .utf8)
+    request.httpBody = Data("test".utf8)
 
     let signedRequest = AwsSigV4Authenticator.signURLRequestSync(
       urlRequest: request
@@ -48,7 +48,7 @@ class AwsSigV4AuthenticatorTests: XCTestCase {
                                       serviceName: serviceName)
 
       var request = URLRequest(url: URL(string: endpoint)!)
-      request.httpBody = "test".data(using: .utf8)
+      request.httpBody = Data("test".utf8)
 
     } catch {
       XCTAssertTrue(true)

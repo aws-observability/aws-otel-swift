@@ -62,22 +62,22 @@ public class AwsSigV4RequestInterceptor: URLProtocol {
     let session = URLSession(configuration: config)
 
     dataTask = session.dataTask(with: request) { [weak self] data, response, error in
-      guard let self = self else { return }
+      guard let self else { return }
 
-      if let error = error {
-        self.client?.urlProtocol(self, didFailWithError: error)
+      if let error {
+        client?.urlProtocol(self, didFailWithError: error)
         return
       }
 
-      if let response = response {
-        self.client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+      if let response {
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
       }
 
-      if let data = data {
-        self.client?.urlProtocol(self, didLoad: data)
+      if let data {
+        client?.urlProtocol(self, didLoad: data)
       }
 
-      self.client?.urlProtocolDidFinishLoading(self)
+      client?.urlProtocolDidFinishLoading(self)
     }
 
     dataTask?.resume()
