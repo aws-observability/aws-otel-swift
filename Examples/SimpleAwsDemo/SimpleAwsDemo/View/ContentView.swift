@@ -34,13 +34,13 @@ struct ContentView: View {
 
         // AWS Operation Buttons
         VStack(spacing: 16) {
-          awsButton(icon: "folder", title: "List S3 Buckets") {
+          awsButton(icon: "folder", title: "List S3 Buckets", action: {
             await viewModel.listS3Buckets()
-          }
+          })
 
-          awsButton(icon: "person.badge.key", title: "Get Cognito Identity") {
+          awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
             await viewModel.getCognitoIdentityId()
-          }
+          })
 
           // UIKit Demo Button
           Button(action: {
@@ -59,20 +59,20 @@ struct ContentView: View {
           .disabled(viewModel.isLoading)
 
           // Sessions
-          awsButton(icon: "info.circle", title: "Peek session") {
+          awsButton(icon: "info.circle", title: "Peek session", action: {
             viewModel.showSessionDetails()
-          }
+          })
 
-          awsButton(icon: "arrow.clockwise", title: "Renew session") {
+          awsButton(icon: "arrow.clockwise", title: "Renew session", action: {
             viewModel.renewSession()
             viewModel.showSessionDetails()
-          }
+          })
 
           // Crash Button
           Button(action: {
             let array = []
             _ = array[10] // Index out of bounds
-          }) {
+          }, label: {
             HStack {
               Image(systemName: "exclamationmark.triangle")
               Text("Trigger Crash")
@@ -82,7 +82,7 @@ struct ContentView: View {
             .background(Color.red)
             .foregroundColor(.white)
             .cornerRadius(10)
-          }
+          })
         }
         .padding(.horizontal)
 
