@@ -3,7 +3,7 @@
   import MetricKit
   import OpenTelemetryApi
 
-  @available(iOS 14.0, *)
+  @available(iOS 15.0, *)
   class AwsMetricKitCrashProcessor {
     static let scopeName = "aws-otel-swift.MXCrashDiagnostic"
     static func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) {

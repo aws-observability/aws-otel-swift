@@ -3,7 +3,7 @@
   import MetricKit
   import OpenTelemetryApi
 
-  @available(iOS 14.0, *)
+  @available(iOS 15.0, *)
   class AwsMetricKitSubscriber: NSObject, MXMetricManagerSubscriber {
     private let config: AwsMetricKitConfig
 

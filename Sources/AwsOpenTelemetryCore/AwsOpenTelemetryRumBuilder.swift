@@ -193,7 +193,7 @@ public class AwsOpenTelemetryRumBuilder {
 
     #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
       // Initialize MetricKit subscriber on iOS 14+
-      if #available(iOS 14.0, *) {
+      if #available(iOS 15.0, *) {
         let metricKitSubscriber = AwsMetricKitSubscriber()
         metricKitSubscriber.subscribe()
         AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber

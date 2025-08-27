@@ -5,7 +5,7 @@
   @testable import AwsOpenTelemetryCore
   @testable import TestUtils
 
-  @available(iOS 14.0, *)
+  @available(iOS 15.0, *)
   final class AwsMetricKitCrashProcessorTests: XCTestCase {
     private var logExporter: InMemoryLogExporter!
 
@@ -64,7 +64,7 @@
     }
   }
 
-  @available(iOS 14.0, *)
+  @available(iOS 15.0, *)
   private class MockMXCrashDiagnostic: MXCrashDiagnostic {
     override var exceptionType: NSNumber? { return NSNumber(value: 1) }
     override var exceptionCode: NSNumber? { return NSNumber(value: 2) }
@@ -76,7 +76,7 @@
     }
   }
 
-  @available(iOS 14.0, *)
+  @available(iOS 15.0, *)
   private class MockMXCallStackTree: MXCallStackTree {
     override func jsonRepresentation() -> Data {
       return Data("{\"test\":\"stacktrace\"}".utf8)
