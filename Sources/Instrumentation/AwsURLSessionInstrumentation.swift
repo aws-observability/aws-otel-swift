@@ -74,7 +74,7 @@ public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtoc
   /**
    * Determines whether a URLRequest should be excluded from instrumentation
    */
-  private func shouldExcludeURL(_ request: URLRequest) -> Bool {
+  func shouldExcludeURL(_ request: URLRequest) -> Bool {
     guard let url = request.url else {
       return false
     }
