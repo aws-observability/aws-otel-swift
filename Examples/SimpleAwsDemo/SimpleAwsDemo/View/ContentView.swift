@@ -45,7 +45,7 @@ struct ContentView: View {
           // UIKit Demo Button
           Button(action: {
             showingDemoViewController = true
-          }) {
+          }, label: {
             HStack {
               Image(systemName: "chart.line.uptrend.xyaxis")
               Text("Show UIKit Demo")
@@ -55,7 +55,7 @@ struct ContentView: View {
             .background(Color.green)
             .foregroundColor(.white)
             .cornerRadius(10)
-          }
+          })
           .disabled(viewModel.isLoading)
 
           // Sessions
@@ -119,7 +119,7 @@ struct ContentView: View {
   func awsButton(icon: String, title: String, action: @escaping () async -> Void) -> some View {
     Button(action: {
       Task { await action() }
-    }) {
+    }, label: {
       HStack {
         Image(systemName: icon)
         Text(title)
@@ -129,7 +129,7 @@ struct ContentView: View {
       .background(Color.blue)
       .foregroundColor(.white)
       .cornerRadius(10)
-    }
+    })
     .disabled(viewModel.isLoading)
   }
 }

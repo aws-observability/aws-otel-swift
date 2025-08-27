@@ -1,8 +1,9 @@
 included:
-  - "Sources"
-  - "Tests"
-excluded: 
-  - ".build"
+  - 'Sources'
+  - 'Tests'
+  - 'Examples'
+excluded:
+  - '.build'
 disabled_rules:
   - todo
   - nesting
