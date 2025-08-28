@@ -67,8 +67,8 @@ public class AwsMetricKitConfigBuilder {
     return self
   }
   
-  /// Sets whether to collect crash diagnostics
-  /// - Parameter crashes: Whether to collect crash diagnostics from MetricKit
+  /// Sets whether to collect hang diagnostics
+  /// - Parameter hangs: Whether to collect hang diagnostics from MetricKit
   /// - Returns: The builder instance for method chaining
   public func with(hangs: Bool) -> Self {
     self.hangs = hangs
