@@ -51,7 +51,7 @@
       let mockHang = MockMXHangDiagnostic()
       let attributes = AwsMetricKitHangProcessor.buildHangAttributes(from: mockHang)
 
-      XCTAssertEqual(attributes["hang.exception_type"]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
+      XCTAssertEqual(attributes["hang.hang_duration"]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
       XCTAssertEqual(attributes["hang.stacktrace"]?.description, "{\"test\":\"stacktrace\"}")
     }
   }
