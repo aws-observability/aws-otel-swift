@@ -55,7 +55,8 @@ public struct AwsMetricKitConfig {
 /// ```
 public class AwsMetricKitConfigBuilder {
   public private(set) var crashes: Bool = true
-
+  public private(set) var hangs: Bool = true
+  
   public init() {}
 
   /// Sets whether to collect crash diagnostics
@@ -63,6 +64,14 @@ public class AwsMetricKitConfigBuilder {
   /// - Returns: The builder instance for method chaining
   public func with(crashes: Bool) -> Self {
     self.crashes = crashes
+    return self
+  }
+  
+  /// Sets whether to collect crash diagnostics
+  /// - Parameter crashes: Whether to collect crash diagnostics from MetricKit
+  /// - Returns: The builder instance for method chaining
+  public func with(hangs: Bool) -> Self {
+    self.hangs = hangs
     return self
   }
 

@@ -67,6 +67,11 @@ struct ContentView: View {
             viewModel.renewSession()
             viewModel.showSessionDetails()
           })
+          
+          // Hang Button
+          awsButton(icon: "exclamationmark.triangle.filled", title: "Simulate ANR (2 sec)") {
+            viewModel.hangApplication(seconds: 2)
+          }
 
           // Crash Button
           Button(action: {

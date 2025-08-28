@@ -59,8 +59,7 @@
     }
 
     private func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
-      guard let diagnostics else { return }
-      AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) hang diagnostic(s)")
+      AwsMetricKitHangProcessor.processHangDiagnostics(diagnostics)
     }
 
     private func processCpuExceptionDiagnostics(_ diagnostics: [MXCPUExceptionDiagnostic]?) {
