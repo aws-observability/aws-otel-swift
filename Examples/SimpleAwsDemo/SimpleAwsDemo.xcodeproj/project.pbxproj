@@ -283,7 +283,6 @@
 				CODE_SIGN_ENTITLEMENTS = SimpleAwsDemo/SimpleAwsDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -321,15 +320,6 @@
 				CODE_SIGN_ENTITLEMENTS = SimpleAwsDemo/SimpleAwsDemo.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-<<<<<<< HEAD
-				DEVELOPMENT_TEAM = 2LP7LF3S9M;
-=======
-<<<<<<< HEAD
-				DEVELOPMENT_TEAM = 2LP7LF3S9M;
-=======
-				DEVELOPMENT_TEAM = "";
->>>>>>> 20480c2 (feat: app hang instrumentation)
->>>>>>> 4e3425e (feat: app hang instrumentation)
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
