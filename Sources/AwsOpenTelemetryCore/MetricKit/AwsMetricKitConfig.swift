@@ -33,10 +33,15 @@ public struct AwsMetricKitConfig {
   /// Whether to collect crash diagnostics from MetricKit
   public let crashes: Bool
 
+  /// Whether to collect crash diagnostics from MetricKit
+  public let hangs: Bool
+
   /// Creates a new MetricKit configuration
   /// - Parameter crashes: Whether to collect crash diagnostics (default true)
-  public init(crashes: Bool = true) {
+  /// - Parameter hangs: Whether to collect hang diagnostics (default true)
+  public init(crashes: Bool = true, hangs: Bool = true) {
     self.crashes = crashes
+    self.hangs = hangs
   }
 
   /// Default configuration with crash collection enabled
@@ -56,7 +61,7 @@ public struct AwsMetricKitConfig {
 public class AwsMetricKitConfigBuilder {
   public private(set) var crashes: Bool = true
   public private(set) var hangs: Bool = true
-  
+
   public init() {}
 
   /// Sets whether to collect crash diagnostics
@@ -66,7 +71,7 @@ public class AwsMetricKitConfigBuilder {
     self.crashes = crashes
     return self
   }
-  
+
   /// Sets whether to collect hang diagnostics
   /// - Parameter hangs: Whether to collect hang diagnostics from MetricKit
   /// - Returns: The builder instance for method chaining

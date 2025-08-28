@@ -138,6 +138,16 @@ class LoaderViewModel: ObservableObject {
     AwsSessionManagerProvider.getInstance().getSession()
   }
 
+  /// Simulates a hang
+  func hangApplication(seconds: UInt8) {
+    /// Most of Apple’s developer tools start reporting issues when the period of unresponsiveness for the main run loop exceeds 250 ms. [source](https://developer.apple.com/documentation/xcode/understanding-hangs-in-your-app#Understand-hangs)
+    ///
+    DispatchQueue.main.async {
+      // Intentionally block the main thread for a duration
+      Thread.sleep(forTimeInterval: Double(seconds) as TimeInterval)
+    }
+  }
+
   /// Starts the digital clock timer
   private func startClock() {
     // Update time immediately

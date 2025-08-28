@@ -28,7 +28,7 @@
       attributes["hang.hang_duration"] = AttributeValue.double(Double(hang.hangDuration.value.toNanoseconds))
 
       if let stacktrace = String(bytes: hang.callStackTree.jsonRepresentation(), encoding: .utf8) {
-        attributes["hang.stacktrace"] = AttributeValue.string(stacktrace)
+        attributes["hang.call_stack_tree"] = AttributeValue.string(stacktrace)
       }
 
       return attributes

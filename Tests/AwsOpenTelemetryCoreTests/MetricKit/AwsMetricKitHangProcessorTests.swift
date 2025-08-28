@@ -44,7 +44,7 @@
       XCTAssertEqual(log.body?.description, "hang")
       XCTAssertEqual(log.instrumentationScopeInfo.name, "aws-otel-swift.MXHangDiagnostic")
       XCTAssertEqual(log.attributes["hang.hang_duration"]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(log.attributes["hang.stacktrace"]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertEqual(log.attributes["hang.call_stack_tree"]?.description, "{\"test\":\"stacktrace\"}")
     }
 
     func testBuildHangAttributesWithMockHang() {
@@ -52,7 +52,7 @@
       let attributes = AwsMetricKitHangProcessor.buildHangAttributes(from: mockHang)
 
       XCTAssertEqual(attributes["hang.hang_duration"]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(attributes["hang.stacktrace"]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertEqual(attributes["hang.call_stack_tree"]?.description, "{\"test\":\"stacktrace\"}")
     }
   }
 
