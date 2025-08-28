@@ -83,7 +83,7 @@ public class AwsMetricKitConfigBuilder {
   /// Builds the AwsMetricKitConfig with the configured settings
   /// - Returns: A new AwsMetricKitConfig instance
   public func build() -> AwsMetricKitConfig {
-    return AwsMetricKitConfig(crashes: crashes)
+    return AwsMetricKitConfig(crashes: crashes, hangs: hangs)
   }
 }
 
