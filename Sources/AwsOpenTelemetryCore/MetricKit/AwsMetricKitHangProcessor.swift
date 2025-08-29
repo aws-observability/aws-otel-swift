@@ -5,7 +5,7 @@
 
   @available(iOS 15.0, *)
   class AwsMetricKitHangProcessor {
-    static let scopeName = "aws-otel-swift.MXHangDiagnostic"
+    static let scopeName = "software.amazon.opentelemetry.MXHangDiagnostic"
     static func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
       guard let diagnostics else { return }
       let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)

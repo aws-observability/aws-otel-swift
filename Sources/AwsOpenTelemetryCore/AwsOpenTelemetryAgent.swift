@@ -87,7 +87,7 @@ import OpenTelemetryApi
    */
   @objc @discardableResult
   func initialize(config: AwsOpenTelemetryConfig) -> Bool {
-    AwsOpenTelemetryLogger.info("Initializing with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
+    AwsOpenTelemetryLogger.info("Initializing with region: \(config.aws.region), appMonitorId: \(config.aws.rumAppMonitorId)")
 
     do {
       try AwsOpenTelemetryRumBuilder.create(config: config).build()

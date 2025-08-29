@@ -55,7 +55,9 @@ public class AwsSessionEventInstrumentation {
   /// Used to broadcast session creation and expiration events after instrumentation is applied.
   static let sessionEventNotification = Notification.Name(AwsSessionConstants.sessionEventNotification)
 
-  static let instrumentationKey = AwsOpenTelemetryAgent.name + ".session"
+  static var instrumentationKey: String {
+    return "software.amazon.opentelemetry.session"
+  }
 
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.

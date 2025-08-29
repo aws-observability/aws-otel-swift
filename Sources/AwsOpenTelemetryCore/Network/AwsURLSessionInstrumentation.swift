@@ -17,7 +17,6 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import URLSessionInstrumentation
-import AwsOpenTelemetryCore
 
 /**
  * AWS-specific URLSession instrumentation that provides automatic network request telemetry
@@ -26,27 +25,26 @@ import AwsOpenTelemetryCore
  * This class wraps the OpenTelemetry URLSession instrumentation with AWS-specific configuration,
  * automatically excluding OTLP telemetry endpoints to prevent recursive instrumentation.
  *
- * Usage: Add this instrumentation via the RUM builder:
+ * Usage:
  * ```
- * try AwsOpenTelemetryRumBuilder.create(config: config)
- *   .addInstrumentation(AwsURLSessionInstrumentation(config: config.rum))
- *   .build()
+ * let urlSessionConfig = AwsURLSessionConfig(region: "us-west-2")
+ * let instrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
+ * instrumentation.apply()
  * ```
  */
-public class AwsURLSessionInstrumentation: AwsOpenTelemetryInstrumentationProtocol {
+public class AwsURLSessionInstrumentation {
   /// Set of URLs that should be excluded from instrumentation
   private let urlsToExclude: Set<String>
-  private let config: RumConfig
-  private var isApplied = false
+  private let config: AwsURLSessionConfig
+  var isApplied = false
 
   /**
    * Initializes the AWS URLSession instrumentation configuration.
    * The instrumentation will be applied when apply() is called.
    */
-  public init(config: RumConfig) {
+  public init(config: AwsURLSessionConfig) {
     self.config = config
-    // Get OTLP endpoints from config but don't create instrumentation yet
-    urlsToExclude = buildOtlpEndpoints(config: config)
+    urlsToExclude = buildOtlpEndpoints(region: config.region, exportOverride: config.exportOverride)
   }
 
   /**

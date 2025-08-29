@@ -20,7 +20,7 @@
     }
 
     func testScopeName() {
-      XCTAssertEqual(AwsMetricKitCrashProcessor.scopeName, "aws-otel-swift.MXCrashDiagnostic")
+      XCTAssertEqual(AwsMetricKitCrashProcessor.scopeName, "software.amazon.opentelemetry.MXCrashDiagnostic")
     }
 
     func testProcessCrashDiagnosticsWithNilDiagnostics() {
@@ -42,7 +42,7 @@
 
       let log = logs[0]
       XCTAssertEqual(log.body?.description, "crash")
-      XCTAssertEqual(log.instrumentationScopeInfo.name, "aws-otel-swift.MXCrashDiagnostic")
+      XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXCrashDiagnostic")
       XCTAssertEqual(log.attributes["crash.exception_type"]?.description, "1")
       XCTAssertEqual(log.attributes["crash.exception_code"]?.description, "2")
       XCTAssertEqual(log.attributes["crash.signal"]?.description, "11")

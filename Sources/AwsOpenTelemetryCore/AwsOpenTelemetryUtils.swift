@@ -27,32 +27,40 @@ public func buildRumEndpoint(region: String) -> String {
   return "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
 }
 
+// MARK: - Endpoint Construction
+
 /**
  * Builds the traces endpoint URL.
  *
- * @param config The RUM configuration
+ * @param region The AWS region
+ * @param exportOverride Optional export overrides
  * @return The traces endpoint URL
  */
-public func buildTracesEndpoint(config: RumConfig) -> String {
-  return config.overrideEndpoint?.traces ?? buildRumEndpoint(region: config.region)
+public func buildTracesEndpoint(region: String, exportOverride: ExportOverride?) -> String {
+  return exportOverride?.traces ?? buildRumEndpoint(region: region)
 }
 
 /**
  * Builds the logs endpoint URL.
  *
- * @param config The RUM configuration
+ * @param region The AWS region
+ * @param exportOverride Optional export overrides
  * @return The logs endpoint URL
  */
-public func buildLogsEndpoint(config: RumConfig) -> String {
-  return config.overrideEndpoint?.logs ?? buildRumEndpoint(region: config.region)
+public func buildLogsEndpoint(region: String, exportOverride: ExportOverride?) -> String {
+  return exportOverride?.logs ?? buildRumEndpoint(region: region)
 }
 
 /**
  * Gets the set of OTLP endpoint URLs
+ *
+ * @param region The AWS region
+ * @param exportOverride Optional export overrides
+ * @return Set of OTLP endpoint URLs
  */
-public func buildOtlpEndpoints(config: RumConfig) -> Set<String> {
-  let tracesEndpoint = buildTracesEndpoint(config: config)
-  let logsEndpoint = buildLogsEndpoint(config: config)
+public func buildOtlpEndpoints(region: String, exportOverride: ExportOverride?) -> Set<String> {
+  let tracesEndpoint = buildTracesEndpoint(region: region, exportOverride: exportOverride)
+  let logsEndpoint = buildLogsEndpoint(region: region, exportOverride: exportOverride)
 
   // Use Set to automatically handle duplicates when traces and logs use the same endpoint
   let endpoints = Set([tracesEndpoint, logsEndpoint])

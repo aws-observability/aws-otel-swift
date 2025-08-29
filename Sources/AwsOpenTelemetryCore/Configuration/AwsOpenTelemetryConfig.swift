@@ -21,21 +21,31 @@ import Foundation
  * This class serves as the main configuration container for initializing the AWS OpenTelemetry SDK
  * with Real User Monitoring (RUM) capabilities. It encompasses all necessary settings for:
  *
- * - **RUM Configuration**: AWS region, app monitor ID, and endpoint overrides
- * - **Application Metadata**: Version information and application identification
+ * - **AWS Configuration**: Region, RUM app monitor ID, and Cognito identity pool
+ * - **Export Overrides**: Custom endpoints for logs and traces
+ * - **Session Configuration**: Timeout settings
+ * - **Application Attributes**: Key-value pairs for application metadata
  * - **Telemetry Features**: Control over automatic instrumentation capabilities
- * - **Schema Versioning**: Configuration format version for compatibility
  *
  */
 @objc public class AwsOpenTelemetryConfig: NSObject, Codable {
-  /// Schema version of the configuration
-  public var version: String?
+  /// AWS service configuration settings
+  public var aws: AwsConfig
 
-  /// RUM (Real User Monitoring) configuration settings
-  public var rum: RumConfig
+  /// Export endpoint overrides
+  public var exportOverride: ExportOverride?
 
-  /// Application-specific configuration settings
-  public var application: ApplicationConfig
+  /// Session timeout in seconds
+  public var sessionTimeout: Int?
+
+  /// Session sample rate (0.0 to 1.0)
+  public var sessionSampleRate: Double?
+
+  /// Application attributes
+  public var applicationAttributes: [String: String]?
+
+  /// Debug flag
+  public var debug: Bool?
 
   /// Telemetry feature configuration settings
   public var telemetry: TelemetryConfig?
@@ -43,246 +53,117 @@ import Foundation
   /**
    * Initializes a new configuration instance.
    *
-   * @param version The schema version of the configuration (defaults to "1.0.0")
-   * @param rum The RUM configuration settings
-   * @param application The application configuration settings
-   * @param telemetry The telemetry configuration settings (defaults to enabled features)
+   * @param aws AWS service configuration
+   * @param exportOverride Optional export endpoint overrides
+   * @param sessionTimeout Session timeout in seconds
+   * @param sessionSampleRate Session sample rate (0.0 to 1.0)
+   * @param applicationAttributes Application metadata attributes
+   * @param debug Debug logging flag
+   * @param telemetry Telemetry configuration (defaults to all enabled)
    */
-  @objc public init(version: String? = "1.0.0",
-                    rum: RumConfig,
-                    application: ApplicationConfig,
-                    telemetry: TelemetryConfig? = TelemetryConfig()) {
-    self.version = version
-    self.rum = rum
-    self.application = application
+  public init(aws: AwsConfig,
+              exportOverride: ExportOverride? = nil,
+              sessionTimeout: Int? = nil,
+              sessionSampleRate: Double? = nil,
+              applicationAttributes: [String: String]? = nil,
+              debug: Bool? = nil,
+              telemetry: TelemetryConfig? = TelemetryConfig()) {
+    self.aws = aws
+    self.exportOverride = exportOverride
+    self.sessionTimeout = sessionTimeout
+    self.sessionSampleRate = sessionSampleRate
+    self.applicationAttributes = applicationAttributes
+    self.debug = debug
     self.telemetry = telemetry
     super.init()
+  }
+
+  /// Creates a new AwsOpenTelemetryConfigBuilder instance
+  static func builder() -> AwsOpenTelemetryConfigBuilder {
+    return AwsOpenTelemetryConfigBuilder()
   }
 
   // Custom decoder implementation to handle default values
   public required init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-
-    version = try container.decodeIfPresent(String.self, forKey: .version)
-    rum = try container.decode(RumConfig.self, forKey: .rum)
-    application = try container.decode(ApplicationConfig.self, forKey: .application)
-
-    // Set default telemetry config if not present in JSON
+    aws = try container.decode(AwsConfig.self, forKey: .aws)
+    exportOverride = try container.decodeIfPresent(ExportOverride.self, forKey: .exportOverride)
+    sessionTimeout = try container.decodeIfPresent(Int.self, forKey: .sessionTimeout)
+    sessionSampleRate = try container.decodeIfPresent(Double.self, forKey: .sessionSampleRate)
+    applicationAttributes = try container.decodeIfPresent([String: String].self, forKey: .applicationAttributes)
+    debug = try container.decodeIfPresent(Bool.self, forKey: .debug)
     telemetry = try container.decodeIfPresent(TelemetryConfig.self, forKey: .telemetry) ?? TelemetryConfig()
-
     super.init()
   }
 }
 
-/**
- * Configuration for AWS CloudWatch RUM (Real User Monitoring) service integration.
- *
- * This class contains all settings required to connect your application to AWS CloudWatch RUM,
- * including service endpoints, authentication parameters, and debugging options.
- *
- * ## Required Settings
- *
- * - **region**: The AWS region where your RUM App Monitor is deployed
- * - **appMonitorId**: The unique identifier of your RUM App Monitor
- *
- * ## Optional Settings
- *
- * - **overrideEndpoint**: Custom endpoints for traces and logs (useful for testing)
- * - **debug**: Enable verbose logging for troubleshooting SDK integration
- * - **alias**: Additional identifier for request routing and access control
- *
- */
-@objc public class RumConfig: NSObject, Codable {
-  /// AWS region where the RUM service is deployed
-  public private(set) var region: String
-
-  /// Unique identifier for the RUM App Monitor
-  public private(set) var appMonitorId: String
-
-  /// Optional endpoint overrides for the RUM service
-  public private(set) var overrideEndpoint: EndpointOverrides?
-
-  /// Flag to enable debug logging for SDK integration
-  public private(set) var debug: Bool?
-
-  /// Optional alias to add to all requests to compare against the rum:alias
-  ///  in appmonitors with resource based policies
-  public private(set) var alias: String?
-
-  // The user session will expire if inactive for the specified length (default 30 minutes)
+/// Builder for creating AwsOpenTelemetryConfig instances with a fluent API
+public class AwsOpenTelemetryConfigBuilder {
+  public private(set) var aws: AwsConfig?
+  public private(set) var exportOverride: ExportOverride?
   public private(set) var sessionTimeout: Int?
+  public private(set) var sessionSampleRate: Double?
+  public private(set) var applicationAttributes: [String: String]?
+  public private(set) var debug: Bool?
+  public private(set) var telemetry: TelemetryConfig? = TelemetryConfig()
 
-  public private(set) var crashes: Bool
+  public init() {}
 
-  /**
-   * Initializes a new RUM configuration instance (Objective-C compatible).
-   *
-   * This initializer is exposed to Objective-C and uses non-optional types
-   * for better Objective-C interoperability.
-   *
-   * @param region AWS region where the RUM service is deployed
-   * @param appMonitorId Unique identifier for the RUM App Monitor
-   * @param overrideEndpoint Optional endpoint overrides for the RUM service
-   * @param debug Flag to enable debug logging (defaults to false)
-   * @param alias Optional alias for request routing and access control
-   * @param sessionTimeout Session timeout in seconds (defaults to 30 minutes)
-   * @param crashes Enable crash reporting (defaults to true)
-   */
-  @objc public init(region: String,
-                    appMonitorId: String,
-                    overrideEndpoint: EndpointOverrides? = nil,
-                    debug: Bool = false,
-                    alias: String? = nil,
-                    sessionTimeout: NSNumber? = nil,
-                    crashes: Bool = true) {
-    self.region = region
-    self.appMonitorId = appMonitorId
-    self.overrideEndpoint = overrideEndpoint
+  /// Sets the AWS configuration
+  public func with(aws: AwsConfig) -> Self {
+    self.aws = aws
+    return self
+  }
+
+  /// Sets the export override configuration
+  public func with(exportOverride: ExportOverride?) -> Self {
+    self.exportOverride = exportOverride
+    return self
+  }
+
+  /// Sets the session timeout
+  public func with(sessionTimeout: Int?) -> Self {
+    self.sessionTimeout = sessionTimeout
+    return self
+  }
+
+  /// Sets the session sample rate
+  public func with(sessionSampleRate: Double?) -> Self {
+    self.sessionSampleRate = sessionSampleRate
+    return self
+  }
+
+  /// Sets the application attributes
+  public func with(applicationAttributes: [String: String]?) -> Self {
+    self.applicationAttributes = applicationAttributes
+    return self
+  }
+
+  /// Sets the debug flag
+  public func with(debug: Bool?) -> Self {
     self.debug = debug
-    self.alias = alias
-    self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionConfig.default.sessionTimeout
-    self.crashes = crashes
-    super.init()
+    return self
   }
 
-  /**
-   * Initializes a new RUM configuration instance (Swift-only).
-   *
-   * This initializer is Swift-only and uses optional types for booleans
-   * that may need to be nil in certain contexts. The dummy parameter
-   * `_swiftOnly` is used to differentiate from the Objective-C initializer.
-   *
-   * @param region AWS region where the RUM service is deployed
-   * @param appMonitorId Unique identifier for the RUM App Monitor
-   * @param overrideEndpoint Optional endpoint overrides for the RUM service
-   * @param debug Optional flag to enable debug logging (defaults to false)
-   * @param alias Optional alias for request routing and access control
-   * @param sessionTimeout Session timeout in seconds (defaults to 30 minutes)
-   * @param crashes Optional flag to enable crash reporting (defaults to true)
-   * @param _swiftOnly Dummy parameter to differentiate from Objective-C initializer
-   */
-  public init(region: String,
-              appMonitorId: String,
-              overrideEndpoint: EndpointOverrides? = nil,
-              debug: Bool? = false,
-              alias: String? = nil,
-              sessionTimeout: NSNumber? = nil,
-              crashes: Bool? = true,
-              _swiftOnly: Bool? = nil) {
-    self.region = region
-    self.appMonitorId = appMonitorId
-    self.overrideEndpoint = overrideEndpoint
-    self.debug = debug ?? false
-    self.alias = alias
-    self.sessionTimeout = (sessionTimeout as? Int) ?? AwsSessionConfig.default.sessionTimeout
-    self.crashes = crashes ?? true
-    super.init()
+  /// Sets the telemetry configuration
+  public func with(telemetry: TelemetryConfig?) -> Self {
+    self.telemetry = telemetry
+    return self
   }
 
-  /**
-   * Initializes RUM configuration from JSON data (Codable decoder).
-   *
-   * Automatically called during JSON deserialization. Handles default values
-   * for optional fields like crashes (defaults to true) and sessionTimeout.
-   */
-  public required init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-
-    region = try container.decode(String.self, forKey: .region)
-    appMonitorId = try container.decode(String.self, forKey: .appMonitorId)
-    overrideEndpoint = try container.decodeIfPresent(EndpointOverrides.self, forKey: .overrideEndpoint)
-    debug = try container.decodeIfPresent(Bool.self, forKey: .debug) ?? false
-    alias = try container.decodeIfPresent(String.self, forKey: .alias)
-    sessionTimeout = try container.decodeIfPresent(Int.self, forKey: .sessionTimeout) ?? AwsSessionConfig.default.sessionTimeout
-    crashes = try container.decodeIfPresent(Bool.self, forKey: .crashes) ?? true
-
-    super.init()
-  }
-}
-
-/**
- * Configuration for endpoint overrides.
- *
- * Allows customization of the endpoints used for logs and traces,
- * which is useful for testing or custom deployments.
- */
-@objc public class EndpointOverrides: NSObject, Codable {
-  /// Custom endpoint URL for logs
-  public var logs: String?
-
-  /// Custom endpoint URL for traces
-  public var traces: String?
-
-  /**
-   * Initializes a new endpoint overrides instance.
-   *
-   * @param logs Custom endpoint URL for logs
-   * @param traces Custom endpoint URL for traces
-   */
-  @objc public init(logs: String? = nil, traces: String? = nil) {
-    self.logs = logs
-    self.traces = traces
-    super.init()
-  }
-}
-
-/**
- * Configuration for application-specific settings.
- *
- * Contains metadata about the application being monitored.
- */
-@objc public class ApplicationConfig: NSObject, Codable {
-  /// Version of the application being monitored
-  public var applicationVersion: String
-
-  /**
-   * Initializes a new application configuration instance.
-   *
-   * @param applicationVersion Version of the application being monitored
-   */
-  @objc public init(applicationVersion: String) {
-    self.applicationVersion = applicationVersion
-    super.init()
-  }
-}
-
-/**
- * Configuration for controlling automatic telemetry instrumentation features.
- *
- * This class allows you to enable or disable specific automatic instrumentation
- * capabilities provided by the AWS OpenTelemetry SDK. Each feature can be
- * controlled independently to match your application's requirements.
- *
- * ## Available Features
- *
- * - **UIKit View Instrumentation**: Automatically creates spans for view controller
- *   lifecycle events (viewDidLoad, viewWillAppear, viewDidAppear, etc.)
- *
- * ## Default Behavior
- *
- * By default, all instrumentation features are **enabled** to provide comprehensive
- * observability out of the box. You can selectively disable features if needed.
- *
- */
-@objc public class TelemetryConfig: NSObject, Codable {
-  /// Enable UIKit view instrumentation (default: true)
-  @objc public var isUiKitViewInstrumentationEnabled: Bool
-
-  /**
-   * Initializes telemetry configuration with default values.
-   */
-  @objc override public init() {
-    isUiKitViewInstrumentationEnabled = true
-    super.init()
-  }
-
-  /**
-   * Initializes telemetry configuration with custom values.
-   *
-   * @param isUiKitViewInstrumentationEnabled Enable UIKit view instrumentation
-   */
-  @objc public init(isUiKitViewInstrumentationEnabled: Bool = true) {
-    self.isUiKitViewInstrumentationEnabled = isUiKitViewInstrumentationEnabled
-    super.init()
+  /// Builds the AwsOpenTelemetryConfig with the configured settings
+  public func build() -> AwsOpenTelemetryConfig {
+    guard let aws else {
+      fatalError("AwsOpenTelemetryConfig requires aws configuration to be set")
+    }
+    return AwsOpenTelemetryConfig(
+      aws: aws,
+      exportOverride: exportOverride,
+      sessionTimeout: sessionTimeout,
+      sessionSampleRate: sessionSampleRate,
+      applicationAttributes: applicationAttributes,
+      debug: debug,
+      telemetry: telemetry
+    )
   }
 }

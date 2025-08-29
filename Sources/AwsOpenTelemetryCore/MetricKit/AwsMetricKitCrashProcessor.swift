@@ -5,7 +5,7 @@
 
   @available(iOS 15.0, *)
   class AwsMetricKitCrashProcessor {
-    static let scopeName = "aws-otel-swift.MXCrashDiagnostic"
+    static let scopeName = "software.amazon.opentelemetry.MXCrashDiagnostic"
     static func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) {
       guard let diagnostics else { return }
       let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
