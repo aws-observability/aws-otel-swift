@@ -2,9 +2,9 @@
 
 This module is responsible for capturing the following telemetries:
 
-1. **[Session Start](#session-start)** - Reports `session.start` events when a new session begins, following OpenTelemetry semantic conventions.
+1. **[Session Start](#session-start)** - Reports `session.start` events when a new session begins, following [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/general/session/#event-sessionstart) for session start.
 
-2. **[Session End](#session-end)** - Reports `session.end` events when a session expires following OpenTelemetry semantic convention, with some extensions such as duration and end time.
+2. **[Session End](#session-end)** - Reports `session.end` events when a session expires following [OpenTelemetry semantic convention](https://opentelemetry.io/docs/specs/semconv/general/session/#event-sessionend) for session end, with some extensions such as duration and end time.
 
 ## Getting Started
 
@@ -75,11 +75,6 @@ if let session = sessionManager.peekSession() {
 - **`getSession()`** - Returns the current active session and extends its expiration time. If no active session exists, creates a new one.
 - **`peekSession()`** - Returns the current active session without extending its expiration time. Returns `nil` if no active session exists.
 
-// Initialize the SDK
-try AwsOpenTelemetryRumBuilder.create(config: config).build()
-
-````
-
 ## Session Start
 
 A `session.start` log record is created when `getSession()` is called and the current session is expired or there is no existing session. Under the hood, AwsSessionSpanProcessor depends on `getSession()`, therefore extending or expiring the current session on every span.
@@ -101,7 +96,7 @@ A `session.start` log record is created when `getSession()` is called and the cu
   "instrumentationScopeInfo": { "name": "software.amazon.opentelemetry.session" },
   "timestamp": 778124014.610989
 }
-````
+```
 
 ### Session Start Attributes
 
@@ -114,10 +109,6 @@ A `session.start` log record is created when `getSession()` is called and the cu
 ## Session End
 
 A `session.end` log record is created when `getSession()` is called and the previous session has expired. If a `session.end` event occurs, then a `session.start` event is also be created immediately.
-
-### Instrumentation Scope
-
-- **Name**: `"software.amazon.opentelemetry.session"`
 
 ### Example Session End Log Record
 
