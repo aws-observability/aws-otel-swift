@@ -1,5 +1,5 @@
 # AWS OpenTelemetry CodeQL - Code Quality checks
-# Runs SwiftFormat and SwiftLint on changed files
+# Runs SwiftFormat and SwiftLint on entire repository
 # Triggered on: PR creation/updates, manual dispatch
 
 name: CodeQL
@@ -13,49 +13,11 @@ permissions:
   contents: read
 
 jobs:
-  FormattingLint:
+  lint:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Install SwiftFormat
-        run: brew install swiftformat
-      - name: SwiftFormat
-        run: |
-          git fetch origin main
-          swift_files=$(git diff --name-only origin/main...HEAD | grep '\.swift$' || true)
-          if [ -n "$swift_files" ]; then
-            echo "Checking SwiftFormat on changed files:"
-            echo "$swift_files"
-            echo "Running SwiftFormat with detailed output..."
-            swiftformat --lint $swift_files --reporter github-actions-log --verbose
-            if [ $? -ne 0 ]; then
-              echo "SwiftFormat violations found. Run 'swiftformat .' to fix automatically."
-              echo "Files that need formatting:"
-              swiftformat --lint $swift_files --reporter json | jq -r '.[] | select(.violations | length > 0) | .file'
-            fi
-          else
-            echo "No Swift files to check"
-          fi
-
-  SwiftLint:
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Install SwiftLint
-        run: brew install swiftlint
-      - name: SwiftLint
-        run: |
-          git fetch origin main
-          swift_files=$(git diff --name-only origin/main...HEAD | grep '\.swift$' || true)
-          if [ -n "$swift_files" ]; then
-            echo "Checking SwiftLint on changed files:"
-            echo "$swift_files"
-            echo "Running SwiftLint..."
-            swiftlint lint --strict $swift_files
-          else
-            echo "No Swift files to check"
-          fi
+      - name: Install tools
+        run: brew install swiftformat swiftlint
+      - name: Run linting
+        run: make lint
