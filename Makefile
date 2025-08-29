@@ -53,6 +53,21 @@ setup-brew:  ## Install required tools (xcbeautify)
 check-coverage:  ## Run tests with coverage and check thresholds
 	./scripts/check-coverage.sh
 
+.PHONY: lint-format
+lint-format:  ## Run SwiftFormat linting
+	find . -name '*.swift' -not -path './.build/*' | xargs swiftformat --lint
+
+.PHONY: lint-swift
+lint-swift:  ## Run SwiftLint
+	find . -name '*.swift' -not -path './.build/*' | xargs swiftlint lint --strict
+
+.PHONY: format
+format:  ## Auto-fix formatting issues with SwiftFormat
+	find . -name '*.swift' -not -path './.build/*' | xargs swiftformat
+
+.PHONY: lint
+lint: lint-format lint-swift  ## Run all linting checks
+
 # Build Commands - Compile code for each platform
 .PHONY: build-ios
 build-ios:  ## Build for iOS
