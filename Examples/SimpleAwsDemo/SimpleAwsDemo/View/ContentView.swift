@@ -40,11 +40,11 @@ struct ContentView: View {
               await viewModel.listS3Buckets()
             })
 
-            awsButton(icon: "network", title: "Make 4xx HTTP Request") {
+            awsButton(icon: "network", title: "4xx HTTP Request") {
               await viewModel.make4xxRequest()
             }
 
-            awsButton(icon: "network", title: "Make 5xx HTTP Request") {
+            awsButton(icon: "network", title: "5xx HTTP Request") {
               await viewModel.make5xxRequest()
             }
 

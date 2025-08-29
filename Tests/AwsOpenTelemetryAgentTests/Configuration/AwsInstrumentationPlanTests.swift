@@ -70,13 +70,9 @@ final class AwsInstrumentationPlanTests: XCTestCase {
     XCTAssertEqual(plan.metricKitConfig?.hangs, true)
   }
 
-  func testCrashOnlyEnabled() {
+  func testCrashOnlyDisabled() {
     let telemetry = TelemetryConfig.builder()
-      .with(crash: TelemetryFeature(enabled: true))
-      .with(sessionEvents: TelemetryFeature(enabled: false))
-      .with(view: TelemetryFeature(enabled: false))
-      .with(network: TelemetryFeature(enabled: false))
-      .with(hang: TelemetryFeature(enabled: false))
+      .with(crash: TelemetryFeature(enabled: false))
       .build()
 
     let config = AwsOpenTelemetryConfig(
@@ -86,23 +82,19 @@ final class AwsInstrumentationPlanTests: XCTestCase {
 
     let plan = AwsInstrumentationPlan.from(config: config)
 
-    XCTAssertTrue(plan.crash)
-    XCTAssertFalse(plan.sessionEvents)
-    XCTAssertFalse(plan.view)
-    XCTAssertFalse(plan.hang)
-    XCTAssertFalse(plan.network)
-    XCTAssertNil(plan.urlSessionConfig)
-    XCTAssertEqual(plan.metricKitConfig?.crashes, true)
-    XCTAssertEqual(plan.metricKitConfig?.hangs, false)
+    XCTAssertFalse(plan.crash)
+    XCTAssertTrue(plan.sessionEvents)
+    XCTAssertTrue(plan.view)
+    XCTAssertTrue(plan.hang)
+    XCTAssertTrue(plan.network)
+    XCTAssertEqual(plan.urlSessionConfig?.region, "us-east-1")
+    XCTAssertEqual(plan.metricKitConfig?.crashes, false)
+    XCTAssertEqual(plan.metricKitConfig?.hangs, true)
   }
 
-  func testNetworkOnlyEnabled() {
+  func testNetworkOnlyDisabled() {
     let telemetry = TelemetryConfig.builder()
-      .with(network: TelemetryFeature(enabled: true))
-      .with(sessionEvents: TelemetryFeature(enabled: false))
-      .with(view: TelemetryFeature(enabled: false))
-      .with(crash: TelemetryFeature(enabled: false))
-      .with(hang: TelemetryFeature(enabled: false))
+      .with(network: TelemetryFeature(enabled: false))
       .build()
 
     let config = AwsOpenTelemetryConfig(
@@ -112,22 +104,19 @@ final class AwsInstrumentationPlanTests: XCTestCase {
 
     let plan = AwsInstrumentationPlan.from(config: config)
 
-    XCTAssertTrue(plan.network)
-    XCTAssertFalse(plan.sessionEvents)
-    XCTAssertFalse(plan.view)
-    XCTAssertFalse(plan.crash)
-    XCTAssertFalse(plan.hang)
-    XCTAssertEqual(plan.urlSessionConfig?.region, "eu-west-1")
-    XCTAssertNil(plan.metricKitConfig)
+    XCTAssertFalse(plan.network)
+    XCTAssertTrue(plan.sessionEvents)
+    XCTAssertTrue(plan.view)
+    XCTAssertTrue(plan.crash)
+    XCTAssertTrue(plan.hang)
+    XCTAssertNil(plan.urlSessionConfig)
+    XCTAssertEqual(plan.metricKitConfig?.crashes, true)
+    XCTAssertEqual(plan.metricKitConfig?.hangs, true)
   }
 
-  func testSessionEventsOnlyEnabled() {
+  func testSessionEventsOnlyDisabled() {
     let telemetry = TelemetryConfig.builder()
-      .with(sessionEvents: TelemetryFeature(enabled: true))
-      .with(view: TelemetryFeature(enabled: false))
-      .with(crash: TelemetryFeature(enabled: false))
-      .with(hang: TelemetryFeature(enabled: false))
-      .with(network: TelemetryFeature(enabled: false))
+      .with(sessionEvents: TelemetryFeature(enabled: false))
       .build()
 
     let config = AwsOpenTelemetryConfig(
@@ -137,22 +126,19 @@ final class AwsInstrumentationPlanTests: XCTestCase {
 
     let plan = AwsInstrumentationPlan.from(config: config)
 
-    XCTAssertTrue(plan.sessionEvents)
-    XCTAssertFalse(plan.view)
-    XCTAssertFalse(plan.crash)
-    XCTAssertFalse(plan.hang)
-    XCTAssertFalse(plan.network)
-    XCTAssertNil(plan.urlSessionConfig)
-    XCTAssertNil(plan.metricKitConfig)
+    XCTAssertFalse(plan.sessionEvents)
+    XCTAssertTrue(plan.view)
+    XCTAssertTrue(plan.crash)
+    XCTAssertTrue(plan.hang)
+    XCTAssertTrue(plan.network)
+    XCTAssertEqual(plan.urlSessionConfig?.region, "ap-south-1")
+    XCTAssertEqual(plan.metricKitConfig?.crashes, true)
+    XCTAssertEqual(plan.metricKitConfig?.hangs, true)
   }
 
-  func testViewOnlyEnabled() {
+  func testViewOnlyDisabled() {
     let telemetry = TelemetryConfig.builder()
-      .with(view: TelemetryFeature(enabled: true))
-      .with(sessionEvents: TelemetryFeature(enabled: false))
-      .with(crash: TelemetryFeature(enabled: false))
-      .with(hang: TelemetryFeature(enabled: false))
-      .with(network: TelemetryFeature(enabled: false))
+      .with(view: TelemetryFeature(enabled: false))
       .build()
 
     let config = AwsOpenTelemetryConfig(
@@ -162,22 +148,19 @@ final class AwsInstrumentationPlanTests: XCTestCase {
 
     let plan = AwsInstrumentationPlan.from(config: config)
 
-    XCTAssertTrue(plan.view)
-    XCTAssertFalse(plan.sessionEvents)
-    XCTAssertFalse(plan.crash)
-    XCTAssertFalse(plan.hang)
-    XCTAssertFalse(plan.network)
-    XCTAssertNil(plan.urlSessionConfig)
-    XCTAssertNil(plan.metricKitConfig)
+    XCTAssertFalse(plan.view)
+    XCTAssertTrue(plan.sessionEvents)
+    XCTAssertTrue(plan.crash)
+    XCTAssertTrue(plan.hang)
+    XCTAssertTrue(plan.network)
+    XCTAssertEqual(plan.urlSessionConfig?.region, "ca-central-1")
+    XCTAssertEqual(plan.metricKitConfig?.crashes, true)
+    XCTAssertEqual(plan.metricKitConfig?.hangs, true)
   }
 
-  func testHangOnlyEnabled() {
+  func testHangOnlyDisabled() {
     let telemetry = TelemetryConfig.builder()
-      .with(hang: TelemetryFeature(enabled: true))
-      .with(sessionEvents: TelemetryFeature(enabled: false))
-      .with(view: TelemetryFeature(enabled: false))
-      .with(crash: TelemetryFeature(enabled: false))
-      .with(network: TelemetryFeature(enabled: false))
+      .with(hang: TelemetryFeature(enabled: false))
       .build()
 
     let config = AwsOpenTelemetryConfig(
@@ -187,14 +170,14 @@ final class AwsInstrumentationPlanTests: XCTestCase {
 
     let plan = AwsInstrumentationPlan.from(config: config)
 
-    XCTAssertTrue(plan.hang)
-    XCTAssertFalse(plan.sessionEvents)
-    XCTAssertFalse(plan.view)
-    XCTAssertFalse(plan.crash)
-    XCTAssertFalse(plan.network)
-    XCTAssertNil(plan.urlSessionConfig)
-    XCTAssertEqual(plan.metricKitConfig?.crashes, false)
-    XCTAssertEqual(plan.metricKitConfig?.hangs, true)
+    XCTAssertFalse(plan.hang)
+    XCTAssertTrue(plan.sessionEvents)
+    XCTAssertTrue(plan.view)
+    XCTAssertTrue(plan.crash)
+    XCTAssertTrue(plan.network)
+    XCTAssertEqual(plan.urlSessionConfig?.region, "eu-central-1")
+    XCTAssertEqual(plan.metricKitConfig?.crashes, true)
+    XCTAssertEqual(plan.metricKitConfig?.hangs, false)
   }
 
   func testNetworkWithExportOverride() {
