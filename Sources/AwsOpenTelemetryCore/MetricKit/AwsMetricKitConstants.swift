@@ -3,7 +3,6 @@
 /// Provides standardized attribute names and event types following MetricKit naming convention.
 ///
 public class AwsMetricKitConstants {
-
   // MARK: - Hang constants
 
   /// Attribute name for hang duration
@@ -11,5 +10,4 @@ public class AwsMetricKitConstants {
 
   /// Attribute name for hang `callStackTree`
   public static let hangCallStackTree = "hang.call_stack_tree"
-
 }
