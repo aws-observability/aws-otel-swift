@@ -58,7 +58,7 @@
       AwsMetricKitCrashProcessor.processCrashDiagnostics(diagnostics)
     }
 
-    private func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
+    private func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {      
       AwsMetricKitHangProcessor.processHangDiagnostics(diagnostics)
     }
 

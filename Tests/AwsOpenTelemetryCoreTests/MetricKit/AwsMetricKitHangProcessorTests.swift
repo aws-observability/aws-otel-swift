@@ -43,16 +43,16 @@
       let log = logs[0]
       XCTAssertEqual(log.body?.description, "hang")
       XCTAssertEqual(log.instrumentationScopeInfo.name, "aws-otel-swift.MXHangDiagnostic")
-      XCTAssertEqual(log.attributes["hang.hang_duration"]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(log.attributes["hang.call_stack_tree"]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
+      XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }
 
     func testBuildHangAttributesWithMockHang() {
       let mockHang = MockMXHangDiagnostic()
       let attributes = AwsMetricKitHangProcessor.buildHangAttributes(from: mockHang)
 
-      XCTAssertEqual(attributes["hang.hang_duration"]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(attributes["hang.call_stack_tree"]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertEqual(attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
+      XCTAssertEqual(attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }
   }
 

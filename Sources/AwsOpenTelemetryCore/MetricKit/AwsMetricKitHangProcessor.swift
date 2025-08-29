@@ -25,10 +25,10 @@
     static func buildHangAttributes(from hang: MXHangDiagnostic) -> [String: AttributeValue] {
       var attributes: [String: AttributeValue] = [:]
 
-      attributes["hang.hang_duration"] = AttributeValue.double(Double(hang.hangDuration.value.toNanoseconds))
+      attributes[AwsMetricKitConstants.hangDuration] = AttributeValue.double(Double(hang.hangDuration.value.toNanoseconds))
 
       if let stacktrace = String(bytes: hang.callStackTree.jsonRepresentation(), encoding: .utf8) {
-        attributes["hang.call_stack_tree"] = AttributeValue.string(stacktrace)
+        attributes[AwsMetricKitConstants.hangCallStackTree] = AttributeValue.string(stacktrace)
       }
 
       return attributes
