@@ -72,8 +72,12 @@ if let session = sessionManager.peekSession() {
 }
 ````
 
-- **`getSession()`** - Returns the current active session and extends its expiration time. If no active session exists, creates a new one.
-- **`peekSession()`** - Returns the current active session without extending its expiration time. Returns `nil` if no active session exists.
+### AwsSessionManager
+
+| Method          | Return Type   | Description                                                                                                          |
+| --------------- | ------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `getSession()`  | `AwsSession`  | Returns the current active session and extends its expiration time. If no active session exists, creates a new one.  |
+| `peekSession()` | `AwsSession?` | Returns the current active session without extending its expiration time. Returns `nil` if no active session exists. |
 
 ## Session Start
 
