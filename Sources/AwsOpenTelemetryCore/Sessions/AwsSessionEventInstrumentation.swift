@@ -56,7 +56,7 @@ public class AwsSessionEventInstrumentation {
   static let sessionEventNotification = Notification.Name(AwsSessionConstants.sessionEventNotification)
 
   static var instrumentationKey: String {
-    return "software.amazon.opentelemetry.session"
+    return AwsInstrumentationScopes.SESSION
   }
 
   /// Flag to track if the instrumentation has been applied.
