@@ -243,12 +243,12 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 #### AwsConfig
 
-| Field               | Type   | Required | Default | Description                                                                                                                                        |
-| ------------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| region              | String | Yes      | -       | AWS region where the RUM service is deployed                                                                                                       |
-| rumAppMonitorId     | String | Yes      | -       | Unique identifier for the RUM App Monitor                                                                                                          |
-| rumAlias            | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor |
-| cognitoIdentityPool | String | No       | nil     | Cognito Identity Pool ID for authentication                                                                                                        |
+| Field               | Type   | Required | Default | Description                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| region              | String | Yes      | -       | AWS region where the RUM service is deployed                                                                                                                                                                                                                                                                                     |
+| rumAppMonitorId     | String | Yes      | -       | Unique identifier for the RUM App Monitor                                                                                                                                                                                                                                                                                        |
+| rumAlias            | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor. See public docs for using an alias with a [RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html). |
+| cognitoIdentityPool | String | No       | nil     | Cognito Identity Pool ID for authentication                                                                                                                                                                                                                                                                                      |
 
 #### ExportOverride
 
