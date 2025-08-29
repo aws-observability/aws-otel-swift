@@ -225,6 +225,20 @@ do {
 }
 ```
 
+## Instrumentation
+
+The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various iOS application components. Each instrumentation can be individually enabled or disabled through the telemetry configuration.
+
+### Available Instrumentations
+
+| Instrumentation    | Description                                                 | Documentation                                                                        |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Network**        | Automatic HTTP request tracing for URLSession               | [Network README](Sources/AwsOpenTelemetryCore/Network/README.md)                     |
+| **Crashes**        | Crash reporting using MetricKit MXCrashDiagnostic           | [Crashes README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#crashes)           |
+| **Hangs**          | Application hang detection using MetricKit MXHangDiagnostic | [Hangs README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#hangs)               |
+| **View Tracking**  | Automatic view instrumentation for UIKit and SwiftUI        | [UIKitView README](Sources/AwsOpenTelemetryCore/AutoInstrumentation/UIKit/README.md) |
+| **Session Events** | Session lifecycle tracking with start/end events            | [Sessions README](Sources/AwsOpenTelemetryCore/Sessions/README.md)                   |
+
 ### Configuration Options
 
 #### AwsConfig
