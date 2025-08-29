@@ -27,19 +27,24 @@ import StdoutExporter
 
 /**
  * Builder for configuring and initializing the AWS OpenTelemetry SDK with RUM capabilities.
- *
- * This class provides a fluent API for setting up the complete OpenTelemetry pipeline
- * optimized for AWS Real User Monitoring (RUM). It handles the configuration of:
- *
- * - **Tracer Provider**: For creating and managing distributed traces
- * - **Logger Provider**: For structured logging with OpenTelemetry context
- * - **Exporters**: For sending telemetry data to AWS CloudWatch RUM
- * - **Resources**: For identifying the application and runtime environment
- * - **Instrumentation**: For configuring and creating instrumentation modules
- *
- * This builder is not thread-safe and should be used from a single thread.
- * However, the resulting OpenTelemetry components are thread-safe once built.
- */
+  *
+  * This class provides a fluent API for setting up the complete OpenTelemetry pipeline
+  * optimized for AWS Real User Monitoring (RUM). It handles the configuration of:
+  *
+  * - **Tracer Provider**: For creating and managing distributed traces
+  * - **Logger Provider**: For structured logging with OpenTelemetry context
+  * - **Exporters**: For sending telemetry data to AWS CloudWatch RUM
+  * - **Resources**: For identifying the application and runtime environment
+  * - **Instrumentation**: For configuring and creating instrumentation modules
+  *
+  * This builder is not thread-safe and should be used from a single thread.
+  * However, the resulting OpenTelemetry components are thread-safe once built.
+  *
+  * Uses a 3-step instrumentation approach:
+  * 1. User provides immutable TelemetryConfig
+  * 2. Config converted to testable AwsInstrumentationPlan
+  * 3. Plan executed to build requested instrumentations
+  */
 public class AwsOpenTelemetryRumBuilder {
   private var tracerProviderCustomizers: [(TracerProviderBuilder) -> TracerProviderBuilder] = []
   private var loggerProviderCustomizers: [(LoggerProviderBuilder) -> LoggerProviderBuilder] = []
@@ -146,30 +151,18 @@ public class AwsOpenTelemetryRumBuilder {
     AwsOpenTelemetryAgent.shared.isInitialized = true
     AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
 
-    buildInstrumentations()
+    buildInstrumentations(plan: instrumentationPlan)
 
     return self
   }
 
-  var instrumentationPlan: InstrumentationPlan {
-    guard let telemetry = config.telemetry else {
-      return InstrumentationPlan()
-    }
-
-    return InstrumentationPlan(
-      sessionEvents: telemetry.sessionEvents?.enabled == true,
-      view: telemetry.view?.enabled == true,
-      crash: telemetry.crash?.enabled == true,
-      network: telemetry.network?.enabled == true
-    )
+  /// Convert TelemetryConfig to testable AwsInstrumentationPlan
+  var instrumentationPlan: AwsInstrumentationPlan {
+    return AwsInstrumentationPlan.from(config: config)
   }
 
-  /**
-   * Builds and applies all instrumentations after OpenTelemetry is initialized.
-   */
-  private func buildInstrumentations() {
-    let plan = instrumentationPlan
-
+  /// Execute AwsInstrumentationPlan to build requested instrumentations
+  private func buildInstrumentations(plan: AwsInstrumentationPlan) {
     // Session Events
     if plan.sessionEvents {
       _ = AwsSessionEventInstrumentation()
@@ -186,9 +179,9 @@ public class AwsOpenTelemetryRumBuilder {
 
     // MetricKit (crashes)
     #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
-      if plan.crash {
+      if plan.crash, let metricKitConfig = plan.metricKitConfig {
         if #available(iOS 15.0, *) {
-          let metricKitSubscriber = AwsMetricKitSubscriber()
+          let metricKitSubscriber = AwsMetricKitSubscriber(config: metricKitConfig)
           metricKitSubscriber.subscribe()
           AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
         }
@@ -196,8 +189,7 @@ public class AwsOpenTelemetryRumBuilder {
     #endif
 
     // Network (URLSession)
-    if plan.network {
-      let urlSessionConfig = AwsURLSessionConfig(region: config.aws.region, exportOverride: config.exportOverride)
+    if plan.network, let urlSessionConfig = plan.urlSessionConfig {
       let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
       urlSessionInstrumentation.apply()
     }
@@ -447,19 +439,5 @@ public class AwsOpenTelemetryRumBuilder {
 
     // Build final provider
     return customizedBuilder.build()
-  }
-}
-
-struct InstrumentationPlan {
-  let sessionEvents: Bool
-  let view: Bool
-  let crash: Bool
-  let network: Bool
-
-  init(sessionEvents: Bool = false, view: Bool = false, crash: Bool = false, network: Bool = false) {
-    self.sessionEvents = sessionEvents
-    self.view = view
-    self.crash = crash
-    self.network = network
   }
 }
