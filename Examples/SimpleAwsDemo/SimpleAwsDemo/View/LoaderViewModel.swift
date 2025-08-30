@@ -159,11 +159,7 @@ class LoaderViewModel: ObservableObject {
   /// Makes a 5xx HTTP request to demonstrate network server error instrumentation
   func make5xxRequest() async {
     stopClock()
-
-    isLoading = true
     resultMessage = "Making 5xx HTTP request..."
-    defer { isLoading = false }
-
     do {
       let url = URL(string: "https://httpbin.org/status/500")!
       let (_, response) = try await URLSession.shared.data(from: url)

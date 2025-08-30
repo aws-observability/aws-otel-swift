@@ -179,19 +179,25 @@ public class AwsOpenTelemetryRumBuilder {
 
     // MetricKit (crashes)
     #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
-      if plan.crash, let metricKitConfig = plan.metricKitConfig {
+      if let metricKitConfig = plan.metricKitConfig {
         if #available(iOS 15.0, *) {
           let metricKitSubscriber = AwsMetricKitSubscriber(config: metricKitConfig)
           metricKitSubscriber.subscribe()
           AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
+        } else {
+          AwsOpenTelemetryLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
         }
+      } else {
+        AwsOpenTelemetryLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
       }
     #endif
 
     // Network (URLSession)
-    if plan.network, let urlSessionConfig = plan.urlSessionConfig {
+    if let urlSessionConfig = plan.urlSessionConfig {
       let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
       urlSessionInstrumentation.apply()
+    } else {
+      AwsOpenTelemetryLogger.info("AwsURLSessionInstrumentation not created - no urlSessionConfig in plan")
     }
   }
 
