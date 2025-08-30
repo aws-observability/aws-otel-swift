@@ -32,10 +32,10 @@ targets: [
         name: "YourAppTarget",
         dependencies: [
             .product(name: "AwsOpenTelemetryCore", package: "aws-otel-swift")
-            
+
             // Only for automatic initialization
             .product(name: "AwsOpenTelemetryAgent", package: "aws-otel-swift"),
-            
+
             // Other dependencies...
         ]
     )
@@ -54,13 +54,12 @@ Example `aws_config.json`:
 
 ```json
 {
-  "version": "1.0.0",
-  "rum": {
+  "aws": {
     "region": "us-west-2",
-    "appMonitorId": "your-app-monitor-id"
+    "rumAppMonitorId": "your-app-monitor-id"
   },
-  "application": {
-    "applicationVersion": "1.0.0"
+  "applicationAttributes": {
+    "application.version": "1.0.0"
   }
 }
 ```
@@ -73,9 +72,10 @@ You can also initialize the SDK manually. The SDK provides a builder pattern:
 import AwsOpenTelemetryCore
 
 // Create your configuration
+let awsConfig = AwsConfig(region: "your-region", rumAppMonitorId: "your-app-monitor-id")
 let config = AwsOpenTelemetryConfig(
-    rum: RumConfig(region: "us-west-2", appMonitorId: "your-app-monitor-id"),
-    application: ApplicationConfig(applicationVersion: "1.0.0")
+    aws: awsConfig,
+    applicationAttributes: ["application.version": "1.0.0"]
 )
 
 // Create a builder, customize it, and build in one go
@@ -144,56 +144,138 @@ do {
 }
 ```
 
-## Configuration Schema
+## Complete Configuration Example
 
 The configuration follows this JSON schema:
 
 ```json
 {
-  "version": "1.0.0",
-  "rum": {
-    "region": "aws-region",
-    "appMonitorId": "app-monitor-id",
-    "overrideEndpoint": {
-      "logs": "optional-logs-endpoint",
-      "traces": "optional-traces-endpoint"
-    },
-    "debug": false,
-    "alias": "optional-alias"
+  "aws": {
+    "region": "us-east-1",
+    "rumAppMonitorId": "YOUR-RUM-APP-MONITOR-ID",
+    "rumAlias": "YOUR-RUM-ALIAS",
+    "cognitoIdentityPool": "YOUR-COGNITO-IDENTITY-POOL-ID"
+  "exportOverride": {
+    "logs": "http://10.0.2.2:4318/v1/logs",
+    "traces": "http://10.0.2.2:4318/v1/traces"
   },
-  "application": {
-    "applicationVersion": "app-version"
+  "sessionTimeout": 1800,
+  "sessionSampleRate": 1.0,
+  "applicationAttributes": {
+    "application.version": "1.0.0"
   },
+  "debug": false,
   "telemetry": {
-    "isUiKitViewInstrumentationEnabled": true
-  }
+    "startup": { "enabled": true },
+    "sessionEvents": { "enabled": true },
+    "crash": { "enabled": true },
+    "hang": { "enabled": true },
+    "network": { "enabled": true }
+    "view": { "enabled": true }
+  },
 }
 ```
 
+### Manual Configuration Setup
+
+You can also create the same configuration programmatically using the builder pattern:
+
+```swift
+import AwsOpenTelemetryCore
+
+// Create AWS configuration
+let awsConfig = AwsConfig(
+    region: "us-east-1",
+    rumAppMonitorId: "YOUR-RUM-APP-MONITOR-ID",
+    rumAlias: "YOUR-RUM-ALIAS",
+    cognitoIdentityPool: "YOUR-COGNITO-IDENTITY-POOL-ID"
+)
+
+// Create export override configuration
+let exportOverride = ExportOverride(
+    logs: "http://10.0.2.2:4318/v1/logs",
+    traces: "http://10.0.2.2:4318/v1/traces"
+)
+
+// Create telemetry configuration
+let telemetryConfig = TelemetryConfig()
+    .withStartup(enabled: true)
+    .withSessionEvents(enabled: true)
+    .withCrash(enabled: true)
+    .withHang(enabled: true)
+    .withNetwork(enabled: true)
+    .withView(enabled: true)
+
+// Create complete configuration
+let config = AwsOpenTelemetryConfig(
+    aws: awsConfig,
+    exportOverride: exportOverride,
+    sessionTimeout: 1800,
+    sessionSampleRate: 1.0,
+    applicationAttributes: ["application.version": "1.0.0"],
+    debug: false,
+    telemetry: telemetryConfig
+)
+
+// Initialize the SDK
+do {
+    try AwsOpenTelemetryRumBuilder.create(config: config).build()
+} catch {
+    print("Error initializing SDK: \(error)")
+}
+```
+
+## Instrumentation
+
+The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various iOS application components. Each instrumentation can be individually enabled or disabled through the telemetry configuration.
+
+### Available Instrumentations
+
+| Instrumentation    | Description                                                 | Documentation                                                                        |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Network**        | Automatic HTTP request tracing for URLSession               | [Network README](Sources/AwsOpenTelemetryCore/Network/README.md)                     |
+| **Crashes**        | Crash reporting using MetricKit MXCrashDiagnostic           | [Crashes README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#crashes)           |
+| **Hangs**          | Application hang detection using MetricKit MXHangDiagnostic | [Hangs README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#hangs)               |
+| **View Tracking**  | Automatic view instrumentation for UIKit and SwiftUI        | [UIKitView README](Sources/AwsOpenTelemetryCore/AutoInstrumentation/UIKit/README.md) |
+| **Session Events** | Session lifecycle tracking with start/end events            | [Sessions README](Sources/AwsOpenTelemetryCore/Sessions/README.md)                   |
+
 ### Configuration Options
 
-#### RumConfig
+#### AwsConfig
 
-| Field            | Type    | Required | Description                                                                                                                                        |
-| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| region           | String  | Yes      | AWS region where the RUM service is deployed                                                                                                       |
-| appMonitorId     | String  | Yes      | Unique identifier for the RUM App Monitor                                                                                                          |
-| overrideEndpoint | Object  | No       | Optional endpoint overrides for the RUM service                                                                                                    |
-| debug            | Boolean | No       | Flag to enable debug logging (defaults to false)                                                                                                   |
-| alias            | String  | No       | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor |
-| sessionTimeout   | Number  | No       | The duration (in seconds) after which an inactive session expires. Default 1800 seconds (30 minutes)                                               |
+| Field               | Type   | Required | Default | Description                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| region              | String | Yes      | -       | AWS region where the RUM service is deployed                                                                                                                                                                                                                                                                                     |
+| rumAppMonitorId     | String | Yes      | -       | Unique identifier for the RUM App Monitor                                                                                                                                                                                                                                                                                        |
+| rumAlias            | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor. See public docs for using an alias with a [RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html). |
+| cognitoIdentityPool | String | No       | nil     | Cognito Identity Pool ID for authentication                                                                                                                                                                                                                                                                                      |
 
-#### ApplicationConfig
+#### ExportOverride
 
-| Field              | Type   | Required | Description                                |
-| ------------------ | ------ | -------- | ------------------------------------------ |
-| applicationVersion | String | Yes      | Version of the application being monitored |
+| Field  | Type   | Required | Default | Description                                                                                                                               |
+| ------ | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| logs   | String | No       | nil     | Custom endpoint for log exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum`   |
+| traces | String | No       | nil     | Custom endpoint for trace exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum` |
+
+#### Root Configuration
+
+| Field                 | Type    | Required | Default | Description                                                       |
+| --------------------- | ------- | -------- | ------- | ----------------------------------------------------------------- |
+| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires |
+| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                               |
+| applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata                          |
+| debug                 | Boolean | No       | false   | Flag to enable debug logging                                      |
 
 #### TelemetryConfig
 
-| Field                             | Type    | Required | Description                                                               |
-| --------------------------------- | ------- | -------- | ------------------------------------------------------------------------- |
-| isUiKitViewInstrumentationEnabled | Boolean | No       | Enable automatic UIKit view controller instrumentation (defaults to true) |
+| Field         | Type   | Required | Default             | Description                                                                                                                                                                                               |
+| ------------- | ------ | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| startup       | Object | No       | { "enabled": true } | Generate MetricKit `MXAppLaungDiagnostic` as log records.                                                                                                                                                 |
+| sessionEvents | Object | No       | { "enabled": true } | Creates `session.start` and `session.end` as log records according to OpenTelemetry Semantic Convention. As an ADOT-Swift extension, `session.end` also includes `duration` and `end_time`.               |
+| crash         | Object | No       | { "enabled": true } | Generate MetricKit `MXCrashDiagnostic` as log records.                                                                                                                                                    |
+| network       | Object | No       | { "enabled": true } | Generate spans of URLSession HTTP requests directly from OTel Swift's implementation of URLSessionInstrumentation. HTTP requests to the logs and spans endpoints are ignored to avoid infinite recursion. |
+| hang          | Object | No       | { "enabled": true } | Generate MetricKit `MXHangDiagnostic` as log records.                                                                                                                                                     |
+| view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
 
 **Note**: The `telemetry` section is optional in JSON configuration. If not provided, all telemetry features will be enabled by default.
 
@@ -204,14 +286,17 @@ This project includes comprehensive test suites. For detailed testing instructio
 **Quick Test Command:**
 
 ```bash
-xcodebuild test -scheme aws-otel-swift-Package -destination 'platform=iOS Simulator,name=iPhone 16'
+swift test // macOS
+make test-ios // iOS
+make test-tvos // tvOS
+make test-watchos // watchOS
 ```
 
 **Test Coverage:**
 
 ```bash
 # Run tests with coverage analysis (requires 70% repository, 80% PR changes)
-make check-coverage
+make check-coverage // macOS
 ```
 
 ## Development Setup

@@ -125,6 +125,6 @@ public enum AwsOpenTelemetryLogger {
 
   /// Checks if debug logging is enabled based on the current configuration
   private static var isDebugEnabled: Bool {
-    return AwsOpenTelemetryAgent.shared.configuration?.rum.debug ?? false
+    return AwsOpenTelemetryAgent.shared.configuration?.debug ?? false
   }
 }

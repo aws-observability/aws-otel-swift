@@ -15,14 +15,10 @@
 
 import Foundation
 
-/**
- * Protocol that all AWS OpenTelemetry instrumentations must conform to.
- * This allows the RUM builder to apply instrumentations without knowing their concrete types.
- */
-public protocol AwsOpenTelemetryInstrumentationProtocol {
-  /**
-   * Applies the instrumentation after OpenTelemetry is fully initialized.
-   * This method should be idempotent - calling it multiple times should be safe.
-   */
-  func apply()
+/// Constants for AWS OpenTelemetry instrumentation scope names
+public enum AwsInstrumentationScopes {
+  public static let CRASH_DIAGNOSTIC = "software.amazon.opentelemetry.MXCrashDiagnostic"
+  public static let HANG_DIAGNOSTIC = "software.amazon.opentelemetry.MXHangDiagnostic"
+  public static let SESSION = "software.amazon.opentelemetry.session"
+  public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
 }

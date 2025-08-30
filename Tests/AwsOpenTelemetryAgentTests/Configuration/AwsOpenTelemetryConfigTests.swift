@@ -2,225 +2,143 @@ import XCTest
 @testable import AwsOpenTelemetryCore
 
 final class AwsOpenTelemetryConfigTests: XCTestCase {
-  // Define test values
-  let version = "1.0.0"
   let region = "us-west-2"
-  let appMonitorId = "test-monitor-id"
-  let appVersion = "1.2.3"
+  let rumAppMonitorId = "test-monitor-id"
+  let rumAlias = "test-alias"
+  let cognitoIdentityPool = "test-identity-pool"
   let logsEndpoint = "https://custom-logs.example.com"
   let tracesEndpoint = "https://custom-traces.example.com"
-  let alias = "test-alias"
-  let sessionTimeout: NSNumber = 100
-
-  // MARK: - AwsOpenTelemetryConfig Tests
+  let sessionTimeout = 100
+  let sessionSampleRate = 1.0
 
   func testAwsOpenTelemetryConfigManualInitWithValues() {
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: rumAlias, cognitoIdentityPool: cognitoIdentityPool)
+    let exportOverride = ExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
+    let applicationAttributes = ["application.version": "1.0.0"]
+    let telemetryConfig = TelemetryConfig()
+
     let config = AwsOpenTelemetryConfig(
-      version: version,
-      rum: RumConfig(region: region, appMonitorId: appMonitorId, debug: true, crashes: false),
-      application: ApplicationConfig(applicationVersion: appVersion),
-      telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
+      aws: awsConfig,
+      exportOverride: exportOverride,
+      sessionTimeout: sessionTimeout,
+      sessionSampleRate: sessionSampleRate,
+      applicationAttributes: applicationAttributes,
+      debug: true,
+      telemetry: telemetryConfig
     )
 
-    XCTAssertEqual(config.version, version)
-    XCTAssertEqual(config.rum.region, region)
-    XCTAssertEqual(config.rum.crashes, false)
-    XCTAssertEqual(config.application.applicationVersion, appVersion)
-    XCTAssertFalse(config.telemetry!.isUiKitViewInstrumentationEnabled)
+    XCTAssertEqual(config.aws.region, region)
+    XCTAssertEqual(config.aws.rumAppMonitorId, rumAppMonitorId)
+    XCTAssertEqual(config.aws.rumAlias, rumAlias)
+    XCTAssertEqual(config.sessionTimeout, sessionTimeout)
+    XCTAssertEqual(config.sessionSampleRate, sessionSampleRate)
+    XCTAssertEqual(config.debug, true)
   }
 
   func testAwsOpenTelemetryConfigManualInitWithDefaults() {
-    let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
-    )
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId)
+    let config = AwsOpenTelemetryConfig(aws: awsConfig)
 
-    XCTAssertEqual(config.version, "1.0.0")
-    XCTAssertEqual(config.rum.crashes, true)
-    XCTAssertTrue(config.telemetry!.isUiKitViewInstrumentationEnabled)
+    XCTAssertNil(config.exportOverride)
+    XCTAssertNil(config.sessionTimeout)
+    XCTAssertNil(config.sessionSampleRate)
+    XCTAssertNil(config.debug)
+    XCTAssertNotNil(config.telemetry)
+    XCTAssertEqual(config.telemetry?.startup?.enabled, true)
+    XCTAssertEqual(config.telemetry?.sessionEvents?.enabled, true)
+    XCTAssertEqual(config.telemetry?.crash?.enabled, true)
+    XCTAssertEqual(config.telemetry?.network?.enabled, true)
+    XCTAssertEqual(config.telemetry?.hang?.enabled, true)
+    XCTAssertEqual(config.telemetry?.view?.enabled, true)
   }
 
   func testAwsOpenTelemetryConfigJSONDecoderWithValues() throws {
     let jsonString = """
     {
-      "version": "\(version)",
-      "rum": {
+      "aws": {
         "region": "\(region)",
-        "appMonitorId": "\(appMonitorId)",
-        "debug": true,
-        "crashes": false
+        "rumAppMonitorId": "\(rumAppMonitorId)",
+        "rumAlias": "\(rumAlias)",
+        "cognitoIdentityPool": "\(cognitoIdentityPool)"
       },
-      "application": {
-        "applicationVersion": "\(appVersion)"
+      "exportOverride": {
+        "logs": "\(logsEndpoint)",
+        "traces": "\(tracesEndpoint)"
       },
+      "sessionTimeout": \(sessionTimeout),
+      "sessionSampleRate": \(sessionSampleRate),
+      "applicationAttributes": {
+        "application.version": "1.0.0"
+      },
+      "debug": true,
       "telemetry": {
-        "isUiKitViewInstrumentationEnabled": false
+        "startup": { "enabled": false },
+        "view": { "enabled": true }
       }
     }
     """
 
     let config = try JSONDecoder().decode(AwsOpenTelemetryConfig.self, from: jsonString.data(using: .utf8)!)
 
-    XCTAssertEqual(config.version, version)
-    XCTAssertEqual(config.rum.debug, true)
-    XCTAssertEqual(config.rum.crashes, false)
-    XCTAssertFalse(config.telemetry!.isUiKitViewInstrumentationEnabled)
+    XCTAssertEqual(config.aws.region, region)
+    XCTAssertEqual(config.aws.rumAppMonitorId, rumAppMonitorId)
+    XCTAssertEqual(config.debug, true)
+    XCTAssertEqual(config.sessionTimeout, sessionTimeout)
+    XCTAssertEqual(config.telemetry?.startup?.enabled, false)
+    XCTAssertEqual(config.telemetry?.sessionEvents?.enabled, true)
+    XCTAssertEqual(config.telemetry?.crash?.enabled, true)
+    XCTAssertEqual(config.telemetry?.network?.enabled, true)
+    XCTAssertEqual(config.telemetry?.hang?.enabled, true)
+    XCTAssertEqual(config.telemetry?.view?.enabled, true)
   }
 
   func testAwsOpenTelemetryConfigJSONDecoderWithDefaults() throws {
     let jsonString = """
     {
-      "rum": {
+      "aws": {
         "region": "\(region)",
-        "appMonitorId": "\(appMonitorId)"
-      },
-      "application": {
-        "applicationVersion": "\(appVersion)"
+        "rumAppMonitorId": "\(rumAppMonitorId)"
       }
     }
     """
 
     let config = try JSONDecoder().decode(AwsOpenTelemetryConfig.self, from: jsonString.data(using: .utf8)!)
 
-    XCTAssertNil(config.version)
-    XCTAssertEqual(config.rum.debug, false)
-    XCTAssertEqual(config.rum.crashes, true)
-    XCTAssertTrue(config.telemetry!.isUiKitViewInstrumentationEnabled)
+    XCTAssertEqual(config.aws.region, region)
+    XCTAssertNil(config.exportOverride)
+    XCTAssertNil(config.debug)
+    XCTAssertNotNil(config.telemetry)
+    XCTAssertEqual(config.telemetry?.startup?.enabled, true)
+    XCTAssertEqual(config.telemetry?.sessionEvents?.enabled, true)
+    XCTAssertEqual(config.telemetry?.crash?.enabled, true)
+    XCTAssertEqual(config.telemetry?.network?.enabled, true)
+    XCTAssertEqual(config.telemetry?.hang?.enabled, true)
+    XCTAssertEqual(config.telemetry?.view?.enabled, true)
   }
 
-  // MARK: - RumConfig Tests
+  func testAwsOpenTelemetryConfigBuilder() {
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId)
+    let exportOverride = ExportOverride(logs: logsEndpoint)
+    let attributes = ["key": "value"]
 
-  func testRumConfigObjectiveCInitWithValues() {
-    let config = RumConfig(
-      region: region,
-      appMonitorId: appMonitorId,
-      overrideEndpoint: EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint),
-      debug: true,
-      alias: alias,
-      sessionTimeout: sessionTimeout,
-      crashes: false
-    )
+    let config = AwsOpenTelemetryConfig.builder()
+      .with(aws: awsConfig)
+      .with(exportOverride: exportOverride)
+      .with(sessionTimeout: sessionTimeout)
+      .with(debug: true)
+      .with(applicationAttributes: attributes)
+      .build()
 
-    XCTAssertEqual(config.region, region)
-    XCTAssertEqual(config.appMonitorId, appMonitorId)
-    XCTAssertEqual(config.overrideEndpoint?.logs, logsEndpoint)
+    XCTAssertEqual(config.aws.region, region)
+    XCTAssertEqual(config.exportOverride?.logs, logsEndpoint)
+    XCTAssertEqual(config.sessionTimeout, sessionTimeout)
     XCTAssertEqual(config.debug, true)
-    XCTAssertEqual(config.alias, alias)
-    XCTAssertEqual(config.crashes, false)
-  }
-
-  func testRumConfigObjectiveCInitWithDefaults() {
-    let config = RumConfig(region: region, appMonitorId: appMonitorId)
-
-    XCTAssertNil(config.overrideEndpoint)
-    XCTAssertEqual(config.debug, false)
-    XCTAssertNil(config.alias)
-    XCTAssertEqual(config.crashes, true)
-    XCTAssertNotNil(config.sessionTimeout)
-  }
-
-  func testRumConfigSwiftOnlyInitWithValues() {
-    let config = RumConfig(
-      region: region,
-      appMonitorId: appMonitorId,
-      overrideEndpoint: EndpointOverrides(logs: logsEndpoint),
-      debug: true,
-      alias: alias,
-      sessionTimeout: sessionTimeout,
-      crashes: false,
-      _swiftOnly: nil
-    )
-
-    XCTAssertEqual(config.region, region)
-    XCTAssertEqual(config.debug, true)
-    XCTAssertEqual(config.crashes, false)
-  }
-
-  func testRumConfigSwiftOnlyInitWithNils() {
-    let config = RumConfig(
-      region: region,
-      appMonitorId: appMonitorId,
-      debug: nil,
-      crashes: nil,
-      _swiftOnly: nil
-    )
-
-    XCTAssertEqual(config.debug, false)
-    XCTAssertEqual(config.crashes, true)
-  }
-
-  func testRumConfigJSONDecoderWithValues() throws {
-    let jsonString = """
-    {
-      "region": "\(region)",
-      "appMonitorId": "\(appMonitorId)",
-      "debug": true,
-      "alias": "\(alias)",
-      "crashes": false,
-      "sessionTimeout": 300
-    }
-    """
-
-    let config = try JSONDecoder().decode(RumConfig.self, from: jsonString.data(using: .utf8)!)
-
-    XCTAssertEqual(config.region, region)
-    XCTAssertEqual(config.debug, true)
-    XCTAssertEqual(config.alias, alias)
-    XCTAssertEqual(config.crashes, false)
-    XCTAssertEqual(config.sessionTimeout, 300)
-  }
-
-  func testRumConfigJSONDecoderWithDefaults() throws {
-    let jsonString = """
-    {
-      "region": "\(region)",
-      "appMonitorId": "\(appMonitorId)"
-    }
-    """
-
-    let config = try JSONDecoder().decode(RumConfig.self, from: jsonString.data(using: .utf8)!)
-
-    XCTAssertEqual(config.debug, false)
-    XCTAssertNil(config.alias)
-    XCTAssertEqual(config.crashes, true)
-    XCTAssertNotNil(config.sessionTimeout)
-  }
-
-  // MARK: - ApplicationConfig Tests
-
-  func testApplicationConfigInit() {
-    let config = ApplicationConfig(applicationVersion: appVersion)
-    XCTAssertEqual(config.applicationVersion, appVersion)
-  }
-
-  // MARK: - TelemetryConfig Tests
-
-  func testTelemetryConfigDefaultInit() {
-    let config = TelemetryConfig()
-    XCTAssertTrue(config.isUiKitViewInstrumentationEnabled)
-  }
-
-  func testTelemetryConfigCustomInit() {
-    let enabledConfig = TelemetryConfig(isUiKitViewInstrumentationEnabled: true)
-    let disabledConfig = TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
-
-    XCTAssertTrue(enabledConfig.isUiKitViewInstrumentationEnabled)
-    XCTAssertFalse(disabledConfig.isUiKitViewInstrumentationEnabled)
-  }
-
-  // MARK: - EndpointOverrides Tests
-
-  func testEndpointOverridesInitWithValues() {
-    let overrides = EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint)
-
-    XCTAssertEqual(overrides.logs, logsEndpoint)
-    XCTAssertEqual(overrides.traces, tracesEndpoint)
-  }
-
-  func testEndpointOverridesInitWithDefaults() {
-    let overrides = EndpointOverrides()
-
-    XCTAssertNil(overrides.logs)
-    XCTAssertNil(overrides.traces)
+    XCTAssertEqual(config.applicationAttributes?["key"], "value")
+    XCTAssertEqual(config.telemetry?.startup?.enabled, true)
+    XCTAssertEqual(config.telemetry?.sessionEvents?.enabled, true)
+    XCTAssertEqual(config.telemetry?.crash?.enabled, true)
+    XCTAssertEqual(config.telemetry?.network?.enabled, true)
+    XCTAssertEqual(config.telemetry?.hang?.enabled, true)
+    XCTAssertEqual(config.telemetry?.view?.enabled, true)
   }
 }

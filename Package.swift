@@ -33,7 +33,8 @@ let package = Package(
         .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift"),
-        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift")
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
+        .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
       ],
       exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md"]
     ),
@@ -97,26 +98,7 @@ extension Package {
     #if canImport(Darwin)
       targets[0].dependencies
         .append(.product(name: "ResourceExtension", package: "opentelemetry-swift"))
-      products.append(contentsOf: [
-        .library(name: "AwsURLSessionInstrumentation", targets: ["AwsURLSessionInstrumentation"])
-      ])
-      targets.append(contentsOf: [
-        .target(
-          name: "AwsURLSessionInstrumentation",
-          dependencies: [
-            "AwsOpenTelemetryCore",
-            .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
-            .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
-            .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
-          ],
-          path: "Sources/Instrumentation/"
-        ),
-        .testTarget(
-          name: "AwsURLSessionInstrumentationTests",
-          dependencies: ["AwsURLSessionInstrumentation"],
-          path: "Tests/InstrumentationTests"
-        )
-      ])
+
     #endif
     return self
   }

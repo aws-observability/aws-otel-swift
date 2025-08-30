@@ -15,7 +15,6 @@
 
 import SwiftUI
 import AwsOpenTelemetryCore
-import AwsURLSessionInstrumentation
 
 @main
 struct SimpleAwsDemoApp: App {
@@ -33,23 +32,20 @@ struct SimpleAwsDemoApp: App {
   }
 
   private func setupOpenTelemetry() {
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let exportOverride = ExportOverride(
+      logs: "http://localhost:4318/v1/logs",
+      traces: "http://localhost:4318/v1/traces"
+    )
     let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(
-        region: "YOUR_REGION_FROM_OUTPUT",
-        appMonitorId: "YOUR_APP_MONITOR_ID_FROM_OUTPUT",
-        overrideEndpoint: EndpointOverrides(
-          logs: "http://localhost:4318/v1/logs",
-          traces: "http://localhost:4318/v1/traces"
-        ),
-        debug: true,
-        sessionTimeout: 30 // just 30 seconds for demo purposes
-      ),
-      application: ApplicationConfig(applicationVersion: "1.0.0")
+      aws: awsConfig,
+      exportOverride: exportOverride,
+      sessionTimeout: 5, // just 5 seconds for demo purposes
+      debug: true
     )
 
     do {
       try AwsOpenTelemetryRumBuilder.create(config: config)
-        .addInstrumentation(AwsURLSessionInstrumentation(config: config.rum))
         .build()
     } catch AwsOpenTelemetryConfigError.alreadyInitialized {
       print("SDK is already initialized")

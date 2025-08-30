@@ -25,94 +25,98 @@ struct ContentView: View {
 
   var body: some View {
     NavigationView {
-      VStack(spacing: 20) {
+      VStack(spacing: 0) {
         // App title
-        Text("AWS OpenTelemetry Demo")
+        Text("ADOT Swift Demo")
           .font(.largeTitle)
           .fontWeight(.bold)
           .padding(.top, 20)
+          .padding(.bottom, 10)
 
-        // AWS Operation Buttons
-        VStack(spacing: 16) {
-          awsButton(icon: "folder", title: "List S3 Buckets", action: {
-            await viewModel.listS3Buckets()
-          })
-
-          awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
-            await viewModel.getCognitoIdentityId()
-          })
-
-          // UIKit Demo Button
-          Button(action: {
-            showingDemoViewController = true
-          }, label: {
-            HStack {
-              Image(systemName: "chart.line.uptrend.xyaxis")
-              Text("Show UIKit Demo")
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.green)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-          })
-          .disabled(viewModel.isLoading)
-
-          // Sessions
-          awsButton(icon: "info.circle", title: "Peek session", action: {
-            viewModel.showSessionDetails()
-          })
-
-          awsButton(icon: "arrow.clockwise", title: "Renew session", action: {
-            viewModel.renewSession()
-            viewModel.showSessionDetails()
-          })
-
-          // Hang Button
-          awsButton(icon: "exclamationmark.triangle.filled", title: "Simulate ANR (2 sec)") {
-            viewModel.hangApplication(seconds: 2)
-          }
-
-          // Crash Button
-          Button(action: {
-            let array = []
-            _ = array[10] // Index out of bounds
-          }, label: {
-            HStack {
-              Image(systemName: "exclamationmark.triangle")
-              Text("Trigger Crash")
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.red)
-            .foregroundColor(.white)
-            .cornerRadius(10)
-          })
-        }
-        .padding(.horizontal)
-
-        // Result Display
+        // Scrollable buttons section
         ScrollView {
-          VStack {
-            if viewModel.isLoading {
-              ProgressView()
-                .padding()
+          LazyVStack(spacing: 12) {
+            awsButton(icon: "folder", title: "List S3 Buckets", action: {
+              await viewModel.listS3Buckets()
+            })
+
+            awsButton(icon: "network", title: "4xx HTTP Request") {
+              await viewModel.make4xxRequest()
             }
 
-            Text(viewModel.resultMessage)
+            awsButton(icon: "network", title: "5xx HTTP Request") {
+              await viewModel.make5xxRequest()
+            }
+
+            awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
+              await viewModel.getCognitoIdentityId()
+            })
+
+            Button(action: {
+              showingDemoViewController = true
+            }, label: {
+              HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                Text("Show UIKit Demo")
+              }
+              .frame(maxWidth: .infinity)
               .padding()
+              .background(Color.green)
+              .foregroundColor(.white)
+              .cornerRadius(10)
+            })
+            .disabled(viewModel.isLoading)
+
+            awsButton(icon: "info.circle", title: "Peek session", action: {
+              viewModel.showSessionDetails()
+            })
+
+            awsButton(icon: "arrow.clockwise", title: "Renew session", action: {
+              viewModel.renewSession()
+              viewModel.showSessionDetails()
+            })
+
+            awsButton(icon: "exclamationmark.triangle.filled", title: "Simulate ANR (2 sec)") {
+              viewModel.hangApplication(seconds: 2)
+            }
+
+            Button(action: {
+              let array = []
+              _ = array[10] // Index out of bounds
+            }, label: {
+              HStack {
+                Image(systemName: "exclamationmark.triangle")
+                Text("Trigger Crash")
+              }
+              .frame(maxWidth: .infinity)
+              .padding()
+              .background(Color.red)
+              .foregroundColor(.white)
+              .cornerRadius(10)
+            })
+          }
+          .padding(.horizontal)
+        }
+
+        // Fixed result display at bottom
+        VStack {
+          if viewModel.isLoading {
+            ProgressView()
+              .padding(.top, 8)
+          }
+
+          ScrollView {
+            Text(viewModel.resultMessage)
               .frame(maxWidth: .infinity, alignment: .leading)
+              .padding()
           }
         }
-        .frame(maxWidth: .infinity)
+        .frame(height: 200)
         .background(.white)
         .cornerRadius(10)
         .shadow(radius: 2)
         .padding()
-
-        Spacer()
       }
-      .padding(.bottom)
       .sheet(isPresented: $showingDemoViewController) {
         DemoViewControllerRepresentable()
       }

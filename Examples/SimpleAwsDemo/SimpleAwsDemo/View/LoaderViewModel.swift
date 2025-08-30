@@ -138,6 +138,42 @@ class LoaderViewModel: ObservableObject {
     AwsSessionManagerProvider.getInstance().getSession()
   }
 
+  /// Makes a 4xx HTTP request to demonstrate network error instrumentation
+  func make4xxRequest() async {
+    stopClock()
+    resultMessage = "Making 4xx HTTP request..."
+    do {
+      let url = URL(string: "https://httpbin.org/status/404")!
+      let (_, response) = try await URLSession.shared.data(from: url)
+
+      if let httpResponse = response as? HTTPURLResponse {
+        resultMessage = "HTTP Request completed with status: \(httpResponse.statusCode)"
+      } else {
+        resultMessage = "HTTP Request completed but no status code available"
+      }
+    } catch {
+      resultMessage = "HTTP Request failed: \(error.localizedDescription)"
+    }
+  }
+
+  /// Makes a 5xx HTTP request to demonstrate network server error instrumentation
+  func make5xxRequest() async {
+    stopClock()
+    resultMessage = "Making 5xx HTTP request..."
+    do {
+      let url = URL(string: "https://httpbin.org/status/500")!
+      let (_, response) = try await URLSession.shared.data(from: url)
+
+      if let httpResponse = response as? HTTPURLResponse {
+        resultMessage = "HTTP Request completed with status: \(httpResponse.statusCode)"
+      } else {
+        resultMessage = "HTTP Request completed but no status code available"
+      }
+    } catch {
+      resultMessage = "HTTP Request failed: \(error.localizedDescription)"
+    }
+  }
+
   /// Simulates a hang
   func hangApplication(seconds: UInt8) {
     /// Most of Apple’s developer tools start reporting issues when the period of unresponsiveness for the main run loop exceeds 250 ms. [source](https://developer.apple.com/documentation/xcode/understanding-hangs-in-your-app#Understand-hangs)

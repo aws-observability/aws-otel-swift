@@ -45,7 +45,11 @@
         if config.crashes {
           processCrashDiagnostics(payload.crashDiagnostics)
         }
-        processHangDiagnostics(payload.hangDiagnostics)
+
+        if config.hangs {
+          processHangDiagnostics(payload.hangDiagnostics)
+        }
+
         processCpuExceptionDiagnostics(payload.cpuExceptionDiagnostics)
         processDiskWriteExceptionDiagnostics(payload.diskWriteExceptionDiagnostics)
         if #available(iOS 16.0, *) {

@@ -46,9 +46,11 @@ final class AwsOpenTelemetryAgentTests: XCTestCase {
 
   func testManualInitialization() {
     // Create a valid configuration
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = ["application.version": appVersion]
     let config = AwsOpenTelemetryConfig(
-      rum: .init(region: region, appMonitorId: appMonitorId),
-      application: .init(applicationVersion: appVersion)
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
     )
 
     // Initialize the SDK
@@ -58,16 +60,18 @@ final class AwsOpenTelemetryAgentTests: XCTestCase {
     XCTAssertTrue(result)
     XCTAssertTrue(AwsOpenTelemetryAgent.shared.isInitialized)
     XCTAssertNotNil(AwsOpenTelemetryAgent.shared.configuration)
-    XCTAssertEqual(AwsOpenTelemetryAgent.shared.configuration?.rum.region, region)
-    XCTAssertEqual(AwsOpenTelemetryAgent.shared.configuration?.rum.appMonitorId, appMonitorId)
-    XCTAssertEqual(AwsOpenTelemetryAgent.shared.configuration?.application.applicationVersion, appVersion)
+    XCTAssertEqual(AwsOpenTelemetryAgent.shared.configuration?.aws.region, region)
+    XCTAssertEqual(AwsOpenTelemetryAgent.shared.configuration?.aws.rumAppMonitorId, appMonitorId)
+    XCTAssertEqual(AwsOpenTelemetryAgent.shared.configuration?.applicationAttributes?["application.version"], appVersion)
   }
 
   func testDoubleInitialization() {
     // Create a valid configuration
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = ["application.version": appVersion]
     let config = AwsOpenTelemetryConfig(
-      rum: .init(region: region, appMonitorId: appMonitorId),
-      application: .init(applicationVersion: appVersion)
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
     )
 
     // First initialization should succeed
@@ -77,38 +81,6 @@ final class AwsOpenTelemetryAgentTests: XCTestCase {
     // Second initialization should fail
     let secondResult = AwsOpenTelemetryAgent.shared.initialize(config: config)
     XCTAssertFalse(secondResult)
-  }
-
-  func testConfigParsing() throws {
-    // Create a JSON string with valid configuration
-    let jsonString = """
-    {
-        "version": "\(version)",
-        "rum": {
-            "region": "\(region)",
-            "appMonitorId": "\(appMonitorId)",
-            "overrideEndpoint": {
-                "logs": "\(logsEndpoint)",
-                "traces": "\(tracesEndpoint)"
-            }
-        },
-        "application": {
-            "applicationVersion": "\(appVersion)"
-        }
-    }
-    """
-
-    // Parse the configuration
-    let data = jsonString.data(using: .utf8)!
-    let config = try AwsRumConfigReader.parseConfig(from: data)
-
-    // Verify the parsed configuration
-    XCTAssertEqual(config.version, version)
-    XCTAssertEqual(config.rum.region, region)
-    XCTAssertEqual(config.rum.appMonitorId, appMonitorId)
-    XCTAssertEqual(config.rum.overrideEndpoint?.logs, logsEndpoint)
-    XCTAssertEqual(config.rum.overrideEndpoint?.traces, tracesEndpoint)
-    XCTAssertEqual(config.application.applicationVersion, appVersion)
   }
 
   func testSpanProperties() {

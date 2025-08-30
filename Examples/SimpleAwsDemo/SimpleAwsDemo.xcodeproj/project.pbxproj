@@ -11,7 +11,6 @@
 		30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C362E047FB0000DFBF5 /* AWSS3 */; };
 		5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */; };
 		5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */; };
-		5E6803F72E1306FC00D1DBD3 /* AwsURLSessionInstrumentation in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803F62E1306FC00D1DBD3 /* AwsURLSessionInstrumentation */; };
 		DBC2D3812E5EAF27002A37D6 /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */; };
 		DBC2D3822E5EAF27002A37D6 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */; };
 /* End PBXBuildFile section */
@@ -36,7 +35,6 @@
 				DBC2D3822E5EAF27002A37D6 /* AwsOpenTelemetryAuth in Frameworks */,
 				DBC2D3812E5EAF27002A37D6 /* AWSClientRuntime in Frameworks */,
 				30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */,
-				5E6803F72E1306FC00D1DBD3 /* AwsURLSessionInstrumentation in Frameworks */,
 				5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */,
 				5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */,
 				30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */,
@@ -96,7 +94,6 @@
 				5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */,
 				5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */,
 				5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */,
-				5E6803F62E1306FC00D1DBD3 /* AwsURLSessionInstrumentation */,
 			);
 			productName = SimpleAwsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */;
@@ -417,10 +414,6 @@
 		5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AwsOpenTelemetryAuth;
-		};
-		5E6803F62E1306FC00D1DBD3 /* AwsURLSessionInstrumentation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AwsURLSessionInstrumentation;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

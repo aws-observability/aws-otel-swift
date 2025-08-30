@@ -20,7 +20,7 @@
     }
 
     func testScopeName() {
-      XCTAssertEqual(AwsMetricKitHangProcessor.scopeName, "aws-otel-swift.MXHangDiagnostic")
+      XCTAssertEqual(AwsMetricKitHangProcessor.scopeName, "software.amazon.opentelemetry.MXHangDiagnostic")
     }
 
     func testProcessHangDiagnosticsWithNilDiagnostics() {
@@ -42,7 +42,7 @@
 
       let log = logs[0]
       XCTAssertEqual(log.body?.description, "hang")
-      XCTAssertEqual(log.instrumentationScopeInfo.name, "aws-otel-swift.MXHangDiagnostic")
+      XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXHangDiagnostic")
       XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
       XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }

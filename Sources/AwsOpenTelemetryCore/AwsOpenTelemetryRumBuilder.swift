@@ -27,19 +27,24 @@ import StdoutExporter
 
 /**
  * Builder for configuring and initializing the AWS OpenTelemetry SDK with RUM capabilities.
- *
- * This class provides a fluent API for setting up the complete OpenTelemetry pipeline
- * optimized for AWS Real User Monitoring (RUM). It handles the configuration of:
- *
- * - **Tracer Provider**: For creating and managing distributed traces
- * - **Logger Provider**: For structured logging with OpenTelemetry context
- * - **Exporters**: For sending telemetry data to AWS CloudWatch RUM
- * - **Resources**: For identifying the application and runtime environment
- * - **Instrumentation**: For configuring and creating instrumentation modules
- *
- * This builder is not thread-safe and should be used from a single thread.
- * However, the resulting OpenTelemetry components are thread-safe once built.
- */
+  *
+  * This class provides a fluent API for setting up the complete OpenTelemetry pipeline
+  * optimized for AWS Real User Monitoring (RUM). It handles the configuration of:
+  *
+  * - **Tracer Provider**: For creating and managing distributed traces
+  * - **Logger Provider**: For structured logging with OpenTelemetry context
+  * - **Exporters**: For sending telemetry data to AWS CloudWatch RUM
+  * - **Resources**: For identifying the application and runtime environment
+  * - **Instrumentation**: For configuring and creating instrumentation modules
+  *
+  * This builder is not thread-safe and should be used from a single thread.
+  * However, the resulting OpenTelemetry components are thread-safe once built.
+  *
+  * Uses a 3-step instrumentation approach:
+  * 1. User provides immutable TelemetryConfig
+  * 2. Config converted to testable AwsInstrumentationPlan
+  * 3. Plan executed to build requested instrumentations
+  */
 public class AwsOpenTelemetryRumBuilder {
   private var tracerProviderCustomizers: [(TracerProviderBuilder) -> TracerProviderBuilder] = []
   private var loggerProviderCustomizers: [(LoggerProviderBuilder) -> LoggerProviderBuilder] = []
@@ -50,9 +55,6 @@ public class AwsOpenTelemetryRumBuilder {
   private var logRecordExporterCustomizer: (LogRecordExporter) -> LogRecordExporter = { $0 }
 
   private var resource: Resource
-
-  // Track instrumentations to add
-  private var instrumentations: [AwsOpenTelemetryInstrumentationProtocol] = []
 
   #if canImport(UIKit) && !os(watchOS)
     private var uiKitViewInstrumentation: UIKitViewInstrumentation?
@@ -77,7 +79,7 @@ public class AwsOpenTelemetryRumBuilder {
 
     // Store the configuration in the shared instance
     AwsOpenTelemetryAgent.shared.configuration = config
-    AwsOpenTelemetryLogger.info("Creating builder with region: \(config.rum.region), appMonitorId: \(config.rum.appMonitorId)")
+    AwsOpenTelemetryLogger.info("Creating builder with region: \(config.aws.region), appMonitorId: \(config.aws.rumAppMonitorId)")
 
     return AwsOpenTelemetryRumBuilder(config: config)
   }
@@ -91,24 +93,9 @@ public class AwsOpenTelemetryRumBuilder {
     self.config = config
     resource = Self.buildResource(config: config)
     // Configure session manager with timeout from config
-    let sessionConfig = AwsSessionConfig(sessionTimeout: config.rum.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
+    let sessionConfig = AwsSessionConfig(sessionTimeout: config.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
     let sessionManager = AwsSessionManager(configuration: sessionConfig)
     AwsSessionManagerProvider.register(sessionManager: sessionManager)
-  }
-
-  // MARK: - Instrumentation Methods
-
-  /**
-   * Adds an instrumentation instance to the RUM configuration.
-   * The instrumentation will be applied when build() is called.
-   *
-   * @param instrumentation The instrumentation instance to add
-   * @return This builder instance for method chaining
-   */
-  @discardableResult
-  public func addInstrumentation(_ instrumentation: some AwsOpenTelemetryInstrumentationProtocol) -> Self {
-    instrumentations.append(instrumentation)
-    return self
   }
 
   /**
@@ -142,11 +129,11 @@ public class AwsOpenTelemetryRumBuilder {
   public func build() throws -> Self {
     // AWS OpenTelemetry Swift SDK instrumentation constants
 
-    let tracesEndpoint = buildTracesEndpoint(config: config.rum)
+    let tracesEndpoint = buildTracesEndpoint(region: config.aws.region, exportOverride: config.exportOverride)
     guard let tracesEndpointURL = URL(string: tracesEndpoint) else {
       throw AwsOpenTelemetryConfigError.malformedURL(tracesEndpoint)
     }
-    let logsEndpoint = buildLogsEndpoint(config: config.rum)
+    let logsEndpoint = buildLogsEndpoint(region: config.aws.region, exportOverride: config.exportOverride)
     guard let logsEndpointURL = URL(string: logsEndpoint) else {
       throw AwsOpenTelemetryConfigError.malformedURL(logsEndpoint)
     }
@@ -164,61 +151,54 @@ public class AwsOpenTelemetryRumBuilder {
     AwsOpenTelemetryAgent.shared.isInitialized = true
     AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
 
-    addAutoInstrumentations()
-
-    // Apply all stored instrumentations after OpenTelemetry is fully initialized
-    applyInstrumentations()
+    buildInstrumentations(plan: instrumentationPlan)
 
     return self
   }
 
-  /// Add default instrumentations that are provided out of the vox.
-  /// 1. SessionEvents
-  /// 2. UIKitViews
-  private func addAutoInstrumentations() {
-    // Session Events
-    // Initialize session event instrumentation
-    _ = AwsSessionEventInstrumentation()
-    // UIKitViews
-    #if canImport(UIKit) && !os(watchOS)
-      // Initialize view instrumentation (enabled by default)
-      if config.telemetry?.isUiKitViewInstrumentationEnabled ?? true {
-        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: AwsOpenTelemetryAgent.getTracer())
-        uiKitViewInstrumentation!.install()
+  /// Convert TelemetryConfig to testable AwsInstrumentationPlan
+  var instrumentationPlan: AwsInstrumentationPlan {
+    return AwsInstrumentationPlan.from(config: config)
+  }
 
-        // Store the UIKitViewInstrumentation in the agent for global access
+  /// Execute AwsInstrumentationPlan to build requested instrumentations
+  private func buildInstrumentations(plan: AwsInstrumentationPlan) {
+    // Session Events
+    if plan.sessionEvents {
+      _ = AwsSessionEventInstrumentation()
+    }
+
+    // View instrumentation (UIKit/SwiftUI)
+    #if canImport(UIKit) && !os(watchOS)
+      if plan.view {
+        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW))
+        uiKitViewInstrumentation!.install()
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
       }
     #endif
 
+    // MetricKit (crashes)
     #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
-      // Initialize MetricKit subscriber on iOS 14+
-      if #available(iOS 15.0, *) {
-        let metricKitSubscriber = AwsMetricKitSubscriber()
-        metricKitSubscriber.subscribe()
-        AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
+      if let metricKitConfig = plan.metricKitConfig {
+        if #available(iOS 15.0, *) {
+          let metricKitSubscriber = AwsMetricKitSubscriber(config: metricKitConfig)
+          metricKitSubscriber.subscribe()
+          AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
+        } else {
+          AwsOpenTelemetryLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
+        }
+      } else {
+        AwsOpenTelemetryLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
       }
     #endif
 
-    _ = AwsSessionEventInstrumentation()
-
-    // Apply all stored instrumentations after OpenTelemetry is fully initialized
-    applyInstrumentations()
-
-    return
-  }
-
-  /**
-   * Applies all stored instrumentations after OpenTelemetry is initialized.
-   */
-  private func applyInstrumentations() {
-    AwsOpenTelemetryLogger.debug("Applying \(instrumentations.count) instrumentations")
-
-    for instrumentation in instrumentations {
-      instrumentation.apply()
+    // Network (URLSession)
+    if let urlSessionConfig = plan.urlSessionConfig {
+      let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
+      urlSessionInstrumentation.apply()
+    } else {
+      AwsOpenTelemetryLogger.info("AwsURLSessionInstrumentation not created - no urlSessionConfig in plan")
     }
-
-    AwsOpenTelemetryLogger.debug("All instrumentations applied successfully")
   }
 
   // MARK: - Resource methods
@@ -362,13 +342,13 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
     var rumResourceAttributes: [String: String] = [
-      AwsRumConstants.AWS_REGION: config.rum.region,
-      AwsRumConstants.RUM_APP_MONITOR_ID: config.rum.appMonitorId,
+      AwsRumConstants.AWS_REGION: config.aws.region,
+      AwsRumConstants.RUM_APP_MONITOR_ID: config.aws.rumAppMonitorId,
       AwsRumConstants.RUM_SDK_VERSION: AwsOpenTelemetryAgent.version
     ]
 
-    if config.rum.alias?.isEmpty == false {
-      rumResourceAttributes[AwsRumConstants.RUM_ALIAS] = config.rum.alias!
+    if config.aws.rumAlias?.isEmpty == false {
+      rumResourceAttributes[AwsRumConstants.RUM_ALIAS] = config.aws.rumAlias!
     }
 
     let resource = DefaultResources().get()
@@ -385,7 +365,7 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private func buildSpanExporter(tracesEndpointURL: URL) -> SpanExporter {
     let traceExporter = OtlpHttpTraceExporter(endpoint: tracesEndpointURL)
-    let defaultExporter: SpanExporter = if config.rum.debug ?? false {
+    let defaultExporter: SpanExporter = if config.debug ?? false {
       MultiSpanExporter(spanExporters: [
         traceExporter,
         StdoutSpanExporter()
@@ -405,7 +385,7 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private func buildLogsExporter(logsEndpointURL: URL) -> LogRecordExporter {
     let logsExporter = OtlpHttpLogExporter(endpoint: logsEndpointURL)
-    let defaultExporter: LogRecordExporter = if config.rum.debug ?? false {
+    let defaultExporter: LogRecordExporter = if config.debug ?? false {
       MultiLogRecordExporter(logRecordExporters: [
         logsExporter,
         StdoutLogExporter()

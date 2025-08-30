@@ -24,9 +24,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
   func testBasicBuilderCreationAndBuild() {
     // Test basic builder creation and build process
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = ["application.version": appVersion]
     let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
     )
 
     // Should create builder and build successfully
@@ -35,13 +37,13 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
   func testEndpointConfiguration() {
     // Test both default endpoints and custom overrides
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let exportOverride = ExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
+    let applicationAttributes = ["application.version": appVersion]
     let configWithOverrides = AwsOpenTelemetryConfig(
-      rum: RumConfig(
-        region: region,
-        appMonitorId: appMonitorId,
-        overrideEndpoint: EndpointOverrides(logs: logsEndpoint, traces: tracesEndpoint)
-      ),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      aws: awsConfig,
+      exportOverride: exportOverride,
+      applicationAttributes: applicationAttributes
     )
 
     // Should build successfully with endpoint overrides
@@ -50,13 +52,13 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
   func testInvalidEndpointHandling() {
     // Test handling of invalid endpoint URLs
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let exportOverride = ExportOverride(logs: invalidLogsUrl, traces: nil)
+    let applicationAttributes = ["application.version": appVersion]
     let configWithInvalidEndpoint = AwsOpenTelemetryConfig(
-      rum: RumConfig(
-        region: region,
-        appMonitorId: appMonitorId,
-        overrideEndpoint: EndpointOverrides(logs: invalidLogsUrl, traces: nil)
-      ),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      aws: awsConfig,
+      exportOverride: exportOverride,
+      applicationAttributes: applicationAttributes
     )
 
     // Should throw an error for invalid URL
@@ -67,9 +69,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
   func testAlreadyInitializedError() {
     // Test that attempting to initialize twice throws an error
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = ["application.version": appVersion]
     let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
     )
 
     // First initialization should succeed
@@ -86,9 +90,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
   func testExporterCustomization() {
     // Test span and log exporter customization
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = ["application.version": appVersion]
     let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
     )
 
     var spanCustomizerCalled = false
@@ -111,9 +117,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
   func testProviderCustomization() {
     // Test tracer and logger provider customization
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = ["application.version": appVersion]
     let config = AwsOpenTelemetryConfig(
-      rum: RumConfig(region: region, appMonitorId: appMonitorId),
-      application: ApplicationConfig(applicationVersion: appVersion)
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
     )
 
     var tracerCustomizerCalled = false
@@ -139,10 +147,14 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       // Test UIKit instrumentation enabled/disabled/default scenarios
 
       // Test enabled
+      let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+      let applicationAttributes = ["application.version": appVersion]
+      let telemetryConfig = TelemetryConfig()
+      telemetryConfig.view = TelemetryFeature(enabled: true)
       let enabledConfig = AwsOpenTelemetryConfig(
-        rum: RumConfig(region: region, appMonitorId: appMonitorId),
-        application: ApplicationConfig(applicationVersion: appVersion),
-        telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: true)
+        aws: awsConfig,
+        applicationAttributes: applicationAttributes,
+        telemetry: telemetryConfig
       )
 
       XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: enabledConfig).build())
@@ -153,10 +165,12 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
 
       // Test disabled
+      let disabledTelemetryConfig = TelemetryConfig()
+      disabledTelemetryConfig.view = TelemetryFeature(enabled: false)
       let disabledConfig = AwsOpenTelemetryConfig(
-        rum: RumConfig(region: region, appMonitorId: appMonitorId),
-        application: ApplicationConfig(applicationVersion: appVersion),
-        telemetry: TelemetryConfig(isUiKitViewInstrumentationEnabled: false)
+        aws: awsConfig,
+        applicationAttributes: applicationAttributes,
+        telemetry: disabledTelemetryConfig
       )
 
       XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: disabledConfig).build())
@@ -168,8 +182,8 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
       // Test default (should be enabled)
       let defaultConfig = AwsOpenTelemetryConfig(
-        rum: RumConfig(region: region, appMonitorId: appMonitorId),
-        application: ApplicationConfig(applicationVersion: appVersion)
+        aws: awsConfig,
+        applicationAttributes: applicationAttributes
       )
 
       XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: defaultConfig).build())

@@ -17,38 +17,37 @@ import XCTest
 import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
-@testable import AwsURLSessionInstrumentation
 @testable import AwsOpenTelemetryCore
 
 final class AwsURLSessionInstrumentationTests: XCTestCase {
   func testOTLPEndpointsFiltering() {
-    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    let config = AwsURLSessionConfig(region: "us-west-2")
+    let instrumentation = AwsURLSessionInstrumentation(config: config)
 
     let rumRequest = URLRequest(url: URL(string: "https://dataplane.rum.us-west-2.amazonaws.com/v1/rum/events")!)
     XCTAssertTrue(instrumentation.shouldExcludeURL(rumRequest), "RUM endpoints should be excluded")
   }
 
   func testRegularRequestsAreNotFiltered() {
-    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    let config = AwsURLSessionConfig(region: "us-west-2")
+    let instrumentation = AwsURLSessionInstrumentation(config: config)
 
     let regularRequest = URLRequest(url: URL(string: "https://httpbin.org/status/200")!)
     XCTAssertFalse(instrumentation.shouldExcludeURL(regularRequest), "Regular endpoints should not be excluded")
   }
 
   func testBasicInitialization() {
-    let rumConfig = RumConfig(region: "us-east-1", appMonitorId: "test-initialization")
+    let config = AwsURLSessionConfig(region: "us-east-1")
 
     XCTAssertNoThrow({
-      let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+      let instrumentation = AwsURLSessionInstrumentation(config: config)
       instrumentation.apply()
     }, "AwsURLSessionInstrumentation should initialize and apply without throwing")
   }
 
   func testApplyIdempotency() {
-    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    let config = AwsURLSessionConfig(region: "us-west-2")
+    let instrumentation = AwsURLSessionInstrumentation(config: config)
 
     XCTAssertNoThrow({
       instrumentation.apply()
@@ -58,16 +57,12 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
   }
 
   func testCustomEndpointFiltering() {
-    let overrideEndpoint = EndpointOverrides(
+    let exportOverride = ExportOverride(
       logs: "https://custom-logs.example.com",
       traces: "https://custom-traces.example.com"
     )
-    let rumConfig = RumConfig(
-      region: "us-west-2",
-      appMonitorId: "test-app-monitor-id",
-      overrideEndpoint: overrideEndpoint
-    )
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    let config = AwsURLSessionConfig(region: "us-west-2", exportOverride: exportOverride)
+    let instrumentation = AwsURLSessionInstrumentation(config: config)
 
     let customLogsRequest = URLRequest(url: URL(string: "https://custom-logs.example.com/logs")!)
     let customTracesRequest = URLRequest(url: URL(string: "https://custom-traces.example.com/traces")!)
@@ -77,8 +72,8 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
   }
 
   func testRequestWithNilURL() {
-    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    let config = AwsURLSessionConfig(region: "us-west-2")
+    let instrumentation = AwsURLSessionInstrumentation(config: config)
 
     var mutableRequest = URLRequest(url: URL(string: "https://example.com")!)
     mutableRequest.url = nil
@@ -87,8 +82,8 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
   }
 
   func testPrefixMatching() {
-    let rumConfig = RumConfig(region: "us-west-2", appMonitorId: "test-app-monitor-id")
-    let instrumentation = AwsURLSessionInstrumentation(config: rumConfig)
+    let config = AwsURLSessionConfig(region: "us-west-2")
+    let instrumentation = AwsURLSessionInstrumentation(config: config)
 
     let rumSubpathRequest = URLRequest(url: URL(string: "https://dataplane.rum.us-west-2.amazonaws.com/v1/rum/events/subpath")!)
     XCTAssertTrue(instrumentation.shouldExcludeURL(rumSubpathRequest), "RUM endpoint subpaths should be excluded")
