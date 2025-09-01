@@ -16,7 +16,7 @@ class AwsUIDSpanProcessor: SpanProcessor {
 
   /// Initializes the span processor with a UID manager
   /// - Parameter uidManager: The UID manager to use for retrieving UID
-  init(uidManager: AwsUIDManager = AwsUIDManager.shared) {
+  init(uidManager: AwsUIDManager) {
     self.uidManager = uidManager
   }
 

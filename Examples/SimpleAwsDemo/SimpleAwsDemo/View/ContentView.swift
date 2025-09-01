@@ -67,6 +67,10 @@ struct ContentView: View {
             })
             .disabled(viewModel.isLoading)
 
+            awsButton(icon: "person.circle", title: "Show User Info", action: {
+              viewModel.showUserInfo()
+            })
+
             awsButton(icon: "info.circle", title: "Peek session", action: {
               viewModel.showSessionDetails()
             })
@@ -160,6 +164,7 @@ struct ContentView_Previews: PreviewProvider {
     override func getCognitoIdentityId() async {}
     override func showSessionDetails() {}
     override func renewSession() {}
+    override func showUserInfo() {}
   }
 
   static var previews: some View {

@@ -412,7 +412,7 @@ public class AwsOpenTelemetryRumBuilder {
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
-      .add(spanProcessor: AwsUIDSpanProcessor())
+      .add(spanProcessor: AwsUIDSpanProcessor(uidManager: AwsUIDManagerProvider.getInstance()))
       .with(resource: resource)
 
     // Apply all customizers in order
@@ -433,9 +433,11 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private func buildLoggerProvider(logExporter: LogRecordExporter,
                                    resource: Resource) -> LoggerProvider {
-    // Create initial builder
+    let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
+    let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
+
     let builder = LoggerProviderBuilder()
-      .with(processors: [BatchLogRecordProcessor(logRecordExporter: logExporter)])
+      .with(processors: [uidProcessor])
       .with(resource: resource)
 
     // Apply all customizers in order

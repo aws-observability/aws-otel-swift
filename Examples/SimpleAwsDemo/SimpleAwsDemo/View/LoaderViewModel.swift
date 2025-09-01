@@ -138,6 +138,13 @@ class LoaderViewModel: ObservableObject {
     AwsSessionManagerProvider.getInstance().getSession()
   }
 
+  func showUserInfo() {
+    stopClock()
+    let uidManager = AwsUIDManagerProvider.getInstance()
+    let currentUID = uidManager.getUID()
+    resultMessage = "UID: \(currentUID)"
+  }
+
   /// Makes a 4xx HTTP request to demonstrate network error instrumentation
   func make4xxRequest() async {
     stopClock()
