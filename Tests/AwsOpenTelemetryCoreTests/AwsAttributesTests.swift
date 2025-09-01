@@ -28,4 +28,8 @@ final class AwsAttributesTests: XCTestCase {
   func testAwsCloudProvider() {
     XCTAssertEqual(AwsAttributes.awsCloudProvider.rawValue, "aws")
   }
+
+  func testRumSdkVersion() {
+    XCTAssertEqual(AwsAttributes.rumSdkVersion.rawValue, "rum.sdk.version")
+  }
 }
