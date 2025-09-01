@@ -345,10 +345,6 @@ public class AwsOpenTelemetryRumBuilder {
       AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId
     ]
 
-    if config.aws.rumAlias?.isEmpty == false {
-      rumResourceAttributes[AwsAttributes.rumAppMonitorAlias.rawValue] = config.aws.rumAlias!
-    }
-
     let cloudResourceAttributes: [String: String] = [
       ResourceAttributes.cloudRegion.rawValue: config.aws.region,
       ResourceAttributes.cloudProvider.rawValue: AwsAttributes.awsCloudProvider.rawValue,

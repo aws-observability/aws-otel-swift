@@ -21,10 +21,6 @@ final class AwsAttributesTests: XCTestCase {
     XCTAssertEqual(AwsAttributes.rumAppMonitorId.rawValue, "aws.rum.appmonitor.id")
   }
 
-  func testRumAppMonitorAlias() {
-    XCTAssertEqual(AwsAttributes.rumAppMonitorAlias.rawValue, "aws.rum.appmonitor.alias")
-  }
-
   func testAwsRumCloudPlatform() {
     XCTAssertEqual(AwsAttributes.awsRumCloudPlatform.rawValue, "aws_rum")
   }
