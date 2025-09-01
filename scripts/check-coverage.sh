@@ -16,6 +16,7 @@ xcrun llvm-cov report .build/debug/aws-otel-swiftPackageTests.xctest/Contents/Ma
 
 # Check repository coverage
 echo "Checking repository coverage..."
+head -1 "$COVERAGE_FILE"
 grep "^Sources/" "$COVERAGE_FILE"
 sources_coverage=$(grep "^Sources/" "$COVERAGE_FILE" | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
 echo "Sources directory code coverage: ${sources_coverage}%"
@@ -37,6 +38,7 @@ if git rev-parse --verify origin/main >/dev/null 2>&1; then
         echo "Checking coverage for changed files:"
         echo "$changed_sources"
         echo "Coverage for changed files:"
+        head -1 "$COVERAGE_FILE"
         echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done
         
         changed_coverage=$(echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
