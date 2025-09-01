@@ -26,6 +26,7 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
     XCTAssertEqual(resource.attributes["cloud.region"]?.description, "us-east-1")
     XCTAssertEqual(resource.attributes["cloud.provider"]?.description, "aws")
     XCTAssertEqual(resource.attributes["cloud.platform"]?.description, "aws_rum")
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumSdkVersion.rawValue]?.description, AwsOpenTelemetryAgent.version)
   }
 
   func testBuildResourceFullyCustomized() {
@@ -42,5 +43,6 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
     XCTAssertEqual(resource.attributes["cloud.region"]?.description, "us-west-2")
     XCTAssertEqual(resource.attributes["cloud.provider"]?.description, "aws")
     XCTAssertEqual(resource.attributes["cloud.platform"]?.description, "aws_rum")
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumSdkVersion.rawValue]?.description, AwsOpenTelemetryAgent.version)
   }
 }

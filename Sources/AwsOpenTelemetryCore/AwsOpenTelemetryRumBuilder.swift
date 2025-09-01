@@ -341,8 +341,9 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A resource with AWS RUM attributes
    */
   static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
-    var rumResourceAttributes: [String: String] = [
-      AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId
+    let rumResourceAttributes: [String: String] = [
+      AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId,
+      AwsAttributes.rumSdkVersion.rawValue: AwsOpenTelemetryAgent.version
     ]
 
     let cloudResourceAttributes: [String: String] = [

@@ -23,6 +23,9 @@ enum AwsAttributes: String {
   /// Attribute key for the AWS RUM AppMonitor alias
   case rumAppMonitorAlias = "aws.rum.appmonitor.alias"
 
+  /// Attribute key for the aws-otel-swift sdk version
+  case rumSdkVersion = "rum.sdk.version"
+
   /** Cloud attributes */
   case awsRumCloudPlatform = "aws_rum"
   case awsCloudProvider = "aws"
