@@ -11,7 +11,7 @@ final class AwsUIDSpanProcessorTests: XCTestCase {
     super.setUp()
     // Clear any existing UID for clean tests
     UserDefaults.standard.removeObject(forKey: "aws-rum-user-id")
-    spanProcessor = AwsUIDSpanProcessor()
+    spanProcessor = AwsUIDSpanProcessor(uidManager: AwsUIDManager())
     mockSpan = MockReadableSpan()
   }
 
