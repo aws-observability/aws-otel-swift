@@ -5,7 +5,7 @@
  * You may not use this file except in compliance with the License.
  * A copy of the License is located at
  *
- *  http://aws.amazon.com/apache2.0
+ *  http://aws.amazon.com/apache2.0
  *
  * or in the "license" file accompanying this file. This file is distributed
  * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
@@ -15,7 +15,15 @@
 
 import Foundation
 
-enum StringConstants: String {
+enum AwsAttributes: String {
+  /** RUM attributes */
+  /// Attribute key for the AWS RUM AppMonitor ID
+  case rumAppMonitorId = "aws.rum.appmonitor.id"
+
+  /// Attribute key for the AWS RUM AppMonitor alias
+  case rumAppMonitorAlias = "aws.rum.appmonitor.alias"
+
+  /** Cloud attributes */
   case awsRumCloudPlatform = "aws_rum"
   case awsCloudProvider = "aws"
 }

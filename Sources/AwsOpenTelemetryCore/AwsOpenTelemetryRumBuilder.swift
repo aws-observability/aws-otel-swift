@@ -340,19 +340,19 @@ public class AwsOpenTelemetryRumBuilder {
    * @param config The AWS OpenTelemetry configuration
    * @return A resource with AWS RUM attributes
    */
-  private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
+  static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
     var rumResourceAttributes: [String: String] = [
-      AwsRumAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId,
+      AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId
     ]
 
     if config.aws.rumAlias?.isEmpty == false {
-      rumResourceAttributes[AwsRumAttributes.rumAppMonitorAlias.rawValue] = config.aws.rumAlias!
+      rumResourceAttributes[AwsAttributes.rumAppMonitorAlias.rawValue] = config.aws.rumAlias!
     }
-    
+
     let cloudResourceAttributes: [String: String] = [
       ResourceAttributes.cloudRegion.rawValue: config.aws.region,
-      ResourceAttributes.cloudProvider.rawValue: StringConstants.awsCloudProvider.rawValue,
-      ResourceAttributes.cloudPlatform.rawValue: StringConstants.awsRumCloudPlatform.rawValue,
+      ResourceAttributes.cloudProvider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
+      ResourceAttributes.cloudPlatform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
     ]
 
     let resource = DefaultResources().get()
