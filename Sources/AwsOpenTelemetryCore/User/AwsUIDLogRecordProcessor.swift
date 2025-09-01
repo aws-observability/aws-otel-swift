@@ -2,7 +2,7 @@ import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryApi
 
-/// OpenTelemetry log record processor that adds UID to all log records
+/// AWS OTel log record processor that adds UID to all log records
 class AwsUIDLogRecordProcessor: LogRecordProcessor {
   /// The attribute key used to store UID in log records
   var userIdKey = "user.id"

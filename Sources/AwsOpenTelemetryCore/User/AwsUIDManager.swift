@@ -4,7 +4,7 @@ import Foundation
 /// Provides thread-safe access to UID and handles persistence to UserDefaults.
 public class AwsUIDManager {
   private let uidKey = "aws-rum-user-id"
-  var uid: String
+  private let uid: String
   private let lock = NSLock()
 
   /// Initializes the UID manager and restores or generates UID

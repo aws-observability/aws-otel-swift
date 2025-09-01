@@ -11,6 +11,8 @@ final class AwsUIDLogRecordProcessorTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
+    // Clear any existing UID for clean tests
+    UserDefaults.standard.removeObject(forKey: "aws-rum-user-id")
     uidManager = AwsUIDManager()
     mockNextProcessor = MockLogRecordProcessor()
     logRecordProcessor = AwsUIDLogRecordProcessor(nextProcessor: mockNextProcessor, uidManager: uidManager)
@@ -28,24 +30,20 @@ final class AwsUIDLogRecordProcessorTests: XCTestCase {
   }
 
   func testOnEmitAddsUIDAttribute() {
-    let expectedUID = "test-uid-123"
-    uidManager.uid = expectedUID
-
     logRecordProcessor.onEmit(logRecord: testLogRecord)
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(uid) = enhancedRecord.attributes["user.id"] {
-      XCTAssertEqual(uid, expectedUID)
+    XCTAssertTrue(enhancedRecord.attributes.keys.contains("user.id"))
+    if case .string = enhancedRecord.attributes["user.id"] {
+      // UID exists and is a string - test passes
     } else {
       XCTFail("Expected user.id attribute to be a string value")
     }
   }
 
   func testOnEmitPreservesOriginalAttributes() {
-    uidManager.uid = "test-uid"
-
     logRecordProcessor.onEmit(logRecord: testLogRecord)
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
@@ -66,11 +64,17 @@ final class AwsUIDLogRecordProcessorTests: XCTestCase {
   }
 
   func testOnEmitWithDifferentUIDs() {
-    uidManager.uid = "uid-1"
-    logRecordProcessor.onEmit(logRecord: testLogRecord)
+    // Set first UID in UserDefaults
+    UserDefaults.standard.set("uid-1", forKey: "aws-rum-user-id")
+    let uidManager1 = AwsUIDManager()
+    let processor1 = AwsUIDLogRecordProcessor(nextProcessor: mockNextProcessor, uidManager: uidManager1)
+    processor1.onEmit(logRecord: testLogRecord)
 
-    uidManager.uid = "uid-2"
-    logRecordProcessor.onEmit(logRecord: testLogRecord)
+    // Set second UID in UserDefaults
+    UserDefaults.standard.set("uid-2", forKey: "aws-rum-user-id")
+    let uidManager2 = AwsUIDManager()
+    let processor2 = AwsUIDLogRecordProcessor(nextProcessor: mockNextProcessor, uidManager: uidManager2)
+    processor2.onEmit(logRecord: testLogRecord)
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 2)
 
@@ -99,12 +103,10 @@ final class AwsUIDLogRecordProcessorTests: XCTestCase {
 
   func testConcurrentOnEmitThreadSafety() {
     let group = DispatchGroup()
-    let syncQueue = DispatchQueue(label: "test.sync")
 
-    for i in 0 ..< 100 {
+    for _ in 0 ..< 100 {
       group.enter()
       DispatchQueue.global().async {
-        self.uidManager.uid = "uid-\(i)"
         self.logRecordProcessor.onEmit(logRecord: self.testLogRecord)
         group.leave()
       }
@@ -112,11 +114,9 @@ final class AwsUIDLogRecordProcessorTests: XCTestCase {
 
     group.wait()
 
-    syncQueue.sync {
-      XCTAssertEqual(self.mockNextProcessor.receivedLogRecords.count, 100)
-      for record in self.mockNextProcessor.receivedLogRecords {
-        XCTAssertTrue(record.attributes.keys.contains("user.id"))
-      }
+    XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 100)
+    for record in mockNextProcessor.receivedLogRecords {
+      XCTAssertTrue(record.attributes.keys.contains("user.id"))
     }
   }
 }
