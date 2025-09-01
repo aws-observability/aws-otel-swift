@@ -19,6 +19,7 @@ import AwsOpenTelemetryAuth
 import AWSCognitoIdentity
 import AwsOpenTelemetryCore
 import Combine
+import OpenTelemetryApi
 
 /**
  * View model responsible for initializing AWS services and handling API calls.
@@ -36,6 +37,9 @@ class LoaderViewModel: ObservableObject {
 
   /// Message displayed to the user representing the result of AWS operations
   @Published var resultMessage: String = "AWS API results will appear here"
+
+  @Published var showingCustomLogForm = false
+  @Published var showingCustomSpanForm = false
 
   /// Timer for updating the digital clock
   private var clockTimer: AnyCancellable?
@@ -143,6 +147,46 @@ class LoaderViewModel: ObservableObject {
     let uidManager = AwsUIDManagerProvider.getInstance()
     let currentUID = uidManager.getUID()
     resultMessage = "UID: \(currentUID)"
+  }
+
+  func showCustomLogForm() {
+    showingCustomLogForm = true
+  }
+
+  func createCustomLog(message: String, attributes: [String: String]) {
+    stopClock()
+
+    let logger = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "custom.log").build()
+    let logBuilder = logger.logRecordBuilder()
+      .setBody(AttributeValue.string(message))
+
+    var attributeValues: [String: AttributeValue] = [:]
+    for (key, value) in attributes {
+      attributeValues[key] = AttributeValue.string(value)
+    }
+
+    logBuilder.setAttributes(attributeValues).emit()
+
+    resultMessage = "Custom log created:\nMessage: \(message)\nAttributes: \(attributes)"
+  }
+
+  func showCustomSpanForm() {
+    showingCustomSpanForm = true
+  }
+
+  func createCustomSpan(name: String, attributes: [String: String]) {
+    stopClock()
+
+    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "custom.span")
+    let span = tracer.spanBuilder(spanName: name).startSpan()
+
+    for (key, value) in attributes {
+      span.setAttribute(key: key, value: AttributeValue.string(value))
+    }
+
+    span.end()
+
+    resultMessage = "Custom span created:\nName: \(name)\nAttributes: \(attributes)"
   }
 
   /// Makes a 4xx HTTP request to demonstrate network error instrumentation

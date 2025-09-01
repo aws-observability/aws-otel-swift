@@ -435,9 +435,10 @@ public class AwsOpenTelemetryRumBuilder {
                                    resource: Resource) -> LoggerProvider {
     let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
+    let sessionProcessor = AwsSessionLogRecordProcessor(nextProcessor: uidProcessor)
 
     let builder = LoggerProviderBuilder()
-      .with(processors: [uidProcessor])
+      .with(processors: [sessionProcessor])
       .with(resource: resource)
 
     // Apply all customizers in order

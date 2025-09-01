@@ -138,3 +138,20 @@ A `session.end` log record is created when `getSession()` is called and the prev
 | `session.start_time` | double | Session start time in nanoseconds since epoch | `1756431127415681800`                    |
 | `session.end_time`   | double | Session end time in nanoseconds since epoch   | `1756431127906623700`                    |
 | `session.duration`   | double | Session duration in nanoseconds               | `490942001` (≈490ms)                     |
+
+## Automatic Session Attribution
+
+The session module automatically adds session attributes to all telemetry data through dedicated processors:
+
+### Log and Span Attribution
+
+`AwsSessionLogRecordProcessor` automatically adds session attributes to all log records:
+
+| Attribute             | Type   | Description                                  | Example                                  |
+| --------------------- | ------ | -------------------------------------------- | ---------------------------------------- |
+| `session.id`          | string | Current active session identifier            | `"EA42F160-603A-43A6-8DA9-A86C88C3A275"` |
+| `session.previous_id` | string | Previous session identifier (when available) | `"9B98FDB4-CCAF-4529-97FC-A0078CF5F4D7"` |
+
+**Special Handling**: For `session.start` and `session.end` log records, the processor preserves the existing session attributes in the log record rather than overriding them with current session data, ensuring historical accuracy of session events.
+
+This automatic attribution ensures all telemetry data can be correlated by session without requiring manual instrumentation.
