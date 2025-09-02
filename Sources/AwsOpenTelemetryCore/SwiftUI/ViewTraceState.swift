@@ -45,6 +45,9 @@ final class ViewTraceState {
   /// The root span that contains all child spans for this view
   var rootSpan: Span?
 
+  /// The duration span that tracks view visibility time
+  var durationSpan: Span?
+
   // MARK: - Lifecycle Counters
 
   /// Count of how many times the view has appeared
@@ -52,21 +55,4 @@ final class ViewTraceState {
 
   /// Count of how many times the view has disappeared
   var disappearCount: Int = 0
-
-  // MARK: - Debugging
-
-  /// Returns a formatted string representation of the current state.
-  ///
-  /// Useful for debugging and logging purposes.
-  ///
-  /// - Returns: A multi-line string containing all tracked metrics
-  func debugDescription() -> String {
-    return """
-    ViewTraceState Debug Info:
-    ├─ Initialize: \(initializationTime.description)
-    ├─ Appear: \(appearCount) times
-    ├─ Disappear: \(disappearCount) times
-    └─ Root Span: \(rootSpan != nil ? "active" : "nil")
-    """
-  }
 }

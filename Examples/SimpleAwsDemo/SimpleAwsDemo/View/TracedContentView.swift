@@ -15,14 +15,15 @@
 
 import SwiftUI
 import AwsOpenTelemetryCore
+import OpenTelemetryApi
 
 /// Example view demonstrating how to use AWS OpenTelemetry SwiftUI tracing
 ///
 /// This creates a span hierarchy per traced view:
-/// Root span: {viewName} (init → onDisappear)
-/// ├── {viewName}.body (each body evaluation)
-/// ├── {viewName}.onAppear (appear event)
-/// └── {viewName}.onDisappear (disappear event)
+/// Root span: {screenName} (init → onDisappear)
+/// ├── {screenName}.body (each body evaluation)
+/// ├── {screenName}.onAppear (appear event)
+/// └── {screenName}.onDisappear (disappear event)
 struct TracedContentView: View {
   @State private var showDetailView = false
   @State private var showProfileView = false
@@ -30,10 +31,10 @@ struct TracedContentView: View {
 
   var body: some View {
     // Example 1: Using the wrapper view
-    AwsOpenTelemetryTraceView("MainScreen",
-                              attributes: ["screen_type": "main"]) {
+    AwsOTelTraceView("MainScreen",
+                     attributes: ["screen_type": "main"]) {
       VStack(spacing: 20) {
-        Text("AWS OpenTelemetry SwiftUI Tracing Demo")
+        Text("ADOT SwiftUI Demo")
           .font(.title)
           .padding()
 
@@ -44,7 +45,7 @@ struct TracedContentView: View {
         // Example 2: Using the view modifier
         DetailSection()
           .awsOpenTelemetryTrace("DetailSection",
-                                 stringAttributes: ["section": "details"])
+                                 attributes: ["section": "details"])
 
         // Navigation buttons to demonstrate view lifecycle
         VStack(spacing: 12) {
@@ -110,7 +111,7 @@ struct DetailModalView: View {
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
-    NavigationView {
+    NavigationStack {
       VStack(spacing: 20) {
         Text("Detail Modal View")
           .font(.largeTitle)
@@ -151,7 +152,7 @@ struct DetailModalView: View {
     .awsOpenTelemetryTrace("DetailModal",
                            attributes: [
                              "presentation_type": AttributeValue.string("modal"),
-                             "view_type": AttributeValue.string("detail")
+                             "view_style": AttributeValue.string("detail")
                            ])
   }
 }
@@ -212,7 +213,7 @@ struct TemporaryOverlayView: View {
     .shadow(radius: 10)
     .awsOpenTelemetryTrace("TemporaryOverlay",
                            attributes: [
-                             "view_type": AttributeValue.string("overlay"),
+                             "view_style": AttributeValue.string("overlay"),
                              "auto_dismiss": AttributeValue.bool(true),
                              "duration_seconds": AttributeValue.int(3)
                            ])

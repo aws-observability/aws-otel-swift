@@ -206,9 +206,9 @@
      *
      * @return The name to use for this view controller in telemetry spans
      */
-    var viewName: String {
+    var screenName: String {
       if let customized = self as? ViewControllerCustomization,
-         let customName = customized.customViewName {
+         let customName = customized.customScreenName {
         return customName
       }
 

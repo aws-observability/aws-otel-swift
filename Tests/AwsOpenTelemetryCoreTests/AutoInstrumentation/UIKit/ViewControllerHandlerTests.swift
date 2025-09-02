@@ -26,7 +26,7 @@ import Atomics
    * Test view controller that conforms to ViewControllerCustomization
    */
   class TestViewController: UIViewController, ViewControllerCustomization {
-    var customViewName: String?
+    var customScreenName: String?
 
     // Implement the protocol method directly, don't override
     var shouldCaptureView: Bool { return true }
@@ -36,7 +36,7 @@ import Atomics
    * Test view controller that opts out of instrumentation
    */
   class OptOutViewController: UIViewController, ViewControllerCustomization {
-    var customViewName: String?
+    var customScreenName: String?
 
     // Implement the protocol method directly, don't override
     var shouldCaptureView: Bool { return false }
@@ -57,7 +57,7 @@ import Atomics
     private static let testInstrumentationVersion = "1.0.0"
 
     // Span names
-    private static let spanNameViewLoad = "view.load"
+    private static let TimeToFirstAppear = "TimeToFirstAppear"
     private static let spanNameViewDuration = "view.duration"
     private static let spanNameViewDidLoad = "viewDidLoad"
     private static let spanNameViewWillAppear = "viewWillAppear"
@@ -69,7 +69,6 @@ import Atomics
     private static let attributeKeyServiceVersion = "service.version"
     private static let attributeKeyAwsRegion = "aws.region"
     private static let attributeKeyAppMonitorId = "rum.app_monitor_id"
-    private static let attributeKeyViewName = "view.name"
     private static let attributeKeyViewClass = "view.class"
 
     // View controller class names
@@ -167,21 +166,22 @@ import Atomics
       wait(timeout: Self.defaultTimeout) {
         let startedSpans = self.mockSpanProcessor.getStartedSpans()
         let spanNames = startedSpans.map(\.name)
-        return spanNames.contains(Self.spanNameViewLoad) && spanNames.contains(Self.spanNameViewDidLoad)
+        return spanNames.contains(Self.TimeToFirstAppear) && spanNames.contains(Self.spanNameViewDidLoad)
       }
 
       let startedSpans = mockSpanProcessor.getStartedSpans()
       let spanNames = startedSpans.map(\.name)
 
       XCTAssertTrue(spanNames.contains(Self.spanNameViewDidLoad), "Should create viewDidLoad span")
-      XCTAssertTrue(spanNames.contains(Self.spanNameViewLoad), "Should create parent view.load span")
+      XCTAssertTrue(spanNames.contains(Self.TimeToFirstAppear), "Should create parent TimeToFirstAppear span")
 
       // Check span attributes
       let viewDidLoadSpan = startedSpans.first { $0.name == Self.spanNameViewDidLoad }
       XCTAssertNotNil(viewDidLoadSpan, "viewDidLoad span should exist")
       if let span = viewDidLoadSpan {
-        XCTAssertEqual(span.attributes[Self.attributeKeyViewName]?.description, Self.testViewControllerClassName)
+        XCTAssertEqual(span.attributes[AwsViewConstants.attributeScreenName]?.description, Self.testViewControllerClassName)
         XCTAssertEqual(span.attributes[Self.attributeKeyViewClass]?.description, Self.testViewControllerClassName)
+        XCTAssertEqual(span.attributes[AwsViewConstants.attributeViewType]?.description, AwsViewConstants.valueUIKit)
       }
     }
 
@@ -239,6 +239,11 @@ import Atomics
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewIsAppearing), "Should create viewIsAppearing span")
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewDidAppear), "Should create viewDidAppear span")
       XCTAssertTrue(startedSpanNames.contains(Self.spanNameViewDuration), "Should create view.duration span")
+
+      // Verify all spans have view.type = uikit
+      for span in startedSpans {
+        XCTAssertEqual(span.attributes[AwsViewConstants.attributeViewType]?.description, AwsViewConstants.valueUIKit)
+      }
     }
 
     func testSpanHierarchy() {
@@ -249,13 +254,13 @@ import Atomics
       // Wait for parent and child spans to be created
       wait(timeout: Self.defaultTimeout) {
         let startedSpans = self.mockSpanProcessor.getStartedSpans()
-        let parentSpan = startedSpans.first { $0.name == Self.spanNameViewLoad }
+        let parentSpan = startedSpans.first { $0.name == Self.TimeToFirstAppear }
         let childSpan = startedSpans.first { $0.name == Self.spanNameViewDidLoad }
         return parentSpan != nil && childSpan != nil
       }
 
       let startedSpans = mockSpanProcessor.getStartedSpans()
-      let parentSpan = startedSpans.first { $0.name == Self.spanNameViewLoad }
+      let parentSpan = startedSpans.first { $0.name == Self.TimeToFirstAppear }
       let childSpan = startedSpans.first { $0.name == Self.spanNameViewDidLoad }
 
       XCTAssertNotNil(parentSpan, "Should create parent span")
@@ -294,7 +299,7 @@ import Atomics
 
     func testCustomViewControllerName() {
       class CustomViewController: UIViewController, ViewControllerCustomization {
-        var customViewName: String? = ViewControllerHandlerTests.customViewControllerClassName
+        var customScreenName: String? = ViewControllerHandlerTests.customViewControllerClassName
         var shouldCaptureView: Bool { return true }
       }
 
@@ -376,7 +381,7 @@ import Atomics
       XCTAssertGreaterThanOrEqual(endedSpans.count, Self.concurrentOperationCount)
 
       // Verify that we have matching parent-child relationships
-      let parentSpans = startedSpans.filter { $0.name == Self.spanNameViewLoad }
+      let parentSpans = startedSpans.filter { $0.name == Self.TimeToFirstAppear }
       let childSpans = startedSpans.filter { $0.name == Self.spanNameViewDidLoad }
 
       // Each child span should have a valid parent

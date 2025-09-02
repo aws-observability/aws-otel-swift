@@ -17,7 +17,6 @@ import Foundation
 
 /**
  * Root configuration object for the AWS OpenTelemetry SDK.
- * Root configuration object for the AWS OpenTelemetry SDK.
  *
  * This class serves as the main configuration container for initializing the AWS OpenTelemetry SDK
  * with Real User Monitoring (RUM) capabilities. It encompasses all necessary settings for:

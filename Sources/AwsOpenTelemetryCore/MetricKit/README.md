@@ -109,7 +109,7 @@ try AwsOpenTelemetryRumBuilder.create(config: config).build()
   "body": { "string": "hang" },
   "attributes": {
     "hang.hang_duration": { "double": 20000000000 },
-    "hang.call_stack_tree": {
+    "hang.stacktrace": {
       "string": "{\n  \"callStacks\" : [\n    {\n      \"threadAttributed\" : true,\n      \"callStackRootFrames\" : [\n        {\n          \"binaryUUID\" : \"0102E659-3745-41D7-95D5-1757A41FFA60\",\n          \"offsetIntoBinaryTextSegment\" : 123,\n          \"sampleCount\" : 20,\n          \"binaryName\" : \"testBinaryName\",\n          \"address\" : 74565\n        }\n      ]\n    }\n  ],\n  \"callStackPerThread\" : true\n}"
     }
   },
@@ -120,7 +120,7 @@ try AwsOpenTelemetryRumBuilder.create(config: config).build()
 
 ### MXHangDiagnostic Attributes
 
-| Attribute              | Type   | Description                                        | Example                                                |
-| ---------------------- | ------ | -------------------------------------------------- | ------------------------------------------------------ |
-| `hang.hang_duration`   | double | Duration of the hang in nanoseconds                | `20000000000` (20 seconds)                             |
-| `hang.call_stack_tree` | string | JSON representation of call stack tree during hang | `"{\"callStacks\":[...],\"callStackPerThread\":true}"` |
+| Attribute            | Type   | Description                                        | Example                                                |
+| -------------------- | ------ | -------------------------------------------------- | ------------------------------------------------------ |
+| `hang.hang_duration` | double | Duration of the hang in nanoseconds                | `20000000000` (20 seconds)                             |
+| `hang.stacktrace`    | string | JSON representation of call stack tree during hang | `"{\"callStacks\":[...],\"callStackPerThread\":true}"` |

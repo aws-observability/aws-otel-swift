@@ -34,7 +34,7 @@ struct ContentView: View {
   }
 
   var body: some View {
-    NavigationView {
+    NavigationStack {
       VStack(spacing: 0) {
         // App title
         Text("ADOT Swift Demo")
@@ -99,6 +99,19 @@ struct ContentView: View {
                 viewModel.showCustomSpanForm()
               })
 
+            // Add navigation to TracedContentView
+            NavigationLink(destination: TracedContentView()) {
+              HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                Text("SwiftUI Tracing Demo")
+              }
+              .frame(maxWidth: .infinity)
+              .padding()
+              .background(Color.green)
+              .foregroundColor(.white)
+              .cornerRadius(10)
+            }
+
               awsButton(icon: "info.circle", title: "Peek session", action: {
                 viewModel.showSessionDetails()
               })
@@ -136,14 +149,14 @@ struct ContentView: View {
         }
         .accessibilityIdentifier("SampleScrollView")
 
-        // Result Display
-        ScrollView {
-          VStack {
-            if viewModel.isLoading {
-              ProgressView()
-                .padding()
-            }
+        // Fixed result display at bottom
+        VStack {
+          if viewModel.isLoading {
+            ProgressView()
+              .padding(.top, 8)
+          }
 
+          ScrollView {
             Text(viewModel.resultMessage)
               .frame(maxWidth: .infinity, alignment: .leading)
               .padding()

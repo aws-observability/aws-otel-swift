@@ -29,7 +29,7 @@
       attributes[AwsMetricKitConstants.hangDuration] = AttributeValue.double(Double(hang.hangDuration.value.toNanoseconds))
 
       if let stacktrace = String(bytes: hang.callStackTree.jsonRepresentation(), encoding: .utf8) {
-        attributes[AwsMetricKitConstants.hangCallStackTree] = AttributeValue.string(stacktrace)
+        attributes[AwsMetricKitConstants.hangCallStack] = AttributeValue.string(stacktrace)
       }
 
       return attributes

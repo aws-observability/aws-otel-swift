@@ -46,7 +46,7 @@
      *
      * @return A custom name for telemetry, or nil to use the class name
      */
-    var customViewName: String? { get }
+    var customScreenName: String? { get }
 
     /**
      * Whether this view controller should be included in telemetry.
@@ -72,7 +72,7 @@
    */
   public extension ViewControllerCustomization where Self: UIViewController {
     /// Default: Use the class name for telemetry
-    var customViewName: String? { nil }
+    var customScreenName: String? { nil }
 
     /// Default: Enable instrumentation for all view controllers
     var shouldCaptureView: Bool { true }
