@@ -19,6 +19,7 @@ import Foundation
 public enum AwsInstrumentationScopes {
   public static let CRASH_DIAGNOSTIC = "software.amazon.opentelemetry.MXCrashDiagnostic"
   public static let HANG_DIAGNOSTIC = "software.amazon.opentelemetry.MXHangDiagnostic"
+  public static let APP_LAUNCH_DIAGNOSTIC = "software.amazon.opentelemetry.MXAppLaunchDiagnostic"
   public static let SESSION = "software.amazon.opentelemetry.session"
   public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
 }

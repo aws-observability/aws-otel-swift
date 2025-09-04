@@ -15,6 +15,9 @@
     init(config: AwsMetricKitConfig = .default) {
       self.config = config
       super.init()
+      if #available(iOS 16.0, *), config.startup {
+        AwsMetricKitAppLaunchProcessor.initialize()
+      }
       AwsOpenTelemetryLogger.debug("Successfully initialized")
     }
 
@@ -78,8 +81,9 @@
 
     @available(iOS 16.0, *)
     private func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
-      guard let diagnostics else { return }
-      AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) app launch diagnostic(s)")
+      if config.startup {
+        AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics(diagnostics)
+      }
     }
   }
 #endif
