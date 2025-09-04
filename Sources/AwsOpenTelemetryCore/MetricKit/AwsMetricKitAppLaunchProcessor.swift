@@ -24,7 +24,7 @@
 
     static func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
       guard let diagnostics else { return }
-      let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationScopeName: scopeName)
+      let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: scopeName)
       AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) app launch diagnostic(s)")
 
       for launch in diagnostics {
