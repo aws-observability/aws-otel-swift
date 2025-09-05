@@ -21,4 +21,5 @@ public enum AwsInstrumentationScopes {
   public static let HANG_DIAGNOSTIC = "software.amazon.opentelemetry.MXHangDiagnostic"
   public static let SESSION = "software.amazon.opentelemetry.session"
   public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
+  public static let URL_SESSION = "NSURLSession"
 }

@@ -76,7 +76,7 @@ struct ContentView: View {
               viewModel.showSessionDetails()
             })
 
-            awsButton(icon: "exclamationmark.triangle.filled", title: "Simulate ANR (2 sec)") {
+            awsButton(icon: "exclamationmark.triangle", title: "Simulate ANR (2 sec)") {
               viewModel.hangApplication(seconds: 2)
             }
 
@@ -97,6 +97,7 @@ struct ContentView: View {
           }
           .padding(.horizontal)
         }
+        .accessibilityIdentifier("SampleScrollView")
 
         // Fixed result display at bottom
         VStack {

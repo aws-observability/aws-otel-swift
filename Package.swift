@@ -89,6 +89,12 @@ let package = Package(
     .testTarget(
       name: "AwsOpenTelemetryAgentTests",
       dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
+    ),
+    .testTarget(
+      name: "ContractTests",
+      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
+      path: "Tests/ContractTests",
+      exclude: ["README.md", "OLTPParser", "OLTPResolver.swift"]
     )
   ]
 ).addPlatformSpecific()
