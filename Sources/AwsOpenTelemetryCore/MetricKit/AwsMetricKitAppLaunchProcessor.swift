@@ -18,8 +18,12 @@
       ) { _ in
         appBecameActiveTime = Date()
       }
-      // Set to false after SDK initialization
-      isColdStart = false
+    }
+
+    // For testing purposes only
+    static func resetForTesting() {
+      isColdStart = true
+      appBecameActiveTime = nil
     }
 
     static func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
@@ -45,6 +49,9 @@
           .startSpan()
 
         span.end(time: endTime)
+
+        // Mark subsequent launches as warm
+        isColdStart = false
       }
     }
   }

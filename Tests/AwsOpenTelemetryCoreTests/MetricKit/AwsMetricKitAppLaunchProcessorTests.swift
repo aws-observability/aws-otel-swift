@@ -2,7 +2,6 @@
   import XCTest
   import MetricKit
   import OpenTelemetryApi
-  import OpenTelemetrySdk
   @testable import AwsOpenTelemetryCore
   @testable import TestUtils
 
@@ -13,6 +12,8 @@
     override func setUp() {
       super.setUp()
       spanExporter = InMemorySpanExporter.register()
+      AwsMetricKitAppLaunchProcessor.resetForTesting()
+      AwsMetricKitAppLaunchProcessor.initialize()
     }
 
     override func tearDown() {
@@ -49,28 +50,50 @@
       let mockLaunch = MockMXAppLaunchDiagnostic()
       AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics([mockLaunch])
 
+      // Add a small delay to ensure async operations complete
+      let expectation = XCTestExpectation(description: "Wait for span export")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        expectation.fulfill()
+      }
+      wait(for: [expectation], timeout: 1.0)
+
       let spans = spanExporter.getExportedSpans()
-      XCTAssertEqual(spans.count, 1)
+      XCTAssertEqual(spans.count, 1, "Expected 1 span but got \(spans.count)")
+
+      guard spans.count > 0 else {
+        XCTFail("No spans were exported")
+        return
+      }
 
       let span = spans[0]
       XCTAssertEqual(span.name, "AppStart")
-      XCTAssertEqual(span.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXAppLaunchDiagnostic")
+      XCTAssertEqual(span.instrumentationScope.name, "software.amazon.opentelemetry.MXAppLaunchDiagnostic")
       XCTAssertEqual(span.attributes[AwsMetricKitConstants.appLaunchDuration]?.description, "2.5")
       XCTAssertEqual(span.attributes[AwsMetricKitConstants.appLaunchType]?.description, "COLD")
     }
 
     func testColdStartDetection() {
-      // Reset to cold start state
-      AwsMetricKitAppLaunchProcessor.initialize()
-
       NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
 
       let mockLaunch = MockMXAppLaunchDiagnostic()
       AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics([mockLaunch])
 
+      // Add a small delay to ensure async operations complete
+      let expectation = XCTestExpectation(description: "Wait for span export")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        expectation.fulfill()
+      }
+      wait(for: [expectation], timeout: 1.0)
+
       let spans = spanExporter.getExportedSpans()
-      XCTAssertEqual(spans.count, 1)
-      XCTAssertEqual(spans[0].attributes[AwsMetricKitConstants.appLaunchType]?.description, "WARM")
+      XCTAssertEqual(spans.count, 1, "Expected 1 span but got \(spans.count)")
+
+      guard spans.count > 0 else {
+        XCTFail("No spans were exported")
+        return
+      }
+
+      XCTAssertEqual(spans[0].attributes[AwsMetricKitConstants.appLaunchType]?.description, "COLD")
     }
   }
 
