@@ -1,0 +1,50 @@
+
+CONTRACT_TEST_SCHEME="UITests"
+CONTRACT_TEST_WORKSPACE="project.xcworkspace"
+
+### START CONTRACT TEST - DATA GENERATION OPTIONS 
+
+XCODEBUILD_OPTIONS_IOS_CONTRACT=\
+	-workspace $(CONTRACT_TEST_WORKSPACE) \
+	-scheme $(CONTRACT_TEST_SCHEME) \
+	-destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
+	-enableCodeCoverage YES
+
+XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
+	-workspace $(CONTRACT_TEST_WORKSPACE) \
+	-scheme $(CONTRACT_TEST_SCHEME) \
+	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
+	-enableCodeCoverage YES
+
+XCODE_OPTIONS_WATCHOS_CONTRACT=\
+	-workspace $(CONTRACT_TEST_WORKSPACE) \
+	-scheme $(CONTRACT_TEST_SCHEME) \
+	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' \
+	-enableCodeCoverage YES
+
+# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
+# XCODE_OPTIONS_VISIONOS_CONTRACT=\
+# 	-workspace $(CONTRACT_TEST_WORKSPACE) \
+# 	-scheme $(CONTRACT_TEST_SCHEME) \
+# 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
+# 	-enableCodeCoverage YES
+
+### END CONTRACT TEST  - DATA GENERATION OPTIONS
+
+# Contract Test - Data Generation Commands
+.PHONY: contract-test-generate-data-ios
+contract-test-generate-data-ios: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT) | xcbeautify
+
+.PHONY: contract-test-generate-data-tvos
+contract-test-generate-data-tvos: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_TVOS_CONTRACT) | xcbeautify
+
+.PHONY: contract-test-generate-data-watchos
+contract-test-generate-data-watchos: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT) | xcbeautify
+
+# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
+# .PHONY: contract-test-generate-data-visionos
+# contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
+# 	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify
