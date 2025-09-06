@@ -26,11 +26,11 @@ runs:
         sudo mkdir -p /tmp/otel-swift-collector  
         sudo chmod 777 /tmp/otel-swift-collector    
 
-    - name: Install dependencies (if any)
-      shell: bash
-      run: |
-        # Example: Install CocoaPods dependencies
-        pod install --repo-update
+    # - name: Install dependencies (if any)
+    #   shell: bash
+    #   run: |
+    #     # Example: Install CocoaPods dependencies
+    #     pod install --repo-update
 
     - name: Start Mock Collector and Mock Endpoint
       shell: bash
