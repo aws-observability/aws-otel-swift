@@ -1,0 +1,27 @@
+name: Contract tests
+on:
+  push:
+    branches:
+      - main
+      - release/*
+
+  pull_request:
+    branches:
+      - main
+      - release/*
+
+jobs:
+  setup-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Initialize
+        uses: ./.github/actions/initialization
+
+      - name: Run contract tests
+        uses: ./.github/actions/contract_tests
+        with:
+          api-level: 35
