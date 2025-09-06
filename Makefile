@@ -53,7 +53,7 @@ XCODEBUILD_OPTIONS_WATCHOS=\
 
 XCODE_OPTIONS_IOS_CONTRACT_RUN=\
 	-configuration Debug \
-	-destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
+	-destination 'platform=iOS Simulator,name=iPhone 16' \
 	-scheme $(PROJECT_NAME) \
 	-testPlan $(CONTRACT_TEST_PLAN) \
 	-workspace .
@@ -188,10 +188,6 @@ contract-test-run-watchos: ## `xcodebuild test` automatically builds and tests
 # .PHONY: test-without-building-visionos
 # test-without-building-visionos:
 #	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
-# 
-# .PHONY: contract-test-generate-data-visionos
-# contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
-# 	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify
 # 
 # .PHONY: contract-test-run-visionos
 # contract-test-run-visionos: ## `xcodebuild test` automatically builds and tests

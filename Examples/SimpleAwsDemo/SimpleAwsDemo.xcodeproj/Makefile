@@ -7,7 +7,7 @@ CONTRACT_TEST_WORKSPACE="project.xcworkspace"
 XCODEBUILD_OPTIONS_IOS_CONTRACT=\
 	-workspace $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
+	-destination 'platform=iOS Simulator,name=iPhone 16' \
 	-enableCodeCoverage YES
 
 XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
