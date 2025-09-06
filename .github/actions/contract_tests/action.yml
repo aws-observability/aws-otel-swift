@@ -27,8 +27,8 @@ runs:
     - name: Prepare directory
       shell: bash
       run: |
-        sudo mkdir -p /tmp/otel-android-collector  
-        sudo chmod 777 /tmp/otel-android-collector    
+        sudo mkdir -p /tmp/otel-swift-collector  
+        sudo chmod 777 /tmp/otel-swift-collector    
 
     - name: Install dependencies (if any)
       shell: bash
@@ -40,38 +40,42 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
-        docker compose up
+        docker compose up -d  # Run in background
         cd ${{ github.workspace }}
 
     - name: Generate spans and logs for contract tests
       shell: bash
       run: |
+        # ios
         cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
-        xcodebuild test \
-          -workspace project.xcworkspace \
-          -scheme UITests \
-          -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
-          -enableCodeCoverage YES
+        make contract-test-generate-data-ios
+        cd ${{ github.workspace }}
+
+        # tvos
+        cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+        make contract-test-generate-data-tvos
+        cd ${{ github.workspace }}
+
+        # watchos
+        cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+        make contract-test-generate-data-watchos
         cd ${{ github.workspace }}
 
     - uses: actions/upload-artifact@v4
       with:
         name: traces_file-sdk-${{ inputs.api-level }}
-        path: /tmp/otel-android-collector/traces.txt
+        path: /tmp/otel-swift-collector/traces.txt
 
     - uses: actions/upload-artifact@v4
       with:
         name: logs_file-sdk-${{ inputs.api-level }}
-        path: /tmp/otel-android-collector/logs.txt
+        path: /tmp/otel-swift-collector/logs.txt
 
     - name: Run contract tests
       shell: bash
       run: |
-        xcodebuild test \
-          -configuration Debug \
-          -destination 'platform=iOS Simulator,name=iPhone 16' \
-          -scheme aws-otel-swift-Package \
-          -testPlan ContractTestPlan \
-          -workspace .
+        make contract-test-run-ios
+        make contract-test-run-tvos
+        make contract-test-run-watchos
 
   
