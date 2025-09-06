@@ -21,17 +21,20 @@ runs:
         sudo chmod 777 /tmp/otel-android-collector    
 
     - name: Install dependencies (if any)
+      shell: bash
       run: |
         # Example: Install CocoaPods dependencies
         pod install --repo-update
 
     - name: Start Mock Collector and Mock Endpoint
+      shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
         docker compose up
         cd ${{ github.workspace }}
 
     - name: Generate spans and logs for contract tests
+      shell: bash
       run: |
         cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
         xcodebuild test \
@@ -52,6 +55,7 @@ runs:
         path: /tmp/otel-android-collector/logs.txt
 
     - name: Run contract tests
+      shell: bash
       run: |
         xcodebuild test \
           -configuration Debug \
