@@ -281,22 +281,51 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 ## Testing
 
+### Unit Tests
+
 This project includes comprehensive test suites. For detailed testing instructions, troubleshooting, and contributor guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md#testing).
 
 **Quick Test Command:**
 
 ```bash
-swift test // macOS
-make test-ios // iOS
-make test-tvos // tvOS
-make test-watchos // watchOS
+swift test # macOS
+make test-ios # iOS
+make test-tvos # tvOS
+make test-watchos # watchOS
 ```
 
 **Test Coverage:**
 
 ```bash
 # Run tests with coverage analysis (requires 70% repository, 80% PR changes)
-make check-coverage // macOS
+make check-coverage # macOS
+```
+
+### Contract Tests
+Contract tests require the following two steps:
+1. Use the UITests framework using XCUIApplication to tap buttons on the sample app and generate data.
+
+Commands to generate contract test data: 
+```
+cd ./Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+xcodebuild test \
+    -workspace project.xcworkspace \
+    -scheme UITests \
+    -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+    -enableCodeCoverage YES
+cd ../../..
+```
+
+2. Run the unit test plan `ContractTestPlan` to read the generated data and validate the spans and logs written to file. 
+
+Command to run contract tests:
+```
+xcodebuild test \
+    -configuration Debug \
+    -destination 'platform=iOS Simulator,name=iPhone 16' \
+    -scheme aws-otel-swift-Package \
+    -testPlan ContractTestPlan \
+    -workspace .
 ```
 
 ## Development Setup

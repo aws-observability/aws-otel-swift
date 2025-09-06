@@ -28,8 +28,6 @@ class NetworkTests: XCTestCase {
       }
     }
 
-    print("spans: \(spans)")
-
     // Assert spans collection is not empty
     XCTAssertFalse(spans.isEmpty, "Spans collection should not be empty")
 

@@ -1,0 +1,63 @@
+
+
+name: 'Contract Tests Action'
+description: 'Reusable contract tests action with specified iOS SDK version'
+inputs:
+  api-level:
+    description: 'iOS SDK version to use (e.g., 35)'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Docker Compose
+      shell: bash
+      run: docker compose version
+
+    - name: Prepare directory
+      shell: bash
+      run: |
+        sudo mkdir -p /tmp/otel-android-collector  
+        sudo chmod 777 /tmp/otel-android-collector    
+
+    - name: Install dependencies (if any)
+      run: |
+        # Example: Install CocoaPods dependencies
+        pod install --repo-update
+
+    - name: Start Mock Collector and Mock Endpoint
+      run: |
+        cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
+        docker compose up
+        cd ${{ github.workspace }}
+
+    - name: Generate spans and logs for contract tests
+      run: |
+        cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+        xcodebuild test \
+          -workspace project.xcworkspace \
+          -scheme UITests \
+          -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.5' \
+          -enableCodeCoverage YES
+        cd ${{ github.workspace }}
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: traces_file-sdk-${{ inputs.api-level }}
+        path: /tmp/otel-android-collector/traces.txt
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: logs_file-sdk-${{ inputs.api-level }}
+        path: /tmp/otel-android-collector/logs.txt
+
+    - name: Run contract tests
+      run: |
+        xcodebuild test \
+          -configuration Debug \
+          -destination 'platform=iOS Simulator,name=iPhone 16' \
+          -scheme aws-otel-swift-Package \
+          -testPlan ContractTestPlan \
+          -workspace .
+
+  
