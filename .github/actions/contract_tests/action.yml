@@ -10,6 +10,16 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install Docker
+      shell: bash
+      run: |
+        # Install Docker on macOS
+        brew install --cask docker
+        # Start Docker
+        open /Applications/Docker.app
+        # Wait for Docker to start
+        while ! docker system info > /dev/null 2>&1; do sleep 1; done
+
     - name: Set up Docker Compose
       shell: bash
       run: docker compose version
