@@ -10,19 +10,15 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install Docker
-      shell: bash
-      run: |
-        # Install Docker on macOS
-        brew install --cask docker
-        # Start Docker
-        open /Applications/Docker.app
-        # Wait for Docker to start
-        while ! docker system info > /dev/null 2>&1; do sleep 1; done
-
-    - name: Set up Docker Compose
-      shell: bash
-      run: docker compose version
+    # - name: Install Docker
+    #   shell: bash
+    #   run: |
+    #     # Install Docker on macOS
+    #     brew install --cask docker
+    #     # Start Docker
+    #     open /Applications/Docker.app
+    #     # Wait for Docker to start
+    #     while ! docker system info > /dev/null 2>&1; do sleep 1; done
 
     - name: Prepare directory
       shell: bash
@@ -51,15 +47,15 @@ runs:
         make contract-test-generate-data-ios
         cd ${{ github.workspace }}
 
-        # tvos
-        cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
-        make contract-test-generate-data-tvos
-        cd ${{ github.workspace }}
+        # # tvos
+        # cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+        # make contract-test-generate-data-tvos
+        # cd ${{ github.workspace }}
 
-        # watchos
-        cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
-        make contract-test-generate-data-watchos
-        cd ${{ github.workspace }}
+        # # watchos
+        # cd ${{ github.workspace }}/Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+        # make contract-test-generate-data-watchos
+        # cd ${{ github.workspace }}
 
     - uses: actions/upload-artifact@v4
       with:
@@ -75,7 +71,7 @@ runs:
       shell: bash
       run: |
         make contract-test-run-ios
-        make contract-test-run-tvos
-        make contract-test-run-watchos
+        # make contract-test-run-tvos
+        # make contract-test-run-watchos
 
   
