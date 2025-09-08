@@ -1,6 +1,6 @@
 
 CONTRACT_TEST_SCHEME="UITests"
-CONTRACT_TEST_WORKSPACE="project.xcworkspace"
+CONTRACT_TEST_WORKSPACE="SimpleAwsDemo.xcodeproj/project.xcworkspace"
 
 ### START CONTRACT TEST - DATA GENERATION OPTIONS 
 
