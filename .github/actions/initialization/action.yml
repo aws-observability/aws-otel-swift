@@ -31,6 +31,12 @@ runs:
       shell: bash
 
     - name: Set up Docker Compose
+      uses: docker/setup-compose-action@v1
+      with:
+        version: 'latest'
+
+
+    - name: Set up Docker Compose
       shell: bash
       run: docker compose version
     
