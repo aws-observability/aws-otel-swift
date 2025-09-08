@@ -7,7 +7,7 @@ CONTRACT_TEST_WORKSPACE="SimpleAwsDemo.xcodeproj"
 XCODEBUILD_OPTIONS_IOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=iOS Simulator,name=iPhone 15' \
+	-destination 'platform=iOS Simulator,name=iPhone 16' \
 	-enableCodeCoverage YES
 
 XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
