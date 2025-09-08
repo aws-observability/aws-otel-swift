@@ -11,25 +11,25 @@ runs:
       with:
         xcode-version: latest-stable
     
-    - name: Setup Docker on macOS
-      uses: docker/setup-docker-action@v3
-      with:
-        daemon-config: |
-          {
-            "debug": true
-          }
+    # - name: Setup Docker on macOS
+    #   uses: docker/setup-docker-action@v3
+    #   with:
+    #     daemon-config: |
+    #       {
+    #         "debug": true
+    #       }
 
-    - name: Verify Docker installation
-      run: docker info
-      shell: bash
+    # - name: Verify Docker installation
+    #   run: docker info
+    #   shell: bash
 
-    - name: Set up Docker Compose
-      uses: docker/setup-compose-action@v1
-      with:
-        version: 'latest'
+    # - name: Set up Docker Compose
+    #   uses: docker/setup-compose-action@v1
+    #   with:
+    #     version: 'latest'
 
-    - name: Set up Docker Compose
-      shell: bash
-      run: docker compose version
+    # - name: Set up Docker Compose
+    #   shell: bash
+    #   run: docker compose version
     
 
