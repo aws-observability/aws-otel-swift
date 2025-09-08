@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -179,7 +179,7 @@
 				30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
 				5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */,
 			);
-			preferredProjectObjectVersion = 56;
+			preferredProjectObjectVersion = 77;
 			productRefGroup = 306BC6992E00C6AA00F19E48 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
