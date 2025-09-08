@@ -32,12 +32,12 @@ runs:
     #     # Example: Install CocoaPods dependencies
     #     pod install --repo-update
 
-    - name: Start Mock Collector and Mock Endpoint
-      shell: bash
-      run: |
-        cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
-        docker compose up -d  # Run in background
-        cd ${{ github.workspace }}
+    # - name: Start Mock Collector and Mock Endpoint
+    #   shell: bash
+    #   run: |
+    #     cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
+    #     docker compose up -d  # Run in background
+    #     cd ${{ github.workspace }}
 
     - name: Generate spans and logs for contract tests
       shell: bash
