@@ -6,7 +6,7 @@
   @available(iOS 15.0, *)
   class AwsMetricKitCrashProcessor {
     static let scopeName = AwsInstrumentationScopes.CRASH_DIAGNOSTIC
-    static func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) {
+    static func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) async {
       guard let diagnostics else { return }
       let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
       AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) crash diagnostic(s)")

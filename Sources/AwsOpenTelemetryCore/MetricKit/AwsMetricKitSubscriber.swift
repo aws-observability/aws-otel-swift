@@ -59,11 +59,15 @@
     }
 
     private func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) {
-      AwsMetricKitCrashProcessor.processCrashDiagnostics(diagnostics)
+      Task {
+        await AwsMetricKitCrashProcessor.processCrashDiagnostics(diagnostics)
+      }
     }
 
     private func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
-      AwsMetricKitHangProcessor.processHangDiagnostics(diagnostics)
+      Task {
+        await AwsMetricKitHangProcessor.processHangDiagnostics(diagnostics)
+      }
     }
 
     private func processCpuExceptionDiagnostics(_ diagnostics: [MXCPUExceptionDiagnostic]?) {

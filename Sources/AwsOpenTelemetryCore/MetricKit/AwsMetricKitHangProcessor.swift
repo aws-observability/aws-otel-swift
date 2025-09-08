@@ -6,7 +6,7 @@
   @available(iOS 15.0, *)
   class AwsMetricKitHangProcessor {
     static let scopeName = AwsInstrumentationScopes.HANG_DIAGNOSTIC
-    static func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
+    static func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) async {
       guard let diagnostics else { return }
       let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
       AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) hang diagnostic(s)")
