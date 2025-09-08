@@ -11,7 +11,7 @@ runs:
       shell: bash
 
     - name: Select Xcode version
-      run: sudo xcode-select -s /Applications/Xcode_15.2.app 
+      run: sudo xcode-select -s /Applications/Xcode_16.0.app 
       shell: bash
 
     - name: Show current version of Xcode
@@ -19,7 +19,15 @@ runs:
       shell: bash
     
     - name: Setup Docker on macOS
-      uses: douglascamata/setup-docker-macos-action@v1.0.0
+      uses: docker/setup-docker-action@v3
+      with:
+        daemon-config: |
+          {
+            "debug": true
+          }
+
+    - name: Verify Docker installation
+      run: docker info
 
     - name: Set up Docker Compose
       shell: bash
