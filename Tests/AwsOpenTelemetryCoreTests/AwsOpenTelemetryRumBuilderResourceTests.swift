@@ -45,4 +45,21 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
     XCTAssertEqual(resource.attributes["cloud.platform"]?.description, "aws_rum")
     XCTAssertEqual(resource.attributes[AwsAttributes.rumSdkVersion.rawValue]?.description, AwsOpenTelemetryAgent.version)
   }
+
+  func testBuildResourceIncludesUpstreamAttributes() {
+    let config = AwsOpenTelemetryConfig(aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"))
+
+    let resource = AwsOpenTelemetryRumBuilder.buildResource(config: config)
+
+    XCTAssertEqual(resource.attributes["telemetry.sdk.name"]?.description, "opentelemetry")
+    XCTAssertEqual(resource.attributes["telemetry.sdk.language"]?.description, "swift")
+    XCTAssertNotNil(resource.attributes["telemetry.sdk.version"])
+    XCTAssertNotNil(resource.attributes["service.name"])
+    XCTAssertNotNil(resource.attributes["service.version"])
+
+    XCTAssertNotNil(resource.attributes["os.name"])
+    XCTAssertNotNil(resource.attributes["os.version"])
+    XCTAssertNotNil(resource.attributes["os.type"])
+    XCTAssertNotNil(resource.attributes["os.description"])
+  }
 }
