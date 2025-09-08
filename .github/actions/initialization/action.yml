@@ -28,6 +28,7 @@ runs:
 
     - name: Verify Docker installation
       run: docker info
+      shell: bash
 
     - name: Set up Docker Compose
       shell: bash
