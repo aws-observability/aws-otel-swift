@@ -39,7 +39,6 @@ runs:
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
         curl --proto '=https' --tlsv1.2 -fOL https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.133.0/otelcol_0.133.0_darwin_arm64.tar.gz
         tar -xvf otelcol_0.133.0_darwin_arm64.tar.gz
-        cd ${{ github.workspace }}
 
   
     

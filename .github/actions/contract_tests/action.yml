@@ -36,7 +36,6 @@ runs:
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
         ./otelcol --config=./no-docker-collector.yaml &
         sleep 5 # Give the collector a moment to start
-        cd ${{ github.workspace }}
 
     # No Docker: manually start mock endpoint 
     - name: Start Mock Endpoint
@@ -44,7 +43,6 @@ runs:
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
         node server.js &
-        cd ${{ github.workspace }}
 
     - name: Generate spans and logs for contract tests
       shell: bash
@@ -52,17 +50,14 @@ runs:
         # ios
         cd ${{ github.workspace }}/Examples/SimpleAwsDemo
         make contract-test-generate-data-ios
-        cd ${{ github.workspace }}
 
         # # tvos
         # cd ${{ github.workspace }}/Examples/SimpleAwsDemo
         # make contract-test-generate-data-tvos
-        # cd ${{ github.workspace }}
 
         # # watchos
         # cd ${{ github.workspace }}/Examples/SimpleAwsDemo
         # make contract-test-generate-data-watchos
-        # cd ${{ github.workspace }}
 
     - uses: actions/upload-artifact@v4
       with:
