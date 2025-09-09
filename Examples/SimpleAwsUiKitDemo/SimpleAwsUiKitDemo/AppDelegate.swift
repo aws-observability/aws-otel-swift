@@ -1,10 +1,3 @@
-//
-//  AppDelegate.swift
-//  SimpleAwsUiKitDemo
-//
-//  Created by Kambhampaty, Rekha on 9/8/25.
-//
-
 import UIKit
 
 @main

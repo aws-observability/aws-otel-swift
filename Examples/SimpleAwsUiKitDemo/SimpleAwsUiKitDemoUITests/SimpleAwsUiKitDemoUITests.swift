@@ -1,13 +1,6 @@
-//
-//  SimpleAwsUiKitDemoUITests.swift
-//  SimpleAwsUiKitDemoUITests
-//
-//  Created by Kambhampaty, Rekha on 9/8/25.
-//
-
 import XCTest
 
-final class SimpleAwsUiKitDemoUITests: XCTestCase {
+class SimpleAwsUiKitDemoUITests: XCTestCase {
   override func setUpWithError() throws {
     // Put setup code here. This method is called before the invocation of each test method in the class.
 
