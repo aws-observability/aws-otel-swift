@@ -37,10 +37,8 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests
-        git clone https://github.com/open-telemetry/opentelemetry-collector.git
-        cd opentelemetry-collector
-        make install-tools
-        make otelcorecol
+        curl --proto '=https' --tlsv1.2 -fOL https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.133.0/otelcol_0.133.0_darwin_arm64.tar.gz
+        tar -xvf otelcol_0.133.0_darwin_arm64.tar.gz
         cd ${{ github.workspace }}
 
   

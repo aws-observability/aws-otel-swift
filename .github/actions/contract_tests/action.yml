@@ -34,7 +34,7 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests
-        ./opentelemetry-collector/otelcorecol --config=./collector.yaml &
+        ./opentelemetry-collector/otelcol --config=../no-docker-collector.yaml &
         sleep 5 # Give the collector a moment to start
         cd ${{ github.workspace }}
 
@@ -43,7 +43,7 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
-        node server.js
+        node server.js &
         cd ${{ github.workspace }}
 
     - name: Generate spans and logs for contract tests
