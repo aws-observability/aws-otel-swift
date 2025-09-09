@@ -49,7 +49,7 @@ server.on('connection', (connection) => {
   });
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.MOCK_ENDPOINT_PORT || 8080; 
 
 // Start the server
 const runningServer = server.listen(PORT, () => {

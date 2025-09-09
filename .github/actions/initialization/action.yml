@@ -10,7 +10,8 @@ runs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
-    
+
+    # Docker fails on macos-15 runners with a virtualization error. Until Github supports runners with nested virtualization enabled on macos-15 runners, disable this.
     # - name: Setup Docker on macOS
     #   uses: docker/setup-docker-action@v3
     #   with:
@@ -18,18 +19,29 @@ runs:
     #       {
     #         "debug": true
     #       }
+    
+    # No Docker: manually download the otel collector 
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22' # Or a recent stable version
+    
+    # No Docker: manually setup node
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x' 
+        cache: 'npm'
+    
+    - name: Download otel-collector
+      run: |
+        cd ${{ github.workspace }}/Tests/ContractTests
+        git clone https://github.com/open-telemetry/opentelemetry-collector.git
+        cd opentelemetry-collector
+        make install-tools
+        make otelcorecol
+        cd ${{ github.workspace }}
 
-    # - name: Verify Docker installation
-    #   run: docker info
-    #   shell: bash
-
-    # - name: Set up Docker Compose
-    #   uses: docker/setup-compose-action@v1
-    #   with:
-    #     version: 'latest'
-
-    # - name: Set up Docker Compose
-    #   shell: bash
-    #   run: docker compose version
+  
     
 

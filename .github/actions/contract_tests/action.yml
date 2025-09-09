@@ -7,18 +7,13 @@ inputs:
     description: 'iOS SDK version to use (e.g., 35)'
     required: true
 
+# Remove if using Docker
+env:
+  MOCK_ENDPOINT_PORT: 8181
+
 runs:
   using: "composite"
   steps:
-    # - name: Install Docker
-    #   shell: bash
-    #   run: |
-    #     # Install Docker on macOS
-    #     brew install --cask docker
-    #     # Start Docker
-    #     open /Applications/Docker.app
-    #     # Wait for Docker to start
-    #     while ! docker system info > /dev/null 2>&1; do sleep 1; done
 
     - name: Prepare directory
       shell: bash
@@ -26,18 +21,28 @@ runs:
         sudo mkdir -p /tmp/otel-swift-collector  
         sudo chmod 777 /tmp/otel-swift-collector    
 
-    # - name: Install dependencies (if any)
-    #   shell: bash
-    #   run: |
-    #     # Example: Install CocoaPods dependencies
-    #     pod install --repo-update
-
+    # 
     # - name: Start Mock Collector and Mock Endpoint
     #   shell: bash
     #   run: |
     #     cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
     #     docker compose up -d  # Run in background
     #     cd ${{ github.workspace }}
+
+    # No Docker: manually start otel collector
+    - name: Start OpenTelemetry Collector
+      run: |
+        cd ${{ github.workspace }}/Tests/ContractTests
+        ./opentelemetry-collector/otelcorecol --config=./collector.yaml &
+        sleep 5 # Give the collector a moment to start
+        cd ${{ github.workspace }}
+
+    # No Docker: manually start mock endpoint 
+    - name: Start Mock Endpoint
+      run: |
+        cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
+        node server.js
+        cd ${{ github.workspace }}
 
     - name: Generate spans and logs for contract tests
       shell: bash
