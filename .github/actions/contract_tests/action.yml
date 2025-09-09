@@ -31,6 +31,7 @@ runs:
 
     # No Docker: manually start otel collector
     - name: Start OpenTelemetry Collector
+      shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests
         ./opentelemetry-collector/otelcorecol --config=./collector.yaml &
@@ -39,6 +40,7 @@ runs:
 
     # No Docker: manually start mock endpoint 
     - name: Start Mock Endpoint
+      shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
         node server.js

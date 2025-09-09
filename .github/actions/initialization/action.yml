@@ -35,6 +35,7 @@ runs:
     
     # No Docker: manually download the otel collector 
     - name: Download otel-collector
+      shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests
         git clone https://github.com/open-telemetry/opentelemetry-collector.git
