@@ -72,6 +72,7 @@ runs:
     - name: Run contract tests
       shell: bash
       run: |
+        cp ${{ github.workspace }}/Tests/ContractTests/MockCollector/tmp /tmp
         make contract-test-run-ios
         # make contract-test-run-tvos
         # make contract-test-run-watchos

@@ -17,7 +17,6 @@ XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
 	-destination 'platform=iOS Simulator,name=iPhone 16' \
 	-scheme $(PROJECT_NAME) \
-	-testPlan $(UNIT_TEST_PLAN) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
 	-workspace .
@@ -26,7 +25,6 @@ XCODEBUILD_OPTIONS_TVOS=\
 	-configuration Debug \
 	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
 	-scheme $(PROJECT_NAME) \
-	-testPlan $(UNIT_TEST_PLAN) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
 	-workspace .
@@ -35,7 +33,6 @@ XCODEBUILD_OPTIONS_WATCHOS=\
 	-configuration Debug \
 	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' \
 	-scheme $(PROJECT_NAME) \
-	-testPlan $(UNIT_TEST_PLAN) \
 	-test-iterations 5 \
     -retry-tests-on-failure \
 	-workspace .
