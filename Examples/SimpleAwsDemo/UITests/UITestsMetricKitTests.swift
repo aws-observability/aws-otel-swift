@@ -25,5 +25,6 @@ final class UITestsMetricKitTests: XCTestCase {
       scrollCount += 1
     }
     simulateAnrButton.tap()
+    sleep(5)
   }
 }
