@@ -18,8 +18,8 @@ runs:
     - name: Prepare directory
       shell: bash
       run: |
-        sudo mkdir -p /tmp/otel-swift-collector  
-        sudo chmod 777 /tmp/otel-swift-collector    
+        sudo mkdir -p ${{ github.workspace }}/Tests/ContractTests/tmp/otel-swift-collector  
+        sudo chmod 777 ${{ github.workspace }}/Tests/ContractTests/tmp/otel-swift-collector    
 
     # 
     # - name: Start Mock Collector and Mock Endpoint
@@ -67,12 +67,12 @@ runs:
     - uses: actions/upload-artifact@v4
       with:
         name: traces_file-sdk-${{ inputs.api-level }}
-        path: /tmp/otel-swift-collector/traces.txt
+        path: ${{ github.workspace }}/Tests/ContractTests/tmp/otel-swift-collector/traces.txt
 
     - uses: actions/upload-artifact@v4
       with:
         name: logs_file-sdk-${{ inputs.api-level }}
-        path: /tmp/otel-swift-collector/logs.txt
+        path: ${{ github.workspace }}/Tests/ContractTests/tmp/otel-swift-collector/logs.txt
 
     - name: Run contract tests
       shell: bash

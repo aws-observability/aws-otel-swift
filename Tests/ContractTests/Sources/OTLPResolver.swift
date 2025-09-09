@@ -6,8 +6,9 @@ struct ParsedOtlpData {
 }
 
 class OtlpResolver {
-  private static let LOGS_LOCATION = "/tmp/otel-swift-collector/logs.txt"
-  private static let TRACES_LOCATION = "/tmp/otel-swift-collector/traces.txt"
+  /// No Docker: Create `tmp` directory inside the `MockCollector` folder instead of container level `/tmp`
+  private static let LOGS_LOCATION = "../MockCollector/tmp/otel-swift-collector/logs.txt"
+  private static let TRACES_LOCATION = "../MockCollector/tmp/otel-swift-collector/traces.txt"
 
   static let shared = OtlpResolver()
 
