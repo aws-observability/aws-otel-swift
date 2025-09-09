@@ -34,7 +34,7 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests
-        ./otelcol --config=../no-docker-collector.yaml &
+        ./otelcol --config=./no-docker-collector.yaml &
         sleep 5 # Give the collector a moment to start
         cd ${{ github.workspace }}
 
