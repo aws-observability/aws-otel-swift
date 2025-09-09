@@ -1,6 +1,6 @@
 import XCTest
 
-final class UITestsNetworkTests: XCTestCase {
+class UITestsNetworkTests: XCTestCase {
   var app: XCUIApplication!
 
   override class var runsForEachTargetApplicationUIConfiguration: Bool {
