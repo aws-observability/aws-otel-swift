@@ -340,19 +340,21 @@ public class AwsOpenTelemetryRumBuilder {
    * @param config The AWS OpenTelemetry configuration
    * @return A resource with AWS RUM attributes
    */
-  private static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
-    var rumResourceAttributes: [String: String] = [
-      AwsRumConstants.AWS_REGION: config.aws.region,
-      AwsRumConstants.RUM_APP_MONITOR_ID: config.aws.rumAppMonitorId,
-      AwsRumConstants.RUM_SDK_VERSION: AwsOpenTelemetryAgent.version
+  static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
+    let rumResourceAttributes: [String: String] = [
+      AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId,
+      AwsAttributes.rumSdkVersion.rawValue: AwsOpenTelemetryAgent.version
     ]
 
-    if config.aws.rumAlias?.isEmpty == false {
-      rumResourceAttributes[AwsRumConstants.RUM_ALIAS] = config.aws.rumAlias!
-    }
+    let cloudResourceAttributes: [String: String] = [
+      ResourceAttributes.cloudRegion.rawValue: config.aws.region,
+      ResourceAttributes.cloudProvider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
+      ResourceAttributes.cloudPlatform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
+    ]
 
     let resource = DefaultResources().get()
       .merging(other: Resource(attributes: buildAttributeMap(rumResourceAttributes)))
+      .merging(other: Resource(attributes: buildAttributeMap(cloudResourceAttributes)))
 
     return resource
   }
@@ -412,7 +414,7 @@ public class AwsOpenTelemetryRumBuilder {
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
-      .add(spanProcessor: AwsUIDSpanProcessor())
+      .add(spanProcessor: AwsUIDSpanProcessor(uidManager: AwsUIDManagerProvider.getInstance()))
       .with(resource: resource)
 
     // Apply all customizers in order
@@ -433,9 +435,12 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private func buildLoggerProvider(logExporter: LogRecordExporter,
                                    resource: Resource) -> LoggerProvider {
-    // Create initial builder
+    let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
+    let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
+    let sessionProcessor = AwsSessionLogRecordProcessor(nextProcessor: uidProcessor)
+
     let builder = LoggerProviderBuilder()
-      .with(processors: [BatchLogRecordProcessor(logRecordExporter: logExporter)])
+      .with(processors: [sessionProcessor])
       .with(resource: resource)
 
     // Apply all customizers in order

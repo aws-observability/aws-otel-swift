@@ -9,7 +9,7 @@ final class AwsUIDManagerTests: XCTestCase {
   }
 
   func testUIDGeneration() {
-    let manager = AwsUIDManager.shared
+    let manager = AwsUIDManager()
     let uid = manager.getUID()
 
     XCTAssertFalse(uid.isEmpty)
@@ -18,7 +18,7 @@ final class AwsUIDManagerTests: XCTestCase {
 
   func testUIDPersistence() {
     // Test that a fresh manager saves UID to UserDefaults
-    let manager = MockUIDManager()
+    let manager = AwsUIDManager()
     let firstUID = manager.getUID()
 
     // Verify it's saved to UserDefaults
@@ -27,16 +27,10 @@ final class AwsUIDManagerTests: XCTestCase {
   }
 
   func testUIDConsistency() {
-    let manager = AwsUIDManager.shared
+    let manager = AwsUIDManager()
     let firstCall = manager.getUID()
     let secondCall = manager.getUID()
 
     XCTAssertEqual(firstCall, secondCall)
   }
-}
-
-// MARK: - Mock Classes
-
-class MockUIDManager: AwsUIDManager {
-  // Override to create a fresh instance for testing persistence
 }

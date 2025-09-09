@@ -22,6 +22,8 @@ import SwiftUI
 struct ContentView: View {
   @ObservedObject var viewModel: LoaderViewModel
   @State private var showingDemoViewController = false
+  @State private var showingCustomLogForm = false
+  @State private var showingCustomSpanForm = false
 
   var body: some View {
     NavigationView {
@@ -66,6 +68,18 @@ struct ContentView: View {
               .cornerRadius(10)
             })
             .disabled(viewModel.isLoading)
+
+            awsButton(icon: "person.circle", title: "Show User Info", action: {
+              viewModel.showUserInfo()
+            })
+
+            awsButton(icon: "doc.text", title: "Create Custom Log", action: {
+              viewModel.showCustomLogForm()
+            })
+
+            awsButton(icon: "chart.line.uptrend.xyaxis", title: "Create Custom Span", action: {
+              viewModel.showCustomSpanForm()
+            })
 
             awsButton(icon: "info.circle", title: "Peek session", action: {
               viewModel.showSessionDetails()
@@ -121,6 +135,12 @@ struct ContentView: View {
       .sheet(isPresented: $showingDemoViewController) {
         DemoViewControllerRepresentable()
       }
+      .sheet(isPresented: $viewModel.showingCustomLogForm) {
+        CustomLogFormView(viewModel: viewModel)
+      }
+      .sheet(isPresented: $viewModel.showingCustomSpanForm) {
+        CustomSpanFormView(viewModel: viewModel)
+      }
     }
   }
 
@@ -161,6 +181,9 @@ struct ContentView_Previews: PreviewProvider {
     override func getCognitoIdentityId() async {}
     override func showSessionDetails() {}
     override func renewSession() {}
+    override func showUserInfo() {}
+    override func showCustomLogForm() {}
+    override func showCustomSpanForm() {}
   }
 
   static var previews: some View {

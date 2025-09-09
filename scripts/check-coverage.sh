@@ -9,8 +9,8 @@ REPO_COVERAGE_THRESHOLD=70
 PR_COVERAGE_THRESHOLD=80
 COVERAGE_FILE="coverage.txt"
 
-# Generate coverage report
-echo "Generating coverage report..."
+# Run tests
+
 xcodebuild test \
   -scheme aws-otel-swift-Package \
   -destination 'platform=macOS' \
@@ -20,10 +20,13 @@ xcodebuild test \
   ENABLE_TESTABILITY=YES 
 
 ### Coverage report failing - disableing until debugged
-# xcrun llvm-cov report .build/Build/Products/Debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/Build/ProfileData/*/Coverage.profdata --format=text > "$COVERAGE_FILE"
+# # Generate coverage report
+# echo "Generating coverage report..."
+# xcrun llvm-cov report .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata --format=text > "$COVERAGE_FILE"
 
 # # Check repository coverage
 # echo "Checking repository coverage..."
+# head -1 "$COVERAGE_FILE"
 # grep "^Sources/" "$COVERAGE_FILE"
 # sources_coverage=$(grep "^Sources/" "$COVERAGE_FILE" | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
 # echo "Sources directory code coverage: ${sources_coverage}%"
@@ -45,8 +48,9 @@ xcodebuild test \
 #         echo "Checking coverage for changed files:"
 #         echo "$changed_sources"
 #         echo "Coverage for changed files:"
+#         head -1 "$COVERAGE_FILE"
 #         echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done
-        
+
 #         changed_coverage=$(echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
 #         echo "Changed files coverage: ${changed_coverage}%"
         
