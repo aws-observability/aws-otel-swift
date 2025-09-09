@@ -34,7 +34,7 @@ XCODE_OPTIONS_WATCHOS_CONTRACT=\
 # Contract Test - Data Generation Commands
 .PHONY: contract-test-generate-data-ios
 contract-test-generate-data-ios: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT) | xcbeautify
+	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT) | xcbeautify
 
 .PHONY: contract-test-generate-data-tvos
 contract-test-generate-data-tvos: ## `xcodebuild test` automatically builds and tests

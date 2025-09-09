@@ -162,7 +162,7 @@ test-without-building-watchos:
 # Contract Test - Run Commands
 .PHONY: contract-test-run-ios
 contract-test-run-ios: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT_RUN) | xcbeautify
+	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT_RUN) | xcbeautify
 
 .PHONY: contract-test-run-tvos
 contract-test-run-tvos: ## `xcodebuild test` automatically builds and tests
