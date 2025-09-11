@@ -107,6 +107,29 @@
       let spans = spanExporter.getExportedSpans()
       XCTAssertEqual(spans.count, 0, "Expected no spans for long launch duration")
     }
+
+    func testCachesDiagnosticWhenAppNotActive() {
+      // Process diagnostic before app becomes active
+      let diagnostic = MockMXAppLaunchDiagnostic()
+      AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics([diagnostic])
+
+      // Should have no spans yet
+      XCTAssertEqual(spanExporter.getExportedSpans().count, 0)
+
+      // Now simulate app becoming active
+      NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+      // Wait for async processing
+      let expectation = XCTestExpectation(description: "Wait for cached diagnostic processing")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        expectation.fulfill()
+      }
+      wait(for: [expectation], timeout: 1.0)
+
+      // Should now have the span from cached diagnostic
+      let spans = spanExporter.getExportedSpans()
+      XCTAssertEqual(spans.count, 1, "Expected 1 span from cached diagnostic")
+    }
   }
 
   @available(iOS 16.0, *)

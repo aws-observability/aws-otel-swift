@@ -9,6 +9,7 @@
     static let scopeName = AwsInstrumentationScopes.APP_LAUNCH_DIAGNOSTIC
     private static var appBecameActiveTime: Date?
     private static var isColdStart = true
+    private static var cachedLaunchDiagnostic: MXAppLaunchDiagnostic?
 
     static func initialize() {
       NotificationCenter.default.addObserver(
@@ -17,6 +18,12 @@
         queue: .main
       ) { _ in
         appBecameActiveTime = Date()
+
+        // Process cached diagnostic if available
+        if let cached = cachedLaunchDiagnostic {
+          processAppLaunchDiagnostics([cached])
+          cachedLaunchDiagnostic = nil
+        }
       }
     }
 
@@ -24,6 +31,7 @@
     static func resetForTesting() {
       isColdStart = true
       appBecameActiveTime = nil
+      cachedLaunchDiagnostic = nil
     }
 
     static func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
@@ -33,7 +41,11 @@
 
       for launch in diagnostics {
         guard let endTime = appBecameActiveTime else {
-          AwsOpenTelemetryLogger.debug("Skipping app launch span - no app active time recorded")
+          // Cache first diagnostic to prevent race condition
+          if cachedLaunchDiagnostic == nil {
+            cachedLaunchDiagnostic = launch
+            AwsOpenTelemetryLogger.debug("Caching app launch diagnostic - waiting for app to become active")
+          }
           continue
         }
 
