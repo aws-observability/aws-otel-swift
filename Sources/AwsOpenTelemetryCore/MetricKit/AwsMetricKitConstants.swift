@@ -10,4 +10,12 @@ public class AwsMetricKitConstants {
 
   /// Attribute name for hang `callStackTree`
   public static let hangCallStackTree = "hang.call_stack_tree"
+
+  // MARK: - App launch constants
+
+  /// Attribute name for app launch duration
+  public static let appLaunchDuration = "app_launch.launch_duration"
+
+  /// Attribute name for app launch type
+  public static let appLaunchType = "app_launch.launch_type"
 }
