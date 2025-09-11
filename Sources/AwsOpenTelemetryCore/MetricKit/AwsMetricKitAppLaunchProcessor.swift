@@ -38,6 +38,12 @@
         }
 
         let launchDurationSeconds = launch.launchDuration.converted(to: .seconds).value
+
+        // Discard abnormally long launches. This may happen in pre-warm launches.
+        guard launchDurationSeconds <= 180 else {
+          AwsOpenTelemetryLogger.debug("Skipping app launch span - duration too long: \(launchDurationSeconds)s")
+          continue
+        }
         let startTime = endTime.addingTimeInterval(-launchDurationSeconds)
         let launchType = isColdStart ? "COLD" : "WARM"
 

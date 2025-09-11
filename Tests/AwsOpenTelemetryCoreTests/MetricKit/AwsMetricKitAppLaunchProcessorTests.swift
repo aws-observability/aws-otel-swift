@@ -95,12 +95,31 @@
 
       XCTAssertEqual(spans[0].attributes[AwsMetricKitConstants.appLaunchType]?.description, "COLD")
     }
+
+    func testSkipsLongLaunchDuration() {
+      // Simulate app becoming active
+      NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+      // Create diagnostic with duration > 3 minutes
+      let longLaunchDiagnostic = MockLongMXAppLaunchDiagnostic()
+      AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics([longLaunchDiagnostic])
+
+      let spans = spanExporter.getExportedSpans()
+      XCTAssertEqual(spans.count, 0, "Expected no spans for long launch duration")
+    }
   }
 
   @available(iOS 16.0, *)
   private class MockMXAppLaunchDiagnostic: MXAppLaunchDiagnostic {
     override var launchDuration: Measurement<UnitDuration> {
       return Measurement(value: 2.5, unit: .seconds)
+    }
+  }
+
+  @available(iOS 16.0, *)
+  private class MockLongMXAppLaunchDiagnostic: MXAppLaunchDiagnostic {
+    override var launchDuration: Measurement<UnitDuration> {
+      return Measurement(value: 300, unit: .seconds) // 5 minutes
     }
   }
 #endif
