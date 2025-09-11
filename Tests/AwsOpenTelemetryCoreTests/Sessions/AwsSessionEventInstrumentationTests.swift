@@ -181,6 +181,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     let record = logRecords[0]
     XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime1.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
@@ -257,6 +258,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     let record = logRecords[0]
     XCTAssertEqual(record.body, AttributeValue.string("session.end"))
+    XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertEqual(record.attributes["session.end_time"], AttributeValue.double(Double(sessionExpired.endTime!.timeIntervalSince1970.toNanoseconds)))
@@ -487,6 +489,24 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
     XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.end"))
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionIdExpired))
+  }
+
+  func testObservedTimestampIsSetOnSessionEvents() {
+    let beforeTime = Date()
+    AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
+    _ = AwsSessionEventInstrumentation()
+    let afterTime = Date()
+
+    let logRecords = logExporter.getFinishedLogRecords()
+    XCTAssertEqual(logRecords.count, 1)
+
+    let record = logRecords[0]
+    XCTAssertNotNil(record.observedTimestamp)
+
+    // Verify the observed timestamp is within a reasonable range
+    let observedTime = record.observedTimestamp!
+    XCTAssertGreaterThanOrEqual(observedTime, beforeTime)
+    XCTAssertLessThanOrEqual(observedTime, afterTime)
   }
 
   func testQueueStoresEventType() {
