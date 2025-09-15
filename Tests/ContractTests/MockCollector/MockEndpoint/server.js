@@ -53,9 +53,10 @@ server.on('connection', (connection) => {
 });
 
 const PORT = NO_DOCKER_ENDPOINT || 8080; 
+const HOST = '0.0.0.0'; // Listen on all available network interfaces
 
 // Start the server
-const runningServer = server.listen(PORT, () => {
+const runningServer = server.listen(PORT, HOST, () => {
   console.log(`Contract Test Endpoint running on port ${PORT}`);
   console.log('Available endpoints:');
   console.log('  / or /200 - Returns 200 OK');

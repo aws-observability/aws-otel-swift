@@ -15,7 +15,7 @@ class UITestsSwiftUITests: XCTestCase {
   }
 
   @MainActor
-  func testUIKitActions() throws {
+  func testSwiftUIActions() throws {
     let scrollView: XCUIElement = app.scrollViews["SampleScrollView"]
     let uiKitDemoButton: XCUIElement = app.buttons["Show UIKit Demo"]
     var scrollCount = 0

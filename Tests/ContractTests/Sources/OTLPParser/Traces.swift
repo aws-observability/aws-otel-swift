@@ -17,7 +17,7 @@ struct ScopeSpan: Codable {
 struct Span: Codable {
   let traceId: String
   let spanId: String
-  let parentSpanId: String
+  let parentSpanId: String?
   let flags: Int?
   let name: String
   let kind: Int
