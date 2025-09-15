@@ -1,5 +1,8 @@
 const http = require('http');
 
+// No Docker: Using 8181 directly until docker is enabled on macos-15 runners on Github actions
+const NO_DOCKER_ENDPOINT = 8181;
+
 // Track all active connections
 const connections = new Set();
 
@@ -49,7 +52,7 @@ server.on('connection', (connection) => {
   });
 });
 
-const PORT = process.env.MOCK_ENDPOINT_PORT || 8080; 
+const PORT = NO_DOCKER_ENDPOINT || 8080; 
 
 // Start the server
 const runningServer = server.listen(PORT, () => {
