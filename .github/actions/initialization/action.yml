@@ -9,11 +9,8 @@ runs:
     - name: Setup Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
-        xcode-version: latest-stable
-    - name: Select Xcode 
-      shell: bash
-      run: | 
-        sudo xcode-select --switch /Applications/Xcode_16.4.app
+        xcode-version: 16.4
+    
     # Docker fails on macos-15 runners with a virtualization error. Until Github supports runners with nested virtualization enabled on macos-15 runners, disable this.
     # - name: Setup Docker on macOS
     #   uses: docker/setup-docker-action@v3
