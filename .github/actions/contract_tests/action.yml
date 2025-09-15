@@ -62,17 +62,17 @@ runs:
     - uses: actions/upload-artifact@v4
       with:
         name: traces_file-sdk-${{ inputs.api-level }}
-        path: ${{ github.workspace }}/Tests/ContractTests/MockCollector/tmp/otel-swift-collector/traces.txt
+        path: /tmp/otel-swift-collector/traces.txt
 
     - uses: actions/upload-artifact@v4
       with:
         name: logs_file-sdk-${{ inputs.api-level }}
-        path: ${{ github.workspace }}/Tests/ContractTests/MockCollector/tmp/otel-swift-collector/logs.txt
+        path: /tmp/otel-swift-collector/logs.txt
 
     - name: Run contract tests
       shell: bash
       run: |
-        cp -r ${{ github.workspace }}/Tests/ContractTests/MockCollector/tmp/otel-swift-collector /tmp
+        ls -al /tmp/otel-swift-collector
         make contract-test-run-ios
         # make contract-test-run-tvos
         # make contract-test-run-watchos

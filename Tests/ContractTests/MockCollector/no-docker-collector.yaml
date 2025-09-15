@@ -8,10 +8,10 @@ receivers:
 extensions:
 exporters:
   file/logs:
-    path: ./tmp/otel-swift-collector/logs.txt
+    path: /tmp/otel-swift-collector/logs.txt
     flush_interval: 1
   file/traces:
-    path: ./tmp/otel-swift-collector/traces.txt
+    path: /tmp/otel-swift-collector/traces.txt
     flush_interval: 1
   debug:
     verbosity: normal

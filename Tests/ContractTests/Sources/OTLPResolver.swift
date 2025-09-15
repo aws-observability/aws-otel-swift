@@ -25,6 +25,7 @@ class OtlpResolver {
 
     if !FileManager.default.fileExists(atPath: LOGS_LOCATION) ||
       !FileManager.default.fileExists(atPath: TRACES_LOCATION) {
+      print("Cloud not find logs and traces files at expected locations: \(LOGS_LOCATION), \(TRACES_LOCATION)")
       // Wait for files to exist (equivalent to Awaitility.await())
       var timeoutCount = 0
       while !FileManager.default.fileExists(atPath: LOGS_LOCATION) ||
