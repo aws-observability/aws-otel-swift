@@ -1,10 +1,10 @@
 
 
-name: 'Contract Tests - ${{ inputs.destination }}'
+name: 'Contract Tests'
 description: 'Reusable contract tests action with specified SDK version'
 inputs:
   api-level:
-    description: 'SDK version to use (e.g., 35)'
+    description: 'SDK version to use (e.g., 18)'
     required: true
   destination:
     description: 'Platform on which contract tests need to be run (e.g., ios)'
@@ -47,7 +47,7 @@ runs:
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
         node server.js &
 
-    - name: Generate spans and logs for contract tests
+    - name: Generate spans and logs for contract tests on ${{ inputs.destination }}
       shell: bash
       run: |
         cd ${{ github.workspace }}/Examples/SimpleAwsDemo
@@ -63,7 +63,7 @@ runs:
         name: logs_file-sdk-${{ inputs.api-level }}
         path: /tmp/otel-swift-collector/logs.txt
 
-    - name: Run contract tests
+    - name: Run contract tests on ${{ inputs.destination }}
       shell: bash
       run: |
         ls -al /tmp/otel-swift-collector
