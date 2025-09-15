@@ -6,6 +6,9 @@ inputs:
   api-level:
     description: 'SDK version to use (e.g., 35)'
     required: true
+  destination:
+    description: 'Platform on which contract tests need to be run (e.g., ios)'
+    required: true
 
 # Remove if using Docker
 env:
