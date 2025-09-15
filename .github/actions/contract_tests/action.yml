@@ -18,8 +18,8 @@ runs:
     - name: Prepare directory
       shell: bash
       run: |
-        sudo mkdir -p ${{ github.workspace }}/Tests/ContractTests/MockCollector/tmp/otel-swift-collector  
-        sudo chmod 777 ${{ github.workspace }}/Tests/ContractTests/MockCollector/tmp/otel-swift-collector    
+        sudo mkdir -p /tmp/otel-swift-collector  
+        sudo chmod 777 /tmp/otel-swift-collector    
 
     # 
     # - name: Start Mock Collector and Mock Endpoint
