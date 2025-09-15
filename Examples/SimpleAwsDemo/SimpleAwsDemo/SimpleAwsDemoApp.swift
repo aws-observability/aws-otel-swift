@@ -18,8 +18,9 @@ import AwsOpenTelemetryCore
 
 @main
 struct SimpleAwsDemoApp: App {
-  private let cognitoPoolId = "us-east-1:ac7df0bd-a16a-4756-9857-960afb12bd97"
-  private let region = "us-east-1"
+  private let cognitoPoolId = "YOUR_IDENTITY_POOL_ID_FROM_OUTPUT"
+  private let region = "YOUR_REGION_FROM_OUTPUT"
+  private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
 
   init() {
     setupOpenTelemetry()
@@ -32,7 +33,7 @@ struct SimpleAwsDemoApp: App {
   }
 
   private func setupOpenTelemetry() {
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: "4e9ea50f-09c2-4297-914d-bcb97d083c3a")
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
       logs: "http://localhost:4318/v1/logs",
       traces: "http://localhost:4318/v1/traces"

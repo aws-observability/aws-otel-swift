@@ -111,3 +111,6 @@ coverage.txt
 Tests/ContractTests/MockCollector/otelcol
 Tests/ContractTests/MockCollector/otelcol_0.133.0_darwin_arm64.tar.gz
 Tests/ContractTests/MockCollector/README.md
+
+## Temporary disable
+Examples/SimpleAwsUiKitDemo

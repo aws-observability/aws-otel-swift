@@ -1,10 +1,10 @@
 
 
-name: 'Contract Tests Action'
-description: 'Reusable contract tests action with specified iOS SDK version'
+name: 'Contract Tests - ${{ inputs.destination }}'
+description: 'Reusable contract tests action with specified SDK version'
 inputs:
   api-level:
-    description: 'iOS SDK version to use (e.g., 35)'
+    description: 'SDK version to use (e.g., 35)'
     required: true
 
 # Remove if using Docker
@@ -47,17 +47,8 @@ runs:
     - name: Generate spans and logs for contract tests
       shell: bash
       run: |
-        # ios
         cd ${{ github.workspace }}/Examples/SimpleAwsDemo
-        make contract-test-generate-data-ios
-
-        # # tvos
-        # cd ${{ github.workspace }}/Examples/SimpleAwsDemo
-        # make contract-test-generate-data-tvos
-
-        # # watchos
-        # cd ${{ github.workspace }}/Examples/SimpleAwsDemo
-        # make contract-test-generate-data-watchos
+        make contract-test-generate-data-${{ inputs.destination }}
 
     - uses: actions/upload-artifact@v4
       with:
@@ -73,8 +64,7 @@ runs:
       shell: bash
       run: |
         ls -al /tmp/otel-swift-collector
-        make contract-test-run-ios
-        # make contract-test-run-tvos
-        # make contract-test-run-watchos
+        make contract-test-run-${{ inputs.destination }}
+
 
   
