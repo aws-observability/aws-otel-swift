@@ -7,27 +7,23 @@ CONTRACT_TEST_WORKSPACE="SimpleAwsDemo.xcodeproj"
 XCODEBUILD_OPTIONS_IOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=iOS Simulator,name=iPhone 16' \
-	-enableCodeCoverage YES
+	-destination 'platform=iOS Simulator,name=iPhone 16' 
 
 XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
-	-enableCodeCoverage YES
+	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' 
 
 XCODE_OPTIONS_WATCHOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' \
-	-enableCodeCoverage YES
+	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' 
 
 # visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
 # XCODE_OPTIONS_VISIONOS_CONTRACT=\
 # 	-project $(CONTRACT_TEST_WORKSPACE) \
 # 	-scheme $(CONTRACT_TEST_SCHEME) \
-# 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
-# 	-enableCodeCoverage YES
+# 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' 
 
 ### END CONTRACT TEST  - DATA GENERATION OPTIONS
 

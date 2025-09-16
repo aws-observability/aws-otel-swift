@@ -90,7 +90,6 @@ class LoaderViewModel: ObservableObject {
 
       isLoading = false
     } catch {
-      self.error = error
       isLoading = false
     }
   }
