@@ -97,11 +97,8 @@ class LoaderViewModel: ObservableObject {
   /// Performs the "List S3 Buckets" operation and updates UI state
   func listS3Buckets() async {
     stopClock()
-    guard let awsServiceHandler else { return }
-
     isLoading = true
     resultMessage = "Loading S3 buckets..."
-    defer { isLoading = false }
 
     if isContractTest() {
       // Send a request to the mock endpoint
@@ -118,6 +115,8 @@ class LoaderViewModel: ObservableObject {
         resultMessage = "HTTP Request failed: \(error.localizedDescription)"
       }
     } else {
+      guard let awsServiceHandler else { return }
+      defer { isLoading = false }
       // Call list buckets
       do {
         let buckets = try await awsServiceHandler.listS3Buckets()
