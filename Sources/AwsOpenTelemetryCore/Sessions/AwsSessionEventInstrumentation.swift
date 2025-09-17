@@ -148,6 +148,7 @@ public class AwsSessionEventInstrumentation {
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(AwsSessionConstants.sessionStartEvent))
       .setAttributes(attributes)
+      .setObservedTimestamp(Date())
       .emit()
   }
 
@@ -181,6 +182,7 @@ public class AwsSessionEventInstrumentation {
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(AwsSessionConstants.sessionEndEvent))
       .setAttributes(attributes)
+      .setObservedTimestamp(Date())
       .emit()
   }
 

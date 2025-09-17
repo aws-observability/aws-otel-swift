@@ -43,6 +43,7 @@
       let log = logs[0]
       XCTAssertEqual(log.body?.description, "hang")
       XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXHangDiagnostic")
+      XCTAssertNotNil(log.observedTimestamp, "Observed timestamp should be set")
       XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
       XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }
@@ -53,6 +54,24 @@
 
       XCTAssertEqual(attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
       XCTAssertEqual(attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
+    }
+
+    func testObservedTimestampIsSetOnHangLog() {
+      let beforeTime = Date()
+      let mockHang = MockMXHangDiagnostic()
+      AwsMetricKitHangProcessor.processHangDiagnostics([mockHang])
+      let afterTime = Date()
+
+      let logs = logExporter.getExportedLogs()
+      XCTAssertEqual(logs.count, 1)
+
+      let log = logs[0]
+      XCTAssertNotNil(log.observedTimestamp)
+
+      // Verify the observed timestamp is within a reasonable range
+      let observedTime = log.observedTimestamp!
+      XCTAssertGreaterThanOrEqual(observedTime, beforeTime)
+      XCTAssertLessThanOrEqual(observedTime, afterTime)
     }
   }
 

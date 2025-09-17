@@ -18,6 +18,7 @@
         logger.logRecordBuilder()
           .setBody(AttributeValue.string("hang"))
           .setAttributes(attributes)
+          .setObservedTimestamp(Date())
           .emit()
       }
     }

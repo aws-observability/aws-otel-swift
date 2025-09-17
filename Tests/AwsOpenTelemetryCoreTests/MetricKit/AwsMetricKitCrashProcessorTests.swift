@@ -43,6 +43,7 @@
       let log = logs[0]
       XCTAssertEqual(log.body?.description, "crash")
       XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXCrashDiagnostic")
+      XCTAssertNotNil(log.observedTimestamp, "Observed timestamp should be set")
       XCTAssertEqual(log.attributes["crash.exception_type"]?.description, "1")
       XCTAssertEqual(log.attributes["crash.exception_code"]?.description, "2")
       XCTAssertEqual(log.attributes["crash.signal"]?.description, "11")
@@ -61,6 +62,24 @@
       XCTAssertEqual(attributes["crash.termination_reason"]?.description, "test termination")
       XCTAssertEqual(attributes["crash.vm_region.info"]?.description, "test vm info")
       XCTAssertEqual(attributes["crash.stacktrace"]?.description, "{\"test\":\"stacktrace\"}")
+    }
+
+    func testObservedTimestampIsSetOnCrashLog() {
+      let beforeTime = Date()
+      let mockCrash = MockMXCrashDiagnostic()
+      AwsMetricKitCrashProcessor.processCrashDiagnostics([mockCrash])
+      let afterTime = Date()
+
+      let logs = logExporter.getExportedLogs()
+      XCTAssertEqual(logs.count, 1)
+
+      let log = logs[0]
+      XCTAssertNotNil(log.observedTimestamp)
+
+      // Verify the observed timestamp is within a reasonable range
+      let observedTime = log.observedTimestamp!
+      XCTAssertGreaterThanOrEqual(observedTime, beforeTime)
+      XCTAssertLessThanOrEqual(observedTime, afterTime)
     }
   }
 
