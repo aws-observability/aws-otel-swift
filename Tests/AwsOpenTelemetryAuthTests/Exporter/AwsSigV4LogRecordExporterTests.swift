@@ -47,4 +47,63 @@ class AwsSigV4LogRecordExporterTest: XCTestCase {
 
     XCTAssertEqual(result, .failure)
   }
+
+  func testForceFlush() throws {
+    mockParentExporter.forceFlushReturnValue = .success
+    let result = logRecordExporter.forceFlush(explicitTimeout: 5.0)
+
+    XCTAssertEqual(result, .success)
+    XCTAssertEqual(mockParentExporter.forceFlushCalledTimes, 1)
+  }
+
+  func testForceFlushWithFailure() throws {
+    mockParentExporter.forceFlushReturnValue = .failure
+    let result = logRecordExporter.forceFlush(explicitTimeout: nil)
+
+    XCTAssertEqual(result, .failure)
+  }
+
+  func testShutdown() throws {
+    logRecordExporter.shutdown(explicitTimeout: 10.0)
+
+    XCTAssertEqual(mockParentExporter.shutdownCalledTimes, 1)
+  }
+
+  func testBuilderPattern() throws {
+    let provider = try CredentialsProvider(
+      source: .static(
+        accessKey: "testKey",
+        secret: "testSecret",
+        sessionToken: "testToken"
+      ))
+
+    let exporter = try AwsSigV4LogRecordExporter.builder()
+      .setEndpoint(endpoint: "test.endpoint.com")
+      .setRegion(region: "us-west-2")
+      .setCredentialsProvider(credentialsProvider: provider)
+      .setServiceName(serviceName: "logs")
+      .setParentExporter(parentExporter: mockParentExporter)
+      .build()
+
+    XCTAssertNotNil(exporter)
+  }
+
+  func testInitWithoutParentExporter() throws {
+    let provider = try CredentialsProvider(
+      source: .static(
+        accessKey: "testKey",
+        secret: "testSecret",
+        sessionToken: "testToken"
+      ))
+
+    let exporter = AwsSigV4LogRecordExporter(
+      endpoint: "https://test.endpoint.com",
+      region: "us-east-1",
+      serviceName: "rum",
+      credentialsProvider: provider,
+      parentExporter: nil
+    )
+
+    XCTAssertNotNil(exporter)
+  }
 }
