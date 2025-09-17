@@ -14,7 +14,7 @@ jobs:
   ios:
     runs-on: macos-15
 
-    # This job will be cancelled after 40 minutes
+    # This job will be cancelled after 60 minutes
     timeout-minutes: 60
 
     # Automatically cancel a running GitHub Actions workflow when a new commit is pushed to the same branch or pull request

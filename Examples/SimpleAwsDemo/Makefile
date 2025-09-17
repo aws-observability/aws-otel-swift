@@ -30,17 +30,17 @@ XCODE_OPTIONS_WATCHOS_CONTRACT=\
 # Contract Test - Data Generation Commands
 .PHONY: contract-test-generate-data-ios
 contract-test-generate-data-ios: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT) | xcbeautify --renderer github-actions
+	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT) | xcbeautify --renderer github-actions
 
 .PHONY: contract-test-generate-data-tvos
 contract-test-generate-data-tvos: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_TVOS_CONTRACT) | xcbeautify --renderer github-actions
+	xcodebuild test $(XCODEBUILD_OPTIONS_TVOS_CONTRACT) | xcbeautify --renderer github-actions
 
 .PHONY: contract-test-generate-data-watchos
 contract-test-generate-data-watchos: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT) | xcbeautify --renderer github-actions
+	xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT) | xcbeautify --renderer github-actions
 
 # visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
 # .PHONY: contract-test-generate-data-visionos
 # contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
-# 	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify
+# 	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify
