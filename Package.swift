@@ -9,8 +9,8 @@ let package = Package(
     .iOS(.v13), // officially only supporting iOS
     .macOS(.v12),
     .tvOS(.v13),
-    .watchOS(.v6)
-    // .visionOS(.v1) // not supported by aws-sdk-swift
+    .watchOS(.v6),
+    .visionOS(.v1)
   ],
   products: [
     // Products define the executables and libraries a package produces, making them visible to other packages.
@@ -19,7 +19,8 @@ let package = Package(
     .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "1.14.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.1.1"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.1.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
     .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0")
@@ -30,9 +31,9 @@ let package = Package(
     .target(
       name: "AwsOpenTelemetryCore",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
-        .product(name: "StdoutExporter", package: "opentelemetry-swift"),
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
       ],
@@ -53,8 +54,8 @@ let package = Package(
       name: "AwsOpenTelemetryAuth",
       dependencies: [
         "AwsOpenTelemetryCore",
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift"),
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "SmithyIdentity", package: "smithy-swift"),
         .product(name: "SmithyHTTPAuth", package: "smithy-swift"),
@@ -69,8 +70,8 @@ let package = Package(
     .target(
       name: "TestUtils",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift")
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
       path: "Tests/TestUtils"
     ),

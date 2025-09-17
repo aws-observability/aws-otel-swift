@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/awslabs/aws-sdk-swift",
       "state" : {
-        "revision" : "efd83db645695bbea34a255735e6ec6da7e77f8a",
-        "version" : "1.3.46"
+        "revision" : "224c85b9843ad3b760387c607b1993ac313a6104",
+        "version" : "1.3.43"
       }
     },
     {
@@ -33,8 +33,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/open-telemetry/opentelemetry-swift",
       "state" : {
-        "revision" : "b9b891abd313a538f8bbee7ac6bc96f647dd2379",
-        "version" : "1.16.1"
+        "revision" : "7a68865d9cc571cbe62c4d4902ccc0d902881eab",
+        "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "opentelemetry-swift-core",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/open-telemetry/opentelemetry-swift-core.git",
+      "state" : {
+        "revision" : "6aebc7734e154cd221ea9fb76bd4f611262be962",
+        "version" : "2.1.1"
       }
     },
     {
@@ -51,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/smithy-lang/smithy-swift",
       "state" : {
-        "revision" : "b986be5d7fa116a14bacffbe4f7c0e92d7b2db72",
-        "version" : "0.144.0"
+        "revision" : "4fd1f783164723094974c7590820874866a67ac2",
+        "version" : "0.141.0"
       }
     },
     {
@@ -132,8 +141,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-http-structured-headers.git",
       "state" : {
-        "revision" : "1625f271afb04375bf48737a5572613248d0e7a0",
-        "version" : "1.4.0"
+        "revision" : "db6eea3692638a65e2124990155cd220c2915903",
+        "version" : "1.3.0"
       }
     },
     {
