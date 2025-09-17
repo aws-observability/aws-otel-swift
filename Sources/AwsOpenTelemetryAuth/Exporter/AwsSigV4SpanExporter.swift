@@ -139,6 +139,6 @@ public class AwsSigV4SpanExporter: SpanExporter {
     configuration.protocolClasses = [AwsSigV4RequestInterceptor.self]
     let session = URLSession(configuration: configuration)
 
-    return OtlpHttpTraceExporter(endpoint: endpointURL, config: otlpTracesConfig, useSession: session)
+    return OtlpHttpTraceExporter(endpoint: endpointURL, config: otlpTracesConfig, httpClient: HTTPClientWithSession(session: session))
   }
 }

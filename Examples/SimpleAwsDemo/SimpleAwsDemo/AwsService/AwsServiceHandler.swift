@@ -142,6 +142,6 @@ public class AwsServiceHandler {
       secret: creds.getSecret() ?? "",
       sessionToken: creds.getSessionToken()
     )
-    return StaticAWSCredentialIdentityResolver(awsCredentials)
+    return try StaticAWSCredentialIdentityResolver(awsCredentials)
   }
 }

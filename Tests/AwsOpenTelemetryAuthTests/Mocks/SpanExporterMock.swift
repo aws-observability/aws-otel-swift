@@ -5,8 +5,9 @@ class SpanExporterMock: SpanExporter {
   var exportCalledTimes: Int = 0
   var exportCalledData: [SpanData]?
   var shutdownCalledTimes: Int = 0
-  var flushCalled: Bool = false
+  var flushCalledTimes: Int = 0
   var returnValue: SpanExporterResultCode = .success
+  var flushReturnValue: SpanExporterResultCode = .success
 
   func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
     exportCalledTimes += 1
@@ -15,8 +16,8 @@ class SpanExporterMock: SpanExporter {
   }
 
   func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
-    flushCalled = true
-    return returnValue
+    flushCalledTimes += 1
+    return flushReturnValue
   }
 
   func shutdown(explicitTimeout: TimeInterval?) {

@@ -101,4 +101,63 @@ class AwsSigV4SpanExporterTest: XCTestCase {
 
     XCTAssertEqual(result, .failure)
   }
+
+  func testFlush() throws {
+    mockParentExporter.flushReturnValue = .success
+    let result = spanExporter.flush(explicitTimeout: 5.0)
+
+    XCTAssertEqual(result, .success)
+    XCTAssertEqual(mockParentExporter.flushCalledTimes, 1)
+  }
+
+  func testFlushWithFailure() throws {
+    mockParentExporter.flushReturnValue = .failure
+    let result = spanExporter.flush(explicitTimeout: nil)
+
+    XCTAssertEqual(result, .failure)
+  }
+
+  func testShutdown() throws {
+    spanExporter.shutdown(explicitTimeout: 10.0)
+
+    XCTAssertEqual(mockParentExporter.shutdownCalledTimes, 1)
+  }
+
+  func testBuilderPattern() throws {
+    let provider = try CredentialsProvider(
+      source: .static(
+        accessKey: "testKey",
+        secret: "testSecret",
+        sessionToken: "testToken"
+      ))
+
+    let exporter = try AwsSigV4SpanExporter.builder()
+      .setEndpoint(endpoint: "test.endpoint.com")
+      .setRegion(region: "us-west-2")
+      .setCredentialsProvider(credentialsProvider: provider)
+      .setServiceName(serviceName: "traces")
+      .setParentExporter(parentExporter: mockParentExporter)
+      .build()
+
+    XCTAssertNotNil(exporter)
+  }
+
+  func testInitWithoutParentExporter() throws {
+    let provider = try CredentialsProvider(
+      source: .static(
+        accessKey: "testKey",
+        secret: "testSecret",
+        sessionToken: "testToken"
+      ))
+
+    let exporter = AwsSigV4SpanExporter(
+      endpoint: "https://test.endpoint.com",
+      region: "us-east-1",
+      serviceName: "rum",
+      credentialsProvider: provider,
+      parentExporter: nil
+    )
+
+    XCTAssertNotNil(exporter)
+  }
 }
