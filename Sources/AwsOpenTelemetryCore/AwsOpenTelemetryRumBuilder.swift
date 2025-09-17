@@ -16,6 +16,7 @@
 import Foundation
 
 import OpenTelemetryApi
+import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetrySdk
 import ResourceExtension
@@ -366,7 +367,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A configured span exporter
    */
   private func buildSpanExporter(tracesEndpointURL: URL) -> SpanExporter {
-    let traceExporter = OtlpHttpTraceExporter(endpoint: tracesEndpointURL)
+    let traceExporter = OtlpHttpTraceExporter(endpoint: tracesEndpointURL, config: OtlpConfiguration(compression: .none))
     let defaultExporter: SpanExporter = if config.debug ?? false {
       MultiSpanExporter(spanExporters: [
         traceExporter,
@@ -386,7 +387,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A configured log record exporter
    */
   private func buildLogsExporter(logsEndpointURL: URL) -> LogRecordExporter {
-    let logsExporter = OtlpHttpLogExporter(endpoint: logsEndpointURL)
+    let logsExporter = OtlpHttpLogExporter(endpoint: logsEndpointURL, config: OtlpConfiguration(compression: .none))
     let defaultExporter: LogRecordExporter = if config.debug ?? false {
       MultiLogRecordExporter(logRecordExporters: [
         logsExporter,
