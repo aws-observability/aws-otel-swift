@@ -11,12 +11,13 @@ class NetworkTests: XCTestCase {
   private let HTTP_200_URL = "http://localhost:8181/200"
   private let HTTP_404_URL = "http://localhost:8181/404"
   private let HTTP_500_URL = "http://localhost:8181/500"
+  private let URL_SESSION = "NSURLSession"
 
   func testNetworkSpansExistForGET() {
     let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
       trace.resourceSpans.flatMap { resourceSpan in
         resourceSpan.scopeSpans.filter { scopeSpan in
-          scopeSpan.scope.name == AwsInstrumentationScopes.URL_SESSION
+          scopeSpan.scope.name == URL_SESSION
         }
       }
     } ?? []
@@ -61,7 +62,7 @@ class NetworkTests: XCTestCase {
     let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
       trace.resourceSpans.flatMap { resourceSpan in
         resourceSpan.scopeSpans.filter { scopeSpan in
-          scopeSpan.scope.name == AwsInstrumentationScopes.URL_SESSION
+          scopeSpan.scope.name == URL_SESSION
         }
       }
     } ?? []
@@ -108,7 +109,7 @@ class NetworkTests: XCTestCase {
   //   let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
   //     trace.resourceSpans.flatMap { resourceSpan in
   //       resourceSpan.scopeSpans.filter { scopeSpan in
-  //         scopeSpan.scope.name == AwsInstrumentationScopes.URL_SESSION
+  //         scopeSpan.scope.name == URL_SESSION
   //       }
   //     }
   //   } ?? []
@@ -156,7 +157,7 @@ class NetworkTests: XCTestCase {
     let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
       trace.resourceSpans.flatMap { resourceSpan in
         resourceSpan.scopeSpans.filter { scopeSpan in
-          scopeSpan.scope.name == AwsInstrumentationScopes.URL_SESSION
+          scopeSpan.scope.name == URL_SESSION
         }
       }
     } ?? []
