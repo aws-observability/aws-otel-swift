@@ -166,10 +166,6 @@ class MockReadableSpan: ReadableSpan {
                     hasRemoteParent: false)
   }
 
-  func updateName(name: String) {
-    self.name = name
-  }
-
   func setAttribute(key: String, value: AttributeValue?) {
     if let value {
       capturedAttributes[key] = value

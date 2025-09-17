@@ -187,6 +187,7 @@ final class AwsInstrumentationPlanTests: XCTestCase {
       .with(view: TelemetryFeature(enabled: false))
       .with(crash: TelemetryFeature(enabled: false))
       .with(hang: TelemetryFeature(enabled: false))
+      .with(startup: TelemetryFeature(enabled: false))
       .build()
     let exportOverride = ExportOverride(
       logs: "http://localhost:4318/v1/logs",

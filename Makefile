@@ -6,7 +6,7 @@
 #   iOS: iPhone 16 (latest available iOS version)
 #   tvOS: Apple TV 4K (3rd generation) (latest available tvOS version)
 #   watchOS: Apple Watch Series 10 (46mm) (latest available watchOS version)
-#   visionOS: Apple Vision Pro (visionOS v26.0) - DISABLED: not supported by aws-sdk-swift
+#   visionOS: Apple Vision Pro (visionOS v26.0)
 
 PROJECT_NAME="aws-otel-swift-Package"
 
@@ -37,14 +37,13 @@ XCODEBUILD_OPTIONS_WATCHOS=\
     -retry-tests-on-failure \
 	-workspace .
 
-# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
-# XCODEBUILD_OPTIONS_VISIONOS=\
-#	-configuration Debug \
-#	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
-#	-scheme $(PROJECT_NAME) \
-#	-test-iterations 5 \
-#    -retry-tests-on-failure \
-#	-workspace .
+XCODEBUILD_OPTIONS_VISIONOS=\
+	-configuration Debug \
+	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=2.4' \
+	-scheme $(PROJECT_NAME) \
+	-test-iterations 5 \
+    -retry-tests-on-failure \
+	-workspace .
 
 ### START CONTRACT TEST - RUN OPTIONS
 
@@ -169,23 +168,24 @@ contract-test-run-tvos: ## `xcodebuild test` automatically builds and tests
 contract-test-run-watchos: ## `xcodebuild test` automatically builds and tests
 	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
 
-# visionOS targets temporarily disabled due to dependency compatibility issues with aws-sdk-swift
-# .PHONY: build-visionos
-# build-visionos:
-#	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build | xcbeautify
-#
-# .PHONY: build-for-testing-visionos
-# build-for-testing-visionos:
-#	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build-for-testing | xcbeautify
-#
-# .PHONY: test-visionos
-# test-visionos:
-#	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test | xcbeautify
-#
-# .PHONY: test-without-building-visionos
-# test-without-building-visionos:
-#	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
-# 
-# .PHONY: contract-test-run-visionos
-# contract-test-run-visionos: ## `xcodebuild test` automatically builds and tests
-# 	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN) | xcbeautify
+.PHONY: build-visionos
+build-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build | xcbeautify
+
+.PHONY: build-for-testing-visionos
+build-for-testing-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build-for-testing | xcbeautify
+
+.PHONY: test-visionos
+test-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test | xcbeautify
+
+.PHONY: test-without-building-visionos
+test-without-building-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
+ 
+.PHONY: contract-test-run-visionos
+contract-test-run-visionos: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN) | xcbeautify
+  
+ 

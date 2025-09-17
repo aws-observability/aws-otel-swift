@@ -1,6 +1,5 @@
 # AWS OpenTelemetry Swift - Build and Test Pipeline
-# Runs builds and tests on iOS, watchOS, and macOS
-# (visionOS not supported by aws-sdk-swift)
+# Runs builds and tests on iOS, tvOS, watchOS, visionOS, and macOS
 # Triggered on: PR creation/updates, manual dispatch
 
 name: Build and Test
@@ -68,20 +67,17 @@ jobs:
         run: make build-for-testing-watchos
       - name: Test for watchOS
         run: make test-without-building-watchos
-# visionOS:
-#   Temporarily disabled due to dependency compatibility issues with aws-sdk-swift
-#   https://github.com/awslabs/aws-sdk-swift/blob/main/Package.swift#L493-L500
-#
-# visionOS:
-#   runs-on: macos-15
-#   steps:
-#     - uses: actions/checkout@v5
-#     - uses: maxim-lobanov/setup-xcode@v1
-#       with:
-#         xcode-version: 16.4
-#     - name: Install Homebrew kegs
-#       run: make setup-brew
-#     - name: Build for visionOS
-#       run: make build-for-testing-visionos
-#     - name: Test for visionOS
-#       run: make test-without-building-visionos
+
+  visionOS:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 16.4
+      - name: Install Homebrew kegs
+        run: make setup-brew
+      - name: Build for visionOS
+        run: make build-for-testing-visionos
+      - name: Test for visionOS
+        run: make test-without-building-visionos

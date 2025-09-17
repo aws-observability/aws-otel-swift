@@ -9,6 +9,7 @@ class LogRecordExporterMock: LogRecordExporter {
 
   var forceFlushCalledTimes: Int = 0
   var returnValue: ExportResult = .success
+  var forceFlushReturnValue: ExportResult = .success
 
   func export(logRecords: [OpenTelemetrySdk.ReadableLogRecord], explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
     exportCalledTimes += 1
@@ -22,6 +23,6 @@ class LogRecordExporterMock: LogRecordExporter {
 
   func forceFlush(explicitTimeout: TimeInterval?) -> OpenTelemetrySdk.ExportResult {
     forceFlushCalledTimes += 1
-    return returnValue
+    return forceFlushReturnValue
   }
 }

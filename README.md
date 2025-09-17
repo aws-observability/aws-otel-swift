@@ -292,6 +292,7 @@ swift test # macOS
 make test-ios # iOS
 make test-tvos # tvOS
 make test-watchos # watchOS
+make test-visionos # visionOS
 ```
 
 **Test Coverage:**
