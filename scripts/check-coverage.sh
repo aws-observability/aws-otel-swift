@@ -11,7 +11,7 @@ COVERAGE_FILE="coverage.txt"
 
 # Generate coverage report
 echo "Generating coverage report..."
-swift test --filter ".*" --skip ".*ContractTests.*"
+swift test --filter ".*" --skip ".*ContractTests.*" --enable-code-coverage
 xcrun llvm-cov report .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata --format=text > "$COVERAGE_FILE"
 
 # Check repository coverage
