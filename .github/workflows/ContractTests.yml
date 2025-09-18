@@ -13,10 +13,7 @@ on:
 
 jobs:
   ios:
-    runs-on: macos-15
-
-    # This job will be cancelled after 60 minutes
-    timeout-minutes: 60
+    runs-on: macos-15-large
 
     steps:
       - name: Checkout repository
