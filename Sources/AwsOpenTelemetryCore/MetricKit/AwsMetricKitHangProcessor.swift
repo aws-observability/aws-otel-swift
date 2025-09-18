@@ -5,21 +5,30 @@
 
   @available(iOS 15.0, *)
   class AwsMetricKitHangProcessor {
+    static let spanName = "hang"
     static let scopeName = AwsInstrumentationScopes.HANG_DIAGNOSTIC
-    static func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
+    static func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?, endTime: Date = Date()) {
       guard let diagnostics else { return }
-      let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
+      let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: scopeName)
       AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) hang diagnostic(s)")
 
       for hang in diagnostics {
         let attributes = buildHangAttributes(from: hang)
 
         AwsOpenTelemetryLogger.debug("Emitting hang log record with \(attributes.count) attributes")
-        logger.logRecordBuilder()
-          .setBody(AttributeValue.string("hang"))
-          .setAttributes(attributes)
-          .setObservedTimestamp(Date())
-          .emit()
+
+        let hangDurationSeconds = Double(hang.hangDuration.converted(to: .seconds).value)
+        let startTime = endTime.addingTimeInterval(-hangDurationSeconds)
+
+        let spanBuilder = tracer.spanBuilder(spanName: spanName)
+          .setStartTime(time: startTime)
+
+        for (key, value) in attributes {
+          spanBuilder.setAttribute(key: key, value: value)
+        }
+
+        let span = spanBuilder.startSpan()
+        span.end(time: endTime)
       }
     }
 

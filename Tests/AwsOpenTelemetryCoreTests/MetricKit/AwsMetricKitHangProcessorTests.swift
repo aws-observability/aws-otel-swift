@@ -7,15 +7,15 @@
 
   @available(iOS 15.0, *)
   final class AwsMetricKitHangProcessorTests: XCTestCase {
-    private var logExporter: InMemoryLogExporter!
+    private var spanExporter: InMemorySpanExporter!
 
     override func setUp() {
       super.setUp()
-      logExporter = InMemoryLogExporter.register()
+      spanExporter = InMemorySpanExporter.register()
     }
 
     override func tearDown() {
-      logExporter.clear()
+      spanExporter.clear()
       super.tearDown()
     }
 
@@ -25,27 +25,37 @@
 
     func testProcessHangDiagnosticsWithNilDiagnostics() {
       AwsMetricKitHangProcessor.processHangDiagnostics(nil)
-      XCTAssertEqual(logExporter.getExportedLogs().count, 0)
+      XCTAssertEqual(spanExporter.getExportedSpans().count, 0)
     }
 
     func testProcessHangDiagnosticsWithEmptyDiagnostics() {
       AwsMetricKitHangProcessor.processHangDiagnostics([])
-      XCTAssertEqual(logExporter.getExportedLogs().count, 0)
+      XCTAssertEqual(spanExporter.getExportedSpans().count, 0)
     }
 
     func testProcessHangDiagnosticsWithMockHang() {
       let mockHang = MockMXHangDiagnostic()
       AwsMetricKitHangProcessor.processHangDiagnostics([mockHang])
 
-      let logs = logExporter.getExportedLogs()
-      XCTAssertEqual(logs.count, 1)
+      let expectation = XCTestExpectation(description: "Wait for span export")
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        expectation.fulfill()
+      }
+      wait(for: [expectation], timeout: 1.0)
 
-      let log = logs[0]
-      XCTAssertEqual(log.body?.description, "hang")
-      XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXHangDiagnostic")
-      XCTAssertNotNil(log.observedTimestamp, "Observed timestamp should be set")
-      XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
+      let spans = spanExporter.getExportedSpans()
+      XCTAssertEqual(spans.count, 1, "Expected 1 span but got \(spans.count)")
+
+      guard spans.count > 0 else {
+        XCTFail("No spans were exported")
+        return
+      }
+
+      let span = spans[0]
+      XCTAssertEqual(span.name, "hang")
+      XCTAssertEqual(span.instrumentationScope.name, "software.amazon.opentelemetry.MXHangDiagnostic")
+      XCTAssertEqual(span.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
+      XCTAssertEqual(span.attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }
 
     func testBuildHangAttributesWithMockHang() {
@@ -54,24 +64,6 @@
 
       XCTAssertEqual(attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
       XCTAssertEqual(attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
-    }
-
-    func testObservedTimestampIsSetOnHangLog() {
-      let beforeTime = Date()
-      let mockHang = MockMXHangDiagnostic()
-      AwsMetricKitHangProcessor.processHangDiagnostics([mockHang])
-      let afterTime = Date()
-
-      let logs = logExporter.getExportedLogs()
-      XCTAssertEqual(logs.count, 1)
-
-      let log = logs[0]
-      XCTAssertNotNil(log.observedTimestamp)
-
-      // Verify the observed timestamp is within a reasonable range
-      let observedTime = log.observedTimestamp!
-      XCTAssertGreaterThanOrEqual(observedTime, beforeTime)
-      XCTAssertLessThanOrEqual(observedTime, afterTime)
     }
   }
 
