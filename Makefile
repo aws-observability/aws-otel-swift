@@ -10,7 +10,6 @@
 
 PROJECT_NAME="aws-otel-swift-Package"
 
-UNIT_TEST_PLAN="UnitTestPlan"
 CONTRACT_TEST_PLAN="ContractTestPlan"
 
 XCODEBUILD_OPTIONS_IOS=\

@@ -7,17 +7,17 @@ echo ""
 
 # Test 200 OK
 echo "Testing /200 endpoint (200 OK):"
-curl -s http://localhost:8080/200
+curl -s http://localhost:8181/200
 echo -e "\n"
 
 # Test 404 ResourceNotFound
 echo "Testing /404 endpoint (404 ResourceNotFound):"
-curl -s http://localhost:8080/404
+curl -s http://localhost:8181/404
 echo -e "\n"
 
 # Test 500 InternalServerException
 echo "Testing /500 endpoint (500 InternalServerException):"
-curl -s http://localhost:8080/500
+curl -s http://localhost:8181/500
 echo -e "\n"
 
 echo "Tests completed."

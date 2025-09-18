@@ -24,14 +24,6 @@ runs:
         sudo mkdir -p /tmp/otel-swift-collector  
         sudo chmod 777 /tmp/otel-swift-collector    
 
-    # 
-    # - name: Start Mock Collector and Mock Endpoint
-    #   shell: bash
-    #   run: |
-    #     cd ${{ github.workspace }}/Tests/ContractTests/MockCollector
-    #     docker compose up -d  # Run in background
-    #     cd ${{ github.workspace }}
-
     # No Docker: manually start otel collector
     - name: Start OpenTelemetry Collector
       shell: bash
@@ -46,6 +38,7 @@ runs:
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
         node server.js &
+        sh test.sh
 
     - name: Generate spans and logs for contract tests on ${{ inputs.destination }}
       shell: bash
