@@ -11,15 +11,6 @@ runs:
       with:
         xcode-version: 16.4
     
-    # Docker fails on macos-15 runners with a virtualization error. Until Github supports runners with nested virtualization enabled on macos-15 runners, disable this.
-    # - name: Setup Docker on macOS
-    #   uses: docker/setup-docker-action@v3
-    #   with:
-    #     daemon-config: |
-    #       {
-    #         "debug": true
-    #       }
-    
     # No Docker: manually setup go
     - name: Setup Go
       uses: actions/setup-go@v5
