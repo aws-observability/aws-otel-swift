@@ -18,11 +18,6 @@ jobs:
     # This job will be cancelled after 60 minutes
     timeout-minutes: 60
 
-    # Automatically cancel a running GitHub Actions workflow when a new commit is pushed to the same branch or pull request
-    concurrency: 
-          group: ios-concurrency-group
-          cancel-in-progress: true
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
