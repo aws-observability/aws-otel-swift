@@ -7,7 +7,10 @@ CONTRACT_TEST_WORKSPACE="SimpleAwsDemo.xcodeproj"
 XCODEBUILD_OPTIONS_IOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=iOS Simulator,name=iPhone 16' 
+	-destination 'platform=iOS Simulator,name=iPhone 16' \
+	-verbose \
+	-scmProvider system \
+	-packageAuthorizationProvider netrc
 
 XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
