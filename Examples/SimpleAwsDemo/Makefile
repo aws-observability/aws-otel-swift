@@ -14,12 +14,12 @@ XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
 	-scheme $(CONTRACT_TEST_SCHEME) \
 	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' 
 
-XCODE_OPTIONS_WATCHOS_CONTRACT=\
+XCODEBUILD_OPTIONS_WATCHOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
 	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' 
 
-XCODE_OPTIONS_VISIONOS_CONTRACT=\
+XCODEBUILD_OPTIONS_VISIONOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' 
@@ -41,4 +41,4 @@ contract-test-generate-data-watchos: ## `xcodebuild test` automatically builds a
 
 .PHONY: contract-test-generate-data-visionos
 contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
-	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify
+	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) | xcbeautify
