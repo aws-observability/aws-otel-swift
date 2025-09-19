@@ -100,32 +100,16 @@ class LoaderViewModel: ObservableObject {
     isLoading = true
     resultMessage = "Loading S3 buckets..."
 
-    if isContractTest() {
-      // Send a request to the mock endpoint
-      do {
-        let url = URL(string: "http://localhost:8181/200")!
-        let (_, response) = try await URLSession.shared.data(from: url)
-
-        if let httpResponse = response as? HTTPURLResponse {
-          resultMessage = "HTTP Request completed with status: \(httpResponse.statusCode)"
-        } else {
-          resultMessage = "HTTP Request completed but no status code available"
-        }
-      } catch {
-        resultMessage = "HTTP Request failed: \(error.localizedDescription)"
-      }
-    } else {
-      guard let awsServiceHandler else { return }
-      defer { isLoading = false }
-      // Call list buckets
-      do {
-        let buckets = try await awsServiceHandler.listS3Buckets()
-        resultMessage = buckets.isEmpty
-          ? "No buckets found"
-          : "S3 Buckets:\n\n" + buckets.map { "- \($0.name) (Created: \($0.creationDate))" }.joined(separator: "\n")
-      } catch {
-        resultMessage = "Error listing S3 buckets: \(error.localizedDescription)"
-      }
+    guard let awsServiceHandler else { return }
+    defer { isLoading = false }
+    // Call list buckets
+    do {
+      let buckets = try await awsServiceHandler.listS3Buckets()
+      resultMessage = buckets.isEmpty
+        ? "No buckets found"
+        : "S3 Buckets:\n\n" + buckets.map { "- \($0.name) (Created: \($0.creationDate))" }.joined(separator: "\n")
+    } catch {
+      resultMessage = "Error listing S3 buckets: \(error.localizedDescription)"
     }
   }
 
@@ -204,6 +188,27 @@ class LoaderViewModel: ObservableObject {
     resultMessage = "Custom span created:\nName: \(name)\nAttributes: \(attributes)"
   }
 
+  /// Makes a 200 HTTP request to demonstrate network error instrumentation
+  func make200Request() async {
+    stopClock()
+    resultMessage = "Making 200 HTTP request..."
+    do {
+      var url = URL(string: "https://httpbin.org/status/200")!
+      if isContractTest() {
+        url = URL(string: "http://localhost:8181/200")!
+      }
+      let (_, response) = try await URLSession.shared.data(from: url)
+
+      if let httpResponse = response as? HTTPURLResponse {
+        resultMessage = "HTTP Request completed with status: \(httpResponse.statusCode)"
+      } else {
+        resultMessage = "HTTP Request completed but no status code available"
+      }
+    } catch {
+      resultMessage = "HTTP Request failed: \(error.localizedDescription)"
+    }
+  }
+
   /// Makes a 4xx HTTP request to demonstrate network error instrumentation
   func make4xxRequest() async {
     stopClock()
@@ -256,7 +261,7 @@ class LoaderViewModel: ObservableObject {
     }
   }
 
-  private func isContractTest() -> Bool {
+  func isContractTest() -> Bool {
     return ProcessInfo.processInfo.arguments.contains("--contractTestMode")
   }
 
