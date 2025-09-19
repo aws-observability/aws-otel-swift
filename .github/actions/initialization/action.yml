@@ -11,14 +11,6 @@ runs:
       with:
         xcode-version: 16.4
     
-    - name: Replace AppIntents Metadata Processor with Dummy Code
-      shell: bash
-      run: |
-        DUMMY_CONTENT="#!/bin/sh \nexit 0 \n"
-        ls -al /Applications/Xcode.app/Contents/Developer/usr/bin/
-        echo -e "$DUMMY_CONTENT" > /Applications/Xcode.app/Contents/Developer/usr/bin/appintentsmetadataprocessor
-        cat /Applications/Xcode.app/Contents/Developer/usr/bin/appintentsmetadataprocessor
-    
     # No Docker: manually setup go
     - name: Setup Go
       uses: actions/setup-go@v5

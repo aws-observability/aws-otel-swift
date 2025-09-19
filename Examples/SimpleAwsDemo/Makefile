@@ -8,24 +8,29 @@ XCODEBUILD_OPTIONS_IOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
 	-destination 'platform=iOS Simulator,name=iPhone 16' \
-	-verbose \
 	-scmProvider system \
 	-packageAuthorizationProvider netrc
 
 XCODEBUILD_OPTIONS_TVOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' 
+	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
+	-scmProvider system \
+	-packageAuthorizationProvider netrc
 
 XCODEBUILD_OPTIONS_WATCHOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' 
+	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' \
+	-scmProvider system \
+	-packageAuthorizationProvider netrc
 
 XCODEBUILD_OPTIONS_VISIONOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \
 	-scheme $(CONTRACT_TEST_SCHEME) \
-	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' 
+	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
+	-scmProvider system \
+	-packageAuthorizationProvider netrc
 
 ### END CONTRACT TEST  - DATA GENERATION OPTIONS
 

@@ -23,6 +23,7 @@
   },
   "testTargets" : [
     {
+      "parallelizable" : true,
       "target" : {
         "containerPath" : "container:SimpleAwsDemo.xcodeproj",
         "identifier" : "3F9C08CC2E68E8000017439E",
