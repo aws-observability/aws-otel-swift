@@ -67,13 +67,12 @@ XCODEBUILD_OPTIONS_WATCHOS_CONTRACT_RUN=\
 	-testPlan $(CONTRACT_TEST_PLAN) \
 	-workspace .
 
-# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
-# XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN=\
-# 	-configuration Debug \
-# 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
-# 	-scheme $(PROJECT_NAME) \
-# 	-testPlan $(CONTRACT_TEST_PLAN) \
-# 	-workspace .
+XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN=\
+	-configuration Debug \
+	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
+	-scheme $(PROJECT_NAME) \
+	-testPlan $(CONTRACT_TEST_PLAN) \
+	-workspace .
 
 ### END CONTRACT TEST - RUN OPTIONS
 

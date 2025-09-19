@@ -52,7 +52,7 @@ struct ContentView: View {
             }
 
             awsButton(icon: "network", title: "200 HTTP Request") {
-              await viewModel.make4xxRequest()
+              await viewModel.make200Request()
             }
 
             awsButton(icon: "network", title: "4xx HTTP Request") {

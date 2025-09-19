@@ -15,6 +15,9 @@ jobs:
   ios:
     runs-on: macos-15-xlarge
 
+    # This job will be cancelled after 60 minutes
+    timeout-minutes: 60
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -28,47 +31,59 @@ jobs:
           api-level: 18
           destination: ios
 
-  # tvos:
-  #   runs-on: macos-15
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v5
+  tvos:
+    runs-on: macos-15
 
-  #     - name: Initialize
-  #       uses: ./.github/actions/initialization
+    # This job will be cancelled after 60 minutes
+    timeout-minutes: 60
 
-  #     - name: Run contract tests
-  #       uses: ./.github/actions/contract_tests
-  #       with:
-  #         api-level: 18
-  #         destination: tvos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Initialize
+        uses: ./.github/actions/initialization
+
+      - name: Run contract tests
+        uses: ./.github/actions/contract_tests
+        with:
+          api-level: 18
+          destination: tvos
   
-  # watchos:
-  #   runs-on: macos-15
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v5
+  watchos:
+    runs-on: macos-15
 
-  #     - name: Initialize
-  #       uses: ./.github/actions/initialization
+    # This job will be cancelled after 60 minutes
+    timeout-minutes: 60
 
-  #     - name: Run contract tests
-  #       uses: ./.github/actions/contract_tests
-  #       with:
-  #         api-level: 11
-  #         destination: watchos
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Initialize
+        uses: ./.github/actions/initialization
+
+      - name: Run contract tests
+        uses: ./.github/actions/contract_tests
+        with:
+          api-level: 11
+          destination: watchos
   
-  # visionos:
-  #   runs-on: macos-15
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v5
+  visionos:
+    runs-on: macos-15
 
-  #     - name: Initialize
-  #       uses: ./.github/actions/initialization
+    # This job will be cancelled after 60 minutes
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
 
-  #     - name: Run contract tests
-  #       uses: ./.github/actions/contract_tests
-  #       with:
-  #         api-level: 2
-  #         destination: visionos
+      - name: Initialize
+        uses: ./.github/actions/initialization
+
+      - name: Run contract tests
+        uses: ./.github/actions/contract_tests
+        with:
+          api-level: 2
+          destination: visionos

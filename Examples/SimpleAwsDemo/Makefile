@@ -19,11 +19,10 @@ XCODE_OPTIONS_WATCHOS_CONTRACT=\
 	-scheme $(CONTRACT_TEST_SCHEME) \
 	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' 
 
-# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
-# XCODE_OPTIONS_VISIONOS_CONTRACT=\
-# 	-project $(CONTRACT_TEST_WORKSPACE) \
-# 	-scheme $(CONTRACT_TEST_SCHEME) \
-# 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' 
+XCODE_OPTIONS_VISIONOS_CONTRACT=\
+	-project $(CONTRACT_TEST_WORKSPACE) \
+	-scheme $(CONTRACT_TEST_SCHEME) \
+	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' 
 
 ### END CONTRACT TEST  - DATA GENERATION OPTIONS
 
@@ -40,7 +39,6 @@ contract-test-generate-data-tvos: ## `xcodebuild test` automatically builds and 
 contract-test-generate-data-watchos: ## `xcodebuild test` automatically builds and tests
 	xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT) | xcbeautify --renderer github-actions
 
-# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
-# .PHONY: contract-test-generate-data-visionos
-# contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
-# 	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify
+.PHONY: contract-test-generate-data-visionos
+contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
+	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) test-without-building | xcbeautify

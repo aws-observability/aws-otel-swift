@@ -65,5 +65,7 @@ public func buildOtlpEndpoints(region: String, exportOverride: ExportOverride?) 
   // Use Set to automatically handle duplicates when traces and logs use the same endpoint
   let endpoints = Set([tracesEndpoint, logsEndpoint])
 
+  print("excluded endpoints: \(endpoints)")
+
   return endpoints
 }
