@@ -281,23 +281,71 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 ## Testing
 
+### Unit Tests
+
 This project includes comprehensive test suites. For detailed testing instructions, troubleshooting, and contributor guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md#testing).
 
 **Quick Test Command:**
 
 ```bash
-swift test // macOS
-make test-ios // iOS
-make test-tvos // tvOS
-make test-watchos // watchOS
-make test-visionos // visionOS
+swift test # macOS
+make test-ios # iOS
+make test-tvos # tvOS
+make test-watchos # watchOS
+make test-visionos # visionOS
 ```
 
 **Test Coverage:**
 
 ```bash
 # Run tests with coverage analysis (requires 70% repository, 80% PR changes)
-make check-coverage // macOS
+make check-coverage # macOS
+```
+
+### Contract Tests
+Contract tests require the following two steps:
+1. Run the otel-collector locally.
+
+This can be done using Docker: 
+
+```bash
+cd ./Tests/ContractTests/MockCollector
+docker compose up
+cd ../../..
+```
+
+Or without Docker by manually downloading the otel-collector (to emulate the Github Actions workflow): 
+
+```bash
+cd ./Tests/ContractTests/MockCollector
+curl --proto '=https' --tlsv1.2 -fOL https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.133.0/otelcol_0.133.0_darwin_arm64.tar.gz
+tar -xvf otelcol_0.133.0_darwin_arm64.tar.gz
+cd ../../..
+```
+
+
+2. Use the UITests framework using XCUIApplication to tap buttons on the sample app and generate data.
+
+Commands to generate contract test data: 
+
+```bash
+cd ./Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
+make contract-test-generate-data-ios
+cd ../../..
+```
+
+3. Run the following command to make sure that `logs.txt` and `traces.txt` were generated successfully: 
+
+```bash
+ls -al /tmp/otel-swift-collector
+```
+
+4. Run the unit test plan `ContractTestPlan` to read the generated data and validate the spans and logs written to file. 
+
+Command to run contract tests:
+
+```bash
+make contract-test-run-ios
 ```
 
 ## Development Setup

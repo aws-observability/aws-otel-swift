@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "19115ED6-710A-457D-99D5-DE0A98D48AB6",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ContractTests",
+        "name" : "ContractTests"
+      }
+    }
+  ],
+  "version" : 1
+}

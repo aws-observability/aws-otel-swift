@@ -11,7 +11,7 @@ COVERAGE_FILE="coverage.txt"
 
 # Generate coverage report
 echo "Generating coverage report..."
-swift test --enable-code-coverage
+swift test --filter ".*" --skip ".*ContractTests.*" --enable-code-coverage
 xcrun llvm-cov report .build/debug/aws-otel-swiftPackageTests.xctest/Contents/MacOS/aws-otel-swiftPackageTests -instr-profile .build/debug/codecov/default.profdata --format=text > "$COVERAGE_FILE"
 
 # Check repository coverage
@@ -40,7 +40,7 @@ if git rev-parse --verify origin/main >/dev/null 2>&1; then
         echo "Coverage for changed files:"
         head -1 "$COVERAGE_FILE"
         echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done
-        
+
         changed_coverage=$(echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
         echo "Changed files coverage: ${changed_coverage}%"
         

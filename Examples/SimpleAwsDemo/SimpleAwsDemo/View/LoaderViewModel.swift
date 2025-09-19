@@ -90,7 +90,6 @@ class LoaderViewModel: ObservableObject {
 
       isLoading = false
     } catch {
-      self.error = error
       isLoading = false
     }
   }
@@ -98,19 +97,35 @@ class LoaderViewModel: ObservableObject {
   /// Performs the "List S3 Buckets" operation and updates UI state
   func listS3Buckets() async {
     stopClock()
-    guard let awsServiceHandler else { return }
-
     isLoading = true
     resultMessage = "Loading S3 buckets..."
-    defer { isLoading = false }
 
-    do {
-      let buckets = try await awsServiceHandler.listS3Buckets()
-      resultMessage = buckets.isEmpty
-        ? "No buckets found"
-        : "S3 Buckets:\n\n" + buckets.map { "- \($0.name) (Created: \($0.creationDate))" }.joined(separator: "\n")
-    } catch {
-      resultMessage = "Error listing S3 buckets: \(error.localizedDescription)"
+    if isContractTest() {
+      // Send a request to the mock endpoint
+      do {
+        let url = URL(string: "http://localhost:8181/200")!
+        let (_, response) = try await URLSession.shared.data(from: url)
+
+        if let httpResponse = response as? HTTPURLResponse {
+          resultMessage = "HTTP Request completed with status: \(httpResponse.statusCode)"
+        } else {
+          resultMessage = "HTTP Request completed but no status code available"
+        }
+      } catch {
+        resultMessage = "HTTP Request failed: \(error.localizedDescription)"
+      }
+    } else {
+      guard let awsServiceHandler else { return }
+      defer { isLoading = false }
+      // Call list buckets
+      do {
+        let buckets = try await awsServiceHandler.listS3Buckets()
+        resultMessage = buckets.isEmpty
+          ? "No buckets found"
+          : "S3 Buckets:\n\n" + buckets.map { "- \($0.name) (Created: \($0.creationDate))" }.joined(separator: "\n")
+      } catch {
+        resultMessage = "Error listing S3 buckets: \(error.localizedDescription)"
+      }
     }
   }
 
@@ -194,7 +209,10 @@ class LoaderViewModel: ObservableObject {
     stopClock()
     resultMessage = "Making 4xx HTTP request..."
     do {
-      let url = URL(string: "https://httpbin.org/status/404")!
+      var url = URL(string: "https://httpbin.org/status/404")!
+      if isContractTest() {
+        url = URL(string: "http://localhost:8181/404")!
+      }
       let (_, response) = try await URLSession.shared.data(from: url)
 
       if let httpResponse = response as? HTTPURLResponse {
@@ -212,7 +230,10 @@ class LoaderViewModel: ObservableObject {
     stopClock()
     resultMessage = "Making 5xx HTTP request..."
     do {
-      let url = URL(string: "https://httpbin.org/status/500")!
+      var url = URL(string: "https://httpbin.org/status/500")!
+      if isContractTest() {
+        url = URL(string: "http://localhost:8181/500")!
+      }
       let (_, response) = try await URLSession.shared.data(from: url)
 
       if let httpResponse = response as? HTTPURLResponse {
@@ -233,6 +254,10 @@ class LoaderViewModel: ObservableObject {
       // Intentionally block the main thread for a duration
       Thread.sleep(forTimeInterval: Double(seconds) as TimeInterval)
     }
+  }
+
+  private func isContractTest() -> Bool {
+    return ProcessInfo.processInfo.arguments.contains("--contractTestMode")
   }
 
   /// Starts the digital clock timer

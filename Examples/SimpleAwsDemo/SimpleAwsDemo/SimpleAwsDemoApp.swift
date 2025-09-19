@@ -20,6 +20,7 @@ import AwsOpenTelemetryCore
 struct SimpleAwsDemoApp: App {
   private let cognitoPoolId = "YOUR_IDENTITY_POOL_ID_FROM_OUTPUT"
   private let region = "YOUR_REGION_FROM_OUTPUT"
+  private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
 
   init() {
     setupOpenTelemetry()

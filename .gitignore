@@ -48,8 +48,10 @@ Package.pins
 #*.xcodeproj
 #
 # Xcode automatically generates this directory with a .xcworkspacedata file and xcuserdata
-# hence it is not needed unless you have added a package configuration file to your project
-.swiftpm
+# Keeping .swiftpm to preserve test plans in the project for CI/CD
+# Ignoring xcuserdata folders inside .swiftpm
+.swiftpm/xcode/package.xcworkspace/xcuserdata
+.swiftpm/xcode/xcuserdata
 
 .build/
 
@@ -104,3 +106,11 @@ Examples/out/
 
 ## Check coverage
 coverage.txt
+
+## Contract Test Dev
+Tests/ContractTests/MockCollector/otelcol
+Tests/ContractTests/MockCollector/otelcol_0.133.0_darwin_arm64.tar.gz
+Tests/ContractTests/MockCollector/README.md
+
+## Temporary disable
+Examples/SimpleAwsUiKitDemo/

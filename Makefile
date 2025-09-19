@@ -10,6 +10,8 @@
 
 PROJECT_NAME="aws-otel-swift-Package"
 
+CONTRACT_TEST_PLAN="ContractTestPlan"
+
 XCODEBUILD_OPTIONS_IOS=\
 	-configuration Debug \
 	-destination 'platform=iOS Simulator,name=iPhone 16' \
@@ -42,6 +44,39 @@ XCODEBUILD_OPTIONS_VISIONOS=\
     -retry-tests-on-failure \
 	-workspace .
 
+### START CONTRACT TEST - RUN OPTIONS
+
+XCODEBUILD_OPTIONS_IOS_CONTRACT_RUN=\
+	-configuration Debug \
+	-destination 'platform=iOS Simulator,name=iPhone 16' \
+	-scheme $(PROJECT_NAME) \
+	-testPlan $(CONTRACT_TEST_PLAN) \
+	-workspace .
+
+XCODEBUILD_OPTIONS_TVOS_CONTRACT_RUN=\
+	-configuration Debug \
+	-destination 'platform=tvOS Simulator,name=Apple TV 4K (3rd generation)' \
+	-scheme $(PROJECT_NAME) \
+	-testPlan $(CONTRACT_TEST_PLAN) \
+	-workspace .
+
+XCODEBUILD_OPTIONS_WATCHOS_CONTRACT_RUN=\
+	-configuration Debug \
+	-destination 'platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)' \
+	-scheme $(PROJECT_NAME) \
+	-testPlan $(CONTRACT_TEST_PLAN) \
+	-workspace .
+
+# visionOS temporarily disabled due to dependency compatibility issues with aws-sdk-swift
+# XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN=\
+# 	-configuration Debug \
+# 	-destination 'platform=visionOS Simulator,name=Apple Vision Pro,OS=26.0' \
+# 	-scheme $(PROJECT_NAME) \
+# 	-testPlan $(CONTRACT_TEST_PLAN) \
+# 	-workspace .
+
+### END CONTRACT TEST - RUN OPTIONS
+
 # Setup Commands
 .PHONY: setup-brew
 setup-brew:  ## Install required tools (xcbeautify)
@@ -70,54 +105,67 @@ lint: lint-format lint-swift  ## Run all linting checks
 # Build Commands - Compile code for each platform
 .PHONY: build-ios
 build-ios:  ## Build for iOS
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build | xcbeautify --renderer github-actions
 
 .PHONY: build-tvos
 build-tvos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) build | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) build | xcbeautify --renderer github-actions
 
 .PHONY: build-watchos
 build-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build | xcbeautify --renderer github-actions
 
 # Build-for-Testing Commands - Prepare test bundles (faster than full test)
 .PHONY: build-for-testing-ios
 build-for-testing-ios:  ## Build test bundles for iOS
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build-for-testing | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) build-for-testing | xcbeautify --renderer github-actions
 
 .PHONY: build-for-testing-tvos
 build-for-testing-tvos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) build-for-testing | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) build-for-testing | xcbeautify --renderer github-actions
 
 .PHONY: build-for-testing-watchos
 build-for-testing-watchos:
-	set -o pipefail && xcodebuild OTHER_LDFLAGS="$(OTHER_LDFLAGS) -fprofile-instr-generate" $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify
+	set -o pipefail && xcodebuild OTHER_LDFLAGS="$(OTHER_LDFLAGS) -fprofile-instr-generate" $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify --renderer github-actions
 
 # Test Commands - Full build + test cycle
 .PHONY: test-ios
 test-ios:  ## Run full test cycle for iOS
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test | xcbeautify --renderer github-actions
 
 .PHONY: test-tvos
 test-tvos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test | xcbeautify --renderer github-actions
 
 .PHONY: test-watchos
 test-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test | xcbeautify --renderer github-actions
 
 # Test-without-Building Commands - Use pre-built test bundles (fast)
 .PHONY: test-without-building-ios
 test-without-building-ios:  ## Run tests using pre-built iOS bundles
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test-without-building | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test-without-building | xcbeautify --renderer github-actions
 
 .PHONY: test-without-building-tvos
 test-without-building-tvos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test-without-building | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test-without-building | xcbeautify --renderer github-actions
 
 .PHONY: test-without-building-watchos
 test-without-building-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building | xcbeautify
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building | xcbeautify --renderer github-actions
+
+# Contract Test - Run Commands
+.PHONY: contract-test-run-ios
+contract-test-run-ios: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
+
+.PHONY: contract-test-run-tvos
+contract-test-run-tvos: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_TVOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
+
+.PHONY: contract-test-run-watchos
+contract-test-run-watchos: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
 
 .PHONY: build-visionos
 build-visionos:
@@ -134,3 +182,9 @@ test-visionos:
 .PHONY: test-without-building-visionos
 test-without-building-visionos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building | xcbeautify
+ 
+.PHONY: contract-test-run-visionos
+contract-test-run-visionos: ## `xcodebuild test` automatically builds and tests
+	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN) | xcbeautify
+  
+ 

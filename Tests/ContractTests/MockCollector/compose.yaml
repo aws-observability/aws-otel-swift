@@ -1,0 +1,18 @@
+services:
+  collector:
+    image: "otel/opentelemetry-collector-contrib@sha256:0076e6c250bef16968e29e8f94177b87b5a851c79ce14b270e657f5f655b9e04"
+    volumes:
+      - ./collector.yaml:/etc/demo-collector.yaml
+      - /tmp/otel-swift-collector:/etc/out
+    entrypoint: ["/otelcol-contrib"]
+    command: ["--config", "/etc/demo-collector.yaml"]
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+  
+  contract-test-endpoint:
+    build:
+      context: ./MockEndpoint
+    ports:
+      - "8181:8080"
+    stop_grace_period: 1s  # Set a shorter grace period for shutdown

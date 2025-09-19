@@ -1,0 +1,38 @@
+{
+  "configurations" : [
+    {
+      "id" : "01AB0564-1EFC-4A62-8F74-456A18246EC5",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AwsOpenTelemetryAgentTests",
+        "name" : "AwsOpenTelemetryAgentTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AwsOpenTelemetryAuthTests",
+        "name" : "AwsOpenTelemetryAuthTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "AwsOpenTelemetryCoreTests",
+        "name" : "AwsOpenTelemetryCoreTests"
+      }
+    }
+  ],
+  "version" : 1
+}
