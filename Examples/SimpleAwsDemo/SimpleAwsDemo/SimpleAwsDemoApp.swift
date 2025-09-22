@@ -45,7 +45,7 @@ struct SimpleAwsDemoApp: App {
       applicationAttributes: [
         "application.version": "1.0.0"
       ],
-      debug: true,
+      debug: true
     )
 
     do {
