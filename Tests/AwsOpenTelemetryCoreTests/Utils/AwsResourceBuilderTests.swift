@@ -19,7 +19,7 @@ import OpenTelemetrySdk
 @testable import AwsOpenTelemetryCore
 @testable import TestUtils
 
-final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
+final class AwsResourceBuilderTests: XCTestCase {
   func testBuildResourceMinimal() {
     let config = AwsOpenTelemetryConfig(aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"))
     let resource = AwsResourceBuilder.buildResource(config: config)

@@ -92,7 +92,7 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private init(config: AwsOpenTelemetryConfig) {
     self.config = config
-    resource = Self.buildResource(config: config)
+    resource = AwsResourceBuilder.buildResource(config: config)
     // Configure session manager with timeout from config
     let sessionConfig = AwsSessionConfig(sessionTimeout: config.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
     let sessionManager = AwsSessionManager(configuration: sessionConfig)
@@ -328,45 +328,6 @@ public class AwsOpenTelemetryRumBuilder {
   }
 
   // MARK: - Builder methods
-
-  /**
-   * Converts a string-to-string map to an attribute map.
-   *
-   * @param map The string-to-string map to convert
-   * @return A map of attribute values
-   */
-  private static func buildAttributeMap(_ map: [String: String]) -> [String: AttributeValue] {
-    var attributeMap: [String: AttributeValue] = [:]
-    for (key, value) in map {
-      attributeMap[key] = AttributeValue(value)
-    }
-    return attributeMap
-  }
-
-  /**
-   * Builds the resource with AWS RUM attributes.
-   *
-   * @param config The AWS OpenTelemetry configuration
-   * @return A resource with AWS RUM attributes
-   */
-  static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
-    let rumResourceAttributes: [String: String] = [
-      AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId,
-      AwsAttributes.rumSdkVersion.rawValue: AwsOpenTelemetryAgent.version
-    ]
-
-    let cloudResourceAttributes: [String: String] = [
-      SemanticConventions.Cloud.region.rawValue: config.aws.region,
-      SemanticConventions.Cloud.provider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
-      SemanticConventions.Cloud.platform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
-    ]
-
-    let resource = DefaultResources().get()
-      .merging(other: Resource(attributes: buildAttributeMap(rumResourceAttributes)))
-      .merging(other: Resource(attributes: buildAttributeMap(cloudResourceAttributes)))
-
-    return resource
-  }
 
   /**
    * Builds the span exporter.
