@@ -356,9 +356,9 @@ public class AwsOpenTelemetryRumBuilder {
     ]
 
     let cloudResourceAttributes: [String: String] = [
-      ResourceAttributes.cloudRegion.rawValue: config.aws.region,
-      ResourceAttributes.cloudProvider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
-      ResourceAttributes.cloudPlatform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
+      SemanticConventions.Cloud.region.rawValue: config.aws.region,
+      SemanticConventions.Cloud.provider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
+      SemanticConventions.Cloud.platform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
     ]
 
     let resource = DefaultResources().get()
