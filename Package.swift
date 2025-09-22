@@ -37,7 +37,7 @@ let package = Package(
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
       ],
-      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md"]
+      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
