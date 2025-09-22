@@ -27,6 +27,7 @@
 
 /* Begin PBXFileReference section */
 		306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleAwsDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F0925712E7E1459006566D8 /* UITests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = UITests.xctestplan; sourceTree = "<group>"; };
 		3F9C08CD2E68E8000017439E /* UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -70,6 +71,7 @@
 		306BC68F2E00C6AA00F19E48 = {
 			isa = PBXGroup;
 			children = (
+				3F0925712E7E1459006566D8 /* UITests.xctestplan */,
 				306BC69A2E00C6AA00F19E48 /* SimpleAwsDemo */,
 				3F9C08CE2E68E8000017439E /* UITests */,
 				30BF3C382E0481DF000DFBF5 /* Frameworks */,

@@ -38,7 +38,8 @@ runs:
       run: |
         cd ${{ github.workspace }}/Tests/ContractTests/MockCollector/MockEndpoint
         node server.js &
-        sh test.sh
+        sleep 5 # Give the server a moment to start
+        set -o pipefail && sh test.sh
 
     - name: Generate spans and logs for contract tests on ${{ inputs.destination }}
       shell: bash
@@ -50,11 +51,13 @@ runs:
       with:
         name: traces_file-sdk-${{ inputs.api-level }}
         path: /tmp/otel-swift-collector/traces.txt
+        overwrite: true 
 
     - uses: actions/upload-artifact@v4
       with:
         name: logs_file-sdk-${{ inputs.api-level }}
         path: /tmp/otel-swift-collector/logs.txt
+        overwrite: true 
 
     - name: Run contract tests on ${{ inputs.destination }}
       shell: bash

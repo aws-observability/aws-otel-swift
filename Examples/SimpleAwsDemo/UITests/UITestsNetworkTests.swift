@@ -16,7 +16,7 @@ class UITestsNetworkTests: XCTestCase {
 
   @MainActor
   func testNetworkGET200() throws {
-    app.buttons["List S3 Buckets"].tap()
+    app.buttons["200 HTTP Request"].tap()
   }
 
   @MainActor

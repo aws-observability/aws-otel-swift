@@ -13,7 +13,10 @@ on:
 
 jobs:
   ios:
-    runs-on: macos-15
+    runs-on: macos-15-xlarge
+
+    # This job will be cancelled after 30 minutes
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -30,6 +33,10 @@ jobs:
 
   # tvos:
   #   runs-on: macos-15
+
+  #   # This job will be cancelled after 60 minutes
+  #   timeout-minutes: 60
+
   #   steps:
   #     - name: Checkout repository
   #       uses: actions/checkout@v5
@@ -45,6 +52,10 @@ jobs:
   
   # watchos:
   #   runs-on: macos-15
+
+  #   # This job will be cancelled after 60 minutes
+  #   timeout-minutes: 60
+
   #   steps:
   #     - name: Checkout repository
   #       uses: actions/checkout@v5
@@ -60,6 +71,10 @@ jobs:
   
   # visionos:
   #   runs-on: macos-15
+
+  #   # This job will be cancelled after 60 minutes
+  #   timeout-minutes: 60
+    
   #   steps:
   #     - name: Checkout repository
   #       uses: actions/checkout@v5

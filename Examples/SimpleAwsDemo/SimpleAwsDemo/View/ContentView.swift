@@ -25,6 +25,13 @@ struct ContentView: View {
   @State private var showingCustomLogForm = false
   @State private var showingCustomSpanForm = false
 
+  private func getResultWindowHeight() -> CGFloat {
+    if viewModel.isContractTest() {
+      return 0
+    }
+    return 200
+  }
+
   var body: some View {
     NavigationView {
       VStack(spacing: 0) {
@@ -38,9 +45,15 @@ struct ContentView: View {
         // Scrollable buttons section
         ScrollView {
           LazyVStack(spacing: 12) {
-            awsButton(icon: "folder", title: "List S3 Buckets", action: {
-              await viewModel.listS3Buckets()
-            })
+            if viewModel.isNotContractTest() {
+              awsButton(icon: "folder", title: "List S3 Buckets", action: {
+                await viewModel.listS3Buckets()
+              })
+            }
+
+            awsButton(icon: "network", title: "200 HTTP Request") {
+              await viewModel.make200Request()
+            }
 
             awsButton(icon: "network", title: "4xx HTTP Request") {
               await viewModel.make4xxRequest()
@@ -50,10 +63,13 @@ struct ContentView: View {
               await viewModel.make5xxRequest()
             }
 
-            awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
-              await viewModel.getCognitoIdentityId()
-            })
+            if viewModel.isNotContractTest() {
+              awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
+                await viewModel.getCognitoIdentityId()
+              })
+            }
 
+            /// UIKit Demo
             Button(action: {
               showingDemoViewController = true
             }, label: {
@@ -69,45 +85,47 @@ struct ContentView: View {
             })
             .disabled(viewModel.isLoading)
 
-            awsButton(icon: "person.circle", title: "Show User Info", action: {
-              viewModel.showUserInfo()
-            })
+            if viewModel.isNotContractTest() {
+              awsButton(icon: "person.circle", title: "Show User Info", action: {
+                viewModel.showUserInfo()
+              })
 
-            awsButton(icon: "doc.text", title: "Create Custom Log", action: {
-              viewModel.showCustomLogForm()
-            })
+              awsButton(icon: "doc.text", title: "Create Custom Log", action: {
+                viewModel.showCustomLogForm()
+              })
 
-            awsButton(icon: "chart.line.uptrend.xyaxis", title: "Create Custom Span", action: {
-              viewModel.showCustomSpanForm()
-            })
+              awsButton(icon: "chart.line.uptrend.xyaxis", title: "Create Custom Span", action: {
+                viewModel.showCustomSpanForm()
+              })
 
-            awsButton(icon: "info.circle", title: "Peek session", action: {
-              viewModel.showSessionDetails()
-            })
+              awsButton(icon: "info.circle", title: "Peek session", action: {
+                viewModel.showSessionDetails()
+              })
 
-            awsButton(icon: "arrow.clockwise", title: "Renew session", action: {
-              viewModel.renewSession()
-              viewModel.showSessionDetails()
-            })
+              awsButton(icon: "arrow.clockwise", title: "Renew session", action: {
+                viewModel.renewSession()
+                viewModel.showSessionDetails()
+              })
 
-            awsButton(icon: "exclamationmark.triangle", title: "Simulate ANR (2 sec)") {
-              viewModel.hangApplication(seconds: 2)
-            }
-
-            Button(action: {
-              let array = []
-              _ = array[10] // Index out of bounds
-            }, label: {
-              HStack {
-                Image(systemName: "exclamationmark.triangle")
-                Text("Trigger Crash")
+              awsButton(icon: "exclamationmark.triangle", title: "Simulate ANR (2 sec)") {
+                viewModel.hangApplication(seconds: 2)
               }
-              .frame(maxWidth: .infinity)
-              .padding()
-              .background(Color.red)
-              .foregroundColor(.white)
-              .cornerRadius(10)
-            })
+
+              Button(action: {
+                let array = []
+                _ = array[10] // Index out of bounds
+              }, label: {
+                HStack {
+                  Image(systemName: "exclamationmark.triangle")
+                  Text("Trigger Crash")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.red)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+              })
+            }
           }
           .padding(.horizontal)
         }
@@ -126,7 +144,7 @@ struct ContentView: View {
               .padding()
           }
         }
-        .frame(height: 200)
+        .frame(height: getResultWindowHeight())
         .background(.white)
         .cornerRadius(10)
         .shadow(radius: 2)
