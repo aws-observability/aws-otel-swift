@@ -259,12 +259,12 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 #### Root Configuration
 
-| Field                 | Type    | Required | Default | Description                                                       |
-| --------------------- | ------- | -------- | ------- | ----------------------------------------------------------------- |
-| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires |
-| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                               |
-| applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata                          |
-| debug                 | Boolean | No       | false   | Flag to enable debug logging                                      |
+| Field                 | Type    | Required | Default | Description                                                                                                                       |
+| --------------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires                                                                 |
+| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                                                                                               |
+| applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata. These are added to all logs and spans as regular attributes (via [global attributes API](Sources/AwsOpenTelemetryCore/GlobalAttributes/README.md)) |
+| debug                 | Boolean | No       | false   | Flag to enable debug logging                                                                                                      |
 
 #### TelemetryConfig
 

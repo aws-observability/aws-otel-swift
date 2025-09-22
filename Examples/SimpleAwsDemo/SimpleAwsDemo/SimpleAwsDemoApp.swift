@@ -42,7 +42,10 @@ struct SimpleAwsDemoApp: App {
       aws: awsConfig,
       exportOverride: exportOverride,
       sessionTimeout: 5, // just 5 seconds for demo purposes
-      debug: true
+      applicationAttributes: [
+        "application.version": "1.0.0"
+      ],
+      debug: true,
     )
 
     do {

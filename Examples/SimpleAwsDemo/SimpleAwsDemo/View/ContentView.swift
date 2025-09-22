@@ -125,6 +125,10 @@ struct ContentView: View {
                 .foregroundColor(.white)
                 .cornerRadius(10)
               })
+
+              awsButton(icon: "tag", title: "Global Attributes", action: {
+                viewModel.showGlobalAttributesView()
+              })
             }
           }
           .padding(.horizontal)
@@ -158,6 +162,9 @@ struct ContentView: View {
       }
       .sheet(isPresented: $viewModel.showingCustomSpanForm) {
         CustomSpanFormView(viewModel: viewModel)
+      }
+      .sheet(isPresented: $viewModel.showingGlobalAttributesView) {
+        GlobalAttributesView()
       }
     }
   }
@@ -202,6 +209,7 @@ struct ContentView_Previews: PreviewProvider {
     override func showUserInfo() {}
     override func showCustomLogForm() {}
     override func showCustomSpanForm() {}
+    override func showGlobalAttributesView() {}
   }
 
   static var previews: some View {

@@ -97,6 +97,14 @@ public class AwsOpenTelemetryRumBuilder {
     let sessionConfig = AwsSessionConfig(sessionTimeout: config.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
     let sessionManager = AwsSessionManager(configuration: sessionConfig)
     AwsSessionManagerProvider.register(sessionManager: sessionManager)
+
+    // Add applicationAttributes to global attributes
+    if let applicationAttributes = config.applicationAttributes {
+      let globalAttributesManager = GlobalAttributesProvider.getInstance()
+      for (key, value) in applicationAttributes {
+        globalAttributesManager.setAttribute(key: key, value: AttributeValue.string(value))
+      }
+    }
   }
 
   /**
