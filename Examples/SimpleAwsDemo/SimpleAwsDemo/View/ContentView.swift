@@ -45,7 +45,7 @@ struct ContentView: View {
         // Scrollable buttons section
         ScrollView {
           LazyVStack(spacing: 12) {
-            if !viewModel.isContractTest() {
+            if viewModel.isNotContractTest() {
               awsButton(icon: "folder", title: "List S3 Buckets", action: {
                 await viewModel.listS3Buckets()
               })
@@ -63,7 +63,7 @@ struct ContentView: View {
               await viewModel.make5xxRequest()
             }
 
-            if !viewModel.isContractTest() {
+            if viewModel.isNotContractTest() {
               awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
                 await viewModel.getCognitoIdentityId()
               })
@@ -85,7 +85,7 @@ struct ContentView: View {
             })
             .disabled(viewModel.isLoading)
 
-            if !viewModel.isContractTest() {
+            if viewModel.isNotContractTest() {
               awsButton(icon: "person.circle", title: "Show User Info", action: {
                 viewModel.showUserInfo()
               })

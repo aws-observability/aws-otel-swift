@@ -265,6 +265,10 @@ class LoaderViewModel: ObservableObject {
     return ProcessInfo.processInfo.arguments.contains("--contractTestMode")
   }
 
+  func isNotContractTest() -> Bool {
+    return !isContractTest()
+  }
+
   /// Starts the digital clock timer
   private func startClock() {
     // Update time immediately
