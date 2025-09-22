@@ -1,0 +1,652 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3F09264C2E81F188006566D8 /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 3F09264B2E81F188006566D8 /* AWSClientRuntime */; };
+		3F09264E2E81F188006566D8 /* AWSCognitoIdentity in Frameworks */ = {isa = PBXBuildFile; productRef = 3F09264D2E81F188006566D8 /* AWSCognitoIdentity */; };
+		3F0926502E81F188006566D8 /* AWSCognitoIdentityProvider in Frameworks */ = {isa = PBXBuildFile; productRef = 3F09264F2E81F188006566D8 /* AWSCognitoIdentityProvider */; };
+		3F0926522E81F188006566D8 /* AWSS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 3F0926512E81F188006566D8 /* AWSS3 */; };
+		3F0926552E81F5B5006566D8 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F0926542E81F5B5006566D8 /* UIKit.framework */; platformFilters = (ios, xros, ); };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3F09261C2E81EFDC006566D8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3F0926052E81EFDA006566D8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3F09260C2E81EFDA006566D8;
+			remoteInfo = BaselineSimpleAwsDemo;
+		};
+		3F0926262E81EFDC006566D8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3F0926052E81EFDA006566D8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3F09260C2E81EFDA006566D8;
+			remoteInfo = BaselineSimpleAwsDemo;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		3F09260D2E81EFDA006566D8 /* BaselineSimpleAwsDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BaselineSimpleAwsDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F09261B2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaselineSimpleAwsDemoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F0926252E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BaselineSimpleAwsDemoUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F0926542E81F5B5006566D8 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		3F09260F2E81EFDA006566D8 /* BaselineSimpleAwsDemo */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BaselineSimpleAwsDemo;
+			sourceTree = "<group>";
+		};
+		3F09261E2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BaselineSimpleAwsDemoTests;
+			sourceTree = "<group>";
+		};
+		3F0926282E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = BaselineSimpleAwsDemoUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3F09260A2E81EFDA006566D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F09264E2E81F188006566D8 /* AWSCognitoIdentity in Frameworks */,
+				3F09264C2E81F188006566D8 /* AWSClientRuntime in Frameworks */,
+				3F0926522E81F188006566D8 /* AWSS3 in Frameworks */,
+				3F0926502E81F188006566D8 /* AWSCognitoIdentityProvider in Frameworks */,
+				3F0926552E81F5B5006566D8 /* UIKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3F0926182E81EFDC006566D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3F0926222E81EFDC006566D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3F0926042E81EFDA006566D8 = {
+			isa = PBXGroup;
+			children = (
+				3F09260F2E81EFDA006566D8 /* BaselineSimpleAwsDemo */,
+				3F09261E2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests */,
+				3F0926282E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests */,
+				3F0926532E81F5B5006566D8 /* Frameworks */,
+				3F09260E2E81EFDA006566D8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3F09260E2E81EFDA006566D8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3F09260D2E81EFDA006566D8 /* BaselineSimpleAwsDemo.app */,
+				3F09261B2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests.xctest */,
+				3F0926252E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3F0926532E81F5B5006566D8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3F0926542E81F5B5006566D8 /* UIKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3F09260C2E81EFDA006566D8 /* BaselineSimpleAwsDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F09262F2E81EFDC006566D8 /* Build configuration list for PBXNativeTarget "BaselineSimpleAwsDemo" */;
+			buildPhases = (
+				3F0926092E81EFDA006566D8 /* Sources */,
+				3F09260A2E81EFDA006566D8 /* Frameworks */,
+				3F09260B2E81EFDA006566D8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3F09260F2E81EFDA006566D8 /* BaselineSimpleAwsDemo */,
+			);
+			name = BaselineSimpleAwsDemo;
+			packageProductDependencies = (
+				3F09264B2E81F188006566D8 /* AWSClientRuntime */,
+				3F09264D2E81F188006566D8 /* AWSCognitoIdentity */,
+				3F09264F2E81F188006566D8 /* AWSCognitoIdentityProvider */,
+				3F0926512E81F188006566D8 /* AWSS3 */,
+			);
+			productName = BaselineSimpleAwsDemo;
+			productReference = 3F09260D2E81EFDA006566D8 /* BaselineSimpleAwsDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+		3F09261A2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F0926322E81EFDC006566D8 /* Build configuration list for PBXNativeTarget "BaselineSimpleAwsDemoTests" */;
+			buildPhases = (
+				3F0926172E81EFDC006566D8 /* Sources */,
+				3F0926182E81EFDC006566D8 /* Frameworks */,
+				3F0926192E81EFDC006566D8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3F09261D2E81EFDC006566D8 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3F09261E2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests */,
+			);
+			name = BaselineSimpleAwsDemoTests;
+			packageProductDependencies = (
+			);
+			productName = BaselineSimpleAwsDemoTests;
+			productReference = 3F09261B2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		3F0926242E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F0926352E81EFDC006566D8 /* Build configuration list for PBXNativeTarget "BaselineSimpleAwsDemoUITests" */;
+			buildPhases = (
+				3F0926212E81EFDC006566D8 /* Sources */,
+				3F0926222E81EFDC006566D8 /* Frameworks */,
+				3F0926232E81EFDC006566D8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3F0926272E81EFDC006566D8 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3F0926282E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests */,
+			);
+			name = BaselineSimpleAwsDemoUITests;
+			packageProductDependencies = (
+			);
+			productName = BaselineSimpleAwsDemoUITests;
+			productReference = 3F0926252E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3F0926052E81EFDA006566D8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					3F09260C2E81EFDA006566D8 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					3F09261A2E81EFDC006566D8 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 3F09260C2E81EFDA006566D8;
+					};
+					3F0926242E81EFDC006566D8 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 3F09260C2E81EFDA006566D8;
+					};
+				};
+			};
+			buildConfigurationList = 3F0926082E81EFDA006566D8 /* Build configuration list for PBXProject "BaselineSimpleAwsDemo" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 3F0926042E81EFDA006566D8;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				3F09264A2E81F188006566D8 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3F09260E2E81EFDA006566D8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				3F09260C2E81EFDA006566D8 /* BaselineSimpleAwsDemo */,
+				3F09261A2E81EFDC006566D8 /* BaselineSimpleAwsDemoTests */,
+				3F0926242E81EFDC006566D8 /* BaselineSimpleAwsDemoUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3F09260B2E81EFDA006566D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3F0926192E81EFDC006566D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3F0926232E81EFDC006566D8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3F0926092E81EFDA006566D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3F0926172E81EFDC006566D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3F0926212E81EFDC006566D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3F09261D2E81EFDC006566D8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3F09260C2E81EFDA006566D8 /* BaselineSimpleAwsDemo */;
+			targetProxy = 3F09261C2E81EFDC006566D8 /* PBXContainerItemProxy */;
+		};
+		3F0926272E81EFDC006566D8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3F09260C2E81EFDA006566D8 /* BaselineSimpleAwsDemo */;
+			targetProxy = 3F0926262E81EFDC006566D8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3F09262D2E81EFDC006566D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		3F09262E2E81EFDC006566D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		3F0926302E81EFDC006566D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BaselineSimpleAwsDemo/BaselineSimpleAwsDemo.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = software.amazon.opentelemetry.ios.BaselineSimpleAwsDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Debug;
+		};
+		3F0926312E81EFDC006566D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BaselineSimpleAwsDemo/BaselineSimpleAwsDemo.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
+				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
+				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = software.amazon.opentelemetry.ios.BaselineSimpleAwsDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Release;
+		};
+		3F0926332E81EFDC006566D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = software.amazon.opentelemetry.ios.BaselineSimpleAwsDemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BaselineSimpleAwsDemo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BaselineSimpleAwsDemo";
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Debug;
+		};
+		3F0926342E81EFDC006566D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = software.amazon.opentelemetry.ios.BaselineSimpleAwsDemoTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BaselineSimpleAwsDemo.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/BaselineSimpleAwsDemo";
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Release;
+		};
+		3F0926362E81EFDC006566D8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = software.amazon.opentelemetry.ios.BaselineSimpleAwsDemoUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = BaselineSimpleAwsDemo;
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Debug;
+		};
+		3F0926372E81EFDC006566D8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MACOSX_DEPLOYMENT_TARGET = 15.4;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = software.amazon.opentelemetry.ios.BaselineSimpleAwsDemoUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TEST_TARGET_NAME = BaselineSimpleAwsDemo;
+				XROS_DEPLOYMENT_TARGET = 2.5;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3F0926082E81EFDA006566D8 /* Build configuration list for PBXProject "BaselineSimpleAwsDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3F09262D2E81EFDC006566D8 /* Debug */,
+				3F09262E2E81EFDC006566D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3F09262F2E81EFDC006566D8 /* Build configuration list for PBXNativeTarget "BaselineSimpleAwsDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3F0926302E81EFDC006566D8 /* Debug */,
+				3F0926312E81EFDC006566D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3F0926322E81EFDC006566D8 /* Build configuration list for PBXNativeTarget "BaselineSimpleAwsDemoTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3F0926332E81EFDC006566D8 /* Debug */,
+				3F0926342E81EFDC006566D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		3F0926352E81EFDC006566D8 /* Build configuration list for PBXNativeTarget "BaselineSimpleAwsDemoUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3F0926362E81EFDC006566D8 /* Debug */,
+				3F0926372E81EFDC006566D8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		3F09264A2E81F188006566D8 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/awslabs/aws-sdk-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.47;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3F09264B2E81F188006566D8 /* AWSClientRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F09264A2E81F188006566D8 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSClientRuntime;
+		};
+		3F09264D2E81F188006566D8 /* AWSCognitoIdentity */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F09264A2E81F188006566D8 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSCognitoIdentity;
+		};
+		3F09264F2E81F188006566D8 /* AWSCognitoIdentityProvider */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F09264A2E81F188006566D8 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSCognitoIdentityProvider;
+		};
+		3F0926512E81F188006566D8 /* AWSS3 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F09264A2E81F188006566D8 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
+			productName = AWSS3;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 3F0926052E81EFDA006566D8 /* Project object */;
+}
