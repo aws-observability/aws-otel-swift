@@ -193,22 +193,16 @@ class DeviceKitPolyfillTests: XCTestCase {
     }
   #endif
 
-  #if !os(iOS) && !os(tvOS) && !os(watchOS)
-    func testHomePodModels() {
-      XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "AudioAccessory1,1"), "HomePod")
-    }
-  #endif
-
   func testSimulatorIdentifiers() {
     // Simulator identifiers should return simulator format with fallback device name
     let i386Result = DeviceKitPolyfill.mapToDevice(identifier: "i386")
-    XCTAssertTrue(i386Result.contains("Simulator"))
+    XCTAssertTrue(i386Result.contains("Simulator"), "Expected result to contain 'Simulator', but got: \(i386Result)")
 
     let x86Result = DeviceKitPolyfill.mapToDevice(identifier: "x86_64")
-    XCTAssertTrue(x86Result.contains("Simulator"))
+    XCTAssertTrue(x86Result.contains("Simulator"), "Expected result to contain 'Simulator', but got: \(x86Result)")
 
     let armResult = DeviceKitPolyfill.mapToDevice(identifier: "arm64")
-    XCTAssertTrue(armResult.contains("Simulator"))
+    XCTAssertTrue(armResult.contains("Simulator"), "Expected result to contain 'Simulator', but got: \(armResult)")
   }
 
   func testUnknownIdentifier() {

@@ -135,7 +135,6 @@ public class DeviceKitPolyfill {
       case "iPad14,5", "iPad14,6": return "iPad Pro (12.9-inch) (6th generation)"
       case "iPad16,3", "iPad16,4": return "iPad Pro (11-inch) (M4)"
       case "iPad16,5", "iPad16,6": return "iPad Pro (13-inch) (M4)"
-      case "AudioAccessory1,1": return "HomePod"
       case "i386", "x86_64", "arm64": return simulator(mapToDevice(identifier: ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] ?? "iOS"))
       default: return unknown(identifier)
       }
@@ -186,9 +185,15 @@ public class DeviceKitPolyfill {
       }
     #elseif os(visionOS)
       // TODO: Replace with proper implementation for visionOS.
-      return unknown(identifier)
+      switch identifier {
+      case "i386", "x86_64", "arm64": return simulator(mapToDevice(identifier: ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] ?? "visionOS"))
+      default: return unknown(identifier)
+      }
     #else
-      return unknown(identifier)
+      switch identifier {
+      case "i386", "x86_64", "arm64": return simulator(mapToDevice(identifier: ProcessInfo().environment["SIMULATOR_MODEL_IDENTIFIER"] ?? "macOS"))
+      default: return unknown(identifier)
+      }
     #endif
   }
 
