@@ -77,7 +77,7 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
     let span = tracer.spanBuilder(spanName: "test-span").startSpan()
     span.end()
 
-    tracerProvider.forceFlush()
+    tracerProvider.forceFlush(timeout: 1.0)
 
     let exportedSpans = spanExporter.getExportedSpans()
     XCTAssertEqual(exportedSpans.count, 1)
