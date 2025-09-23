@@ -40,6 +40,7 @@ class LoaderViewModel: ObservableObject {
 
   @Published var showingCustomLogForm = false
   @Published var showingCustomSpanForm = false
+  @Published var showingGlobalAttributesView = false
 
   /// Timer for updating the digital clock
   private var clockTimer: AnyCancellable?
@@ -171,6 +172,10 @@ class LoaderViewModel: ObservableObject {
 
   func showCustomSpanForm() {
     showingCustomSpanForm = true
+  }
+
+  func showGlobalAttributesView() {
+    showingGlobalAttributesView = true
   }
 
   func createCustomSpan(name: String, attributes: [String: String]) {

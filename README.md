@@ -259,12 +259,12 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 #### Root Configuration
 
-| Field                 | Type    | Required | Default | Description                                                       |
-| --------------------- | ------- | -------- | ------- | ----------------------------------------------------------------- |
-| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires |
-| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                               |
-| applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata                          |
-| debug                 | Boolean | No       | false   | Flag to enable debug logging                                      |
+| Field                 | Type    | Required | Default | Description                                                                                                                       |
+| --------------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires                                                                 |
+| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                                                                                               |
+| applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata. These are added to all logs and spans as regular attributes (via [global attributes API](Sources/AwsOpenTelemetryCore/GlobalAttributes/README.md)) |
+| debug                 | Boolean | No       | false   | Flag to enable debug logging                                                                                                      |
 
 #### TelemetryConfig
 
@@ -288,7 +288,7 @@ This project includes comprehensive test suites. For detailed testing instructio
 **Quick Test Command:**
 
 ```bash
-swift test # macOS
+make test-macos # macOS
 make test-ios # iOS
 make test-tvos # tvOS
 make test-watchos # watchOS
@@ -303,10 +303,12 @@ make check-coverage # macOS
 ```
 
 ### Contract Tests
+
 Contract tests require the following two steps:
+
 1. Run the otel-collector locally.
 
-This can be done using Docker: 
+This can be done using Docker:
 
 ```bash
 cd ./Tests/ContractTests/MockCollector
@@ -314,7 +316,7 @@ docker compose up
 cd ../../..
 ```
 
-Or without Docker by manually downloading the otel-collector (to emulate the Github Actions workflow): 
+Or without Docker by manually downloading the otel-collector (to emulate the Github Actions workflow):
 
 ```bash
 cd ./Tests/ContractTests/MockCollector
@@ -323,10 +325,9 @@ tar -xvf otelcol_0.133.0_darwin_arm64.tar.gz
 cd ../../..
 ```
 
-
 2. Use the UITests framework using XCUIApplication to tap buttons on the sample app and generate data.
 
-Commands to generate contract test data: 
+Commands to generate contract test data:
 
 ```bash
 cd ./Examples/SimpleAwsDemo/SimpleAwsDemo.xcodeproj
@@ -334,13 +335,13 @@ make contract-test-generate-data-ios
 cd ../../..
 ```
 
-3. Run the following command to make sure that `logs.txt` and `traces.txt` were generated successfully: 
+3. Run the following command to make sure that `logs.txt` and `traces.txt` were generated successfully:
 
 ```bash
 ls -al /tmp/otel-swift-collector
 ```
 
-4. Run the unit test plan `ContractTestPlan` to read the generated data and validate the spans and logs written to file. 
+4. Run the unit test plan `ContractTestPlan` to read the generated data and validate the spans and logs written to file.
 
 Command to run contract tests:
 

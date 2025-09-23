@@ -97,6 +97,14 @@ public class AwsOpenTelemetryRumBuilder {
     let sessionConfig = AwsSessionConfig(sessionTimeout: config.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
     let sessionManager = AwsSessionManager(configuration: sessionConfig)
     AwsSessionManagerProvider.register(sessionManager: sessionManager)
+
+    // Add applicationAttributes to global attributes
+    if let applicationAttributes = config.applicationAttributes {
+      let globalAttributesManager = GlobalAttributesProvider.getInstance()
+      for (key, value) in applicationAttributes {
+        globalAttributesManager.setAttribute(key: key, value: AttributeValue.string(value))
+      }
+    }
   }
 
   /**
@@ -348,9 +356,9 @@ public class AwsOpenTelemetryRumBuilder {
     ]
 
     let cloudResourceAttributes: [String: String] = [
-      ResourceAttributes.cloudRegion.rawValue: config.aws.region,
-      ResourceAttributes.cloudProvider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
-      ResourceAttributes.cloudPlatform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
+      SemanticConventions.Cloud.region.rawValue: config.aws.region,
+      SemanticConventions.Cloud.provider.rawValue: AwsAttributes.awsCloudProvider.rawValue,
+      SemanticConventions.Cloud.platform.rawValue: AwsAttributes.awsRumCloudPlatform.rawValue
     ]
 
     let resource = DefaultResources().get()
@@ -414,6 +422,7 @@ public class AwsOpenTelemetryRumBuilder {
       .add(spanProcessor: MultiSpanProcessor(
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
+      .add(spanProcessor: GlobalAttributesSpanProcessor(globalAttributesManager: GlobalAttributesProvider.getInstance()))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
       .add(spanProcessor: AwsUIDSpanProcessor(uidManager: AwsUIDManagerProvider.getInstance()))
       .with(resource: resource)
@@ -439,9 +448,10 @@ public class AwsOpenTelemetryRumBuilder {
     let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
     let sessionProcessor = AwsSessionLogRecordProcessor(nextProcessor: uidProcessor)
+    let globalAttributesProcessor = GlobalAttributesLogRecordProcessor(nextProcessor: sessionProcessor)
 
     let builder = LoggerProviderBuilder()
-      .with(processors: [sessionProcessor])
+      .with(processors: [globalAttributesProcessor])
       .with(resource: resource)
 
     // Apply all customizers in order

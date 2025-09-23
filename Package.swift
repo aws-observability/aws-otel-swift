@@ -37,7 +37,7 @@ let package = Package(
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
       ],
-      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md"]
+      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -95,7 +95,8 @@ let package = Package(
       name: "ContractTests",
       dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
       path: "Tests/ContractTests",
-      exclude: ["README.md", "OLTPParser", "OLTPResolver.swift"]
+      exclude: ["MockCollector"],
+      sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
     )
   ]
 ).addPlatformSpecific()

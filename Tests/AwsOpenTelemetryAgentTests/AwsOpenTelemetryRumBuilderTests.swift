@@ -142,6 +142,27 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     XCTAssertTrue(loggerCustomizerCalled, "Logger provider customizer should be called")
   }
 
+  func testApplicationAttributesAddedToGlobalAttributes() {
+    // Test that applicationAttributes are added to global attributes during initialization
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let applicationAttributes = [
+      "application.version": "1.2.3",
+      "application.name": "TestApp"
+    ]
+    let config = AwsOpenTelemetryConfig(
+      aws: awsConfig,
+      applicationAttributes: applicationAttributes
+    )
+
+    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config))
+
+    let globalAttributesManager = GlobalAttributesProvider.getInstance()
+    let globalAttributes = globalAttributesManager.getAttributes()
+
+    XCTAssertEqual(globalAttributes["application.version"], AttributeValue.string("1.2.3"))
+    XCTAssertEqual(globalAttributes["application.name"], AttributeValue.string("TestApp"))
+  }
+
   #if canImport(UIKit) && !os(watchOS)
     func testUIKitInstrumentationConfiguration() {
       // Test UIKit instrumentation enabled/disabled/default scenarios

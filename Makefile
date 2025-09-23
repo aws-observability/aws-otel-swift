@@ -127,6 +127,10 @@ build-for-testing-tvos:
 build-for-testing-watchos:
 	set -o pipefail && xcodebuild OTHER_LDFLAGS="$(OTHER_LDFLAGS) -fprofile-instr-generate" $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify --renderer github-actions
 
+.PHONY: test-macos
+test-macos:  ## Run tests on macOS excluding ContractTests
+	swift test --skip ContractTests
+
 # Test Commands - Full build + test cycle
 .PHONY: test-ios
 test-ios:  ## Run full test cycle for iOS
