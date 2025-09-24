@@ -1,13 +1,6 @@
-//
-//  PerformanceTests.swift
-//  PerformanceTests
-//
-//  Created by Kambhampaty, Rekha on 9/23/25.
-//
-
 import XCTest
 
-final class PerformanceTests: XCTestCase {
+class PerformanceTests: XCTestCase {
   override func setUpWithError() throws {
     // Put setup code here. This method is called before the invocation of each test method in the class.
 
@@ -29,23 +22,23 @@ final class PerformanceTests: XCTestCase {
     }
   }
 
-  // @MainActor
-  // func testNetworkRequestPerformance() throws {
-  //     // This measures how long it takes to launch your application.
-  //     let app = XCUIApplication()
-  //     app.launch()
+  @MainActor
+  func testNetworkRequestPerformance() throws {
+    // This measures how long it takes to launch your application.
+    let app = XCUIApplication()
+    app.launch()
 
-  //     let scrollView: XCUIElement = app.scrollViews["SampleScrollView"]
-  //     let http5xxRequestButton: XCUIElement = app.buttons["5xx HTTP Request"]
-  //     var scrollCount = 0
-  //     let maxScrollAttempts = 10
-  //     while !http5xxRequestButton.isHittable, scrollCount < maxScrollAttempts {
-  //         scrollView.swipeUp(velocity: XCUIGestureVelocity(100))
-  //         scrollCount += 1
-  //     }
+    let scrollView: XCUIElement = app.scrollViews["SampleScrollView"]
+    let http5xxRequestButton: XCUIElement = app.buttons["5xx HTTP Request"]
+    var scrollCount = 0
+    let maxScrollAttempts = 10
+    while !http5xxRequestButton.isHittable, scrollCount < maxScrollAttempts {
+      scrollView.swipeUp(velocity: XCUIGestureVelocity(100))
+      scrollCount += 1
+    }
 
-  //     measure(metrics: [XCTClockMetric(), XCTCPUMetric(), XCTMemoryMetric()]) {
-  //         http5xxRequestButton.tap()
-  //     }
-  // }
+    measure(metrics: [XCTClockMetric(), XCTCPUMetric(), XCTMemoryMetric()]) {
+      http5xxRequestButton.tap()
+    }
+  }
 }

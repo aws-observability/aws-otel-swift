@@ -68,9 +68,9 @@ contract-test-generate-data-watchos: ## `xcodebuild test` automatically builds a
 
 .PHONY: contract-test-generate-data-visionos
 contract-test-generate-data-visionos: ## `xcodebuild test` automatically builds and tests
-	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) | xcbeautify
+	xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT) | xcbeautify --renderer github-actions
 
 # Performance Test Commands
 .PHONY: performance-test-ios
 performance-test-ios: ## `xcodebuild test` automatically builds and tests
-	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_PERFORMANCE) | xcbeautify --renderer github-actions
+	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_PERFORMANCE) | xcbeautify 

@@ -17,4 +17,4 @@ XCODEBUILD_OPTIONS_IOS_PERFORMANCE=\
 # Performance Test Commands
 .PHONY: performance-test-ios
 performance-test-ios: ## `xcodebuild test` automatically builds and tests
-	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_PERFORMANCE) | xcbeautify --renderer github-actions
+	xcodebuild test $(XCODEBUILD_OPTIONS_IOS_PERFORMANCE) | xcbeautify 
