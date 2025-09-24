@@ -26,13 +26,13 @@ runs:
       shell: bash
       run: |
         cd ${{ github.workspace }}/Examples/SimpleAwsDemo
-        make performance-test-${{ inputs.destination }} > /tmp/SimpleAwsDemo/performanceTests/output
+        make performance-test-${{ inputs.destination }} | tee /tmp/SimpleAwsDemo/performanceTests/output
 
     - name: Run Performance Tests on BaselineSimpleAwsDemo
       shell: bash
       run: |
         cd ${{ github.workspace }}/Examples/BaselineSimpleAwsDemo
-        make performance-test-${{ inputs.destination }} > /tmp/BaselineSimpleAwsDemo/performanceTests/output
+        make performance-test-${{ inputs.destination }} | tee /tmp/BaselineSimpleAwsDemo/performanceTests/output
 
     - uses: actions/upload-artifact@v4
       with:
