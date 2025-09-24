@@ -17,6 +17,11 @@ import Foundation
 import AwsCommonRuntimeKit
 import AWSCognitoIdentity
 
+enum CustomError: Error {
+  case noIdentityId
+  case credentialsError
+}
+
 /**
  * A credentials provider that retrieves AWS credentials from Amazon Cognito Identity
  * and caches them to avoid unnecessary API calls.
@@ -120,7 +125,7 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
     )
 
     guard let identityId = identityOutput.identityId else {
-      throw AwsOpenTelemetryAuthError.noIdentityId
+      throw CustomError.noIdentityId
     }
     return identityId
   }
@@ -145,7 +150,7 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
     )
 
     guard let credentials = credentialsOutput.credentials else {
-      throw AwsOpenTelemetryAuthError.credentialsError
+      throw CustomError.credentialsError
     }
     return credentials
   }

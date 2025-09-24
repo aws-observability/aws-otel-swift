@@ -1,0 +1,55 @@
+
+
+name: 'Contract Tests'
+description: 'Reusable contract tests action with specified SDK version'
+inputs:
+  api-level:
+    description: 'SDK version to use (e.g., 18)'
+    required: true
+  destination:
+    description: 'Platform on which contract tests need to be run (e.g., ios)'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Prepare directory
+      shell: bash
+      run: |
+        sudo mkdir -p /tmp/SimpleAwsDemo
+        sudo mkdir -p /tmp/BaselineSimpleAwsDemo
+        sudo chmod 777 /tmp/SimpleAwsDemo
+        sudo chmod 777 /tmp/BaselineSimpleAwsDemo
+
+    - name: Run Performance Tests on SimpleAwsDemo
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/Examples/SimpleAwsDemo
+        make performance-test-${{ inputs.destination }} > /tmp/SimpleAwsDemo/performanceTests/output
+
+    - name: Run Performance Tests on BaselineSimpleAwsDemo
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/Examples/BaselineSimpleAwsDemo
+        make performance-test-${{ inputs.destination }} > /tmp/BaselineSimpleAwsDemo/performanceTests/output
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: test-app-performance-${{ inputs.api-level }}
+        path: /tmp/SimpleAwsDemo/performanceTests/output
+        overwrite: true 
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: baseline-app-performance-${{ inputs.api-level }}
+        path: /tmp/BaselineSimpleAwsDemo/performanceTests/output
+        overwrite: true 
+
+    - name: Check performance 
+      shell: bash
+      run: |
+        set -o pipefail && sh ./scripts/check-performance.sh
+
+
+  

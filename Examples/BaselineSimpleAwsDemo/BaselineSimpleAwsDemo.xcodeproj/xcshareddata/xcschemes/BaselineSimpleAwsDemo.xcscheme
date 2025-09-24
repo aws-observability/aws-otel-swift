@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "306BC6972E00C6AA00F19E48"
-               BuildableName = "SimpleAwsDemo.app"
-               BlueprintName = "SimpleAwsDemo"
-               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+               BlueprintIdentifier = "3F09260C2E81EFDA006566D8"
+               BuildableName = "BaselineSimpleAwsDemo.app"
+               BlueprintName = "BaselineSimpleAwsDemo"
+               ReferencedContainer = "container:BaselineSimpleAwsDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -30,11 +30,8 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:UITests.xctestplan"
+            reference = "container:PerformanceTests.xctestplan"
             default = "YES">
-         </TestPlanReference>
-         <TestPlanReference
-            reference = "container:PerformanceTests.xctestplan">
          </TestPlanReference>
       </TestPlans>
       <Testables>
@@ -43,10 +40,10 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3F9C08CC2E68E8000017439E"
-               BuildableName = "UITests.xctest"
-               BlueprintName = "UITests"
-               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+               BlueprintIdentifier = "3F09261A2E81EFDC006566D8"
+               BuildableName = "BaselineSimpleAwsDemoTests.xctest"
+               BlueprintName = "BaselineSimpleAwsDemoTests"
+               ReferencedContainer = "container:BaselineSimpleAwsDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -54,10 +51,21 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "3FEA797B2E833B050026E7AB"
+               BlueprintIdentifier = "3F0926242E81EFDC006566D8"
+               BuildableName = "BaselineSimpleAwsDemoUITests.xctest"
+               BlueprintName = "BaselineSimpleAwsDemoUITests"
+               ReferencedContainer = "container:BaselineSimpleAwsDemo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3FEA79AB2E834B920026E7AB"
                BuildableName = "PerformanceTests.xctest"
                BlueprintName = "PerformanceTests"
-               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+               ReferencedContainer = "container:BaselineSimpleAwsDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -76,19 +84,12 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "306BC6972E00C6AA00F19E48"
-            BuildableName = "SimpleAwsDemo.app"
-            BlueprintName = "SimpleAwsDemo"
-            ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+            BlueprintIdentifier = "3F09260C2E81EFDA006566D8"
+            BuildableName = "BaselineSimpleAwsDemo.app"
+            BlueprintName = "BaselineSimpleAwsDemo"
+            ReferencedContainer = "container:BaselineSimpleAwsDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "CFNETWORK_DIAGNOSTICS"
-            value = "3"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -100,10 +101,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "306BC6972E00C6AA00F19E48"
-            BuildableName = "SimpleAwsDemo.app"
-            BlueprintName = "SimpleAwsDemo"
-            ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+            BlueprintIdentifier = "3F09260C2E81EFDA006566D8"
+            BuildableName = "BaselineSimpleAwsDemo.app"
+            BlueprintName = "BaselineSimpleAwsDemo"
+            ReferencedContainer = "container:BaselineSimpleAwsDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
