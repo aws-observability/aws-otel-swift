@@ -1,7 +1,7 @@
 
 
-name: 'Contract Tests'
-description: 'Reusable contract tests action with specified SDK version'
+name: 'Performance Tests'
+description: 'Reusable performance tests action with specified SDK version'
 inputs:
   api-level:
     description: 'SDK version to use (e.g., 18)'
