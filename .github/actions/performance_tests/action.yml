@@ -17,10 +17,10 @@ runs:
     - name: Prepare directory
       shell: bash
       run: |
-        sudo mkdir -p /tmp/SimpleAwsDemo
-        sudo mkdir -p /tmp/BaselineSimpleAwsDemo
-        sudo chmod 777 /tmp/SimpleAwsDemo
-        sudo chmod 777 /tmp/BaselineSimpleAwsDemo
+        sudo mkdir -p /tmp/SimpleAwsDemo/performanceTests
+        sudo mkdir -p /tmp/BaselineSimpleAwsDemo/performanceTests
+        sudo chmod 777 /tmp/SimpleAwsDemo/performanceTests
+        sudo chmod 777 /tmp/BaselineSimpleAwsDemo/performanceTests
 
     - name: Run Performance Tests on SimpleAwsDemo
       shell: bash
