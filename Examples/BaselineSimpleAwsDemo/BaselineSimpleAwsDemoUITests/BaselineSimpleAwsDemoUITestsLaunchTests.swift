@@ -1,13 +1,6 @@
-//
-//  BaselineSimpleAwsDemoUITestsLaunchTests.swift
-//  BaselineSimpleAwsDemoUITests
-//
-//  Created by Kambhampaty, Rekha on 9/22/25.
-//
-
 import XCTest
 
-final class BaselineSimpleAwsDemoUITestsLaunchTests: XCTestCase {
+class BaselineSimpleAwsDemoUITestsLaunchTests: XCTestCase {
   override class var runsForEachTargetApplicationUIConfiguration: Bool {
     true
   }

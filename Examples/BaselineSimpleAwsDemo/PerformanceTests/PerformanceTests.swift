@@ -1,10 +1,3 @@
-//
-//  PerformanceTests.swift
-//  PerformanceTests
-//
-//  Created by Kambhampaty, Rekha on 9/23/25.
-//
-
 import XCTest
 
 final class PerformanceTests: XCTestCase {
