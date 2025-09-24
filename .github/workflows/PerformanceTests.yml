@@ -15,8 +15,8 @@ jobs:
   ios:
     runs-on: macos-15-xlarge
 
-    # This job will be cancelled after 45 minutes
-    timeout-minutes: 45
+    # This job will be cancelled after 60 minutes
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
