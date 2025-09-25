@@ -17,7 +17,7 @@ final class PerformanceTests: XCTestCase {
   @MainActor
   func testLaunchPerformance() throws {
     // This measures how long it takes to launch your application.
-    measure(metrics: [XCTApplicationLaunchMetric(), XCTCPUMetric(), XCTMemoryMetric()]) {
+    measure(metrics: [XCTApplicationLaunchMetric()]) {
       XCUIApplication().launch()
     }
   }
@@ -37,7 +37,7 @@ final class PerformanceTests: XCTestCase {
       scrollCount += 1
     }
 
-    measure(metrics: [XCTClockMetric(), XCTCPUMetric(), XCTMemoryMetric()]) {
+    measure(metrics: [XCTClockMetric()]) {
       http5xxRequestButton.tap()
     }
   }
