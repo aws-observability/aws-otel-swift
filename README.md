@@ -348,6 +348,24 @@ Command to run contract tests:
 make contract-test-run-ios
 ```
 
+### Performance Tests
+
+To run programmatic performance tests (using the UITests framework), run the following commands:
+
+- `SimpleAwsDemo`
+
+```
+cd ./Examples/SimpleAwsDemo
+make performance-test-ios
+```
+
+- `BaselineSimpleAwsDemo`
+
+```
+cd ./Examples/BaselineSimpleAwsDemo
+make performance-test-ios
+```
+
 ## Development Setup
 
 ### Git Hooks
