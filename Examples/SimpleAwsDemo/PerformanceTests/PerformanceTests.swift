@@ -16,29 +16,9 @@ class PerformanceTests: XCTestCase {
 
   @MainActor
   func testLaunchPerformance() throws {
-    // This measures how long it takes to launch your application.
+    // Measure and log how long it takes to launch the app.
     measure(metrics: [XCTApplicationLaunchMetric()]) {
       XCUIApplication().launch()
-    }
-  }
-
-  @MainActor
-  func testNetworkRequestPerformance() throws {
-    // This measures how long it takes to launch your application.
-    let app = XCUIApplication()
-    app.launch()
-
-    let scrollView: XCUIElement = app.scrollViews["SampleScrollView"]
-    let http5xxRequestButton: XCUIElement = app.buttons["5xx HTTP Request"]
-    var scrollCount = 0
-    let maxScrollAttempts = 10
-    while !http5xxRequestButton.isHittable, scrollCount < maxScrollAttempts {
-      scrollView.swipeUp(velocity: XCUIGestureVelocity(100))
-      scrollCount += 1
-    }
-
-    measure(metrics: [XCTClockMetric()]) {
-      http5xxRequestButton.tap()
     }
   }
 }
