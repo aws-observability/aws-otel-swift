@@ -22,8 +22,14 @@ struct SimpleAwsDemoApp: App {
   private let region = "YOUR_REGION_FROM_OUTPUT"
   private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
 
+  private func isNotZeroCodeRun() -> Bool {
+    return !ProcessInfo.processInfo.arguments.contains("--zeroCodeMode")
+  }
+
   init() {
-    setupOpenTelemetry()
+    if isNotZeroCodeRun() {
+      setupOpenTelemetry()
+    }
   }
 
   var body: some Scene {

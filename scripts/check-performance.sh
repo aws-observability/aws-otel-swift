@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TEST_APP_APPLAUNCH_DURATION=$(grep "Duration (AppLaunch)" /tmp/SimpleAwsDemo/performanceTests/output | sed 's/.*(\([0-9.]*\) s.*/\1/')
+TEST_APP_APPLAUNCH_DURATION=$(grep "testLaunchPerformance.*Duration (AppLaunch)" /tmp/SimpleAwsDemo/performanceTests/output | sed 's/.*(\([0-9.]*\) s.*/\1/')
 
 BASELINE_APP_APPLAUNCH_DURATION=$(grep "Duration (AppLaunch)" /tmp/BaselineSimpleAwsDemo/performanceTests/output | sed 's/.*(\([0-9.]*\) s.*/\1/')
 
