@@ -23,11 +23,11 @@ class PerformanceTests: XCTestCase {
   }
 
   @MainActor
-  func testZeroCodeLaunchPerformance() throws {
+  func testImportCoreNoInitializationLaunchPerformance() throws {
     // Measure and log how long it takes to launch the app.
     measure(metrics: [XCTApplicationLaunchMetric()]) {
       let app = XCUIApplication()
-      app.launchArguments.append("--zeroCodeMode")
+      app.launchArguments.append("--importCoreNoInitialization")
       app.launch()
     }
   }

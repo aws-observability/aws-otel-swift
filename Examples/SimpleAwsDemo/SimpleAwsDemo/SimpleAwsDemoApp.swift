@@ -22,12 +22,12 @@ struct SimpleAwsDemoApp: App {
   private let region = "YOUR_REGION_FROM_OUTPUT"
   private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
 
-  private func isNotZeroCodeRun() -> Bool {
-    return !ProcessInfo.processInfo.arguments.contains("--zeroCodeMode")
+  private func isImportCoreNoInitialization() -> Bool {
+    return !ProcessInfo.processInfo.arguments.contains("--importCoreNoInitialization")
   }
 
   init() {
-    if isNotZeroCodeRun() {
+    if isImportCoreNoInitialization() {
       setupOpenTelemetry()
     }
   }
