@@ -22,8 +22,14 @@ struct SimpleAwsDemoApp: App {
   private let region = "YOUR_REGION_FROM_OUTPUT"
   private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
 
+  private func isImportCoreNoInitialization() -> Bool {
+    return !ProcessInfo.processInfo.arguments.contains("--importCoreNoInitialization")
+  }
+
   init() {
-    setupOpenTelemetry()
+    if isImportCoreNoInitialization() {
+      setupOpenTelemetry()
+    }
   }
 
   var body: some Scene {

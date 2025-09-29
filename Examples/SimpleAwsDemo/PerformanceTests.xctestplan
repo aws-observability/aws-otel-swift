@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "7D984EE3-BE36-4261-AC79-50FAD4AD1374",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:SimpleAwsDemo.xcodeproj",
+        "identifier" : "3FEA797B2E833B050026E7AB",
+        "name" : "PerformanceTests"
+      }
+    }
+  ],
+  "version" : 1
+}

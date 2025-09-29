@@ -1,6 +1,6 @@
 import XCTest
 
-class UITests: XCTestCase {
+class PerformanceTests: XCTestCase {
   override func setUpWithError() throws {
     // Put setup code here. This method is called before the invocation of each test method in the class.
 
@@ -15,19 +15,20 @@ class UITests: XCTestCase {
   }
 
   @MainActor
-  func testExample() throws {
-    // UI tests must launch the application that they test.
-    let app = XCUIApplication()
-    app.launch()
-
-    // Use XCTAssert and related functions to verify your tests produce the correct results.
+  func testLaunchPerformance() throws {
+    // Measure and log how long it takes to launch the app.
+    measure(metrics: [XCTApplicationLaunchMetric()]) {
+      XCUIApplication().launch()
+    }
   }
 
   @MainActor
-  func testLaunchPerformance() throws {
-    // This measures how long it takes to launch your application.
+  func testImportCoreNoInitializationLaunchPerformance() throws {
+    // Measure and log how long it takes to launch the app.
     measure(metrics: [XCTApplicationLaunchMetric()]) {
-      XCUIApplication().launch()
+      let app = XCUIApplication()
+      app.launchArguments.append("--importCoreNoInitialization")
+      app.launch()
     }
   }
 }

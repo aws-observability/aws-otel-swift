@@ -33,6 +33,9 @@
             reference = "container:UITests.xctestplan"
             default = "YES">
          </TestPlanReference>
+         <TestPlanReference
+            reference = "container:PerformanceTests.xctestplan">
+         </TestPlanReference>
       </TestPlans>
       <Testables>
          <TestableReference
@@ -43,6 +46,17 @@
                BlueprintIdentifier = "3F9C08CC2E68E8000017439E"
                BuildableName = "UITests.xctest"
                BlueprintName = "UITests"
+               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3FEA797B2E833B050026E7AB"
+               BuildableName = "PerformanceTests.xctest"
+               BlueprintName = "PerformanceTests"
                ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>

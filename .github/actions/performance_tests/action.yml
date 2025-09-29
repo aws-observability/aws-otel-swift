@@ -1,0 +1,41 @@
+
+
+name: 'Performance Tests'
+description: 'Reusable performance tests action with specified SDK version'
+inputs:
+  api-level:
+    description: 'SDK version to use (e.g., 18)'
+    required: true
+  destination:
+    description: 'Platform on which contract tests need to be run (e.g., ios)'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Prepare directory
+      shell: bash
+      run: |
+        sudo mkdir -p /tmp/SimpleAwsDemo/performanceTests
+        sudo chmod 777 /tmp/SimpleAwsDemo/performanceTests
+
+    - name: Run Performance Tests on SimpleAwsDemo
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/Examples/SimpleAwsDemo
+        make performance-test-${{ inputs.destination }} | tee /tmp/SimpleAwsDemo/performanceTests/output
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: test-app-performance-${{ inputs.api-level }}
+        path: /tmp/SimpleAwsDemo/performanceTests/output
+        overwrite: true 
+
+    - name: Check performance 
+      shell: bash
+      run: |
+        set -o pipefail && sh ./scripts/check-performance.sh
+
+
+  
