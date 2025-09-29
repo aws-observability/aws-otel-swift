@@ -350,7 +350,7 @@ make contract-test-run-ios
 
 ### Performance Tests
 
-Performance tests measure app launch duration programmatically using `XCUIApplication` and the [UITests](https://developer.apple.com/documentation/Xcode/adding-tests-to-your-xcode-project#Write-a-UI-test) framework. The goal of performance tests run on PR is to identify a regression in performance. Please note that when run on PR, these tests are hosted on a Github macos runner and run on a simulator. Consequently, the duration reported by the test on PR is not an accurate representation of time take on a real device. Instead, we use use the duration to understand the relative difference between a baseline run without instrumentation and an instrumented run, and ensure it doesn't exceed the threshold set in [scripts/check-performance.sh](./scripts/check-performance.sh). 
+Performance tests measure app launch duration programmatically using `XCUIApplication` and the [UITests](https://developer.apple.com/documentation/Xcode/adding-tests-to-your-xcode-project#Write-a-UI-test) framework. The goal of performance tests run on PR is to identify a regression in performance. Please note that when run on PR, these tests are hosted on a Github macos runner and run on a simulator. Consequently, the duration reported by the test on PR is not an accurate representation of time take on a real device. Instead, we use use the duration to understand the relative difference with and without calling `setupOpenTelemetry()`, and ensure it doesn't exceed the threshold set in [scripts/check-performance.sh](./scripts/check-performance.sh). 
 
 To run programmatic performance tests (using the UITests framework), run the following commands:
 
@@ -358,13 +358,6 @@ To run programmatic performance tests (using the UITests framework), run the fol
 
 ```
 cd ./Examples/SimpleAwsDemo
-make performance-test-ios
-```
-
-- `BaselineSimpleAwsDemo`
-
-```
-cd ./Examples/BaselineSimpleAwsDemo
 make performance-test-ios
 ```
 
