@@ -4,7 +4,7 @@ TEST_APP_APPLAUNCH_DURATION=$(grep "testLaunchPerformance.*Duration (AppLaunch)"
 
 BASELINE_APP_APPLAUNCH_DURATION=$(grep "testImportCoreNoInitializationLaunchPerformance.*Duration (AppLaunch)" /tmp/SimpleAwsDemo/performanceTests/output | sed 's/.*(\([0-9.]*\) s.*/\1/')
 
-THRESHOLD_SECONDS=1.5
+THRESHOLD_SECONDS=1.2
 
 DIFF=$(echo "$TEST_APP_APPLAUNCH_DURATION - $BASELINE_APP_APPLAUNCH_DURATION" | bc -l)
 
