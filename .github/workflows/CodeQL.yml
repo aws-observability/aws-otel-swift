@@ -23,3 +23,30 @@ jobs:
         run: brew install swiftformat swiftlint
       - name: Run linting
         run: make lint
+
+  scancode:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: fossology/scancode-action@v1
+        with:
+          path: '.'
+          format: 'json'
+          output: 'scancode-results.json'
+      - name: Upload scancode results
+        uses: actions/upload-artifact@v4
+        with:
+          name: scancode-results
+          path: scancode-results.json
+
+  trufflehog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          path: '.'
+          base: main
+          head: HEAD
