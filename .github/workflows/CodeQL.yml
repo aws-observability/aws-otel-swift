@@ -38,11 +38,17 @@ jobs:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-scancode-31.2.6
           restore-keys: |
-            ${{ runner.os }}-pip-
+            ${{ runner.os }}-pip-g
       - name: Install scancode-toolkit
-        run: pip install scancode-toolkit==31.2.6
+        run: |
+          /usr/bin/python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip setuptools wheel
+          pip install scancode-toolkit==31.2.6
       - name: Run scancode
-        run: scancode --license --copyright --json-pp scancode-results.json .
+        run: |
+          source venv/bin/activate
+          scancode --license --copyright --json-pp scancode-results.json .
       - name: Upload scancode results
         uses: actions/upload-artifact@v4
         with:
