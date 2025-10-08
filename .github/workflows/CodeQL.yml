@@ -28,11 +28,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: fossology/scancode-action@v1
-        with:
-          path: '.'
-          format: 'json'
-          output: 'scancode-results.json'
+      - name: Install scancode-toolkit
+        run: pip install scancode-toolkit
+      - name: Run scancode
+        run: scancode --json scancode-results.json .
       - name: Upload scancode results
         uses: actions/upload-artifact@v4
         with:
