@@ -28,10 +28,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - name: Install scancode-toolkit
-        run: pip install scancode-toolkit==32.3.0
+        run: pip install scancode-toolkit==31.2.6
       - name: Run scancode
-        run: scancode --json-pp scancode-results.json --license --copyright .
+        run: scancode --license --copyright --json-pp scancode-results.json .
       - name: Upload scancode results
         uses: actions/upload-artifact@v4
         with:
