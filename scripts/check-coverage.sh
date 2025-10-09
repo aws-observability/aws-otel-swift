@@ -41,7 +41,7 @@ if git rev-parse --verify origin/main >/dev/null 2>&1; then
         head -1 "$COVERAGE_FILE"
         echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done
 
-        changed_coverage=$(echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 0}')
+        changed_coverage=$(echo "$changed_sources" | while read file; do grep "^$file" "$COVERAGE_FILE" || true; done | awk '{lines += $8; missed += $9} END {if (lines > 0) print ((lines - missed) / lines * 100); else print 100}')
         echo "Changed files coverage: ${changed_coverage}%"
         
         if (( $(echo "$changed_coverage < $PR_COVERAGE_THRESHOLD" | bc -l) )); then
