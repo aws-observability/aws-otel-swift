@@ -48,33 +48,6 @@ final class AwsOTelTraceViewTests: XCTestCase {
     AwsOpenTelemetryAgent.shared.configuration = nil
   }
 
-  func testTraceViewBasicInitialization() {
-    XCTAssertNoThrow {
-      let traceView = AwsOTelTraceView("TestView") {
-        Text("Test Content")
-      }
-      XCTAssertNotNil(traceView)
-    }
-  }
-
-  func testTraceViewWithStringAttributes() {
-    XCTAssertNoThrow {
-      let traceView = AwsOTelTraceView("TestView", attributes: ["screen_type": "test"]) {
-        Text("Test Content")
-      }
-      XCTAssertNotNil(traceView)
-    }
-  }
-
-  func testTraceViewWithAttributeValues() {
-    XCTAssertNoThrow {
-      let traceView = AwsOTelTraceView("TestView", attributes: ["screen_type": .string("test")]) {
-        Text("Test Content")
-      }
-      XCTAssertNotNil(traceView)
-    }
-  }
-
   func testBody() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
@@ -187,5 +160,36 @@ final class AwsOTelTraceViewTests: XCTestCase {
 
     let duration = durationSpan.endTime.timeIntervalSince(durationSpan.startTime)
     XCTAssertGreaterThanOrEqual(duration, 0, "Duration span should measure at least 0 seconds")
+  }
+
+  func testTraceViewAttributesAppliedToSpans() {
+    let config = AwsOpenTelemetryConfig(
+      aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
+      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+    )
+    AwsOpenTelemetryAgent.shared.configuration = config
+
+    let traceView = AwsOTelTraceView("TestView", attributes: [
+      "screen_type": .string("test"),
+      "user_id": .int(123),
+      "is_premium": .bool(true),
+      "score": .double(98.5)
+    ]) {
+      Text("Test Content")
+    }
+
+    traceView.handleViewAppear()
+    traceView.handleViewDisappear()
+
+    let spans = mockSpanProcessor.getEndedSpans()
+    let viewSpans = spans.filter { $0.name == AwsViewConstants.spanNameView }
+    XCTAssertEqual(viewSpans.count, 1)
+
+    let viewSpan = viewSpans.first!
+    XCTAssertEqual(viewSpan.attributes["screen_type"]?.description, "test")
+    XCTAssertEqual(viewSpan.attributes["user_id"]?.description, "123")
+    XCTAssertEqual(viewSpan.attributes["is_premium"]?.description, "true")
+    XCTAssertEqual(viewSpan.attributes["score"]?.description, "98.5")
+    XCTAssertEqual(viewSpan.attributes[AwsViewConstants.attributeScreenName]?.description, "TestView")
   }
 }

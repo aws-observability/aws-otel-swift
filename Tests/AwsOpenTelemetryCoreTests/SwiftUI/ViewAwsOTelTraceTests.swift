@@ -48,51 +48,6 @@ final class ViewAwsOTelTraceTests: XCTestCase {
     AwsOpenTelemetryAgent.shared.configuration = nil
   }
 
-  func testBasicTraceExtension() {
-    XCTAssertNoThrow {
-      let view = Text("Hello World")
-      let tracedView = view.awsOpenTelemetryTrace("HomeView")
-      XCTAssertNotNil(tracedView)
-    }
-  }
-
-  func testTraceExtensionWithStringAttributes() {
-    XCTAssertNoThrow {
-      let view = Text("Hello World")
-      let tracedView = view.awsOpenTelemetryTrace(
-        "HomeView",
-        attributes: ["screen_type": "home"]
-      )
-      XCTAssertNotNil(tracedView)
-    }
-  }
-
-  func testTraceExtensionWithAttributeValues() {
-    XCTAssertNoThrow {
-      let view = Text("Hello World")
-      let tracedView = view.awsOpenTelemetryTrace(
-        "HomeView",
-        attributes: ["screen_type": .string("home"), "count": .int(1)]
-      )
-      XCTAssertNotNil(tracedView)
-    }
-  }
-
-  func testBody() {
-    let config = AwsOpenTelemetryConfig(
-      aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
-    )
-    AwsOpenTelemetryAgent.shared.configuration = config
-
-    let view = Text("Hello World")
-    let tracedView = view.awsOpenTelemetryTrace("HomeView")
-
-    _ = tracedView.body
-
-    XCTAssertNotNil(tracedView)
-  }
-
   func testHandleViewAppear() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
@@ -155,6 +110,30 @@ final class ViewAwsOTelTraceTests: XCTestCase {
       let allSpans = spans.filter { expectedSpanNames.contains($0.name) }
       for span in allSpans {
         XCTAssertEqual(span.attributes[AwsViewConstants.attributeScreenName]?.description, "HomeView", "Span \(span.name) should have screen.name attribute")
+      }
+    }
+  }
+
+  func testTraceViewAttributesAppliedToSpans() {
+    let config = AwsOpenTelemetryConfig(
+      aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
+      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+    )
+    AwsOpenTelemetryAgent.shared.configuration = config
+
+    let view = Text("Hello World")
+    let tracedView = view.awsOpenTelemetryTrace("TestView")
+
+    if let traceView = tracedView as? AwsOTelTraceView<Text> {
+      traceView.handleViewAppear()
+      traceView.handleViewDisappear()
+
+      let spans = mockSpanProcessor.getEndedSpans()
+      XCTAssertGreaterThan(spans.count, 0)
+
+      // Verify all spans have the screen.name attribute
+      for span in spans {
+        XCTAssertEqual(span.attributes[AwsViewConstants.attributeScreenName]?.description, "TestView")
       }
     }
   }

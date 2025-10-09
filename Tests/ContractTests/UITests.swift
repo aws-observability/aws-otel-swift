@@ -6,7 +6,7 @@ class UITests: XCTestCase {
   private let VIEW_CLASS_ATTR = "view.class"
   private let SESSION_ID_ATTR = "session.id"
   private let USER_ID_ATTR = "user.id"
-  private let VIEW_NAME_ATTR = "view.name"
+  private let VIEW_NAME_ATTR = "screen.name"
   private let SESSION_PREVIOUS_ID_ATTR = "session.previous_id"
 
   func testUISpanIsCreated() {
