@@ -45,7 +45,7 @@
       XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXHangDiagnostic")
       XCTAssertNotNil(log.observedTimestamp, "Observed timestamp should be set")
       XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangCallStack]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }
 
     func testBuildHangAttributesWithMockHang() {
@@ -53,7 +53,7 @@
       let attributes = AwsMetricKitHangProcessor.buildHangAttributes(from: mockHang)
 
       XCTAssertEqual(attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
-      XCTAssertEqual(attributes[AwsMetricKitConstants.hangCallStack]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertEqual(attributes[AwsMetricKitConstants.hangCallStackTree]?.description, "{\"test\":\"stacktrace\"}")
     }
 
     func testObservedTimestampIsSetOnHangLog() {
