@@ -52,6 +52,6 @@ public class AwsMetricKitConstants {
   public static let crashStacktrace = "crash.stacktrace"
 
   // event names
-  public static let appHang = "hang"
+  public static let appHang = "device.hang"
   public static let crash = "device.crash"
 }

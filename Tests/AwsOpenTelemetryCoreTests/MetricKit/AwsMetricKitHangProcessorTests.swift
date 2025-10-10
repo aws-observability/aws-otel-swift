@@ -41,7 +41,7 @@
       XCTAssertEqual(logs.count, 1)
 
       let log = logs[0]
-      XCTAssertEqual(log.eventName, "hang")
+      XCTAssertEqual(log.eventName, "device.hang")
       XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXHangDiagnostic")
       XCTAssertNotNil(log.observedTimestamp, "Observed timestamp should be set")
       XCTAssertEqual(log.attributes[AwsMetricKitConstants.hangDuration]?.description, String(Double(Measurement<UnitDuration>(value: 2, unit: UnitDuration.seconds).value.toNanoseconds)))
