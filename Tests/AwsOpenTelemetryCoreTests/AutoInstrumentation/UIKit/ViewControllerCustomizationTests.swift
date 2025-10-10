@@ -30,7 +30,7 @@ import XCTest
     }
 
     class CustomNameViewController: UIViewController, ViewControllerCustomization {
-      var customViewName: String? { return "MyCustomName" }
+      var customScreenName: String? { return "MyCustomName" }
     }
 
     class OptOutViewController: UIViewController, ViewControllerCustomization {
@@ -38,7 +38,7 @@ import XCTest
     }
 
     class FullyCustomViewController: UIViewController, ViewControllerCustomization {
-      var customViewName: String? { return "FullyCustom" }
+      var customScreenName: String? { return "FullyCustom" }
       var shouldCaptureView: Bool { return true }
     }
 
@@ -48,28 +48,28 @@ import XCTest
       let viewController = DefaultViewController()
 
       // Test default implementations
-      XCTAssertNil(viewController.customViewName, "Default customViewName should be nil")
+      XCTAssertNil(viewController.customScreenName, "Default customScreenName should be nil")
       XCTAssertTrue(viewController.shouldCaptureView, "Default shouldCaptureView should be true")
     }
 
     func testCustomViewName() {
       let viewController = CustomNameViewController()
 
-      XCTAssertEqual(viewController.customViewName, "MyCustomName")
+      XCTAssertEqual(viewController.customScreenName, "MyCustomName")
       XCTAssertTrue(viewController.shouldCaptureView, "Should use default shouldCaptureView")
     }
 
     func testOptOutBehavior() {
       let viewController = OptOutViewController()
 
-      XCTAssertNil(viewController.customViewName, "Should use default customViewName")
+      XCTAssertNil(viewController.customScreenName, "Should use default customScreenName")
       XCTAssertFalse(viewController.shouldCaptureView, "Should opt out of capture")
     }
 
     func testFullyCustomBehavior() {
       let viewController = FullyCustomViewController()
 
-      XCTAssertEqual(viewController.customViewName, "FullyCustom")
+      XCTAssertEqual(viewController.customScreenName, "FullyCustom")
       XCTAssertTrue(viewController.shouldCaptureView)
     }
 
@@ -80,7 +80,7 @@ import XCTest
       let viewController = TestVC()
 
       // Should compile and use default implementations
-      XCTAssertNil(viewController.customViewName)
+      XCTAssertNil(viewController.customScreenName)
       XCTAssertTrue(viewController.shouldCaptureView)
     }
 
@@ -92,7 +92,7 @@ import XCTest
         FullyCustomViewController()
       ]
 
-      let customNames = controllers.map(\.customViewName)
+      let customNames = controllers.map(\.customScreenName)
       let shouldCapture = controllers.map(\.shouldCaptureView)
 
       XCTAssertEqual(customNames, [nil, "MyCustomName", nil, "FullyCustom"])

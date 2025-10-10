@@ -22,4 +22,5 @@ public enum AwsInstrumentationScopes {
   public static let APP_LAUNCH_DIAGNOSTIC = "software.amazon.opentelemetry.MXAppLaunchDiagnostic"
   public static let SESSION = "software.amazon.opentelemetry.session"
   public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
+  public static let SWIFTUI_VIEW = "software.amazon.opentelemetry.SwiftUIView"
 }

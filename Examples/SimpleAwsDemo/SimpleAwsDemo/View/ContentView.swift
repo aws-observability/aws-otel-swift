@@ -14,6 +14,7 @@
  */
 
 import SwiftUI
+import AwsOpenTelemetryCore
 
 /**
  * Main app view that allows users to trigger AWS operations like
@@ -33,7 +34,7 @@ struct ContentView: View {
   }
 
   var body: some View {
-    NavigationView {
+    NavigationStack {
       VStack(spacing: 0) {
         // App title
         Text("ADOT Swift Demo")
@@ -97,6 +98,19 @@ struct ContentView: View {
               awsButton(icon: "chart.line.uptrend.xyaxis", title: "Create Custom Span", action: {
                 viewModel.showCustomSpanForm()
               })
+
+              // Add navigation to TracedContentView
+              NavigationLink(destination: TracedContentView()) {
+                HStack {
+                  Image(systemName: "chart.line.uptrend.xyaxis")
+                  Text("SwiftUI Tracing Demo")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.green)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+              }
 
               awsButton(icon: "info.circle", title: "Peek session", action: {
                 viewModel.showSessionDetails()

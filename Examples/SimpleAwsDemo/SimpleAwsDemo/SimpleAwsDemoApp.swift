@@ -47,7 +47,7 @@ struct SimpleAwsDemoApp: App {
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      sessionTimeout: 5, // just 5 seconds for demo purposes
+      // sessionTimeout: 30, // just 30 seconds for demo purposes
       applicationAttributes: [
         "application.version": "1.0.0"
       ],

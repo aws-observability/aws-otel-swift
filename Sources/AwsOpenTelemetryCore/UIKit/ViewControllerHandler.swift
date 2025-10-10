@@ -20,12 +20,6 @@
 
   // MARK: - Constants
 
-  /// Status description when spans are cancelled due to app backgrounding
-  private let statusAppBackgrounded = "app_backgrounded"
-
-  /// Status description when spans are cancelled due to view disappearing
-  private let statusViewDisappeared = "view_disappeared"
-
   /**
    * Core handler for managing OpenTelemetry spans during UIViewController lifecycle events.
    *
@@ -47,7 +41,7 @@
    * The handler creates two types of root spans for each view controller:
    *
    * ```
-   * view.load (Root Span)
+   * TimeToFirstAppear (Root Span)
    * ├── viewDidLoad
    * ├── viewWillAppear
    * ├── viewIsAppearing
@@ -78,21 +72,7 @@
 
     /// Queue label for ViewControllerHandler operations
     /// Used to create a dedicated serial queue for thread-safe span operations
-    private static let queueLabel = "com.aws.otel.ViewControllerHandler"
-
-    /// Span names for different lifecycle events
-    /// These names follow OpenTelemetry semantic conventions for UI instrumentation
-    private let spanNameViewLoad = "view.load"
-    private let spanNameViewDuration = "view.duration"
-    private let spanNameViewDidLoad = "viewDidLoad"
-    private let spanNameViewWillAppear = "viewWillAppear"
-    private let spanNameViewIsAppearing = "viewIsAppearing"
-    private let spanNameViewDidAppear = "viewDidAppear"
-
-    /// Attribute keys for span metadata
-    /// Used to add contextual information to spans for better observability
-    private let attributeKeyViewName = "view.name"
-    private let attributeKeyViewClass = "view.class"
+    private static let queueLabel = "software.amazon.opentelemetry.ViewControllerHandler"
 
     // MARK: - Instance Properties
 
@@ -113,7 +93,7 @@
     // Dictionaries for tracking spans by view controller identifier
     // All access to these dictionaries is performed on the serial queue for thread safety
 
-    /// Parent spans for the view.load lifecycle (viewDidLoad → viewDidAppear)
+    /// Parent spans for the TimeToFirstAppear lifecycle (viewDidLoad → viewDidAppear)
     private var parentSpans: [String: Span] = [:]
 
     /// Individual lifecycle method spans
@@ -199,7 +179,7 @@
 
         // End incomplete lifecycle spans with cancelled status
         for id in self.parentSpans.keys {
-          self.endAllSpans(for: id, time: now, status: .error(description: statusAppBackgrounded))
+          self.endAllSpans(for: id, time: now, status: .error(description: AwsViewConstants.statusAppBackgrounded))
         }
 
         // Clear all cached spans
@@ -232,24 +212,24 @@
       viewController.instrumentationState = state
 
       let className = viewController.className
-      let viewName = viewController.viewName
+      let screenName = viewController.screenName
 
-      let parentSpanName = spanNameViewLoad // Single parent span for all views
+      let parentSpanName = AwsViewConstants.TimeToFirstAppear // Single parent span for all views
 
       queue.async {
         // Create parent span
         let parentSpan = self.createSpan(
           name: parentSpanName,
-          viewName: viewName,
+          screenName: screenName,
           className: className,
           startTime: now
         )
 
         // Create viewDidLoad child span
         let viewDidLoadSpan = self.createSpan(
-          name: self.spanNameViewDidLoad,
+          name: AwsViewConstants.spanNameViewDidLoad,
           parent: parentSpan,
-          viewName: viewName,
+          screenName: screenName,
           className: className,
           startTime: now
         )
@@ -279,7 +259,7 @@
       viewController.instrumentationState?.viewWillAppearSpanCreated = true
 
       let className = viewController.className
-      let viewName = viewController.viewName
+      let screenName = viewController.screenName
 
       queue.async {
         guard let parentSpan = self.parentSpans[id] else {
@@ -287,9 +267,9 @@
         }
 
         let span = self.createSpan(
-          name: self.spanNameViewWillAppear,
+          name: AwsViewConstants.spanNameViewWillAppear,
           parent: parentSpan,
-          viewName: viewName,
+          screenName: screenName,
           className: className,
           startTime: now
         )
@@ -304,7 +284,7 @@
       }
 
       let className = viewController.className
-      let viewName = viewController.viewName
+      let screenName = viewController.screenName
 
       queue.async {
         // End viewWillAppear span
@@ -318,9 +298,9 @@
         }
 
         let span = self.createSpan(
-          name: self.spanNameViewIsAppearing,
+          name: AwsViewConstants.spanNameViewIsAppearing,
           parent: parentSpan,
-          viewName: viewName,
+          screenName: screenName,
           className: className,
           startTime: now
         )
@@ -338,7 +318,7 @@
       viewController.instrumentationState?.viewDidAppearSpanCreated = true
 
       let className = viewController.className
-      let viewName = viewController.viewName
+      let screenName = viewController.screenName
 
       queue.async {
         guard let parentSpan = self.parentSpans[id] else {
@@ -346,9 +326,9 @@
         }
 
         let span = self.createSpan(
-          name: self.spanNameViewDidAppear,
+          name: AwsViewConstants.spanNameViewDidAppear,
           parent: parentSpan,
-          viewName: viewName,
+          screenName: screenName,
           className: className,
           startTime: now
         )
@@ -363,7 +343,7 @@
       }
 
       let className = viewController.className
-      let viewName = viewController.viewName
+      let screenName = viewController.screenName
 
       queue.async {
         // End viewIsAppearing span if it exists
@@ -378,8 +358,8 @@
 
         // Start visibility span
         let visibilitySpan = self.createSpan(
-          name: self.spanNameViewDuration,
-          viewName: viewName,
+          name: AwsViewConstants.spanNameViewDuration,
+          screenName: screenName,
           className: className,
           startTime: now
         )
@@ -408,7 +388,7 @@
         }
 
         // Force end all remaining spans
-        self.endAllSpans(for: id, time: now, status: .error(description: statusViewDisappeared))
+        self.endAllSpans(for: id, time: now, status: .error(description: AwsViewConstants.statusViewDisappeared))
       }
     }
 
@@ -417,13 +397,14 @@
     /// Creates a span with common attributes for view controller instrumentation
     private func createSpan(name: String,
                             parent: Span? = nil,
-                            viewName: String,
+                            screenName: String,
                             className: String,
                             startTime: Date) -> Span {
       let builder = tracer.spanBuilder(spanName: name)
         .setSpanKind(spanKind: .client)
-        .setAttribute(key: attributeKeyViewName, value: viewName)
-        .setAttribute(key: attributeKeyViewClass, value: className)
+        .setAttribute(key: AwsViewConstants.attributeScreenName, value: screenName)
+        .setAttribute(key: AwsViewConstants.attributeViewClass, value: className)
+        .setAttribute(key: AwsViewConstants.attributeViewType, value: AwsViewConstants.valueUIKit)
         .setStartTime(time: startTime)
 
       if let parent {
