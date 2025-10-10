@@ -47,10 +47,15 @@ public class AwsResourceBuilder {
       SemanticConventions.Device.modelName.rawValue: DeviceKitPolyfill.getDeviceName()
     ]
 
-    let resource = DefaultResources().get()
+    var resource = DefaultResources().get()
       .merging(other: Resource(attributes: buildAttributeMap(rumResourceAttributes)))
       .merging(other: Resource(attributes: buildAttributeMap(cloudResourceAttributes)))
       .merging(other: Resource(attributes: buildAttributeMap(deviceResourceAttributes)))
+
+    // Add application attributes to resource
+    if let applicationAttributes = config.applicationAttributes {
+      resource = resource.merging(other: Resource(attributes: buildAttributeMap(applicationAttributes)))
+    }
 
     return resource
   }

@@ -47,6 +47,16 @@ final class AwsResourceBuilderTests: XCTestCase {
     XCTAssertNotNil(resource.attributes["device.model.name"])
   }
 
+  func testBuildResourceWithApplicationAttributes() {
+    let config = AwsOpenTelemetryConfig(
+      aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"),
+      applicationAttributes: ["application.version": "1.0.0", "application.name": "TestApp"]
+    )
+    let resource = AwsResourceBuilder.buildResource(config: config)
+    XCTAssertEqual(resource.attributes["application.version"]?.description, "1.0.0")
+    XCTAssertEqual(resource.attributes["application.name"]?.description, "TestApp")
+  }
+
   func testBuildResourceIncludesUpstreamAttributes() {
     let config = AwsOpenTelemetryConfig(aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"))
     let resource = AwsResourceBuilder.buildResource(config: config)
@@ -91,7 +101,10 @@ final class AwsResourceBuilderTests: XCTestCase {
   func testLogRecordsCreatedWithResource() {
     let logExporter = InMemoryLogExporter()
     let resource = AwsResourceBuilder.buildResource(
-      config: AwsOpenTelemetryConfig(aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "log-test-id"))
+      config: AwsOpenTelemetryConfig(
+        aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "log-test-id"),
+        applicationAttributes: ["application.version": "2.0.0"]
+      )
     )
 
     let loggerProvider = LoggerProviderBuilder()
@@ -108,6 +121,7 @@ final class AwsResourceBuilderTests: XCTestCase {
     let logRecord = exportedLogs[0]
     XCTAssertEqual(logRecord.resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "log-test-id")
     XCTAssertEqual(logRecord.resource.attributes["cloud.region"]?.description, "us-west-2")
+    XCTAssertEqual(logRecord.resource.attributes["application.version"]?.description, "2.0.0")
     XCTAssertNotNil(logRecord.resource.attributes["device.model.name"])
   }
 }
