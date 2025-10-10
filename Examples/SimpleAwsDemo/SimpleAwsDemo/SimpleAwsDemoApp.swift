@@ -18,8 +18,8 @@ import AwsOpenTelemetryCore
 
 @main
 struct SimpleAwsDemoApp: App {
-  private let cognitoPoolId = "us-west-2:f1d59878-424f-43d4-9c27-0f2553b89ecb"
-  private let appMonitorId = "6f39bbcb-b1a5-4b7b-a33b-5fa9e911193d"
+  private let cognitoPoolId = "us-west-2_jxYFz3SsN"
+  private let appMonitorId = "9a49451f-b9d7-4fef-97aa-18896dc5f0b5"
   private let region = "us-west-2"
 
   private func isImportCoreNoInitialization() -> Bool {
