@@ -16,7 +16,7 @@
 
         AwsOpenTelemetryLogger.debug("Emitting hang log record with \(attributes.count) attributes")
         logger.logRecordBuilder()
-          .setBody(AttributeValue.string("hang"))
+          .setEventName(AwsMetricKitConstants.appHang)
           .setAttributes(attributes)
           .setObservedTimestamp(Date())
           .emit()

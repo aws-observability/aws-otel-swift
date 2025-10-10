@@ -25,21 +25,10 @@ class AwsUIDLogRecordProcessor: LogRecordProcessor {
   /// - Parameter logRecord: The log record being processed
   func onEmit(logRecord: ReadableLogRecord) {
     let uid = uidManager.getUID()
-    var newAttributes = logRecord.attributes
-    newAttributes[userIdKey] = AttributeValue.string(uid)
+    var mutatedRecord = logRecord
+    mutatedRecord.setAttribute(key: userIdKey, value: uid)
 
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
-
-    nextProcessor.onEmit(logRecord: enhancedRecord)
+    nextProcessor.onEmit(logRecord: mutatedRecord)
   }
 
   /// Shuts down the processor - no cleanup needed
