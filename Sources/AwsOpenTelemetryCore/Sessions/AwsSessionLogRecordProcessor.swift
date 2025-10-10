@@ -22,7 +22,7 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   /// - Parameter logRecord: The log record being processed
   func onEmit(logRecord: ReadableLogRecord) {
-    var newAttributes = logRecord.attributes
+    var mutatedRecord = logRecord
 
     // For session.start and session.end events, preserve existing session attributes
     if let body = logRecord.body,
@@ -34,24 +34,13 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
     } else {
       // For other log records, add current session attributes
       let session = sessionManager.getSession()
-      newAttributes[AwsSessionConstants.id] = AttributeValue.string(session.id)
+      mutatedRecord.setAttribute(key: AwsSessionConstants.id, value: AttributeValue.string(session.id))
       if let previousId = session.previousId {
-        newAttributes[AwsSessionConstants.previousId] = AttributeValue.string(previousId)
+        mutatedRecord.setAttribute(key: AwsSessionConstants.previousId, value: AttributeValue.string(previousId))
       }
     }
 
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
-
-    nextProcessor.onEmit(logRecord: enhancedRecord)
+    nextProcessor.onEmit(logRecord: mutatedRecord)
   }
 
   /// Shuts down the processor - no cleanup needed

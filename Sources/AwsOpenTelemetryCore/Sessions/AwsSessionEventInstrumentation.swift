@@ -146,7 +146,7 @@ public class AwsSessionEventInstrumentation {
     /// Create `session.start` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setBody(AttributeValue.string(AwsSessionConstants.sessionStartEvent))
+      .setEventName(AwsSessionConstants.sessionStartEvent)
       .setAttributes(attributes)
       .setObservedTimestamp(Date())
       .emit()
@@ -180,7 +180,7 @@ public class AwsSessionEventInstrumentation {
     /// Create `session.end`` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setBody(AttributeValue.string(AwsSessionConstants.sessionEndEvent))
+      .setEventName(AwsSessionConstants.sessionEndEvent)
       .setAttributes(attributes)
       .setObservedTimestamp(Date())
       .emit()

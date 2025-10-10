@@ -169,7 +169,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    XCTAssertNil(logRecords[0].body)
   }
 
   func testSessionStartLogRecord() {
@@ -180,7 +180,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertNil(record.body)
+    XCTAssertEqual(record.eventName, "session.start")
     XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime1.timeIntervalSince1970.toNanoseconds)))
@@ -195,7 +196,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertNil(record.body)
+    XCTAssertEqual(record.eventName, "session.start")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(session1.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
@@ -211,7 +213,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertNil(record.body)
+    XCTAssertEqual(record.eventName, "session.start")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(session1.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
@@ -227,7 +230,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.end"))
+    XCTAssertNil(record.body)
+    XCTAssertEqual(record.eventName, "session.end")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
@@ -243,7 +247,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.start"))
+    XCTAssertNil(record.body)
+    XCTAssertEqual(record.eventName, "session.start")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId2))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime2.timeIntervalSince1970.toNanoseconds)))
     XCTAssertEqual(record.attributes["session.previous_id"], AttributeValue.string(sessionId1))
@@ -257,7 +262,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
-    XCTAssertEqual(record.body, AttributeValue.string("session.end"))
+    XCTAssertNil(record.body)
+    XCTAssertEqual(record.eventName, "session.end")
     XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
     XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
@@ -286,15 +292,15 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 3)
 
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    XCTAssertNil(logRecords[0].body)
     XCTAssertNil(logRecords[0].attributes["session.previous_id"])
 
     XCTAssertEqual(logRecords[1].attributes["session.id"], AttributeValue.string(sessionId2))
-    XCTAssertEqual(logRecords[1].body, AttributeValue.string("session.start"))
+    XCTAssertNil(logRecords[1].body)
     XCTAssertEqual(logRecords[1].attributes["session.previous_id"], AttributeValue.string(sessionId1))
 
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
+    XCTAssertEqual(logRecords[2].eventName, "session.end")
   }
 
   func testMultipleSessionsProcessedInOrderBefore() {
@@ -308,15 +314,15 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 3)
 
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    XCTAssertNil(logRecords[0].body)
     XCTAssertNil(logRecords[0].attributes["session.previous_id"])
 
     XCTAssertEqual(logRecords[1].attributes["session.id"], AttributeValue.string(sessionId2))
-    XCTAssertEqual(logRecords[1].body, AttributeValue.string("session.start"))
+    XCTAssertNil(logRecords[1].body)
     XCTAssertEqual(logRecords[1].attributes["session.previous_id"], AttributeValue.string(sessionId1))
 
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
+    XCTAssertEqual(logRecords[2].eventName, "session.end")
   }
 
   // MARK: - Max Queue Size Tests
@@ -446,7 +452,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     // Verify first session has no previous ID
     let firstStartRecord = logRecords.first { record in
-      record.body == AttributeValue.string("session.start") &&
+      record.eventName == "session.start" &&
         record.attributes["session.id"] == AttributeValue.string(sessions[0].id)
     }
     XCTAssertNotNil(firstStartRecord)
@@ -455,7 +461,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     // Verify session chain linking
     for i in 1 ..< sessions.count {
       let sessionStartRecord = logRecords.first { record in
-        record.body == AttributeValue.string("session.start") &&
+        record.eventName == "session.start" &&
           record.attributes["session.id"] == AttributeValue.string(sessions[i].id)
       }
       XCTAssertNotNil(sessionStartRecord)
@@ -471,7 +477,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.start"))
+    XCTAssertNil(logRecords[0].body)
+    XCTAssertEqual(logRecords[0].eventName, "session.start")
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
   }
 
@@ -487,7 +494,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
-    XCTAssertEqual(logRecords[0].body, AttributeValue.string("session.end"))
+    XCTAssertNil(logRecords[0].body)
+    XCTAssertEqual(logRecords[0].eventName, "session.end")
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionIdExpired))
   }
 

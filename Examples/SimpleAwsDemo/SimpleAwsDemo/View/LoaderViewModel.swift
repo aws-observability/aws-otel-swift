@@ -158,6 +158,7 @@ class LoaderViewModel: ObservableObject {
 
     let logger = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "custom.log").build()
     let logBuilder = logger.logRecordBuilder()
+      // .setEventName("CustomEvent")
       .setBody(AttributeValue.string(message))
 
     var attributeValues: [String: AttributeValue] = [:]
