@@ -55,8 +55,10 @@
         attributes["crash.vm_region.info"] = AttributeValue.string(vmRegionInfo)
       }
 
-      if let stacktrace = String(bytes: crash.callStackTree.jsonRepresentation(), encoding: .utf8) {
-        attributes["crash.stacktrace"] = AttributeValue.string(stacktrace)
+      if let filteredStacktrace = filterCallStackDepth(crash.callStackTree, maxDepth: 15) {
+        let maxBytes = 32700
+        let truncated = filteredStacktrace.count > maxBytes ? String(filteredStacktrace.prefix(maxBytes)) : filteredStacktrace
+        attributes["crash.stacktrace"] = AttributeValue.string(truncated)
       }
 
       return attributes

@@ -18,9 +18,9 @@ import AwsOpenTelemetryCore
 
 @main
 struct SimpleAwsDemoApp: App {
-  private let cognitoPoolId = "YOUR_IDENTITY_POOL_ID_FROM_OUTPUT"
-  private let region = "YOUR_REGION_FROM_OUTPUT"
-  private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
+  private let cognitoPoolId = "us-west-2:f1d59878-424f-43d4-9c27-0f2553b89ecb"
+  private let appMonitorId = "6f39bbcb-b1a5-4b7b-a33b-5fa9e911193d"
+  private let region = "us-west-2"
 
   private func isImportCoreNoInitialization() -> Bool {
     return !ProcessInfo.processInfo.arguments.contains("--importCoreNoInitialization")
@@ -41,16 +41,12 @@ struct SimpleAwsDemoApp: App {
   private func setupOpenTelemetry() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
-      logs: "http://localhost:4318/v1/logs",
-      traces: "http://localhost:4318/v1/traces"
+      logs: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum",
+      traces: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
     )
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      // sessionTimeout: 30, // just 30 seconds for demo purposes
-      applicationAttributes: [
-        "application.version": "1.0.0"
-      ],
       debug: true
     )
 
