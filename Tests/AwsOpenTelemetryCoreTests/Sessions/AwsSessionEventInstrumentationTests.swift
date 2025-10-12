@@ -233,7 +233,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords[1].attributes["session.previous_id"], AttributeValue.string(sessionId1))
 
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(logRecords[2].eventName, "session.end")
+    XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
   }
 
   func testMultipleSessionsProcessedInOrderBefore() {
@@ -255,7 +255,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords[1].attributes["session.previous_id"], AttributeValue.string(sessionId1))
 
     XCTAssertEqual(logRecords[2].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(logRecords[2].eventName, "session.end")
+    XCTAssertEqual(logRecords[2].body, AttributeValue.string("session.end"))
   }
 
   // MARK: - Max Queue Size Tests
@@ -385,7 +385,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
     // Verify first session has no previous ID
     let firstStartRecord = logRecords.first { record in
-      record.eventName == "session.start" &&
+      record.body == AttributeValue.string("session.start") &&
         record.attributes["session.id"] == AttributeValue.string(sessions[0].id)
     }
     XCTAssertNotNil(firstStartRecord)
@@ -394,7 +394,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     // Verify session chain linking
     for i in 1 ..< sessions.count {
       let sessionStartRecord = logRecords.first { record in
-        record.eventName == "session.start" &&
+        record.body == AttributeValue.string("session.start") &&
           record.attributes["session.id"] == AttributeValue.string(sessions[i].id)
       }
       XCTAssertNotNil(sessionStartRecord)
