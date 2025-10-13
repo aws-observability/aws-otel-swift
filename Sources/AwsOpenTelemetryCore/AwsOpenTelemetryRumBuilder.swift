@@ -369,7 +369,7 @@ public class AwsOpenTelemetryRumBuilder {
       MultiLogRecordExporter(logRecordExporters: [
         logsExporter,
         StdoutLogExporter()
-      ]) // TODO: Replace with upstream's once it's made public
+      ])
     } else {
       logsExporter
     }

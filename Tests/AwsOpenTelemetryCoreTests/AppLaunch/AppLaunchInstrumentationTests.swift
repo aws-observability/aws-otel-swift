@@ -36,7 +36,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
   }
 
   func testColdLaunchSpanCreation() {
-    let _ = AppLaunchInstrumentation(provider: MockAppLaunchProvider(coldLaunchStartTime: Date()))
+    _ = AppLaunchInstrumentation(provider: MockAppLaunchProvider(coldLaunchStartTime: Date()))
 
     NotificationCenter.default.post(name: mockProvider.coldLaunchEndNotification, object: nil)
 
@@ -62,7 +62,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
       coldLaunchStartTime: Date(timeIntervalSinceNow: -40),
       preWarmFallbackThreshold: 30.0
     )
-    let _ = AppLaunchInstrumentation(provider: longThresholdProvider)
+    _ = AppLaunchInstrumentation(provider: longThresholdProvider)
 
     NotificationCenter.default.post(name: longThresholdProvider.coldLaunchEndNotification, object: nil)
 
@@ -79,7 +79,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
   }
 
   func testWarmLaunchSpanCreation() {
-    let _ = AppLaunchInstrumentation(provider: mockProvider)
+    _ = AppLaunchInstrumentation(provider: mockProvider)
 
     // Set initial launch as recorded and set warm start time
     AppLaunchInstrumentation.initialLaunchRecorded = true
@@ -106,7 +106,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
   }
 
   func testWarmLaunchSkippedBeforeColdLaunch() {
-    let _ = AppLaunchInstrumentation(provider: mockProvider)
+    _ = AppLaunchInstrumentation(provider: mockProvider)
 
     // Trigger warm launch without cold launch first
     NotificationCenter.default.post(name: mockProvider.warmLaunchStartNotification, object: nil)
@@ -146,7 +146,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
   }
 
   func testWarmLaunchPrewarmDetection() {
-    let _ = AppLaunchInstrumentation(provider: mockProvider)
+    _ = AppLaunchInstrumentation(provider: mockProvider)
 
     // Set up initial launch
     NotificationCenter.default.post(name: mockProvider.coldLaunchEndNotification, object: nil)
@@ -181,7 +181,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
     XCTAssertFalse(AppLaunchInstrumentation.initialLaunchRecorded)
     XCTAssertNil(AppLaunchInstrumentation.warmLaunchStartTime)
 
-    let _ = AppLaunchInstrumentation(provider: mockProvider)
+    _ = AppLaunchInstrumentation(provider: mockProvider)
     NotificationCenter.default.post(name: mockProvider.coldLaunchEndNotification, object: nil)
 
     // Wait for cold launch to be processed
