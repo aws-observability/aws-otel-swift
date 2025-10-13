@@ -8,16 +8,32 @@
       body {
         font-family: Arial, sans-serif;
         margin: 0;
-        padding: 20px;
+        padding: 0;
         background-color: #f5f5f5;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 240px 1fr 0;
+        grid-template-rows: auto auto auto 1fr;
+        grid-template-areas:
+          'sidebar header header'
+          'sidebar topbar topbar'
+          'sidebar filters filters'
+          'sidebar content details';
+        transition: grid-template-columns 0.3s;
+      }
+      body.details-open {
+        grid-template-columns: 240px 1fr 400px;
+      }
+      .left-sidebar {
+        grid-area: sidebar;
+        background: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+        padding: 20px;
+        overflow-y: auto;
       }
       .header {
-        position: fixed;
-        top: 0;
-        left: 240px;
-        right: 0;
+        grid-area: header;
         background: white;
-        z-index: 200;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
       .title-bar {
@@ -30,6 +46,7 @@
         color: #333;
       }
       .top-bar {
+        grid-area: topbar;
         height: 60px;
         background: #e3f2fd;
         border-bottom: 1px solid #2196f3;
@@ -38,6 +55,52 @@
         gap: 15px;
         padding: 0 20px;
         box-sizing: border-box;
+      }
+      .filters-bar {
+        grid-area: filters;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 10px 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #filterTags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+      .filter-tag {
+        background: #2196f3;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .filter-tag .remove {
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.5em;
+        line-height: 1;
+      }
+      .filter-tag .remove {
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .add-filter-input {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9em;
+        min-width: 200px;
       }
       .filter-input {
         padding: 6px;
@@ -75,26 +138,15 @@
         min-width: 40px;
       }
       .container {
-        max-width: 1200px;
-        margin: 0 auto;
+        grid-area: content;
         background: white;
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        margin-left: 220px;
-        margin-top: 110px;
-      }
-      .left-sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 200px;
-        height: 100vh;
-        background: #f8f9fa;
-        border-right: 1px solid #e0e0e0;
-        padding: 20px;
-        z-index: 100;
-        overflow-y: auto;
+        margin: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
       }
       .sidebar-section {
         margin-bottom: 30px;
@@ -117,26 +169,34 @@
         border-radius: 4px;
       }
       .timeline {
-        position: relative;
-        margin: 20px 0;
-        min-height: 400px;
+        flex: 1;
         border: 1px solid #e0e0e0;
         border-radius: 4px;
-        overflow-x: auto;
+        overflow: hidden;
         background: #fafafa;
+        display: flex;
+        flex-direction: column;
       }
       .timeline-header {
-        position: sticky;
-        top: 0;
         background: #fff;
         border-bottom: 1px solid #e0e0e0;
         padding: 10px;
         font-weight: bold;
-        z-index: 10;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .timeline-timestamps {
+        font-size: 0.8em;
+        color: #666;
+        font-weight: normal;
       }
       .timeline-content {
+        flex: 1;
         padding: 20px;
         position: relative;
+        overflow: auto;
       }
       .timeline-axis {
         position: absolute;
@@ -148,26 +208,27 @@
       }
       .timeline-item {
         position: relative;
-        margin: 15px 0;
-        padding-left: 120px;
+        margin: 8px 0;
+        padding-left: 35px;
         min-height: 40px;
         cursor: pointer;
-        padding: 10px;
-        padding-left: 120px;
+        padding: 8px;
+        padding-left: 35px;
         border-radius: 4px;
         transition: background-color 0.2s;
       }
       .timeline-item:hover {
-        background-color: #f8f9fa;
+        background-color: #e3f2fd;
       }
       .timeline-label {
         position: absolute;
-        left: 0;
+        left: -125px;
         top: 0;
         width: 90px;
-        font-size: 0.8em;
+        font-size: 0.7em;
         color: #666;
         text-align: right;
+        padding-right: 8px;
       }
       .span-bar {
         position: relative;
@@ -240,19 +301,14 @@
       }
 
       .details-panel {
-        position: fixed;
-        right: -400px;
-        top: 130px;
-        width: 400px;
-        height: calc(100vh - 130px);
+        grid-area: details;
         background: white;
-        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-        transition: right 0.3s;
-        z-index: 150;
+        border-left: 1px solid #ddd;
         overflow-y: auto;
+        display: none;
       }
       .details-panel.open {
-        right: 0;
+        display: block;
       }
       .details-header {
         padding: 20px;
@@ -287,6 +343,11 @@
         border-radius: 3px;
         font-family: monospace;
         font-size: 0.9em;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .detail-item:hover {
+        background: #e3f2fd;
       }
       .detail-tabs {
         display: flex;
@@ -393,15 +454,52 @@
         text-align: center;
         font-size: 0.9em;
       }
-      .timeline-content {
-        padding: 20px;
-        position: relative;
-        overflow-x: auto;
-        min-width: 100%;
-      }
       .timeline-container {
         position: relative;
-        min-width: 800px;
+        min-width: 100%;
+        width: max-content;
+      }
+      .timeline-ruler {
+        position: sticky;
+        top: 0;
+        background: #f8f8f8;
+        border-bottom: 1px solid #ddd;
+        height: 35px;
+        margin-left: 100px;
+        z-index: 10;
+        display: flex;
+        align-items: flex-end;
+      }
+      .session-group {
+        margin-bottom: 30px;
+        border-left: 4px solid;
+        padding-left: 20px;
+        margin-left: 98px;
+      }
+      .session-group-header {
+        font-weight: bold;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      .timeline-tick {
+        position: absolute;
+        height: 15px;
+        border-left: 1px solid #999;
+        font-size: 0.65em;
+        color: #666;
+        padding-left: 5px;
+        white-space: nowrap;
+        min-width: 60px;
+      }
+      .timeline-tick.major {
+        height: 25px;
+        border-left-color: #333;
+        font-weight: bold;
+        font-size: 0.7em;
       }
       .timeline-cursor {
         position: absolute;
@@ -527,110 +625,130 @@
       </div>
     </div>
 
-    <div class="container">
-      <div class="header">
-        <div class="title-bar">
-          <h1>OTEL Timeline Viewer</h1>
-        </div>
-        <div class="top-bar">
-          <button
-            onclick="refreshData()"
-            style="
-              padding: 6px 12px;
-              background: #4caf50;
-              color: white;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 0.9em;
-            "
-          >
-            Refresh Data
-          </button>
-          <div class="zoom-control">
-            <label for="zoomSlider">Zoom:</label>
-            <input type="range" id="zoomSlider" min="0.1" max="5" value="1" step="0.1" />
-            <span id="zoomValue">1.0x</span>
-          </div>
-          <input
-            type="text"
-            id="filterInput"
-            placeholder="Filter by trace ID, span name, or log message..."
-            class="filter-input"
-            style="width: 300px"
-          />
-          <select id="typeFilter" class="filter-input" style="width: 120px">
-            <option value="all">All Types</option>
-            <option value="spans">Spans Only</option>
-            <option value="logs">Logs Only</option>
-          </select>
-          <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
-            <div
-              id="timezoneToggle"
-              onclick="toggleTimezone()"
-              style="
-                display: flex;
-                background: #f0f0f0;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 0.9em;
-                overflow: hidden;
-              "
-            >
-              <div id="utcOption" style="padding: 6px 12px; background: #ff9800; color: white;">UTC</div>
-              <div id="localOption" style="padding: 6px 12px; color: #666;">Local</div>
-            </div>
-            <label>Time Range:</label>
-            <select id="timeRangeSelect" class="time-range-select">
-              <option value="all">All Time</option>
-              <option value="15m">Last 15 minutes</option>
-              <option value="30m">Last 30 minutes</option>
-              <option value="1h">Last 1 hour</option>
-              <option value="2h">Last 2 hours</option>
-              <option value="6h">Last 6 hours</option>
-              <option value="12h">Last 12 hours</option>
-              <option value="24h">Last 24 hours</option>
-              <option value="custom">Custom Range...</option>
-            </select>
-          </div>
-        </div>
+    <div class="header">
+      <div class="title-bar">
+        <h1>OTEL Timeline Viewer</h1>
       </div>
+    </div>
 
+    <div class="top-bar">
+      <button
+        onclick="refreshData()"
+        style="
+          padding: 6px 12px;
+          background: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.9em;
+        "
+      >
+        Refresh Data
+      </button>
+      <div class="zoom-control">
+        <label for="zoomSlider">Zoom:</label>
+        <input type="range" id="zoomSlider" min="0.1" max="5" value="1" step="0.1" />
+        <span id="zoomValue">1.0x</span>
+      </div>
+      <input
+        type="text"
+        id="addFilterInput"
+        placeholder="Add filter (e.g., session ID, trace ID)..."
+        class="filter-input"
+        style="width: 300px"
+      />
+      <select id="typeFilter" class="filter-input" style="width: 120px">
+        <option value="all">All Types</option>
+        <option value="spans">Spans Only</option>
+        <option value="logs">Logs Only</option>
+      </select>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
+        <div
+          id="timezoneToggle"
+          onclick="toggleTimezone()"
+          style="
+            display: flex;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            overflow: hidden;
+          "
+        >
+          <div id="utcOption" style="padding: 6px 12px; background: #ff9800; color: white">UTC</div>
+          <div id="localOption" style="padding: 6px 12px; color: #666">Local</div>
+        </div>
+        <label>Time Range:</label>
+        <select id="timeRangeSelect" class="time-range-select">
+          <option value="all">All Time</option>
+          <option value="15m">Last 15 minutes</option>
+          <option value="30m">Last 30 minutes</option>
+          <option value="1h">Last 1 hour</option>
+          <option value="2h">Last 2 hours</option>
+          <option value="6h">Last 6 hours</option>
+          <option value="12h">Last 12 hours</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="custom">Custom Range...</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <label style="font-weight: bold; color: #333">Filters:</label>
+      <div id="filterTags"></div>
+      <button
+        onclick="clearAllFilters()"
+        style="
+          padding: 4px 8px;
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.8em;
+        "
+      >
+        Clear All
+      </button>
+    </div>
+
+    <div class="container">
       <div class="timeline">
         <div class="timeline-header">Timeline View</div>
         <div class="timeline-content" id="timelineContent">
           <p>Loading OTEL data...</p>
         </div>
       </div>
+    </div>
 
-      <div class="details-panel" id="detailsPanel">
-        <div class="details-header">
-          <h3 id="detailsTitle">Event Details</h3>
-          <button class="close-btn" onclick="closeDetails()">&times;</button>
-        </div>
-        <div class="details-content" id="detailsContent">Click on an event to see details</div>
+    <div class="details-panel" id="detailsPanel">
+      <div class="details-header">
+        <h3 id="detailsTitle">Event Details</h3>
+        <button class="close-btn" onclick="closeDetails()">&times;</button>
       </div>
+      <div class="details-content" id="detailsContent">Click on an event to see details</div>
+    </div>
 
-      <div class="modal" id="timeRangeModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>Custom Time Range</h3>
-            <button class="close-btn" onclick="closeTimeRangeModal()">&times;</button>
+    <div class="modal" id="timeRangeModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Custom Time Range</h3>
+          <button class="close-btn" onclick="closeTimeRangeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="time-input-group">
+            <label for="customStartTime">Start Time:</label>
+            <input type="datetime-local" id="customStartTime" class="time-input" />
           </div>
-          <div class="modal-body">
-            <div class="time-input-group">
-              <label for="customStartTime">Start Time:</label>
-              <input type="datetime-local" id="customStartTime" class="time-input" />
-            </div>
-            <div class="time-input-group">
-              <label for="customEndTime">End Time:</label>
-              <input type="datetime-local" id="customEndTime" class="time-input" />
-            </div>
-            <div class="modal-actions">
-              <button onclick="applyCustomTimeRange()" class="apply-btn">Apply</button>
-              <button onclick="closeTimeRangeModal()" class="cancel-btn">Cancel</button>
-            </div>
+          <div class="time-input-group">
+            <label for="customEndTime">End Time:</label>
+            <input type="datetime-local" id="customEndTime" class="time-input" />
+          </div>
+          <div class="modal-actions">
+            <button onclick="applyCustomTimeRange()" class="apply-btn">Apply</button>
+            <button onclick="closeTimeRangeModal()" class="cancel-btn">Cancel</button>
           </div>
         </div>
       </div>
@@ -654,11 +772,22 @@
         document.getElementById(`${tabName}Content`).classList.add('active');
       }
 
-      document.getElementById('filterInput').addEventListener('input', applyFilters);
-      document.getElementById('typeFilter').addEventListener('change', applyFilters);
+      document.getElementById('typeFilter').addEventListener('change', () => {
+        saveSettings();
+        applyFilters();
+      });
       document.getElementById('zoomSlider').addEventListener('input', updateZoom);
       document.getElementById('timeRangeSelect').addEventListener('change', handleTimeRangeChange);
-      document.getElementById('sessionSearchInput').addEventListener('input', populateSessionsList);
+      document.getElementById('sessionSearchInput').addEventListener('input', () => {
+        saveSettings();
+        populateSessionsList();
+      });
+      document.getElementById('addFilterInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addCustomFilter(e.target.value.trim());
+          e.target.value = '';
+        }
+      });
 
       let customTimeRange = { start: null, end: null };
 
@@ -668,6 +797,7 @@
           openTimeRangeModal();
         } else {
           customTimeRange = { start: null, end: null };
+          saveSettings();
           populateSessionsList();
           applyFilters();
         }
@@ -707,17 +837,58 @@
       let zoomLevel = 1;
       let useUTC = true;
 
+      // Load settings from localStorage
+      function loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('otelViewerSettings') || '{}');
+
+        zoomLevel = settings.zoomLevel || 1;
+        useUTC = settings.useUTC !== undefined ? settings.useUTC : true;
+
+        document.getElementById('zoomSlider').value = zoomLevel;
+        document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+
+        document.getElementById('typeFilter').value = settings.typeFilter || 'all';
+        document.getElementById('timeRangeSelect').value = settings.timeRange || 'all';
+        document.getElementById('sessionSearchInput').value = settings.sessionSearch || '';
+        customFilters = settings.customFilters || [];
+        renderFilterTags();
+
+        updateTimezoneToggle();
+      }
+
+      // Save settings to localStorage
+      function saveSettings() {
+        const settings = {
+          zoomLevel,
+          useUTC,
+
+          filterText: '',
+          typeFilter: document.getElementById('typeFilter').value,
+          timeRange: document.getElementById('timeRangeSelect').value,
+          sessionSearch: document.getElementById('sessionSearchInput').value,
+          customFilters,
+        };
+        localStorage.setItem('otelViewerSettings', JSON.stringify(settings));
+      }
+
       function updateZoom() {
         zoomLevel = parseFloat(document.getElementById('zoomSlider').value);
         document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+        saveSettings();
         renderTimeline();
       }
 
       function toggleTimezone() {
         useUTC = !useUTC;
+        updateTimezoneToggle();
+        saveSettings();
+        renderTimeline();
+      }
+
+      function updateTimezoneToggle() {
         const utcOption = document.getElementById('utcOption');
         const localOption = document.getElementById('localOption');
-        
+
         if (useUTC) {
           utcOption.style.background = '#ff9800';
           utcOption.style.color = 'white';
@@ -729,8 +900,6 @@
           utcOption.style.background = 'transparent';
           utcOption.style.color = '#666';
         }
-        
-        renderTimeline();
       }
 
       function formatTimeForDisplay(timestamp) {
@@ -747,9 +916,9 @@
         return useUTC ? date.toISOString() : date.toLocaleString();
       }
 
-      let selectedSessionId = 'all';
       let sessionColors = new Map();
       let allSessionData = new Map();
+      let customFilters = [];
 
       function formatDuration(durationMs) {
         if (durationMs < 1000) {
@@ -797,7 +966,10 @@
       }
 
       // Auto-load data when page loads
-      window.addEventListener('load', loadDefaultData);
+      window.addEventListener('load', () => {
+        loadSettings();
+        loadDefaultData();
+      });
 
       function refreshData() {
         allItems = [];
@@ -895,24 +1067,64 @@
       }
 
       function applyFilters() {
-        const filterText = document.getElementById('filterInput').value.toLowerCase();
+        const filterText = '';
         const typeFilter = document.getElementById('typeFilter').value;
         const timeRangeValue = document.getElementById('timeRangeSelect').value;
 
         filteredItems = allItems.filter((item) => {
-          const matchesSession =
-            selectedSessionId === 'all' || getSessionId(item) === selectedSessionId;
-
           const matchesType =
             typeFilter === 'all' ||
             (typeFilter === 'spans' && item.type === 'span') ||
             (typeFilter === 'logs' && item.type === 'log');
 
-          const matchesText =
-            !filterText ||
-            item.traceId?.toLowerCase().includes(filterText) ||
-            item.name?.toLowerCase().includes(filterText) ||
-            item.body?.toLowerCase().includes(filterText);
+          const matchesCustomFilters =
+            customFilters.length === 0 ||
+            customFilters.some((filter) => {
+              const filterLower = filter.toLowerCase();
+
+              // Handle key=value filters
+              if (filter.includes('=')) {
+                const [key, value] = filter.split('=', 2);
+                const keyLower = key.toLowerCase();
+                const valueLower = value.toLowerCase();
+
+                if (keyLower === 'session.id') {
+                  return getSessionId(item).toLowerCase() === valueLower;
+                }
+
+                return item.attributes?.some(
+                  (attr) =>
+                    attr.key?.toLowerCase() === keyLower &&
+                    String(
+                      attr.value?.stringValue ||
+                        attr.value?.intValue ||
+                        attr.value?.doubleValue ||
+                        attr.value?.boolValue,
+                    ).toLowerCase() === valueLower,
+                );
+              }
+
+              // Handle general text filters
+              return (
+                item.traceId?.toLowerCase().includes(filterLower) ||
+                item.spanId?.toLowerCase().includes(filterLower) ||
+                item.name?.toLowerCase().includes(filterLower) ||
+                item.body?.toLowerCase().includes(filterLower) ||
+                getSessionId(item).toLowerCase().includes(filterLower) ||
+                item.attributes?.some(
+                  (attr) =>
+                    attr.key?.toLowerCase().includes(filterLower) ||
+                    String(
+                      attr.value?.stringValue ||
+                        attr.value?.intValue ||
+                        attr.value?.doubleValue ||
+                        attr.value?.boolValue,
+                    )
+                      .toLowerCase()
+                      .includes(filterLower),
+                )
+              );
+            });
 
           const matchesTimeRange = (() => {
             if (timeRangeValue === 'all') return true;
@@ -946,25 +1158,16 @@
             return true;
           })();
 
-          return matchesSession && matchesType && matchesText && matchesTimeRange;
+          return matchesType && matchesTimeRange && matchesCustomFilters;
         });
 
         renderTimeline();
       }
 
       function selectSession(sessionId) {
-        selectedSessionId = sessionId;
-        document
-          .querySelectorAll('.session-item')
-          .forEach((item) => item.classList.remove('active'));
         if (sessionId !== 'all') {
-          document.querySelector(`[data-session-id="${sessionId}"]`).classList.add('active');
-        } else {
-          document
-            .querySelector('.session-item[onclick="selectSession(\'all\')"]')
-            .classList.add('active');
+          addCustomFilter(`session.id=${sessionId}`);
         }
-        applyFilters();
       }
 
       function getSessionId(item) {
@@ -1035,17 +1238,7 @@
           return;
         }
 
-        // Create all sessions option
-        let html = `
-          <div class="session-item ${
-            selectedSessionId === 'all' ? 'active' : ''
-          }" onclick="selectSession('all')">
-            <div class="session-id">All Sessions</div>
-            <div class="session-stats">
-              <div class="session-stat">📊 ${timeFilteredItems.length} events</div>
-            </div>
-          </div>
-        `;
+        let html = '';
 
         // Add individual sessions (filtered by search)
         Array.from(sessionData.values())
@@ -1057,7 +1250,9 @@
             html += `
             <div class="session-item" data-session-id="${session.id}" onclick="selectSession('${
               session.id
-            }')">
+            }')" onmouseenter="highlightSessionEvents('${
+              session.id
+            }', true)" onmouseleave="highlightSessionEvents('${session.id}', false)">
               <div class="session-id">${session.id}</div>
               <div class="session-stats">
                 <div class="session-stat">🕰️ Started ${timeAgo}</div>
@@ -1080,38 +1275,91 @@
 
       function renderTimeline() {
         const content = document.getElementById('timelineContent');
+        const header = document.querySelector('.timeline-header');
 
         if (filteredItems.length === 0) {
           content.innerHTML =
             '<div class="timeline-container"><div class="timeline-axis"></div><p>No items to display. Try adjusting your filters.</p></div>';
+          header.innerHTML = '<span>Timeline View</span>';
           return;
         }
 
         // Calculate timeline scale with zoom
         const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
         const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
-        const timeRange = maxTime - minTime;
+        const actualTimeRange = maxTime - minTime;
+        const timeRange = actualTimeRange * 1.1; // Add 20% padding after the latest event
 
-        // Fixed width calculation so zoom levels look consistent across different time ranges
-        const fixedBaseWidth = 800; // Standard base width
-        const timelineWidth = fixedBaseWidth * zoomLevel;
+        // Update header with timestamps
+        const startTimeStr = formatTimeForDisplay(minTime);
+        const endTimeStr = formatTimeForDisplay(maxTime);
+        const durationStr = formatDuration(timeRange);
+        header.innerHTML = `
+          <span>Timeline View</span>
+          <div class="timeline-timestamps">
+            ${startTimeStr} → ${endTimeStr} (${durationStr})
+          </div>
+        `;
+
+        // Use available width with zoom
+        const timelineContent = document.querySelector('.timeline-content');
+        const availableWidth = timelineContent.clientWidth - 40; // Account for padding
+        const baseWidth = Math.max(600, availableWidth);
+        const timelineWidth = baseWidth * zoomLevel;
+
+        // Generate timeline ruler
+        const rulerHtml = generateTimelineRuler(minTime, timeRange, timelineWidth);
+
+        // Group items by session
+        const sessionGroups = new Map();
+        filteredItems.forEach((item) => {
+          const sessionId = getSessionId(item);
+          if (!sessionGroups.has(sessionId)) {
+            sessionGroups.set(sessionId, []);
+          }
+          sessionGroups.get(sessionId).push(item);
+        });
+
+        // Sort sessions by earliest timestamp, then items within sessions
+        const sortedSessions = Array.from(sessionGroups.entries())
+          .map(([sessionId, items]) => {
+            items.sort((a, b) => a.timestamp - b.timestamp);
+            return [sessionId, items, Math.min(...items.map((item) => item.timestamp))];
+          })
+          .sort(([, , aMinTime], [, , bMinTime]) => aMinTime - bMinTime)
+          .map(([sessionId, items]) => [sessionId, items]);
+
+        const sessionGroupsHtml = sortedSessions
+          .map(([sessionId, items]) => {
+            const sessionColor = getSessionColor(sessionId);
+            const itemsHtml = items
+              .map((item) => {
+                if (item.type === 'span') {
+                  return renderSpanItem(item, minTime, timeRange, timelineWidth);
+                } else {
+                  return renderLogItem(item, minTime, timeRange, timelineWidth);
+                }
+              })
+              .join('');
+
+            return `
+            <div class="session-group" style="border-left-color: ${sessionColor};">
+              <div class="session-group-header" style="color: ${sessionColor};">
+                Session: ${sessionId} (${items.length} events)
+              </div>
+              ${itemsHtml}
+            </div>
+          `;
+          })
+          .join('');
 
         const html = `
                 <div class="timeline-timestamp-follow" id="timelineTimestampFollow"></div>
-                <div class="timeline-container" style="width: ${
-                  timelineWidth + 200
-                }px;" onmousemove="showTimelineCursor(event, ${minTime}, ${timeRange}, ${timelineWidth})" onmouseleave="hideTimelineCursor()">
+                <div class="timeline-container" style="width: ${timelineWidth}px;" onmousemove="showTimelineCursor(event, ${minTime}, ${timeRange}, ${timelineWidth})" onmouseleave="hideTimelineCursor()">
+                    ${rulerHtml}
                     <div class="timeline-axis"></div>
                     <div class="timeline-cursor" id="timelineCursor"></div>
-                    ${filteredItems
-                      .map((item) => {
-                        if (item.type === 'span') {
-                          return renderSpanItem(item, minTime, timeRange, timelineWidth);
-                        } else {
-                          return renderLogItem(item, minTime, timeRange, timelineWidth);
-                        }
-                      })
-                      .join('')}
+                    ${sessionGroupsHtml}
                 </div>
             `;
 
@@ -1127,16 +1375,21 @@
         const sessionColor = getSessionColor(sessionId);
         const screenName = span.attributes?.find((attr) => attr.key === 'screen.name')?.value
           ?.stringValue;
+        const launchType = span.attributes?.find((attr) => attr.key === 'launch.type')?.value
+          ?.stringValue;
+        const activePrewarm = span.attributes?.find((attr) => attr.key === 'active_prewarm')?.value
+          ?.boolValue;
         const formattedDuration = formatDuration(span.duration);
 
         return `
-                <div class="timeline-item" onclick="showDetails(${JSON.stringify(span).replace(
-                  /"/g,
-                  '&quot;',
-                )})" 
+                <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
+          span,
+        ).replace(/"/g, '&quot;')})" 
                      title="${span.name} - ${formattedDuration}\nSession: ${sessionId}${
           screenName ? '\nScreen: ' + screenName : ''
-        }${span.scopeName ? '\nScope: ' + span.scopeName : ''}">
+        }${span.scopeName ? '\nScope: ' + span.scopeName : ''}${
+          launchType ? '\nLaunch Type: ' + launchType : ''
+        }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}">
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
                     </div>
@@ -1150,6 +1403,16 @@
                         ${
                           span.scopeName
                             ? `<div style="font-size: 0.8em; color: #666;">🔧 ${span.scopeName}</div>`
+                            : ''
+                        }
+                        ${
+                          launchType
+                            ? `<div style="font-size: 0.8em; color: #ff9800;">🚀 ${launchType}</div>`
+                            : ''
+                        }
+                        ${
+                          activePrewarm !== undefined
+                            ? `<div style="font-size: 0.8em; color: #e91e63;">⚡ active_prewarm: ${activePrewarm}</div>`
                             : ''
                         }
                         <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
@@ -1168,10 +1431,9 @@
         const sessionColor = getSessionColor(sessionId);
 
         return `
-                <div class="timeline-item" onclick="showDetails(${JSON.stringify(log).replace(
-                  /"/g,
-                  '&quot;',
-                )})" 
+                <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
+          log,
+        ).replace(/"/g, '&quot;')})" 
                      title="${log.body}\nSession: ${sessionId}">
                     <div class="timeline-label">${time}</div>
                     <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
@@ -1224,9 +1486,15 @@
                 <div class="detail-section">
                     <div class="detail-title">Identifiers</div>
                     ${
-                      item.traceId ? `<div class="detail-item">Trace ID: ${item.traceId}</div>` : ''
+                      item.traceId
+                        ? `<div class="detail-item" onclick="addCustomFilter('traceId=${item.traceId}')">Trace ID: ${item.traceId}</div>`
+                        : ''
                     }
-                    ${item.spanId ? `<div class="detail-item">Span ID: ${item.spanId}</div>` : ''}
+                    ${
+                      item.spanId
+                        ? `<div class="detail-item" onclick="addCustomFilter('spanId=${item.spanId}')">Span ID: ${item.spanId}</div>`
+                        : ''
+                    }
                     ${item.kind ? `<div class="detail-item">Kind: ${item.kind}</div>` : ''}
                 </div>
             `;
@@ -1236,14 +1504,16 @@
                     <div class="detail-section">
                         <div class="detail-title">Attributes</div>
                         ${item.attributes
-                          .map(
-                            (attr) =>
-                              `<div class="detail-item">${attr.key}: ${
-                                attr.value.stringValue ||
-                                attr.value.intValue ||
-                                attr.value.doubleValue
-                              }</div>`,
-                          )
+                          .map((attr) => {
+                            let value =
+                              attr.value.stringValue ||
+                              attr.value.intValue ||
+                              attr.value.doubleValue;
+                            if (attr.value.boolValue !== undefined) {
+                              value = attr.value.boolValue;
+                            }
+                            return `<div class="detail-item" onclick="addCustomFilter('${attr.key}=${value}')">${attr.key}: ${value}</div>`;
+                          })
                           .join('')}
                     </div>
                 `;
@@ -1266,10 +1536,12 @@
 
         content.innerHTML = html;
         panel.classList.add('open');
+        document.body.classList.add('details-open');
       }
 
       function closeDetails() {
         document.getElementById('detailsPanel').classList.remove('open');
+        document.body.classList.remove('details-open');
       }
 
       function showTimelineCursor(event, minTime, timeRange, timelineWidth) {
@@ -1286,10 +1558,10 @@
 
           cursor.style.left = x + 100 + 'px';
           cursor.style.display = 'block';
-          
+
           followTimestamp.textContent = timeStr;
-          followTimestamp.style.left = (event.clientX + 15) + 'px';
-          followTimestamp.style.top = (event.clientY - 10) + 'px';
+          followTimestamp.style.left = event.clientX + 15 + 'px';
+          followTimestamp.style.top = event.clientY - 10 + 'px';
           followTimestamp.style.display = 'block';
         }
       }
@@ -1303,6 +1575,120 @@
         if (followTimestamp) {
           followTimestamp.style.display = 'none';
         }
+      }
+
+      function generateTimelineRuler(minTime, timeRange, timelineWidth) {
+        const tickInterval = calculateTickInterval(timeRange);
+        const startTick = Math.floor(minTime / tickInterval) * tickInterval;
+        let ticks = '';
+        let lastMajorOffset = -100; // Track spacing between major ticks
+
+        for (let time = startTick; time <= minTime + timeRange; time += tickInterval) {
+          if (time < minTime) continue;
+
+          const offset = ((time - minTime) / timeRange) * timelineWidth;
+          if (offset > timelineWidth) break;
+
+          const isMajor = (time - startTick) % (tickInterval * 5) === 0;
+
+          // Only show major tick labels if they have enough space
+          const showLabel = isMajor && offset - lastMajorOffset > 80;
+          if (showLabel) lastMajorOffset = offset;
+
+          const timeStr = showLabel ? formatTickTime(time) : '';
+
+          ticks += `<div class="timeline-tick ${
+            isMajor ? 'major' : ''
+          }" style="left: ${offset}px;">${timeStr}</div>`;
+        }
+
+        return `<div class="timeline-ruler" style="width: ${
+          timelineWidth + 100
+        }px;">${ticks}</div>`;
+      }
+
+      function calculateTickInterval(timeRange) {
+        // Adjust tick interval based on zoom level - more zoom = finer ticks
+        const baseInterval = timeRange / (20 * zoomLevel); // Target ~20 major ticks per zoom level
+
+        // Round to nice intervals
+        if (baseInterval < 1000) return 100; // 100ms
+        if (baseInterval < 5000) return 1000; // 1 second
+        if (baseInterval < 10000) return 5000; // 5 seconds
+        if (baseInterval < 30000) return 10000; // 10 seconds
+        if (baseInterval < 60000) return 30000; // 30 seconds
+        if (baseInterval < 300000) return 60000; // 1 minute
+        if (baseInterval < 600000) return 300000; // 5 minutes
+        if (baseInterval < 1800000) return 600000; // 10 minutes
+        return 1800000; // 30 minutes
+      }
+
+      function formatTickTime(timestamp) {
+        const date = new Date(timestamp);
+        if (useUTC) {
+          return date.toISOString().substring(11, 19); // HH:MM:SS
+        } else {
+          return date.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+        }
+      }
+
+      function highlightSessionEvents(sessionId, highlight) {
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach((item) => {
+          const itemSessionId = item.dataset.sessionId;
+          if (itemSessionId === sessionId) {
+            if (highlight) {
+              item.style.backgroundColor = '#e3f2fd';
+            } else {
+              item.style.backgroundColor = '';
+            }
+          }
+        });
+      }
+
+      function addCustomFilter(filterText) {
+        if (filterText && !customFilters.includes(filterText)) {
+          customFilters.push(filterText);
+          saveSettings();
+          renderFilterTags();
+          applyFilters();
+        }
+      }
+
+      function removeCustomFilter(filterText) {
+        customFilters = customFilters.filter((f) => f !== filterText);
+        saveSettings();
+        renderFilterTags();
+        applyFilters();
+      }
+
+      function renderFilterTags() {
+        const container = document.getElementById('filterTags');
+        container.innerHTML = customFilters
+          .map(
+            (filter) => `
+          <div class="filter-tag">
+            ${filter}
+            <span class="remove" onclick="removeCustomFilter('${filter.replace(
+              /'/g,
+              "\\'",
+            )}')">×</span>
+          </div>
+        `,
+          )
+          .join('');
+      }
+
+      function clearAllFilters() {
+        customFilters = [];
+        saveSettings();
+        renderFilterTags();
+        applyFilters();
       }
     </script>
   </body>

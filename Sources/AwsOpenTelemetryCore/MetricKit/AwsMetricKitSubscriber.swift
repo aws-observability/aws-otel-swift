@@ -36,27 +36,12 @@
     func didReceive(_ payloads: [MXDiagnosticPayload]) {
       AwsOpenTelemetryLogger.debug("Received \(payloads.count) diagnostic payload(s)")
       for payload in payloads {
-        AwsOpenTelemetryLogger.debug("Processing diagnostic payload from \(payload.timeStampBegin) to \(payload.timeStampEnd)")
-        AwsOpenTelemetryLogger.debug("Crash diagnostics count: \(payload.crashDiagnostics?.count ?? 0)")
-        AwsOpenTelemetryLogger.debug("Hang diagnostics count: \(payload.hangDiagnostics?.count ?? 0)")
-        AwsOpenTelemetryLogger.debug("CPU exception diagnostics count: \(payload.cpuExceptionDiagnostics?.count ?? 0)")
-        AwsOpenTelemetryLogger.debug("Disk write exception diagnostics count: \(payload.diskWriteExceptionDiagnostics?.count ?? 0)")
-        if #available(iOS 16.0, *) {
-          AwsOpenTelemetryLogger.debug("App launch diagnostics count: \(payload.appLaunchDiagnostics?.count ?? 0)")
-        }
-
         if config.crashes {
           processCrashDiagnostics(payload.crashDiagnostics)
         }
 
         if config.hangs {
           processHangDiagnostics(payload.hangDiagnostics)
-        }
-
-        processCpuExceptionDiagnostics(payload.cpuExceptionDiagnostics)
-        processDiskWriteExceptionDiagnostics(payload.diskWriteExceptionDiagnostics)
-        if #available(iOS 16.0, *) {
-          processAppLaunchDiagnostics(payload.appLaunchDiagnostics)
         }
       }
     }
@@ -69,21 +54,11 @@
       AwsMetricKitHangProcessor.processHangDiagnostics(diagnostics)
     }
 
-    private func processCpuExceptionDiagnostics(_ diagnostics: [MXCPUExceptionDiagnostic]?) {
-      guard let diagnostics else { return }
-      AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) CPU exception diagnostic(s)")
-    }
-
-    private func processDiskWriteExceptionDiagnostics(_ diagnostics: [MXDiskWriteExceptionDiagnostic]?) {
-      guard let diagnostics else { return }
-      AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) disk write exception diagnostic(s)")
-    }
-
-    @available(iOS 16.0, *)
-    private func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
-      if config.startup {
-        AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics(diagnostics)
-      }
-    }
+    // @available(iOS 16.0, *)
+    // private func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
+    //   if config.startup {
+    //     AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics(diagnostics)
+    //   }
+    // }
   }
 #endif

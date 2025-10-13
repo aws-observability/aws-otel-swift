@@ -133,6 +133,7 @@ public class TelemetryConfigBuilder {
     config.network = network
     config.hang = hang
     config.view = view
+
     return config
   }
 }

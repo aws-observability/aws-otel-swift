@@ -49,7 +49,8 @@
       XCTAssertEqual(log.attributes["crash.signal"]?.description, "11")
       XCTAssertEqual(log.attributes["crash.termination_reason"]?.description, "test termination")
       XCTAssertEqual(log.attributes["crash.vm_region.info"]?.description, "test vm info")
-      XCTAssertEqual(log.attributes["crash.stacktrace"]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertNotNil(log.attributes["crash.stacktrace"])
+      XCTAssertTrue(log.attributes["crash.stacktrace"]?.description.contains("callStacks") == true)
     }
 
     func testBuildCrashAttributesWithMockCrash() {
@@ -61,7 +62,8 @@
       XCTAssertEqual(attributes["crash.signal"]?.description, "11")
       XCTAssertEqual(attributes["crash.termination_reason"]?.description, "test termination")
       XCTAssertEqual(attributes["crash.vm_region.info"]?.description, "test vm info")
-      XCTAssertEqual(attributes["crash.stacktrace"]?.description, "{\"test\":\"stacktrace\"}")
+      XCTAssertNotNil(attributes["crash.stacktrace"])
+      XCTAssertTrue(attributes["crash.stacktrace"]?.description.contains("callStacks") == true)
     }
 
     func testObservedTimestampIsSetOnCrashLog() {
@@ -98,7 +100,26 @@
   @available(iOS 15.0, *)
   private class MockMXCallStackTree: MXCallStackTree {
     override func jsonRepresentation() -> Data {
-      return Data("{\"test\":\"stacktrace\"}".utf8)
+      let jsonString = """
+      {
+        "callStackPerThread": true,
+        "callStacks": [
+          {
+            "callStackRootFrames": [
+              {
+                "address": 4371867052,
+                "offsetIntoBinaryTextSegment": 124332,
+                "binaryUUID": "C42F630F-A71A-3EDC-9225-CF2C231A6669",
+                "binaryName": "TestApp",
+                "sampleCount": 1
+              }
+            ],
+            "threadAttributed": true
+          }
+        ]
+      }
+      """
+      return Data(jsonString.utf8)
     }
   }
 #endif

@@ -172,6 +172,14 @@ public class AwsOpenTelemetryRumBuilder {
 
   /// Execute AwsInstrumentationPlan to build requested instrumentations
   private func buildInstrumentations(plan: AwsInstrumentationPlan) {
+    // App Launch
+    if plan.startup {
+      // Only supported on iOS
+      #if canImport(UIKit) && !os(watchOS)
+        _ = AppLaunchInstrumentation()
+      #endif
+    }
+
     // Session Events
     if plan.sessionEvents {
       _ = AwsSessionEventInstrumentation()

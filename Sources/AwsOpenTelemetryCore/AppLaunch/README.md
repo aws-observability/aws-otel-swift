@@ -1,0 +1,125 @@
+# App Launch Instrumentation
+
+The App Launch instrumentation module provides automatic tracking of iOS application launch performance by creating OpenTelemetry spans that measure cold and warm launch times, including pre-warm launch detection.
+
+## Overview
+
+This instrumentation captures different types of app launches:
+
+- **Cold Launch**: App starts from scratch (process creation to launch completion)
+- **Warm Launch**: App returns from background to foreground
+- **Pre-warm Launch**: Cold or warm launches that exceed the pre-warm threshold, indicating system pre-warming
+
+## Components
+
+### AppLaunchProvider
+
+A protocol that defines the interface for providing app launch timing data:
+
+```swift
+public protocol AppLaunchProvider {
+  var coldLaunchStartTime: Date { get }
+  var coldLaunchEndNotification: Notification.Name { get }
+  var warmLaunchStartNotification: Notification.Name { get }
+  var warmLaunchEndNotification: Notification.Name { get }
+  var preWarmFallbackThreshold: TimeInterval { get }
+}
+```
+
+#### AppLaunchProvider Parameters
+
+| Parameter                     | Type                | Description                                                                                                                   | Default (DefaultAppLaunchProvider)              |
+| ----------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `coldLaunchStartTime`         | `Date`              | The time when the app process started                                                                                         | Process start time from `kinfo_proc`            |
+| `coldLaunchEndNotification`   | `Notification.Name` | Notification fired when cold launch completes                                                                                 | `UIApplication.didFinishLaunchingNotification`  |
+| `warmLaunchStartNotification` | `Notification.Name` | Notification fired when warm launch begins                                                                                    | `UIApplication.willEnterForegroundNotification` |
+| `warmLaunchEndNotification`   | `Notification.Name` | Notification fired when warm launch completes                                                                                 | `UIApplication.didBecomeActiveNotification`     |
+| `preWarmFallbackThreshold`    | `TimeInterval`      | Duration threshold (seconds) above which launches are classified as pre-warm. Set to `0` to disable threshold-based detection | `30.0`                                          |
+
+### DefaultAppLaunchProvider
+
+The default implementation that:
+
+- Calculates process start time using `kinfo_proc` system call for accurate cold launch timing
+- Uses `UIApplication.didFinishLaunchingNotification` for cold launch completion
+- Uses `UIApplication.willEnterForegroundNotification` for warm launch start
+- Uses `UIApplication.didBecomeActiveNotification` for warm launch completion
+- Sets pre-warm threshold to 30 seconds by default
+- Only available on UIKit platforms (iOS, tvOS, macOS with UIKit)
+
+### AppLaunchInstrumentation
+
+The main instrumentation class that:
+
+- Creates `AppStart` spans for both cold and warm launches
+- Detects pre-warm launches using duration thresholds or `ActivePrewarm` environment variable
+- Ensures only one cold launch is recorded per app session
+- Tracks warm launch start times automatically
+- Uses thread-safe static state management
+
+## Launch Type Detection
+
+### Cold Launch
+
+- Triggered by `coldLaunchEndNotification`
+- Measures from process start to launch completion
+- Automatically classified as `PRE_WARM` if duration exceeds threshold
+
+### Warm Launch
+
+- Only recorded after initial cold launch is complete
+- Triggered by `warmLaunchStartNotification` and `warmLaunchEndNotification`
+- Measures from foreground entry to active state
+- Automatically classified as `PRE_WARM` if duration exceeds threshold
+
+### Pre-warm Detection
+
+- Uses `ActivePrewarm` environment variable if present
+- Falls back to duration-based detection using `preWarmFallbackThreshold`
+- Threshold of 0 disables fallback detection
+
+## Usage
+
+The instrumentation is automatically enabled when the `startup` telemetry feature is enabled:
+
+```json
+{
+  "telemetry": {
+    "startup": { "enabled": true }
+  }
+}
+```
+
+Or programmatically:
+
+```swift
+let config = TelemetryConfig()
+  .withStartup(enabled: true)
+```
+
+## Custom Implementation
+
+You can provide a custom provider:
+
+```swift
+let customProvider = MyAppLaunchProvider()
+let instrumentation = AppLaunchInstrumentation(provider: customProvider)
+```
+
+## Platform Behavior
+
+- **iOS/tvOS/macOS with UIKit**: Full functionality with default notifications
+- **watchOS or non-UIKit platforms**: Requires custom provider implementation
+
+## Generated Telemetry
+
+The instrumentation creates spans with:
+
+- **Name**: `AppStart`
+- **Attributes**:
+  - `launch.type`: `COLD`, `WARM`, or `PRE_WARM`
+  - `app.launch.start_notification`: Name of the start notification
+  - `app.launch.end_notification`: Name of the end notification
+  - `active_prewarm`: Boolean indicating if `ActivePrewarm` environment variable is set
+- **Instrumentation Scope**: `software.amazon.opentelemetry.AppStart`
+- **Timing**: Accurate start/end times based on actual system events

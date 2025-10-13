@@ -19,7 +19,8 @@ import Foundation
 public enum AwsInstrumentationScopes {
   public static let CRASH_DIAGNOSTIC = "software.amazon.opentelemetry.MXCrashDiagnostic"
   public static let HANG_DIAGNOSTIC = "software.amazon.opentelemetry.MXHangDiagnostic"
-  public static let APP_LAUNCH_DIAGNOSTIC = "software.amazon.opentelemetry.MXAppLaunchDiagnostic"
+  public static let APP_LAUNCH_DIAGNOSTIC = "software.amazon.opentelemetry.MXAppLaunchDiagnostic" // keeping this temporarily before we fully deprecate metric kit app launches
+  public static let APP_START = "software.amazon.opentelemetry.AppStart"
   public static let SESSION = "software.amazon.opentelemetry.session"
   public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
   public static let SWIFTUI_VIEW = "software.amazon.opentelemetry.SwiftUIView"
