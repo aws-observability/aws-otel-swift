@@ -97,7 +97,7 @@ public class AppLaunchInstrumentation {
       .setStartTime(time: startTime)
       .startSpan()
 
-    span.setAttribute(key: "launch.type", value: launchType)
+    span.setAttribute(key: "start.type", value: launchType)
     span.setAttribute(key: "app.launch.start_notification", value: startNotification)
     span.setAttribute(key: "app.launch.end_notification", value: provider.coldLaunchEndNotification.rawValue)
     span.setAttribute(key: "active_prewarm", value: hasActivePrewarm)
@@ -136,7 +136,7 @@ public class AppLaunchInstrumentation {
       .startSpan()
 
     span.setAttribute(key: "app.launch.end_notification", value: provider.warmLaunchEndNotification.rawValue)
-    span.setAttribute(key: "launch.type", value: launchType)
+    span.setAttribute(key: "start.type", value: launchType)
     span.setAttribute(key: "active_prewarm", value: hasActivePrewarm)
     span.setAttribute(key: "app.launch.start_notification", value: provider.warmLaunchStartNotification.rawValue)
 

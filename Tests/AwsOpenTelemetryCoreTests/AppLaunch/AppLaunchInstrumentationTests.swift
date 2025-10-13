@@ -52,7 +52,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
 
     let span = spans[0]
     XCTAssertEqual(span.name, "AppStart")
-    XCTAssertEqual(span.attributes["launch.type"]?.description, "cold")
+    XCTAssertEqual(span.attributes["start.type"]?.description, "cold")
     XCTAssertEqual(span.attributes["app.launch.end_notification"]?.description, mockProvider.coldLaunchEndNotification.rawValue)
     XCTAssertEqual(span.attributes["active_prewarm"]?.description, "false")
   }
@@ -75,7 +75,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
 
     let spans = spanExporter.getExportedSpans()
     XCTAssertEqual(spans.count, 1)
-    XCTAssertEqual(spans[0].attributes["launch.type"]?.description, "prewarm")
+    XCTAssertEqual(spans[0].attributes["start.type"]?.description, "prewarm")
   }
 
   func testWarmLaunchSpanCreation() {
@@ -100,7 +100,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
 
     let span = spans[0]
     XCTAssertEqual(span.name, "AppStart")
-    XCTAssertEqual(span.attributes["launch.type"]?.description, "warm")
+    XCTAssertEqual(span.attributes["start.type"]?.description, "warm")
     XCTAssertEqual(span.attributes["app.launch.start_notification"]?.description, mockProvider.warmLaunchStartNotification.rawValue)
     XCTAssertEqual(span.attributes["app.launch.end_notification"]?.description, mockProvider.warmLaunchEndNotification.rawValue)
   }
@@ -174,7 +174,7 @@ final class AppLaunchInstrumentationTests: XCTestCase {
 
     let spans = spanExporter.getExportedSpans()
     XCTAssertEqual(spans.count, 1)
-    XCTAssertEqual(spans[0].attributes["launch.type"]?.description, "prewarm")
+    XCTAssertEqual(spans[0].attributes["start.type"]?.description, "prewarm")
   }
 
   func testStaticStateManagement() {
