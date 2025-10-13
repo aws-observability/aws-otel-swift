@@ -135,8 +135,7 @@ public class AwsSessionEventInstrumentation {
     AwsOpenTelemetryLogger.debug("Creating session.start event for session ID: \(session.id)")
 
     var attributes: [String: AttributeValue] = [
-      AwsSessionConstants.id: AttributeValue.string(session.id),
-      AwsSessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds))
+      AwsSessionConstants.id: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
@@ -148,7 +147,8 @@ public class AwsSessionEventInstrumentation {
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(AwsSessionConstants.sessionStartEvent))
       .setAttributes(attributes)
-      .setObservedTimestamp(Date())
+      .setTimestamp(session.startTime)
+      .setObservedTimestamp(session.startTime)
       .emit()
   }
 
@@ -158,8 +158,7 @@ public class AwsSessionEventInstrumentation {
   /// end time, duration, and previous session ID (if available).
   /// - Parameter session: The expired session
   private func createSessionEndEvent(session: AwsSession) {
-    guard let endTime = session.endTime,
-          let duration = session.duration else {
+    guard let endTime = session.endTime else {
       AwsOpenTelemetryLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
       return
     }
@@ -167,10 +166,7 @@ public class AwsSessionEventInstrumentation {
     AwsOpenTelemetryLogger.debug("Creating session.end event for session ID: \(session.id)")
 
     var attributes: [String: AttributeValue] = [
-      AwsSessionConstants.id: AttributeValue.string(session.id),
-      AwsSessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds)),
-      AwsSessionConstants.endTime: AttributeValue.double(Double(endTime.timeIntervalSince1970.toNanoseconds)),
-      AwsSessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
+      AwsSessionConstants.id: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
@@ -182,7 +178,8 @@ public class AwsSessionEventInstrumentation {
     logger.logRecordBuilder()
       .setBody(AttributeValue.string(AwsSessionConstants.sessionEndEvent))
       .setAttributes(attributes)
-      .setObservedTimestamp(Date())
+      .setTimestamp(endTime)
+      .setObservedTimestamp(endTime)
       .emit()
   }
 

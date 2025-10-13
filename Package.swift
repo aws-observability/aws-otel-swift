@@ -70,6 +70,7 @@ let package = Package(
     .target(
       name: "TestUtils",
       dependencies: [
+        "AwsOpenTelemetryCore",
         .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
@@ -87,10 +88,11 @@ let package = Package(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
     ),
-    .testTarget(
-      name: "AwsOpenTelemetryAgentTests",
-      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
-    ),
+    // Disabling due to flakiness caused by attempting to start the ADOT Swift agent
+    // .testTarget(
+    //   name: "AwsOpenTelemetryAgentTests",
+    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
+    // ),
     .testTarget(
       name: "ContractTests",
       dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],

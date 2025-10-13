@@ -31,15 +31,6 @@ public class AwsSessionConstants {
   /// Attribute name for previous session identifier
   public static let previousId = "session.previous_id"
 
-  // MARK: - Extension Attributes
-
-  /// Attribute name for session start timestamp
-  public static let startTime = "session.start_time"
-  /// Attribute name for session end timestamp
-  public static let endTime = "session.end_time"
-  /// Attribute name for session duration
-  public static let duration = "session.duration"
-
   // MARK: - Internal Constants
 
   /// Notification name for session events

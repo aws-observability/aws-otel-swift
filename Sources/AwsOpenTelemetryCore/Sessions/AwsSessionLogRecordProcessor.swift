@@ -24,18 +24,18 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
   func onEmit(logRecord: ReadableLogRecord) {
     var newAttributes = logRecord.attributes
 
-    // For session.start and session.end events, preserve existing session attributes
-    if let body = logRecord.body,
-       case let .string(bodyString) = body,
-       bodyString == AwsSessionConstants.sessionStartEvent || bodyString == AwsSessionConstants.sessionEndEvent {
-      // Do nothing
-      // - Session start and end events already have their intended session ids.
-      // - Overwriting them here will also cause session end to have the wrong current and prev session ids.
-    } else {
-      // For other log records, add current session attributes
+    // Only add session attributes if they don't already exist
+    if newAttributes[AwsSessionConstants.id] == nil || newAttributes[AwsSessionConstants.previousId] == nil {
+      // Only call refresh session if we are not processing a session event
       let session = sessionManager.getSession()
-      newAttributes[AwsSessionConstants.id] = AttributeValue.string(session.id)
-      if let previousId = session.previousId {
+
+      // Add session.id if not already present
+      if newAttributes[AwsSessionConstants.id] == nil {
+        newAttributes[AwsSessionConstants.id] = AttributeValue.string(session.id)
+      }
+
+      // Add session.previous_id if not already present and session has a previous ID
+      if newAttributes[AwsSessionConstants.previousId] == nil, let previousId = session.previousId {
         newAttributes[AwsSessionConstants.previousId] = AttributeValue.string(previousId)
       }
     }

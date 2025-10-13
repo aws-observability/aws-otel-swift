@@ -14,7 +14,7 @@
  */
 
 import Foundation
-@testable import AwsOpenTelemetryCore
+import AwsOpenTelemetryCore
 
 public class MockAppLaunchProvider: AppLaunchProvider {
   public let coldLaunchStartTime: Date

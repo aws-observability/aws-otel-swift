@@ -138,30 +138,66 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(result, .success)
   }
 
-  func testSessionStartEventPreservesExistingAttributes() {
-    let sessionStartRecord = ReadableLogRecord(
+  func testPreservesExistingSessionId() {
+    let recordWithExistingSessionId = ReadableLogRecord(
       resource: Resource(attributes: [:]),
       instrumentationScopeInfo: InstrumentationScopeInfo(),
       timestamp: Date(),
       observedTimestamp: Date(),
       spanContext: nil,
       severity: .info,
-      body: AttributeValue.string("session.start"),
+      body: AttributeValue.string("Test log message"),
       attributes: [
         AwsSessionConstants.id: AttributeValue.string("existing-session-123"),
+        "other.key": AttributeValue.string("other.value")
+      ]
+    )
+
+    mockSessionManager.sessionId = "current-session-999"
+    mockSessionManager.previousSessionId = "previous-session-888"
+    logRecordProcessor.onEmit(logRecord: recordWithExistingSessionId)
+
+    let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
+
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+      XCTAssertEqual(sessionId, "existing-session-123", "Should preserve existing session ID")
+    } else {
+      XCTFail("Expected existing session.id to be preserved")
+    }
+
+    // Should still add previous session ID if not present
+    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
+      XCTAssertEqual(previousId, "previous-session-888", "Should add previous session ID when not present")
+    } else {
+      XCTFail("Expected session.previous_id to be added")
+    }
+  }
+
+  func testPreservesExistingPreviousSessionId() {
+    let recordWithExistingPreviousId = ReadableLogRecord(
+      resource: Resource(attributes: [:]),
+      instrumentationScopeInfo: InstrumentationScopeInfo(),
+      timestamp: Date(),
+      observedTimestamp: Date(),
+      spanContext: nil,
+      severity: .info,
+      body: AttributeValue.string("Test log message"),
+      attributes: [
         AwsSessionConstants.previousId: AttributeValue.string("existing-previous-456")
       ]
     )
 
     mockSessionManager.sessionId = "current-session-999"
-    logRecordProcessor.onEmit(logRecord: sessionStartRecord)
+    mockSessionManager.previousSessionId = "previous-session-888"
+    logRecordProcessor.onEmit(logRecord: recordWithExistingPreviousId)
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
+    // Should add session ID when not present
     if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
-      XCTAssertEqual(sessionId, "existing-session-123", "Should preserve existing session ID for session.start")
+      XCTAssertEqual(sessionId, "current-session-999", "Should add current session ID when not present")
     } else {
-      XCTFail("Expected existing session.id to be preserved")
+      XCTFail("Expected session.id to be added")
     }
 
     if case let .string(previousId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
@@ -171,36 +207,37 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
     }
   }
 
-  func testSessionEndEventPreservesExistingAttributes() {
-    let sessionEndRecord = ReadableLogRecord(
+  func testPreservesBothExistingSessionAttributes() {
+    let recordWithBothExisting = ReadableLogRecord(
       resource: Resource(attributes: [:]),
       instrumentationScopeInfo: InstrumentationScopeInfo(),
       timestamp: Date(),
       observedTimestamp: Date(),
       spanContext: nil,
       severity: .info,
-      body: AttributeValue.string("session.end"),
+      body: AttributeValue.string("Test log message"),
       attributes: [
-        AwsSessionConstants.id: AttributeValue.string("ending-session-789"),
-        "session.duration": AttributeValue.double(123.45)
+        AwsSessionConstants.id: AttributeValue.string("existing-session-123"),
+        AwsSessionConstants.previousId: AttributeValue.string("existing-previous-456")
       ]
     )
 
     mockSessionManager.sessionId = "current-session-999"
-    logRecordProcessor.onEmit(logRecord: sessionEndRecord)
+    mockSessionManager.previousSessionId = "previous-session-888"
+    logRecordProcessor.onEmit(logRecord: recordWithBothExisting)
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
     if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
-      XCTAssertEqual(sessionId, "ending-session-789", "Should preserve existing session ID for session.end")
+      XCTAssertEqual(sessionId, "existing-session-123", "Should preserve existing session ID")
     } else {
       XCTFail("Expected existing session.id to be preserved")
     }
 
-    if case let .double(duration) = enhancedRecord.attributes["session.duration"] {
-      XCTAssertEqual(duration, 123.45, "Should preserve existing session.duration")
+    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
+      XCTAssertEqual(previousId, "existing-previous-456", "Should preserve existing previous session ID")
     } else {
-      XCTFail("Expected existing session.duration to be preserved")
+      XCTFail("Expected existing session.previous_id to be preserved")
     }
   }
 

@@ -183,7 +183,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(record.body, AttributeValue.string("session.start"))
     XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime1.timeIntervalSince1970.toNanoseconds)))
+
     XCTAssertNil(record.attributes["session.previous_id"])
   }
 
@@ -197,10 +197,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     let record = logRecords[0]
     XCTAssertEqual(record.body, AttributeValue.string("session.start"))
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(session1.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
-    XCTAssertNil(record.attributes["session.end_time"])
-    XCTAssertNil(record.attributes["session.duration"])
   }
 
   func testSessionStartApplyBefore() {
@@ -213,10 +210,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     let record = logRecords[0]
     XCTAssertEqual(record.body, AttributeValue.string("session.start"))
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId1))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(session1.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
-    XCTAssertNil(record.attributes["session.end_time"])
-    XCTAssertNil(record.attributes["session.duration"])
   }
 
   func testSessionEndApplyBefore() {
@@ -229,10 +223,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     let record = logRecords[0]
     XCTAssertEqual(record.body, AttributeValue.string("session.end"))
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
     XCTAssertNil(record.attributes["session.previous_id"])
-    XCTAssertEqual(record.attributes["session.end_time"], AttributeValue.double(Double(sessionExpired.endTime!.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(record.attributes["session.duration"], AttributeValue.double(Double(sessionExpired.duration!.toNanoseconds)))
   }
 
   func testSessionStartLogRecordWithPreviousId() {
@@ -245,7 +236,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     let record = logRecords[0]
     XCTAssertEqual(record.body, AttributeValue.string("session.start"))
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionId2))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(startTime2.timeIntervalSince1970.toNanoseconds)))
+
     XCTAssertEqual(record.attributes["session.previous_id"], AttributeValue.string(sessionId1))
   }
 
@@ -260,9 +251,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(record.body, AttributeValue.string("session.end"))
     XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
-    XCTAssertEqual(record.attributes["session.start_time"], AttributeValue.double(Double(sessionExpired.startTime.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(record.attributes["session.end_time"], AttributeValue.double(Double(sessionExpired.endTime!.timeIntervalSince1970.toNanoseconds)))
-    XCTAssertEqual(record.attributes["session.duration"], AttributeValue.double(Double(sessionExpired.duration!.toNanoseconds)))
+
     XCTAssertNil(record.attributes["session.previous_id"])
   }
 
@@ -492,21 +481,18 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
   }
 
   func testObservedTimestampIsSetOnSessionEvents() {
-    let beforeTime = Date()
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
     _ = AwsSessionEventInstrumentation()
-    let afterTime = Date()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
 
     let record = logRecords[0]
     XCTAssertNotNil(record.observedTimestamp)
+    XCTAssertNotNil(record.timestamp)
 
-    // Verify the observed timestamp is within a reasonable range
-    let observedTime = record.observedTimestamp!
-    XCTAssertGreaterThanOrEqual(observedTime, beforeTime)
-    XCTAssertLessThanOrEqual(observedTime, afterTime)
+    // Verify the observed timestamp equals the timestamp
+    XCTAssertEqual(record.observedTimestamp, record.timestamp)
   }
 
   func testQueueStoresEventType() {
