@@ -41,12 +41,13 @@ struct SimpleAwsDemoApp: App {
   private func setupOpenTelemetry() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
-      logs: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum",
-      traces: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
+      logs: "http://localhost:4318/v1/logs",
+      traces: "http://localhost:4318/v1/traces"
     )
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
+      sessionTimeout: 30,
       debug: true
     )
 

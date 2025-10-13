@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OTEL Timeline Viewer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .header {
+        position: fixed;
+        top: 0;
+        left: 240px;
+        right: 0;
+        background: white;
+        z-index: 200;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .title-bar {
+        padding: 15px 20px 10px 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .title-bar h1 {
+        margin: 0;
+        font-size: 1.5em;
+        color: #333;
+      }
+      .top-bar {
+        height: 60px;
+        background: #e3f2fd;
+        border-bottom: 1px solid #2196f3;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 0 20px;
+        box-sizing: border-box;
+      }
+      .filter-input {
+        padding: 6px;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        font-size: 0.9em;
+        background: white;
+        color: #333;
+      }
+      .top-bar label {
+        font-weight: bold;
+        color: #1976d2;
+        font-size: 1em;
+      }
+      .time-range-select {
+        padding: 6px 10px;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        font-size: 0.9em;
+        background: white;
+        color: #333;
+        cursor: pointer;
+      }
+      .zoom-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .zoom-control input[type='range'] {
+        width: 120px;
+      }
+      .zoom-control span {
+        font-size: 0.9em;
+        color: #333;
+        min-width: 40px;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-left: 220px;
+        margin-top: 110px;
+      }
+      .left-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 200px;
+        height: 100vh;
+        background: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+        padding: 20px;
+        z-index: 100;
+        overflow-y: auto;
+      }
+      .sidebar-section {
+        margin-bottom: 30px;
+      }
+      .sidebar-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+      }
+      .controls {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .file-input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .timeline {
+        position: relative;
+        margin: 20px 0;
+        min-height: 400px;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        overflow-x: auto;
+        background: #fafafa;
+      }
+      .timeline-header {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 10px;
+        font-weight: bold;
+        z-index: 10;
+      }
+      .timeline-content {
+        padding: 20px;
+        position: relative;
+      }
+      .timeline-axis {
+        position: absolute;
+        left: 100px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #ddd;
+      }
+      .timeline-item {
+        position: relative;
+        margin: 15px 0;
+        padding-left: 120px;
+        min-height: 40px;
+        cursor: pointer;
+        padding: 10px;
+        padding-left: 120px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+      .timeline-item:hover {
+        background-color: #f8f9fa;
+      }
+      .timeline-label {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 90px;
+        font-size: 0.8em;
+        color: #666;
+        text-align: right;
+      }
+      .span-bar {
+        position: relative;
+        height: 20px;
+        background: linear-gradient(90deg, #2196f3, #1976d2);
+        border-radius: 10px;
+        margin: 5px 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+      }
+      .span-bar:hover {
+        transform: scaleY(1.2);
+        box-shadow: 0 4px 8px rgba(33, 150, 243, 0.5);
+      }
+      .log-marker {
+        position: relative;
+        margin: 5px 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-block;
+        font-size: 20px;
+        font-weight: bold;
+        /* color: #9c27b0; */
+        line-height: 20px;
+        /* background: transparent; */
+        border: none;
+        padding: 0;
+      }
+      .log-marker:hover {
+        transform: scale(1.2);
+        color: #7b1fa2;
+      }
+      .log-marker::before {
+        content: '✕';
+      }
+      .item-header {
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .item-time {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      .item-details {
+        font-size: 0.85em;
+        color: #555;
+      }
+      .trace-id {
+        font-family: monospace;
+        background: #f0f0f0;
+        padding: 2px 4px;
+        border-radius: 2px;
+        font-size: 0.8em;
+      }
+      .duration {
+        background: #4caf50;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.8em;
+        margin-left: 10px;
+      }
+      .status-200 {
+        border-left-color: #4caf50;
+      }
+      .status-error {
+        border-left-color: #f44336;
+      }
+
+      .details-panel {
+        position: fixed;
+        right: -400px;
+        top: 130px;
+        width: 400px;
+        height: calc(100vh - 130px);
+        background: white;
+        box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s;
+        z-index: 150;
+        overflow-y: auto;
+      }
+      .details-panel.open {
+        right: 0;
+      }
+      .details-header {
+        padding: 20px;
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .details-content {
+        padding: 20px;
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        color: #666;
+      }
+      .detail-section {
+        margin-bottom: 20px;
+      }
+      .detail-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .detail-item {
+        margin: 5px 0;
+        padding: 5px;
+        background: #f9f9f9;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.9em;
+      }
+      .detail-tabs {
+        display: flex;
+        border-bottom: 1px solid #ddd;
+        margin-bottom: 15px;
+      }
+      .detail-tab {
+        padding: 10px 15px;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: #666;
+        border-bottom: 2px solid transparent;
+      }
+      .detail-tab.active {
+        color: #2196f3;
+        border-bottom-color: #2196f3;
+      }
+      .detail-tab:hover {
+        background: #f5f5f5;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .json-view {
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        font-family: monospace;
+        font-size: 0.85em;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .sessions-panel {
+        margin-bottom: 0;
+      }
+      .sessions-header {
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1.1em;
+      }
+      .session-item {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85em;
+      }
+      .session-item:hover {
+        background: #f0f8ff;
+        border-color: #2196f3;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .session-item.active {
+        background: #e3f2fd;
+        border-color: #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+      }
+      .session-id {
+        font-weight: bold;
+        margin-bottom: 6px;
+        word-break: break-all;
+        font-size: 0.8em;
+      }
+      .session-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 0.75em;
+        color: #666;
+      }
+      .session-stat {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .zoom-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .zoom-controls label {
+        font-weight: bold;
+        color: #333;
+        font-size: 0.9em;
+      }
+      .zoom-controls input[type='range'] {
+        width: 100%;
+      }
+      .zoom-controls span {
+        font-weight: bold;
+        color: #2196f3;
+        text-align: center;
+        font-size: 0.9em;
+      }
+      .timeline-content {
+        padding: 20px;
+        position: relative;
+        overflow-x: auto;
+        min-width: 100%;
+      }
+      .timeline-container {
+        position: relative;
+        min-width: 800px;
+      }
+      .timeline-cursor {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #ff5722;
+        pointer-events: none;
+        z-index: 50;
+        display: none;
+      }
+
+      .timeline-timestamp-follow {
+        position: fixed;
+        background: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 1000;
+        display: none;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal.open {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 400px;
+        max-width: 90vw;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body {
+        padding: 20px;
+      }
+      .time-input-group {
+        margin-bottom: 15px;
+      }
+      .time-input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+      }
+      .time-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+      .apply-btn {
+        padding: 8px 16px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .apply-btn:hover {
+        background: #1976d2;
+      }
+      .cancel-btn {
+        padding: 8px 16px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .cancel-btn:hover {
+        background: #5a6268;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="left-sidebar">
+      <div class="sessions-panel" id="sessionsPanel">
+        <div class="sessions-header">Sessions</div>
+        <input
+          type="text"
+          id="sessionSearchInput"
+          placeholder="Search sessions..."
+          style="
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+          "
+        />
+        <div id="sessionsList">Loading sessions...</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="header">
+        <div class="title-bar">
+          <h1>OTEL Timeline Viewer</h1>
+        </div>
+        <div class="top-bar">
+          <button
+            onclick="refreshData()"
+            style="
+              padding: 6px 12px;
+              background: #4caf50;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 0.9em;
+            "
+          >
+            Refresh Data
+          </button>
+          <div class="zoom-control">
+            <label for="zoomSlider">Zoom:</label>
+            <input type="range" id="zoomSlider" min="0.1" max="5" value="1" step="0.1" />
+            <span id="zoomValue">1.0x</span>
+          </div>
+          <input
+            type="text"
+            id="filterInput"
+            placeholder="Filter by trace ID, span name, or log message..."
+            class="filter-input"
+            style="width: 300px"
+          />
+          <select id="typeFilter" class="filter-input" style="width: 120px">
+            <option value="all">All Types</option>
+            <option value="spans">Spans Only</option>
+            <option value="logs">Logs Only</option>
+          </select>
+          <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
+            <div
+              id="timezoneToggle"
+              onclick="toggleTimezone()"
+              style="
+                display: flex;
+                background: #f0f0f0;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 0.9em;
+                overflow: hidden;
+              "
+            >
+              <div id="utcOption" style="padding: 6px 12px; background: #ff9800; color: white;">UTC</div>
+              <div id="localOption" style="padding: 6px 12px; color: #666;">Local</div>
+            </div>
+            <label>Time Range:</label>
+            <select id="timeRangeSelect" class="time-range-select">
+              <option value="all">All Time</option>
+              <option value="15m">Last 15 minutes</option>
+              <option value="30m">Last 30 minutes</option>
+              <option value="1h">Last 1 hour</option>
+              <option value="2h">Last 2 hours</option>
+              <option value="6h">Last 6 hours</option>
+              <option value="12h">Last 12 hours</option>
+              <option value="24h">Last 24 hours</option>
+              <option value="custom">Custom Range...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-header">Timeline View</div>
+        <div class="timeline-content" id="timelineContent">
+          <p>Loading OTEL data...</p>
+        </div>
+      </div>
+
+      <div class="details-panel" id="detailsPanel">
+        <div class="details-header">
+          <h3 id="detailsTitle">Event Details</h3>
+          <button class="close-btn" onclick="closeDetails()">&times;</button>
+        </div>
+        <div class="details-content" id="detailsContent">Click on an event to see details</div>
+      </div>
+
+      <div class="modal" id="timeRangeModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Custom Time Range</h3>
+            <button class="close-btn" onclick="closeTimeRangeModal()">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="time-input-group">
+              <label for="customStartTime">Start Time:</label>
+              <input type="datetime-local" id="customStartTime" class="time-input" />
+            </div>
+            <div class="time-input-group">
+              <label for="customEndTime">End Time:</label>
+              <input type="datetime-local" id="customEndTime" class="time-input" />
+            </div>
+            <div class="modal-actions">
+              <button onclick="applyCustomTimeRange()" class="apply-btn">Apply</button>
+              <button onclick="closeTimeRangeModal()" class="cancel-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let allItems = [];
+      let filteredItems = [];
+
+      // Store items globally for click handlers
+      window.showDetails = showDetails;
+      window.closeDetails = closeDetails;
+      window.switchTab = switchTab;
+
+      function switchTab(tabName) {
+        document.querySelectorAll('.detail-tab').forEach((tab) => tab.classList.remove('active'));
+        document
+          .querySelectorAll('.tab-content')
+          .forEach((content) => content.classList.remove('active'));
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(`${tabName}Content`).classList.add('active');
+      }
+
+      document.getElementById('filterInput').addEventListener('input', applyFilters);
+      document.getElementById('typeFilter').addEventListener('change', applyFilters);
+      document.getElementById('zoomSlider').addEventListener('input', updateZoom);
+      document.getElementById('timeRangeSelect').addEventListener('change', handleTimeRangeChange);
+      document.getElementById('sessionSearchInput').addEventListener('input', populateSessionsList);
+
+      let customTimeRange = { start: null, end: null };
+
+      function handleTimeRangeChange() {
+        const value = document.getElementById('timeRangeSelect').value;
+        if (value === 'custom') {
+          openTimeRangeModal();
+        } else {
+          customTimeRange = { start: null, end: null };
+          populateSessionsList();
+          applyFilters();
+        }
+      }
+
+      function openTimeRangeModal() {
+        document.getElementById('timeRangeModal').classList.add('open');
+      }
+
+      function closeTimeRangeModal() {
+        document.getElementById('timeRangeModal').classList.remove('open');
+        if (customTimeRange.start === null && customTimeRange.end === null) {
+          document.getElementById('timeRangeSelect').value = 'all';
+        }
+      }
+
+      function applyCustomTimeRange() {
+        const startTime = document.getElementById('customStartTime').value;
+        const endTime = document.getElementById('customEndTime').value;
+
+        customTimeRange = {
+          start: startTime ? new Date(startTime) : null,
+          end: endTime ? new Date(endTime) : null,
+        };
+
+        closeTimeRangeModal();
+        populateSessionsList();
+        applyFilters();
+      }
+
+      window.closeTimeRangeModal = closeTimeRangeModal;
+      window.applyCustomTimeRange = applyCustomTimeRange;
+      window.showTimelineCursor = showTimelineCursor;
+      window.hideTimelineCursor = hideTimelineCursor;
+      window.toggleTimezone = toggleTimezone;
+
+      let zoomLevel = 1;
+      let useUTC = true;
+
+      function updateZoom() {
+        zoomLevel = parseFloat(document.getElementById('zoomSlider').value);
+        document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+        renderTimeline();
+      }
+
+      function toggleTimezone() {
+        useUTC = !useUTC;
+        const utcOption = document.getElementById('utcOption');
+        const localOption = document.getElementById('localOption');
+        
+        if (useUTC) {
+          utcOption.style.background = '#ff9800';
+          utcOption.style.color = 'white';
+          localOption.style.background = 'transparent';
+          localOption.style.color = '#666';
+        } else {
+          localOption.style.background = '#ff9800';
+          localOption.style.color = 'white';
+          utcOption.style.background = 'transparent';
+          utcOption.style.color = '#666';
+        }
+        
+        renderTimeline();
+      }
+
+      function formatTimeForDisplay(timestamp) {
+        const date = new Date(timestamp);
+        if (useUTC) {
+          return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+        } else {
+          return date.toLocaleTimeString();
+        }
+      }
+
+      function formatTimeStringForCursor(timestamp) {
+        const date = new Date(timestamp);
+        return useUTC ? date.toISOString() : date.toLocaleString();
+      }
+
+      let selectedSessionId = 'all';
+      let sessionColors = new Map();
+      let allSessionData = new Map();
+
+      function formatDuration(durationMs) {
+        if (durationMs < 1000) {
+          return durationMs.toFixed(2) + 'ms';
+        } else if (durationMs < 60000) {
+          return (durationMs / 1000).toFixed(2) + 's';
+        } else if (durationMs < 3600000) {
+          return (durationMs / 60000).toFixed(2) + 'min';
+        } else {
+          return (durationMs / 3600000).toFixed(2) + 'h';
+        }
+      }
+
+      function formatTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+
+        if (diff < 60000) {
+          return Math.floor(diff / 1000) + 's ago';
+        } else if (diff < 3600000) {
+          return Math.floor(diff / 60000) + 'm ago';
+        } else if (diff < 86400000) {
+          return Math.floor(diff / 3600000) + 'h ago';
+        } else {
+          return Math.floor(diff / 86400000) + 'd ago';
+        }
+      }
+
+      function getSessionColor(sessionId) {
+        if (!sessionColors.has(sessionId)) {
+          const colors = [
+            '#2196f3',
+            '#4caf50',
+            '#ff9800',
+            '#9c27b0',
+            '#f44336',
+            '#00bcd4',
+            '#795548',
+            '#607d8b',
+          ];
+          const colorIndex = sessionColors.size % colors.length;
+          sessionColors.set(sessionId, colors[colorIndex]);
+        }
+        return sessionColors.get(sessionId);
+      }
+
+      // Auto-load data when page loads
+      window.addEventListener('load', loadDefaultData);
+
+      function refreshData() {
+        allItems = [];
+        filteredItems = [];
+        document.getElementById('timelineContent').innerHTML = '<p>Refreshing data...</p>';
+        loadDefaultData();
+      }
+
+      function loadDefaultData() {
+        // Load spans from the current file
+        fetch('../out/traces.txt')
+          .then((response) => response.text())
+          .then((data) => parseSpansData(data))
+          .catch(() => {
+            // Fallback to embedded data if file not accessible
+            const spansData = `{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"SimpleAwsDemo"}}]},"scopeSpans":[{"scope":{"name":"NSURLSession","version":"0.0.1"},"spans":[{"traceId":"5c537c524ec0aee3fd2b3633810609ab","spanId":"34d13046d889676b","name":"HTTP POST","kind":3,"startTimeUnixNano":"1760324709540306944","endTimeUnixNano":"1760324709593145856","attributes":[{"key":"http.method","value":{"stringValue":"POST"}},{"key":"http.status_code","value":{"intValue":"200"}},{"key":"http.url","value":{"stringValue":"http://localhost:4318/v1/traces"}}]}]}]}]}`;
+            parseSpansData(spansData);
+          });
+        fetch('../out/logs.txt')
+          .then((response) => response.text())
+          .then((data) => parseLogsData(data))
+          .catch(() => {
+            // Fallback to embedded data if file not accessible
+            const logsData = `{"resourceLogs":[{"scopeLogs":[{"logRecords":[{"timeUnixNano":"1760320928970785024","body":{"stringValue":"session.end"},"attributes":[{"key":"session.id","value":{"stringValue":"2D45910F-DB3D-47CF-A6CF-8A1AEF1EBE54"}}]}]}]}]}`;
+            parseLogsData(logsData);
+          });
+      }
+
+      function parseSpansData(data) {
+        const lines = data.trim().split('\n');
+        lines.forEach((line) => {
+          if (line.trim()) {
+            try {
+              const spanData = JSON.parse(line);
+              if (spanData.resourceSpans) {
+                spanData.resourceSpans.forEach((resourceSpan) => {
+                  resourceSpan.scopeSpans?.forEach((scopeSpan) => {
+                    scopeSpan.spans?.forEach((span) => {
+                      const item = {
+                        type: 'span',
+                        timestamp: parseInt(span.startTimeUnixNano) / 1000000,
+                        endTime: parseInt(span.endTimeUnixNano) / 1000000,
+                        traceId: span.traceId,
+                        spanId: span.spanId,
+                        name: span.name,
+                        kind: span.kind,
+                        attributes: span.attributes || [],
+                        scopeName: scopeSpan.scope?.name,
+                        duration:
+                          (parseInt(span.endTimeUnixNano) - parseInt(span.startTimeUnixNano)) /
+                          1000000,
+                      };
+                      allItems.push(item);
+                    });
+                  });
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing span data:', e);
+            }
+          }
+        });
+        updateTimeline();
+      }
+
+      function parseLogsData(data) {
+        const lines = data.trim().split('\n');
+        lines.forEach((line) => {
+          if (line.trim()) {
+            try {
+              const logData = JSON.parse(line);
+              if (logData.resourceLogs) {
+                logData.resourceLogs.forEach((resourceLog) => {
+                  resourceLog.scopeLogs?.forEach((scopeLog) => {
+                    scopeLog.logRecords?.forEach((logRecord) => {
+                      const item = {
+                        type: 'log',
+                        timestamp: parseInt(logRecord.timeUnixNano) / 1000000,
+                        body: logRecord.body?.stringValue || '',
+                        attributes: logRecord.attributes || [],
+                        traceId: logRecord.traceId || '',
+                        spanId: logRecord.spanId || '',
+                      };
+                      allItems.push(item);
+                    });
+                  });
+                });
+              }
+            } catch (e) {
+              console.error('Error parsing log data:', e);
+            }
+          }
+        });
+        updateTimeline();
+      }
+
+      function applyFilters() {
+        const filterText = document.getElementById('filterInput').value.toLowerCase();
+        const typeFilter = document.getElementById('typeFilter').value;
+        const timeRangeValue = document.getElementById('timeRangeSelect').value;
+
+        filteredItems = allItems.filter((item) => {
+          const matchesSession =
+            selectedSessionId === 'all' || getSessionId(item) === selectedSessionId;
+
+          const matchesType =
+            typeFilter === 'all' ||
+            (typeFilter === 'spans' && item.type === 'span') ||
+            (typeFilter === 'logs' && item.type === 'log');
+
+          const matchesText =
+            !filterText ||
+            item.traceId?.toLowerCase().includes(filterText) ||
+            item.name?.toLowerCase().includes(filterText) ||
+            item.body?.toLowerCase().includes(filterText);
+
+          const matchesTimeRange = (() => {
+            if (timeRangeValue === 'all') return true;
+
+            const itemTime = new Date(item.timestamp);
+            const now = new Date();
+
+            if (timeRangeValue === 'custom') {
+              if (customTimeRange.start && itemTime < customTimeRange.start) return false;
+              if (customTimeRange.end && itemTime > customTimeRange.end) return false;
+              return true;
+            }
+
+            // Handle preset time ranges
+            const timeMap = {
+              '15m': 15 * 60 * 1000,
+              '30m': 30 * 60 * 1000,
+              '1h': 60 * 60 * 1000,
+              '2h': 2 * 60 * 60 * 1000,
+              '6h': 6 * 60 * 60 * 1000,
+              '12h': 12 * 60 * 60 * 1000,
+              '24h': 24 * 60 * 60 * 1000,
+            };
+
+            const timeAgo = timeMap[timeRangeValue];
+            if (timeAgo) {
+              const cutoffTime = new Date(now.getTime() - timeAgo);
+              return itemTime >= cutoffTime;
+            }
+
+            return true;
+          })();
+
+          return matchesSession && matchesType && matchesText && matchesTimeRange;
+        });
+
+        renderTimeline();
+      }
+
+      function selectSession(sessionId) {
+        selectedSessionId = sessionId;
+        document
+          .querySelectorAll('.session-item')
+          .forEach((item) => item.classList.remove('active'));
+        if (sessionId !== 'all') {
+          document.querySelector(`[data-session-id="${sessionId}"]`).classList.add('active');
+        } else {
+          document
+            .querySelector('.session-item[onclick="selectSession(\'all\')"]')
+            .classList.add('active');
+        }
+        applyFilters();
+      }
+
+      function getSessionId(item) {
+        const sessionAttr = item.attributes?.find((attr) => attr.key === 'session.id');
+        return sessionAttr?.value?.stringValue || 'unknown';
+      }
+
+      function populateSessionsList() {
+        const sessionData = new Map();
+        const timeRangeValue = document.getElementById('timeRangeSelect').value;
+        const searchText = document.getElementById('sessionSearchInput').value.toLowerCase();
+
+        // Filter items by time range first
+        const timeFilteredItems = allItems.filter((item) => {
+          if (timeRangeValue === 'all') return true;
+
+          const itemTime = new Date(item.timestamp);
+          const now = new Date();
+
+          if (timeRangeValue === 'custom') {
+            if (customTimeRange.start && itemTime < customTimeRange.start) return false;
+            if (customTimeRange.end && itemTime > customTimeRange.end) return false;
+            return true;
+          }
+
+          const timeMap = {
+            '15m': 15 * 60 * 1000,
+            '30m': 30 * 60 * 1000,
+            '1h': 60 * 60 * 1000,
+            '2h': 2 * 60 * 60 * 1000,
+            '6h': 6 * 60 * 60 * 1000,
+            '12h': 12 * 60 * 60 * 1000,
+            '24h': 24 * 60 * 60 * 1000,
+          };
+
+          const timeAgo = timeMap[timeRangeValue];
+          if (timeAgo) {
+            const cutoffTime = new Date(now.getTime() - timeAgo);
+            return itemTime >= cutoffTime;
+          }
+
+          return true;
+        });
+
+        // Collect session data from time-filtered items
+        timeFilteredItems.forEach((item) => {
+          const sessionId = getSessionId(item);
+          if (sessionId !== 'unknown') {
+            if (!sessionData.has(sessionId)) {
+              sessionData.set(sessionId, {
+                id: sessionId,
+                events: [],
+                minTime: Infinity,
+                maxTime: -Infinity,
+              });
+            }
+            const session = sessionData.get(sessionId);
+            session.events.push(item);
+            session.minTime = Math.min(session.minTime, item.timestamp);
+            session.maxTime = Math.max(session.maxTime, item.endTime || item.timestamp);
+          }
+        });
+
+        const sessionsList = document.getElementById('sessionsList');
+        if (sessionData.size === 0) {
+          sessionsList.innerHTML =
+            '<div style="padding: 15px; color: #666;">No sessions found</div>';
+          return;
+        }
+
+        // Create all sessions option
+        let html = `
+          <div class="session-item ${
+            selectedSessionId === 'all' ? 'active' : ''
+          }" onclick="selectSession('all')">
+            <div class="session-id">All Sessions</div>
+            <div class="session-stats">
+              <div class="session-stat">📊 ${timeFilteredItems.length} events</div>
+            </div>
+          </div>
+        `;
+
+        // Add individual sessions (filtered by search)
+        Array.from(sessionData.values())
+          .filter((session) => !searchText || session.id.toLowerCase().includes(searchText))
+          .sort((a, b) => b.maxTime - a.maxTime)
+          .forEach((session) => {
+            const duration = session.maxTime - session.minTime;
+            const timeAgo = formatTimeAgo(session.maxTime);
+            html += `
+            <div class="session-item" data-session-id="${session.id}" onclick="selectSession('${
+              session.id
+            }')">
+              <div class="session-id">${session.id}</div>
+              <div class="session-stats">
+                <div class="session-stat">🕰️ Started ${timeAgo}</div>
+                <div class="session-stat">⏱️ ${formatDuration(duration)} elapsed</div>
+                <div class="session-stat">📊 ${session.events.length} events total</div>
+              </div>
+            </div>
+          `;
+          });
+
+        sessionsList.innerHTML = html;
+      }
+
+      function updateTimeline() {
+        // Sort all items by timestamp
+        allItems.sort((a, b) => a.timestamp - b.timestamp);
+        populateSessionsList();
+        applyFilters();
+      }
+
+      function renderTimeline() {
+        const content = document.getElementById('timelineContent');
+
+        if (filteredItems.length === 0) {
+          content.innerHTML =
+            '<div class="timeline-container"><div class="timeline-axis"></div><p>No items to display. Try adjusting your filters.</p></div>';
+          return;
+        }
+
+        // Calculate timeline scale with zoom
+        const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
+        const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
+        const timeRange = maxTime - minTime;
+
+        // Fixed width calculation so zoom levels look consistent across different time ranges
+        const fixedBaseWidth = 800; // Standard base width
+        const timelineWidth = fixedBaseWidth * zoomLevel;
+
+        const html = `
+                <div class="timeline-timestamp-follow" id="timelineTimestampFollow"></div>
+                <div class="timeline-container" style="width: ${
+                  timelineWidth + 200
+                }px;" onmousemove="showTimelineCursor(event, ${minTime}, ${timeRange}, ${timelineWidth})" onmouseleave="hideTimelineCursor()">
+                    <div class="timeline-axis"></div>
+                    <div class="timeline-cursor" id="timelineCursor"></div>
+                    ${filteredItems
+                      .map((item) => {
+                        if (item.type === 'span') {
+                          return renderSpanItem(item, minTime, timeRange, timelineWidth);
+                        } else {
+                          return renderLogItem(item, minTime, timeRange, timelineWidth);
+                        }
+                      })
+                      .join('')}
+                </div>
+            `;
+
+        content.innerHTML = html;
+      }
+
+      function renderSpanItem(span, minTime, timeRange, timelineWidth) {
+        const startOffset = ((span.timestamp - minTime) / timeRange) * timelineWidth;
+        const duration = span.endTime - span.timestamp;
+        const barWidth = Math.max(20, (duration / timeRange) * timelineWidth);
+        const time = formatTimeForDisplay(span.timestamp);
+        const sessionId = getSessionId(span);
+        const sessionColor = getSessionColor(sessionId);
+        const screenName = span.attributes?.find((attr) => attr.key === 'screen.name')?.value
+          ?.stringValue;
+        const formattedDuration = formatDuration(span.duration);
+
+        return `
+                <div class="timeline-item" onclick="showDetails(${JSON.stringify(span).replace(
+                  /"/g,
+                  '&quot;',
+                )})" 
+                     title="${span.name} - ${formattedDuration}\nSession: ${sessionId}${
+          screenName ? '\nScreen: ' + screenName : ''
+        }${span.scopeName ? '\nScope: ' + span.scopeName : ''}">
+                    <div class="timeline-label">${time}</div>
+                    <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
+                    </div>
+                    <div style="margin-left: ${startOffset}px; font-size: 0.9em; color: #333;">
+                        <strong>${span.name}</strong> (${formattedDuration})
+                        ${
+                          screenName
+                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
+                            : ''
+                        }
+                        ${
+                          span.scopeName
+                            ? `<div style="font-size: 0.8em; color: #666;">🔧 ${span.scopeName}</div>`
+                            : ''
+                        }
+                        <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
+                          0,
+                          8,
+                        )}...</div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function renderLogItem(log, minTime, timeRange, timelineWidth) {
+        const offset = ((log.timestamp - minTime) / timeRange) * timelineWidth;
+        const time = formatTimeForDisplay(log.timestamp);
+        const sessionId = getSessionId(log);
+        const sessionColor = getSessionColor(sessionId);
+
+        return `
+                <div class="timeline-item" onclick="showDetails(${JSON.stringify(log).replace(
+                  /"/g,
+                  '&quot;',
+                )})" 
+                     title="${log.body}\nSession: ${sessionId}">
+                    <div class="timeline-label">${time}</div>
+                    <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
+                    </div>
+                    <div style="margin-left: ${offset + 20}px; font-size: 0.9em; color: #333;">
+                        <strong>${log.body}</strong>
+                        <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
+                          0,
+                          8,
+                        )}...</div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function formatTime(timestamp) {
+        return formatTimeForDisplay(timestamp);
+      }
+
+      function showDetails(item) {
+        const panel = document.getElementById('detailsPanel');
+        const title = document.getElementById('detailsTitle');
+        const content = document.getElementById('detailsContent');
+
+        title.textContent = item.type === 'span' ? `Span: ${item.name}` : `Log: ${item.body}`;
+
+        let formattedHtml = `
+                <div class="detail-section">
+                    <div class="detail-title">Basic Information</div>
+                    <div class="detail-item">Type: ${item.type}</div>
+                    <div class="detail-item">Timestamp: ${new Date(
+                      item.timestamp,
+                    ).toISOString()}</div>
+                    ${
+                      item.endTime
+                        ? `<div class="detail-item">End Time: ${new Date(
+                            item.endTime,
+                          ).toISOString()}</div>`
+                        : ''
+                    }
+                    ${
+                      item.duration
+                        ? `<div class="detail-item">Duration: ${formatDuration(
+                            item.duration,
+                          )}</div>`
+                        : ''
+                    }
+                </div>
+                
+                <div class="detail-section">
+                    <div class="detail-title">Identifiers</div>
+                    ${
+                      item.traceId ? `<div class="detail-item">Trace ID: ${item.traceId}</div>` : ''
+                    }
+                    ${item.spanId ? `<div class="detail-item">Span ID: ${item.spanId}</div>` : ''}
+                    ${item.kind ? `<div class="detail-item">Kind: ${item.kind}</div>` : ''}
+                </div>
+            `;
+
+        if (item.attributes && item.attributes.length > 0) {
+          formattedHtml += `
+                    <div class="detail-section">
+                        <div class="detail-title">Attributes</div>
+                        ${item.attributes
+                          .map(
+                            (attr) =>
+                              `<div class="detail-item">${attr.key}: ${
+                                attr.value.stringValue ||
+                                attr.value.intValue ||
+                                attr.value.doubleValue
+                              }</div>`,
+                          )
+                          .join('')}
+                    </div>
+                `;
+        }
+
+        const jsonView = JSON.stringify(item, null, 2);
+
+        const html = `
+          <div class="detail-tabs">
+            <button class="detail-tab active" data-tab="formatted" onclick="switchTab('formatted')">Formatted</button>
+            <button class="detail-tab" data-tab="json" onclick="switchTab('json')">Raw JSON</button>
+          </div>
+          <div id="formattedContent" class="tab-content active">
+            ${formattedHtml}
+          </div>
+          <div id="jsonContent" class="tab-content">
+            <div class="json-view">${jsonView}</div>
+          </div>
+        `;
+
+        content.innerHTML = html;
+        panel.classList.add('open');
+      }
+
+      function closeDetails() {
+        document.getElementById('detailsPanel').classList.remove('open');
+      }
+
+      function showTimelineCursor(event, minTime, timeRange, timelineWidth) {
+        const cursor = document.getElementById('timelineCursor');
+        const followTimestamp = document.getElementById('timelineTimestampFollow');
+        const container = event.currentTarget;
+        const rect = container.getBoundingClientRect();
+        const x = event.clientX - rect.left - 100;
+
+        if (x >= 0 && x <= timelineWidth) {
+          const timeOffset = (x / timelineWidth) * timeRange;
+          const currentTime = minTime + timeOffset;
+          const timeStr = formatTimeStringForCursor(currentTime);
+
+          cursor.style.left = x + 100 + 'px';
+          cursor.style.display = 'block';
+          
+          followTimestamp.textContent = timeStr;
+          followTimestamp.style.left = (event.clientX + 15) + 'px';
+          followTimestamp.style.top = (event.clientY - 10) + 'px';
+          followTimestamp.style.display = 'block';
+        }
+      }
+
+      function hideTimelineCursor() {
+        const cursor = document.getElementById('timelineCursor');
+        const followTimestamp = document.getElementById('timelineTimestampFollow');
+        if (cursor) {
+          cursor.style.display = 'none';
+        }
+        if (followTimestamp) {
+          followTimestamp.style.display = 'none';
+        }
+      }
+    </script>
+  </body>
+</html>
