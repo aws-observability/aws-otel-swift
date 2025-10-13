@@ -25,20 +25,8 @@ class AwsUIDLogRecordProcessor: LogRecordProcessor {
   /// - Parameter logRecord: The log record being processed
   func onEmit(logRecord: ReadableLogRecord) {
     let uid = uidManager.getUID()
-    var newAttributes = logRecord.attributes
-    newAttributes[userIdKey] = AttributeValue.string(uid)
-
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
-
+    var enhancedRecord = logRecord
+    enhancedRecord.setAttribute(key: userIdKey, value: uid)
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
 

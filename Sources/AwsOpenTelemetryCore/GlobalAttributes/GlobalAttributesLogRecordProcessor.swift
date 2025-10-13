@@ -27,23 +27,12 @@ class GlobalAttributesLogRecordProcessor: LogRecordProcessor {
   }
 
   func onEmit(logRecord: ReadableLogRecord) {
-    var newAttributes = logRecord.attributes
+    var enhancedRecord = logRecord
     let globalAttributes = globalAttributesManager.getAttributes()
 
     for (key, value) in globalAttributes {
-      newAttributes[key] = value
+      enhancedRecord.setAttribute(key: key, value: value)
     }
-
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
 
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
