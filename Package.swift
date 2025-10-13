@@ -87,10 +87,11 @@ let package = Package(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
     ),
-    .testTarget(
-      name: "AwsOpenTelemetryAgentTests",
-      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
-    ),
+    // Disabling due to flakiness caused by attempting to start the AWS Otel Swift agent
+    // .testTarget(
+    //   name: "AwsOpenTelemetryAgentTests",
+    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
+    // ),
     .testTarget(
       name: "ContractTests",
       dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
