@@ -41,7 +41,7 @@
       XCTAssertEqual(logs.count, 1)
 
       let log = logs[0]
-      XCTAssertEqual(log.eventName, "device.crash")
+      XCTAssertEqual(log.body?.description, "crash")
       XCTAssertEqual(log.instrumentationScopeInfo.name, "software.amazon.opentelemetry.MXCrashDiagnostic")
       XCTAssertNotNil(log.observedTimestamp, "Observed timestamp should be set")
       XCTAssertEqual(log.attributes["crash.exception_type"]?.description, "1")

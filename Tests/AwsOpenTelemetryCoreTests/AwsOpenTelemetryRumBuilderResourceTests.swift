@@ -100,14 +100,12 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
       .build()
 
     let logger = loggerProvider.get(instrumentationScopeName: "test")
-    logger.logRecordBuilder().setEventName("test name").setBody(AttributeValue.string("test body")).emit()
+    logger.logRecordBuilder().setBody(AttributeValue.string("test log")).emit()
 
     let exportedLogs = logExporter.getExportedLogs()
     XCTAssertEqual(exportedLogs.count, 1)
 
     let logRecord = exportedLogs[0]
-    XCTAssertEqual(logRecord.eventName, "test name")
-    XCTAssertEqual(logRecord.body, AttributeValue.string("test body"))
     XCTAssertEqual(logRecord.resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "log-test-id")
     XCTAssertEqual(logRecord.resource.attributes["cloud.region"]?.description, "us-west-2")
     XCTAssertNotNil(logRecord.resource.attributes["device.model.name"])

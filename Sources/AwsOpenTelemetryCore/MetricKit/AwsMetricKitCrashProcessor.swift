@@ -16,7 +16,7 @@
 
         AwsOpenTelemetryLogger.debug("Emitting crash log record with \(attributes.count) attributes")
         logger.logRecordBuilder()
-          .setEventName(AwsMetricKitConstants.crash)
+          .setBody(AttributeValue.string("crash"))
           .setObservedTimestamp(Date())
           .setAttributes(attributes)
           .emit()
@@ -27,36 +27,36 @@
       var attributes: [String: AttributeValue] = [:]
 
       if let exceptionType = crash.exceptionType {
-        attributes[AwsMetricKitConstants.crashExceptionType] = AttributeValue.int(Int(truncating: exceptionType))
+        attributes["crash.exception_type"] = AttributeValue.int(Int(truncating: exceptionType))
       }
 
       if let exceptionCode = crash.exceptionCode {
-        attributes[AwsMetricKitConstants.crashExceptionCode] = AttributeValue.int(Int(truncating: exceptionCode))
+        attributes["crash.exception_code"] = AttributeValue.int(Int(truncating: exceptionCode))
       }
 
       if let signal = crash.signal {
-        attributes[AwsMetricKitConstants.crashSignal] = AttributeValue.int(Int(truncating: signal))
+        attributes["crash.signal"] = AttributeValue.int(Int(truncating: signal))
       }
 
       if let terminationReason = crash.terminationReason {
-        attributes[AwsMetricKitConstants.crashTerminationReason] = AttributeValue.string(terminationReason)
+        attributes["crash.termination_reason"] = AttributeValue.string(terminationReason)
       }
 
       if #available(iOS 17.0, *) {
         if let exceptionReason = crash.exceptionReason {
-          attributes[AwsMetricKitConstants.crashExceptionReasonType] = AttributeValue.string(exceptionReason.exceptionType)
-          attributes[AwsMetricKitConstants.crashExceptionReasonName] = AttributeValue.string(exceptionReason.exceptionName)
-          attributes[AwsMetricKitConstants.crashExceptionReasonMessage] = AttributeValue.string(exceptionReason.composedMessage)
-          attributes[AwsMetricKitConstants.crashExceptionReasonClassName] = AttributeValue.string(exceptionReason.className)
+          attributes["crash.exception_reason.type"] = AttributeValue.string(exceptionReason.exceptionType)
+          attributes["crash.exception_reason.name"] = AttributeValue.string(exceptionReason.exceptionName)
+          attributes["crash.exception_reason.message"] = AttributeValue.string(exceptionReason.composedMessage)
+          attributes["crash.exception_reason.class_name"] = AttributeValue.string(exceptionReason.className)
         }
       }
 
       if let vmRegionInfo = crash.virtualMemoryRegionInfo {
-        attributes[AwsMetricKitConstants.crashVmRegionInfo] = AttributeValue.string(vmRegionInfo)
+        attributes["crash.vm_region.info"] = AttributeValue.string(vmRegionInfo)
       }
 
       if let stacktrace = String(bytes: crash.callStackTree.jsonRepresentation(), encoding: .utf8) {
-        attributes[AwsMetricKitConstants.crashStacktrace] = AttributeValue.string(stacktrace)
+        attributes["crash.stacktrace"] = AttributeValue.string(stacktrace)
       }
 
       return attributes
