@@ -59,8 +59,8 @@ struct CustomSpanFormView: View {
                 pair.key.isEmpty ? nil : (pair.key, pair.value)
               }
             )
-            let startTime = Date()
-            let endTime = startTime.addingTimeInterval(durationSeconds)
+            let endTime = Date()
+            let startTime = endTime.addingTimeInterval(-durationSeconds)
             viewModel.createCustomSpan(name: spanName, startTime: startTime, endTime: endTime, attributes: attributeDict)
             dismiss()
           }
