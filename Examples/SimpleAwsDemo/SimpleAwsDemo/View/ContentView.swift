@@ -125,6 +125,10 @@ struct ContentView: View {
                 viewModel.hangApplication(seconds: 2)
               }
 
+              awsButton(icon: viewModel.isJanking ? "pause.fill" : "play.fill", title: viewModel.isJanking ? "Stop UI Jank" : "Start UI Jank", action: {
+                viewModel.toggleUIJank()
+              })
+
               Button(action: {
                 let array = []
                 _ = array[10] // Index out of bounds

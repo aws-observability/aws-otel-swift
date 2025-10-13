@@ -41,6 +41,7 @@ class LoaderViewModel: ObservableObject {
   @Published var showingCustomLogForm = false
   @Published var showingCustomSpanForm = false
   @Published var showingGlobalAttributesView = false
+  @Published var isJanking = false
 
   /// Timer for updating the digital clock
   private var clockTimer: AnyCancellable?
@@ -275,6 +276,36 @@ class LoaderViewModel: ObservableObject {
 
   func isNotContractTest() -> Bool {
     return !isContractTest()
+  }
+
+  func toggleUIJank() {
+    stopClock()
+    isJanking.toggle()
+    if isJanking {
+      startJankSimulation()
+      resultMessage = "🟡 Started UI jank simulation"
+    } else {
+      resultMessage = "🟢 Stopped UI jank simulation"
+    }
+  }
+
+  private func startJankSimulation() {
+    performJankOperation()
+  }
+
+  private func performJankOperation() {
+    guard isJanking else { return }
+
+    // Block main thread for 100ms to cause frame drops
+    let startTime = Date()
+    while Date().timeIntervalSince(startTime) < 0.1 {
+      // Busy wait
+    }
+
+    // Schedule next jank operation
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+      self.performJankOperation()
+    }
   }
 
   /// Starts the digital clock timer
