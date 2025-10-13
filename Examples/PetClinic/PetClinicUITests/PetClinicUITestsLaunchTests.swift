@@ -1,13 +1,6 @@
-//
-//  PetClinicUITestsLaunchTests.swift
-//  PetClinicUITests
-//
-//  Created by Sakharkar, Paras on 9/18/25.
-//
-
 import XCTest
 
-final class PetClinicUITestsLaunchTests: XCTestCase {
+class PetClinicUITestsLaunchTests: XCTestCase {
   override class var runsForEachTargetApplicationUIConfiguration: Bool {
     true
   }

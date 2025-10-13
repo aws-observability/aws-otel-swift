@@ -1,10 +1,3 @@
-//
-//  PetClinicUITests.swift
-//  PetClinicUITests
-//
-//  Created by Sakharkar, Paras on 9/18/25.
-//
-
 import XCTest
 
 /**
@@ -14,7 +7,7 @@ import XCTest
  *
  * The ANR and Crash buttons are saved for last as they will terminate the test.
  */
-final class PetClinicUITests: XCTestCase {
+class PetClinicUITests: XCTestCase {
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
