@@ -4,6 +4,7 @@ struct CustomLogFormView: View {
   @ObservedObject var viewModel: LoaderViewModel
   @Environment(\.dismiss) private var dismiss
 
+  @State private var eventName = "CustomLog"
   @State private var message = "Custom log message"
   @State private var attributes: [AttributePair] = [
     AttributePair(key: "action.type", value: "button_click"),
@@ -13,6 +14,10 @@ struct CustomLogFormView: View {
   var body: some View {
     NavigationView {
       Form {
+        Section("Event Name") {
+          TextField("Enter event name", text: $eventName)
+        }
+
         Section("Log Message") {
           TextField("Enter log message", text: $message)
         }
@@ -50,10 +55,10 @@ struct CustomLogFormView: View {
                 pair.key.isEmpty ? nil : (pair.key, pair.value)
               }
             )
-            viewModel.createCustomLog(message: message, attributes: attributeDict)
+            viewModel.createCustomLog(eventName: eventName, message: message, attributes: attributeDict)
             dismiss()
           }
-          .disabled(message.isEmpty)
+          .disabled(eventName.isEmpty || message.isEmpty)
         }
       }
     }

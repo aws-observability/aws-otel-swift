@@ -16,9 +16,9 @@
 
         AwsOpenTelemetryLogger.debug("Emitting hang log record with \(attributes.count) attributes")
         logger.logRecordBuilder()
-          .setBody(AttributeValue.string("hang"))
+          .setEventName("device.hang")
           .setAttributes(attributes)
-          .setObservedTimestamp(Date())
+          .setTimestamp(Date())
           .emit()
       }
     }

@@ -1010,13 +1010,9 @@
                     scopeSpan.spans?.forEach((span) => {
                       const item = {
                         type: 'span',
+                        ...span,
                         timestamp: parseInt(span.startTimeUnixNano) / 1000000,
                         endTime: parseInt(span.endTimeUnixNano) / 1000000,
-                        traceId: span.traceId,
-                        spanId: span.spanId,
-                        name: span.name,
-                        kind: span.kind,
-                        attributes: span.attributes || [],
                         scopeName: scopeSpan.scope?.name,
                         duration:
                           (parseInt(span.endTimeUnixNano) - parseInt(span.startTimeUnixNano)) /
@@ -1047,11 +1043,12 @@
                     scopeLog.logRecords?.forEach((logRecord) => {
                       const item = {
                         type: 'log',
+                        ...logRecord,
                         timestamp: parseInt(logRecord.timeUnixNano) / 1000000,
+                        observedTimeUnixNano: logRecord.observedTimeUnixNano
+                          ? parseInt(logRecord.observedTimeUnixNano) / 1000000
+                          : null,
                         body: logRecord.body?.stringValue || '',
-                        attributes: logRecord.attributes || [],
-                        traceId: logRecord.traceId || '',
-                        spanId: logRecord.spanId || '',
                       };
                       allItems.push(item);
                     });
@@ -1288,7 +1285,7 @@
         const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
         const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
         const actualTimeRange = maxTime - minTime;
-        const timeRange = actualTimeRange * 1.1; // Add 20% padding after the latest event
+        const timeRange = actualTimeRange * 1.1; // Add 10% padding after the latest event
 
         // Update header with timestamps
         const startTimeStr = formatTimeForDisplay(minTime);
@@ -1344,9 +1341,6 @@
 
             return `
             <div class="session-group" style="border-left-color: ${sessionColor};">
-              <div class="session-group-header" style="color: ${sessionColor};">
-                Session: ${sessionId} (${items.length} events)
-              </div>
               ${itemsHtml}
             </div>
           `;
@@ -1429,17 +1423,18 @@
         const time = formatTimeForDisplay(log.timestamp);
         const sessionId = getSessionId(log);
         const sessionColor = getSessionColor(sessionId);
+        const displayTitle = log.eventName || log.body;
 
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
           log,
         ).replace(/"/g, '&quot;')})" 
-                     title="${log.body}\nSession: ${sessionId}">
+                     title="${displayTitle}\nSession: ${sessionId}">
                     <div class="timeline-label">${time}</div>
                     <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
                     </div>
                     <div style="margin-left: ${offset + 20}px; font-size: 0.9em; color: #333;">
-                        <strong>${log.body}</strong>
+                        <strong>${displayTitle}</strong>
                         <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
                           0,
                           8,
@@ -1468,6 +1463,13 @@
                       item.timestamp,
                     ).toISOString()}</div>
                     ${
+                      item.observedTimeUnixNano
+                        ? `<div class="detail-item">Observed Time: ${new Date(
+                            item.observedTimeUnixNano,
+                          ).toISOString()}</div>`
+                        : ''
+                    }
+                    ${
                       item.endTime
                         ? `<div class="detail-item">End Time: ${new Date(
                             item.endTime,
@@ -1479,6 +1481,26 @@
                         ? `<div class="detail-item">Duration: ${formatDuration(
                             item.duration,
                           )}</div>`
+                        : ''
+                    }
+                    ${
+                      item.eventName
+                        ? `<div class="detail-item">Event Name: ${item.eventName}</div>`
+                        : ''
+                    }
+                    ${
+                      item.severityText
+                        ? `<div class="detail-item">Severity Text: ${item.severityText}</div>`
+                        : ''
+                    }
+                    ${
+                      item.severityNumber !== null && item.severityNumber !== undefined
+                        ? `<div class="detail-item">Severity Number: ${item.severityNumber}</div>`
+                        : ''
+                    }
+                    ${
+                      item.flags !== null && item.flags !== undefined
+                        ? `<div class="detail-item">Flags: ${item.flags}</div>`
                         : ''
                     }
                 </div>

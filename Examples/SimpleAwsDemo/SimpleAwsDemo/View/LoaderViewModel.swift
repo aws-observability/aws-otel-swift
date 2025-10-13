@@ -153,11 +153,13 @@ class LoaderViewModel: ObservableObject {
     showingCustomLogForm = true
   }
 
-  func createCustomLog(message: String, attributes: [String: String]) {
+  func createCustomLog(eventName: String, message: String, attributes: [String: String]) {
     stopClock()
 
     let logger = OpenTelemetry.instance.loggerProvider.loggerBuilder(instrumentationScopeName: "custom.log").build()
     let logBuilder = logger.logRecordBuilder()
+      .setEventName(eventName)
+      .setTimestamp(Date())
       .setBody(AttributeValue.string(message))
 
     var attributeValues: [String: AttributeValue] = [:]
@@ -167,7 +169,7 @@ class LoaderViewModel: ObservableObject {
 
     logBuilder.setAttributes(attributeValues).emit()
 
-    resultMessage = "Custom log created:\nMessage: \(message)\nAttributes: \(attributes)"
+    resultMessage = "Custom log created:\nEvent: \(eventName)\nMessage: \(message)\nAttributes: \(attributes)"
   }
 
   func showCustomSpanForm() {
@@ -178,19 +180,20 @@ class LoaderViewModel: ObservableObject {
     showingGlobalAttributesView = true
   }
 
-  func createCustomSpan(name: String, attributes: [String: String]) {
+  func createCustomSpan(name: String, startTime: Date, endTime: Date, attributes: [String: String]) {
     stopClock()
 
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "custom.span")
-    let span = tracer.spanBuilder(spanName: name).startSpan()
+    let span = tracer.spanBuilder(spanName: name).setStartTime(time: startTime).startSpan()
 
     for (key, value) in attributes {
       span.setAttribute(key: key, value: AttributeValue.string(value))
     }
 
-    span.end()
+    span.end(time: endTime)
 
-    resultMessage = "Custom span created:\nName: \(name)\nAttributes: \(attributes)"
+    let duration = endTime.timeIntervalSince(startTime)
+    resultMessage = "Custom span created:\nName: \(name)\nDuration: \(String(format: "%.2f", duration))s\nAttributes: \(attributes)"
   }
 
   /// Makes a 200 HTTP request to demonstrate network error instrumentation

@@ -5,6 +5,7 @@ struct CustomSpanFormView: View {
   @Environment(\.dismiss) private var dismiss
 
   @State private var spanName = "custom.operation"
+  @State private var durationSeconds: Double = .random(in: 1 ... 5)
   @State private var attributes: [AttributePair] = [
     AttributePair(key: "operation.type", value: "user_action"),
     AttributePair(key: "component", value: "demo_app")
@@ -15,6 +16,14 @@ struct CustomSpanFormView: View {
       Form {
         Section("Span Name") {
           TextField("Enter span name", text: $spanName)
+        }
+
+        Section("Duration") {
+          HStack {
+            Text("Duration: \(String(format: "%.1f", durationSeconds))s")
+            Spacer()
+          }
+          Slider(value: $durationSeconds, in: 0.1 ... 10.0, step: 0.1)
         }
 
         Section("Attributes") {
@@ -50,7 +59,9 @@ struct CustomSpanFormView: View {
                 pair.key.isEmpty ? nil : (pair.key, pair.value)
               }
             )
-            viewModel.createCustomSpan(name: spanName, attributes: attributeDict)
+            let startTime = Date()
+            let endTime = startTime.addingTimeInterval(durationSeconds)
+            viewModel.createCustomSpan(name: spanName, startTime: startTime, endTime: endTime, attributes: attributeDict)
             dismiss()
           }
           .disabled(spanName.isEmpty)

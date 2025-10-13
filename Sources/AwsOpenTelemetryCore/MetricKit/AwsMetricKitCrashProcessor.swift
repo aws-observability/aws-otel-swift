@@ -16,8 +16,8 @@
 
         AwsOpenTelemetryLogger.debug("Emitting crash log record with \(attributes.count) attributes")
         logger.logRecordBuilder()
-          .setBody(AttributeValue.string("crash"))
-          .setObservedTimestamp(Date())
+          .setEventName("device.crash")
+          .setTimestamp(Date())
           .setAttributes(attributes)
           .emit()
       }
