@@ -69,7 +69,7 @@
       XCTAssertEqual(span.name, "AppStart")
       XCTAssertEqual(span.instrumentationScope.name, "software.amazon.opentelemetry.MXAppLaunchDiagnostic")
       XCTAssertEqual(span.attributes[AwsMetricKitConstants.appLaunchDuration]?.description, "2.5")
-      XCTAssertEqual(span.attributes[AwsMetricKitConstants.appLaunchType]?.description, "COLD")
+      XCTAssertEqual(span.attributes[AwsMetricKitConstants.appLaunchType]?.description, "cold")
     }
 
     func testColdStartDetection() {
@@ -93,7 +93,7 @@
         return
       }
 
-      XCTAssertEqual(spans[0].attributes[AwsMetricKitConstants.appLaunchType]?.description, "COLD")
+      XCTAssertEqual(spans[0].attributes[AwsMetricKitConstants.appLaunchType]?.description, "cold")
     }
 
     func testSkipsLongLaunchDuration() {

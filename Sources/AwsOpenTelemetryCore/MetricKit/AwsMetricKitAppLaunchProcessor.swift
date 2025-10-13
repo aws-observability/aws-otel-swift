@@ -57,7 +57,7 @@
           continue
         }
         let startTime = endTime.addingTimeInterval(-launchDurationSeconds)
-        let launchType = isColdStart ? "COLD" : "WARM"
+        let launchType = isColdStart ? "cold" : "warm"
 
         AwsOpenTelemetryLogger.debug("Creating app launch span with duration \(launchDurationSeconds)s")
         let span = tracer.spanBuilder(spanName: "AppStart")

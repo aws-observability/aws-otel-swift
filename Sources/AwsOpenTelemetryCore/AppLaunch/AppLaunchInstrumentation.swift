@@ -83,11 +83,11 @@ public class AppLaunchInstrumentation {
 
     let endTime = Date()
     let startTime: Date = provider.coldLaunchStartTime
-    var launchType = "COLD"
+    var launchType = "cold"
     var startNotification = "ColdLaunchStartTime"
 
     if isPrewarmLaunch(duration: endTime.timeIntervalSince(startTime)) {
-      launchType = "PRE_WARM"
+      launchType = "prewarm"
       startNotification = provider.warmLaunchStartNotification.rawValue
     }
 
@@ -128,7 +128,7 @@ public class AppLaunchInstrumentation {
 
     // Determine launch type for warm launches
     let launchDuration = endTime.timeIntervalSince(startTime)
-    let launchType = isPrewarmLaunch(duration: launchDuration) ? "PRE_WARM" : "WARM"
+    let launchType = isPrewarmLaunch(duration: launchDuration) ? "prewarm" : "warm"
     AwsOpenTelemetryLogger.debug("AppLaunchInstrumentation creating warm launch span with type: \(launchType), startTime: \(startTime), endTime: \(endTime)")
 
     let span = tracer.spanBuilder(spanName: "AppStart")
