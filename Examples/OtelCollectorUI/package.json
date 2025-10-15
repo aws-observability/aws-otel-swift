@@ -1,0 +1,13 @@
+{
+  "name": "otel-viewer-server",
+  "version": "1.0.0",
+  "description": "Node.js Express server for OTEL Timeline Viewer",
+  "main": "serve_otel_viewer.js",
+  "scripts": {
+    "start": "node serve_otel_viewer.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "open": "^8.4.2"
+  }
+}

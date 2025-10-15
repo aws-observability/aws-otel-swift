@@ -189,8 +189,3 @@ test-without-building-visionos:
 .PHONY: contract-test-run-visionos
 contract-test-run-visionos: ## `xcodebuild test` automatically builds and tests
 	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
-
-# OTEL Viewer
-.PHONY: otel-viewer
-otel-viewer:  ## Start the OTEL Timeline Viewer server
-	cd Examples/OtelCollectorUI && python3 serve_otel_viewer.py
