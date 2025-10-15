@@ -1384,6 +1384,8 @@
           ?.stringValue;
         const launchType = span.attributes?.find((attr) => attr.key === 'launch.type')?.value
           ?.stringValue;
+        const startType = span.attributes?.find((attr) => attr.key === 'start.type')?.value
+          ?.stringValue;
         const hangReporter = span.attributes?.find((attr) => attr.key === 'hang.reporter')?.value
           ?.stringValue;
         const activePrewarm = span.attributes?.find((attr) => attr.key === 'active_prewarm')?.value
@@ -1398,9 +1400,9 @@
           screenName ? '\nScreen: ' + screenName : ''
         }${span.scopeName ? '\nScope: ' + span.scopeName : ''}${
           launchType ? '\nLaunch Type: ' + launchType : ''
-        }${hangReporter ? '\nHang Reporter: ' + hangReporter : ''}${
-          activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''
-        }">
+        }${startType ? '\nStart Type: ' + startType : ''}${
+          hangReporter ? '\nHang Reporter: ' + hangReporter : ''
+        }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}">
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
                     </div>
@@ -1419,6 +1421,11 @@
                         ${
                           launchType
                             ? `<div style="font-size: 0.8em; color: #ff9800;">🚀 ${launchType}</div>`
+                            : ''
+                        }
+                        ${
+                          startType
+                            ? `<div style="font-size: 0.8em; color: #4caf50;">▶️ ${startType}</div>`
                             : ''
                         }
                         ${

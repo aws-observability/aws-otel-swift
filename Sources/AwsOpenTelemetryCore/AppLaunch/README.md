@@ -19,22 +19,22 @@ A protocol that defines the interface for providing app launch timing data:
 ```swift
 public protocol AppLaunchProvider {
   var coldLaunchStartTime: Date { get }
-  var coldLaunchEndNotification: Notification.Name { get }
-  var warmLaunchStartNotification: Notification.Name { get }
-  var warmLaunchEndNotification: Notification.Name { get }
+  var coldEndNotification: Notification.Name { get }
+  var warmStartNotification: Notification.Name { get }
+  var warmEndNotification: Notification.Name { get }
   var preWarmFallbackThreshold: TimeInterval { get }
 }
 ```
 
 #### AppLaunchProvider Parameters
 
-| Parameter                     | Type                | Description                                                                                                                   | Default (DefaultAppLaunchProvider)              |
-| ----------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `coldLaunchStartTime`         | `Date`              | The time when the app process started                                                                                         | Process start time from `kinfo_proc`            |
-| `coldLaunchEndNotification`   | `Notification.Name` | Notification fired when cold launch completes                                                                                 | `UIApplication.didFinishLaunchingNotification`  |
-| `warmLaunchStartNotification` | `Notification.Name` | Notification fired when warm launch begins                                                                                    | `UIApplication.willEnterForegroundNotification` |
-| `warmLaunchEndNotification`   | `Notification.Name` | Notification fired when warm launch completes                                                                                 | `UIApplication.didBecomeActiveNotification`     |
-| `preWarmFallbackThreshold`    | `TimeInterval`      | Duration threshold (seconds) above which launches are classified as pre-warm. Set to `0` to disable threshold-based detection | `30.0`                                          |
+| Parameter                  | Type                | Description                                                                                                                   | Default (DefaultAppLaunchProvider)              |
+| -------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `coldLaunchStartTime`      | `Date`              | The time when the app process started                                                                                         | Process start time from `kinfo_proc`            |
+| `coldEndNotification`      | `Notification.Name` | Notification fired when cold launch completes                                                                                 | `UIApplication.didFinishLaunchingNotification`  |
+| `warmStartNotification`    | `Notification.Name` | Notification fired when warm launch begins                                                                                    | `UIApplication.willEnterForegroundNotification` |
+| `warmEndNotification`      | `Notification.Name` | Notification fired when warm launch completes                                                                                 | `UIApplication.didBecomeActiveNotification`     |
+| `preWarmFallbackThreshold` | `TimeInterval`      | Duration threshold (seconds) above which launches are classified as pre-warm. Set to `0` to disable threshold-based detection | `30.0`                                          |
 
 ### DefaultAppLaunchProvider
 
@@ -61,14 +61,14 @@ The main instrumentation class that:
 
 ### Cold Launch
 
-- Triggered by `coldLaunchEndNotification`
+- Triggered by `coldEndNotification`
 - Measures from process start to launch completion
 - Automatically classified as `PRE_WARM` if duration exceeds threshold
 
 ### Warm Launch
 
 - Only recorded after initial cold launch is complete
-- Triggered by `warmLaunchStartNotification` and `warmLaunchEndNotification`
+- Triggered by `warmStartNotification` and `warmEndNotification`
 - Measures from foreground entry to active state
 - Automatically classified as `PRE_WARM` if duration exceeds threshold
 
