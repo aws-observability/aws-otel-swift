@@ -12,7 +12,7 @@
         background-color: #f5f5f5;
         height: 100vh;
         display: grid;
-        grid-template-columns: 240px 1fr 0;
+        grid-template-columns: 200px 1fr 0;
         grid-template-rows: auto auto auto 1fr;
         grid-template-areas:
           'sidebar header header'
@@ -22,7 +22,7 @@
         transition: grid-template-columns 0.3s;
       }
       body.details-open {
-        grid-template-columns: 240px 1fr 400px;
+        grid-template-columns: 200px 1fr 400px;
       }
       .left-sidebar {
         grid-area: sidebar;
@@ -1163,7 +1163,12 @@
 
       function selectSession(sessionId) {
         if (sessionId !== 'all') {
-          addCustomFilter(`session.id=${sessionId}`);
+          const filterText = `session.id=${sessionId}`;
+          if (customFilters.includes(filterText)) {
+            removeCustomFilter(filterText);
+          } else {
+            addCustomFilter(filterText);
+          }
         }
       }
 
@@ -1244,13 +1249,21 @@
           .forEach((session) => {
             const duration = session.maxTime - session.minTime;
             const timeAgo = formatTimeAgo(session.maxTime);
+            const isFiltered = customFilters.includes(`session.id=${session.id}`);
             html += `
-            <div class="session-item" data-session-id="${session.id}" onclick="selectSession('${
+            <div class="session-item ${isFiltered ? 'active' : ''}" data-session-id="${
               session.id
-            }')" onmouseenter="highlightSessionEvents('${
+            }" onclick="selectSession('${session.id}')" onmouseenter="highlightSessionEvents('${
               session.id
             }', true)" onmouseleave="highlightSessionEvents('${session.id}', false)">
-              <div class="session-id">${session.id}</div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div class="session-id">${session.id}</div>
+                ${
+                  isFiltered
+                    ? `<button onclick="event.stopPropagation(); removeCustomFilter('session.id=${session.id}')" style="background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>`
+                    : ''
+                }
+              </div>
               <div class="session-stats">
                 <div class="session-stat">🕰️ Started ${timeAgo}</div>
                 <div class="session-stat">⏱️ ${formatDuration(duration)} elapsed</div>
@@ -1285,7 +1298,7 @@
         const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
         const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
         const actualTimeRange = maxTime - minTime;
-        const timeRange = actualTimeRange * 1.1; // Add 10% padding after the latest event
+        const timeRange = actualTimeRange * 1.2; // Add 10% padding after the latest event
 
         // Update header with timestamps
         const startTimeStr = formatTimeForDisplay(minTime);
@@ -1371,6 +1384,8 @@
           ?.stringValue;
         const launchType = span.attributes?.find((attr) => attr.key === 'launch.type')?.value
           ?.stringValue;
+        const hangReporter = span.attributes?.find((attr) => attr.key === 'hang.reporter')?.value
+          ?.stringValue;
         const activePrewarm = span.attributes?.find((attr) => attr.key === 'active_prewarm')?.value
           ?.boolValue;
         const formattedDuration = formatDuration(span.duration);
@@ -1383,7 +1398,9 @@
           screenName ? '\nScreen: ' + screenName : ''
         }${span.scopeName ? '\nScope: ' + span.scopeName : ''}${
           launchType ? '\nLaunch Type: ' + launchType : ''
-        }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}">
+        }${hangReporter ? '\nHang Reporter: ' + hangReporter : ''}${
+          activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''
+        }">
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
                     </div>
@@ -1402,6 +1419,11 @@
                         ${
                           launchType
                             ? `<div style="font-size: 0.8em; color: #ff9800;">🚀 ${launchType}</div>`
+                            : ''
+                        }
+                        ${
+                          hangReporter
+                            ? `<div style="font-size: 0.8em; color: #9c27b0;">⏸️ ${hangReporter}</div>`
                             : ''
                         }
                         ${
@@ -1678,6 +1700,7 @@
           customFilters.push(filterText);
           saveSettings();
           renderFilterTags();
+          populateSessionsList();
           applyFilters();
         }
       }
@@ -1686,6 +1709,7 @@
         customFilters = customFilters.filter((f) => f !== filterText);
         saveSettings();
         renderFilterTags();
+        populateSessionsList();
         applyFilters();
       }
 

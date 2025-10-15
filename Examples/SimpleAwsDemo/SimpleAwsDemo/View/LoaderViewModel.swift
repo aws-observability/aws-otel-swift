@@ -42,6 +42,8 @@ class LoaderViewModel: ObservableObject {
   @Published var showingCustomSpanForm = false
   @Published var showingGlobalAttributesView = false
   @Published var isJanking = false
+  private var jankStartTime: Date?
+  private var jankDuration: Double = 0
 
   /// Timer for updating the digital clock
   private var clockTimer: AnyCancellable?
@@ -260,14 +262,82 @@ class LoaderViewModel: ObservableObject {
     }
   }
 
+  enum HangType: String, CaseIterable {
+    case threadSleep = "Thread.sleep"
+    case networkCall = "Network Call"
+    case heavyComputation = "Heavy Computation"
+    case fileIO = "File I/O"
+
+    var description: String {
+      switch self {
+      case .threadSleep:
+        return "Blocks thread completely using Thread.sleep"
+      case .networkCall:
+        return "Synchronous network request with delay"
+      case .heavyComputation:
+        return "CPU-intensive work without yielding"
+      case .fileIO:
+        return "Synchronous file operations"
+      }
+    }
+  }
+
   /// Simulates a hang
   func hangApplication(seconds: UInt8) {
+    hangApplication(seconds: Double(seconds), type: .threadSleep)
+  }
+
+  func hangApplication(seconds: Double, type: HangType) {
     /// Most of Apple’s developer tools start reporting issues when the period of unresponsiveness for the main run loop exceeds 250 ms. [source](https://developer.apple.com/documentation/xcode/understanding-hangs-in-your-app#Understand-hangs)
     ///
-    DispatchQueue.main.async {
-      // Intentionally block the main thread for a duration
-      Thread.sleep(forTimeInterval: Double(seconds) as TimeInterval)
+    let startTime = Date()
+    let duration = seconds
+
+    switch type {
+    case .threadSleep:
+      print("LoaderViewModel: Starting Thread.sleep at \(startTime)")
+      Thread.sleep(forTimeInterval: duration)
+
+    case .networkCall:
+      print("LoaderViewModel: Starting network call at \(startTime)")
+      let delaySeconds = Int(duration)
+      let url = URL(string: "https://httpbin.org/delay/\(delaySeconds)")!
+      _ = try? Data(contentsOf: url)
+
+    case .heavyComputation:
+      print("LoaderViewModel: Starting heavy computation at \(startTime)")
+      let endTime = startTime.addingTimeInterval(duration)
+      while Date() < endTime {
+        // CPU-intensive work that blocks RunLoop
+        _ = (0 ... 1000).map { $0 * $0 }.reduce(0, +)
+      }
+
+    case .fileIO:
+      print("LoaderViewModel: Starting file I/O at \(startTime)")
+      let tempFile = FileManager.default.temporaryDirectory.appendingPathComponent("hang_test.txt")
+      let endTime = startTime.addingTimeInterval(duration)
+      var i = 0
+      while Date() < endTime {
+        try? "\(i)\n".data(using: .utf8)?.write(to: tempFile, options: .atomic)
+        i += 1
+      }
     }
+
+    let actualEndTime = Date()
+    print("LoaderViewModel: Finished hang simulation at \(actualEndTime), duration: \(actualEndTime.timeIntervalSince(startTime) * 1000)ms")
+
+    let (typeName, typeDescription) = switch type {
+    case .threadSleep: ("Thread.Sleep", "Blocks thread completely")
+    case .networkCall: ("Network.Call", "Synchronous network request")
+    case .heavyComputation: ("Heavy.Computation", "CPU-intensive work")
+    case .fileIO: ("File.IO", "Synchronous file operations")
+    }
+
+    createCustomSpan(name: "[DEBUG]\(typeName)", startTime: startTime, endTime: actualEndTime, attributes: [
+      "duration_seconds": String(format: "%.1f", seconds),
+      "type": typeName,
+      "description": typeDescription
+    ])
   }
 
   func isContractTest() -> Bool {
@@ -279,18 +349,40 @@ class LoaderViewModel: ObservableObject {
   }
 
   func toggleUIJank() {
+    toggleUIJank(duration: 10.0)
+  }
+
+  func toggleUIJank(duration: Double) {
     stopClock()
     isJanking.toggle()
     if isJanking {
+      jankStartTime = Date()
+      jankDuration = duration
       startJankSimulation()
-      resultMessage = "🟡 Started UI jank simulation"
+      resultMessage = "🟡 Started UI jank simulation for \(String(format: "%.1f", duration))s"
     } else {
+      if let startTime = jankStartTime {
+        let endTime = Date()
+        createCustomSpan(name: "[DEBUG]UIJank", startTime: startTime, endTime: endTime, attributes: [
+          "duration_seconds": String(format: "%.1f", endTime.timeIntervalSince(startTime)),
+          "type": "UIJank",
+          "description": "Continuous frame drops (100ms blocks every 50ms)"
+        ])
+      }
+      jankStartTime = nil
       resultMessage = "🟢 Stopped UI jank simulation"
     }
   }
 
   private func startJankSimulation() {
     performJankOperation()
+
+    // Auto-stop after specified duration
+    DispatchQueue.main.asyncAfter(deadline: .now() + jankDuration) {
+      if self.isJanking {
+        self.toggleUIJank(duration: 0)
+      }
+    }
   }
 
   private func performJankOperation() {

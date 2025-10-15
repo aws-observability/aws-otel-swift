@@ -209,6 +209,11 @@ public class AwsOpenTelemetryRumBuilder {
       }
     #endif
 
+    // Hang Detection
+    if plan.hang {
+      _ = HangInstrumentation.shared
+    }
+
     // Network (URLSession)
     if let urlSessionConfig = plan.urlSessionConfig {
       let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)

@@ -25,6 +25,7 @@ struct ContentView: View {
   @State private var showingDemoViewController = false
   @State private var showingCustomLogForm = false
   @State private var showingCustomSpanForm = false
+  @State private var showingANRForm = false
 
   private func getResultWindowHeight() -> CGFloat {
     if viewModel.isContractTest() {
@@ -121,9 +122,9 @@ struct ContentView: View {
                 viewModel.showSessionDetails()
               })
 
-              awsButton(icon: "exclamationmark.triangle", title: "Simulate ANR (2 sec)") {
-                viewModel.hangApplication(seconds: 2)
-              }
+              awsButton(icon: "exclamationmark.triangle", title: "Simulate ANR", action: {
+                showingANRForm = true
+              })
 
               awsButton(icon: viewModel.isJanking ? "pause.fill" : "play.fill", title: viewModel.isJanking ? "Stop UI Jank" : "Start UI Jank", action: {
                 viewModel.toggleUIJank()
@@ -183,6 +184,9 @@ struct ContentView: View {
       }
       .sheet(isPresented: $viewModel.showingGlobalAttributesView) {
         GlobalAttributesView()
+      }
+      .sheet(isPresented: $showingANRForm) {
+        ANRFormView(viewModel: viewModel)
       }
     }
   }
