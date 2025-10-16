@@ -79,7 +79,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     observers[provider.coldEndNotification.rawValue] = NotificationCenter.default.addObserver(
       forName: provider.coldEndNotification,
       object: nil,
-      queue: nil
+      queue: OperationQueue()
     ) { _ in
       Self.onColdEnd()
     }
@@ -89,7 +89,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     observers[provider.warmStartNotification.rawValue] = NotificationCenter.default.addObserver(
       forName: provider.warmStartNotification,
       object: nil,
-      queue: nil
+      queue: OperationQueue()
     ) { _ in
       Self.onWarmStart()
     }
@@ -99,7 +99,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     observers[provider.warmEndNotification.rawValue] = NotificationCenter.default.addObserver(
       forName: provider.warmEndNotification,
       object: nil,
-      queue: nil
+      queue: OperationQueue()
     ) { _ in
       Self.onWarmEnd()
     }
@@ -109,7 +109,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     observers[provider.hiddenNotification.rawValue] = NotificationCenter.default.addObserver(
       forName: provider.hiddenNotification,
       object: nil,
-      queue: nil
+      queue: OperationQueue()
     ) { _ in
       Self.onHidden()
     }
@@ -126,7 +126,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       observers[event.rawValue] = NotificationCenter.default.addObserver(
         forName: event,
         object: nil,
-        queue: nil
+        queue: OperationQueue()
       ) { notification in
         Self.onLifecycleEvent(name: notification.name.rawValue)
       }

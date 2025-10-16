@@ -81,7 +81,7 @@ public class AwsSessionEventInstrumentation {
     NotificationCenter.default.addObserver(
       forName: AwsSessionEventInstrumentation.sessionEventNotification,
       object: nil,
-      queue: nil
+      queue: OperationQueue()
     ) { notification in
       if let sessionEvent = notification.object as? AwsSessionEvent {
         self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
