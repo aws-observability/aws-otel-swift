@@ -250,7 +250,7 @@ class LoaderViewModel: ObservableObject {
     case .fileIO: ("File.IO", "Synchronous file operations")
     }
 
-    createCustomSpan(name: "[DEBUG]\(typeName)", startTime: startTime, endTime: actualEndTime, attributes: [
+    createCustomSpan(name: "[DEBUG] \(typeName)", startTime: startTime, endTime: actualEndTime, attributes: [
       "duration_seconds": String(format: "%.1f", seconds),
       "type": typeName,
       "description": typeDescription

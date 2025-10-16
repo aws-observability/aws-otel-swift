@@ -459,6 +459,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "billyzh-apple-distribution";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
+				STRIP_STYLE = debugging;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -503,6 +504,7 @@
 				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = "billyzh-apple-distribution";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
+				STRIP_STYLE = debugging;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

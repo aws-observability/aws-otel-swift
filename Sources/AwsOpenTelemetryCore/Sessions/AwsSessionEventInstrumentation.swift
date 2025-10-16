@@ -81,10 +81,12 @@ public class AwsSessionEventInstrumentation {
     NotificationCenter.default.addObserver(
       forName: AwsSessionEventInstrumentation.sessionEventNotification,
       object: nil,
-      queue: OperationQueue()
+      queue: nil
     ) { notification in
       if let sessionEvent = notification.object as? AwsSessionEvent {
-        self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
+        DispatchQueue.global(qos: .utility).async {
+          self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
+        }
       }
     }
     AwsOpenTelemetryLogger.info("AwsSessionEventInstrumentation applied successfully")
