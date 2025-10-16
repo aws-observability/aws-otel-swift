@@ -18,8 +18,7 @@ import AwsOpenTelemetryCore
 
 @main
 struct SimpleAwsDemoApp: App {
-  private let cognitoPoolId = "us-west-2_jxYFz3SsN"
-  private let appMonitorId = "9a49451f-b9d7-4fef-97aa-18896dc5f0b5"
+  private let appMonitorId = "33868e1a-72af-4815-8605-46f5dc76c91b"
   private let region = "us-west-2"
 
   private func isImportCoreNoInitialization() -> Bool {
@@ -27,14 +26,12 @@ struct SimpleAwsDemoApp: App {
   }
 
   init() {
-    if isImportCoreNoInitialization() {
-      setupOpenTelemetry()
-    }
+    setupOpenTelemetry()
   }
 
   var body: some Scene {
     WindowGroup {
-      LoaderView(cognitoPoolId: cognitoPoolId, region: region)
+      ContentView(viewModel: LoaderViewModel())
     }
   }
 

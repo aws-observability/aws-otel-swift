@@ -15,8 +15,6 @@
 
 import Foundation
 import SwiftUI
-import AwsOpenTelemetryAuth
-import AWSCognitoIdentity
 import AwsOpenTelemetryCore
 import Combine
 import OpenTelemetryApi
@@ -30,7 +28,7 @@ import OpenTelemetryApi
 @MainActor
 class LoaderViewModel: ObservableObject {
   /// Indicates whether an AWS operation is in progress
-  @Published var isLoading = true
+  @Published var isLoading = false
 
   /// Stores any error encountered during AWS setup or operations
   @Published var error: Error?
@@ -41,18 +39,9 @@ class LoaderViewModel: ObservableObject {
   @Published var showingCustomLogForm = false
   @Published var showingCustomSpanForm = false
   @Published var showingGlobalAttributesView = false
-  @Published var isJanking = false
-  private var jankStartTime: Date?
-  private var jankDuration: Double = 0
 
   /// Timer for updating the digital clock
   private var clockTimer: AnyCancellable?
-
-  /// Instance of the AWS service handler (non-observable)
-  private(set) var awsServiceHandler: AwsServiceHandler?
-
-  private let cognitoPoolId: String
-  private let region: String
 
   /// Date formatter for the digital clock
   private let timeFormatter: DateFormatter = {
@@ -61,78 +50,6 @@ class LoaderViewModel: ObservableObject {
     formatter.timeZone = TimeZone(abbreviation: "UTC")
     return formatter
   }()
-
-  /**
-   * Initializes the view model with required AWS configuration
-   *
-   * - Parameters:
-   *   - cognitoPoolId: The Cognito Identity Pool ID
-   *   - region: AWS region string (e.g., "us-west-2")
-   */
-  init(cognitoPoolId: String, region: String) {
-    self.cognitoPoolId = cognitoPoolId
-    self.region = region
-  }
-
-  /// Initializes the `AwsServiceHandler` instance and prepares AWS SDK for use
-  func initialize() async {
-    do {
-      // Configure and initialize the Cognito Identity client
-      let cognitoConfig = try await CognitoIdentityClient.CognitoIdentityClientConfiguration(region: region)
-      let cognitoIdentityClient = CognitoIdentityClient(config: cognitoConfig)
-
-      let credentialsProvider = CognitoCachedCredentialsProvider(
-        cognitoPoolId: cognitoPoolId, cognitoClient: cognitoIdentityClient
-      )
-
-      awsServiceHandler = try await AwsServiceHandler(
-        region: region,
-        awsCredentialsProvider: credentialsProvider,
-        cognitoIdentityClient: cognitoIdentityClient,
-        cognitoPoolId: cognitoPoolId
-      )
-
-      isLoading = false
-    } catch {
-      isLoading = false
-    }
-  }
-
-  /// Performs the "List S3 Buckets" operation and updates UI state
-  func listS3Buckets() async {
-    stopClock()
-    isLoading = true
-    resultMessage = "Loading S3 buckets..."
-
-    guard let awsServiceHandler else { return }
-    defer { isLoading = false }
-    // Call list buckets
-    do {
-      let buckets = try await awsServiceHandler.listS3Buckets()
-      resultMessage = buckets.isEmpty
-        ? "No buckets found"
-        : "S3 Buckets:\n\n" + buckets.map { "- \($0.name) (Created: \($0.creationDate))" }.joined(separator: "\n")
-    } catch {
-      resultMessage = "Error listing S3 buckets: \(error.localizedDescription)"
-    }
-  }
-
-  /// Performs the "Get Cognito Identity" operation and updates UI state
-  func getCognitoIdentityId() async {
-    stopClock()
-    guard let awsServiceHandler else { return }
-
-    isLoading = true
-    resultMessage = "Fetching Cognito identity..."
-    defer { isLoading = false }
-
-    do {
-      let identityId = try await awsServiceHandler.getCognitoIdentityId()
-      resultMessage = "Cognito Identity ID: \(identityId)"
-    } catch {
-      resultMessage = "Error getting Cognito identity: \(error.localizedDescription)"
-    }
-  }
 
   func showSessionDetails() {
     resultMessage = "Session Details\n\n"
@@ -348,58 +265,6 @@ class LoaderViewModel: ObservableObject {
     return !isContractTest()
   }
 
-  func toggleUIJank() {
-    toggleUIJank(duration: 10.0)
-  }
-
-  func toggleUIJank(duration: Double) {
-    stopClock()
-    isJanking.toggle()
-    if isJanking {
-      jankStartTime = Date()
-      jankDuration = duration
-      startJankSimulation()
-      resultMessage = "🟡 Started UI jank simulation for \(String(format: "%.1f", duration))s"
-    } else {
-      if let startTime = jankStartTime {
-        let endTime = Date()
-        createCustomSpan(name: "[DEBUG]UIJank", startTime: startTime, endTime: endTime, attributes: [
-          "duration_seconds": String(format: "%.1f", endTime.timeIntervalSince(startTime)),
-          "type": "UIJank",
-          "description": "Continuous frame drops (100ms blocks every 50ms)"
-        ])
-      }
-      jankStartTime = nil
-      resultMessage = "🟢 Stopped UI jank simulation"
-    }
-  }
-
-  private func startJankSimulation() {
-    performJankOperation()
-
-    // Auto-stop after specified duration
-    DispatchQueue.main.asyncAfter(deadline: .now() + jankDuration) {
-      if self.isJanking {
-        self.toggleUIJank(duration: 0)
-      }
-    }
-  }
-
-  private func performJankOperation() {
-    guard isJanking else { return }
-
-    // Block main thread for 100ms to cause frame drops
-    let startTime = Date()
-    while Date().timeIntervalSince(startTime) < 0.1 {
-      // Busy wait
-    }
-
-    // Schedule next jank operation
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-      self.performJankOperation()
-    }
-  }
-
   /// Starts the digital clock timer
   private func startClock() {
     // Update time immediately
@@ -451,12 +316,54 @@ class LoaderViewModel: ObservableObject {
     clockTimer = nil
   }
 
+  // MARK: - Crash Testing Methods
+
+  func triggerArrayIndexCrash() {
+    let array: [Int] = []
+    _ = array[10]
+  }
+
+  func triggerForceUnwrapCrash() {
+    let value: String? = nil
+    _ = value!
+  }
+
+  func triggerDivisionByZeroCrash() {
+    let zero = Int.random(in: 0 ... 0) // Dynamic zero to avoid compiler warning
+    _ = 1 / zero
+  }
+
+  func triggerStackOverflowCrash() {
+    func recursiveFunction() {
+      recursiveFunction()
+    }
+    recursiveFunction()
+  }
+
+  func triggerMemoryAccessCrash() {
+    let ptr = UnsafeMutablePointer<Int>.allocate(capacity: 1)
+    ptr.deallocate()
+    _ = ptr.pointee
+  }
+
+  func triggerFatalErrorCrash() {
+    fatalError("Intentional crash for testing")
+  }
+
+  func triggerPreconditionCrash() {
+    preconditionFailure("Test precondition failure")
+  }
+
+  func triggerAssertCrash() {
+    assertionFailure("Test assertion failure")
+  }
+
+  func triggerAbortCrash() {
+    abort()
+  }
+
   // Teardown
   deinit {
-    // Use Task to call MainActor-isolated method from deinit
-    Task { @MainActor in
-      clockTimer?.cancel()
-      clockTimer = nil
-    }
+    clockTimer?.cancel()
   }
 }

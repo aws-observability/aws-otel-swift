@@ -29,6 +29,15 @@
       }
     },
     {
+      "identity" : "kscrash",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kstenerud/KSCrash.git",
+      "state" : {
+        "revision" : "f7675440853aa7a6dc4e1606fdb2e3423e6f1757",
+        "version" : "2.4.0"
+      }
+    },
+    {
       "identity" : "opentelemetry-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/open-telemetry/opentelemetry-swift.git",

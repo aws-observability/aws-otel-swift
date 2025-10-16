@@ -25,25 +25,12 @@ import SwiftUI
 struct LoaderView: View {
   @StateObject private var viewModel: LoaderViewModel
 
-  /// Initializes the loader with AWS configuration
-  init(cognitoPoolId: String, region: String) {
-    _viewModel = StateObject(wrappedValue: LoaderViewModel(cognitoPoolId: cognitoPoolId, region: region))
+  /// Initializes the loader
+  init() {
+    _viewModel = StateObject(wrappedValue: LoaderViewModel())
   }
 
   var body: some View {
-    Group {
-      if viewModel.isLoading {
-        ProgressView("Initializing AWS...")
-      } else if let error = viewModel.error {
-        Text("Failed to initialize AWS: \(error.localizedDescription)")
-          .foregroundColor(.red)
-          .padding()
-      } else {
-        ContentView(viewModel: viewModel)
-      }
-    }
-    .task {
-      await viewModel.initialize()
-    }
+    ContentView(viewModel: viewModel)
   }
 }

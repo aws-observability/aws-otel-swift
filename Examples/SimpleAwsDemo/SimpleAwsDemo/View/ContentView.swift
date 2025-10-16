@@ -47,12 +47,6 @@ struct ContentView: View {
         // Scrollable buttons section
         ScrollView {
           LazyVStack(spacing: 12) {
-            if viewModel.isNotContractTest() {
-              awsButton(icon: "folder", title: "List S3 Buckets", action: {
-                await viewModel.listS3Buckets()
-              })
-            }
-
             awsButton(icon: "network", title: "200 HTTP Request") {
               await viewModel.make200Request()
             }
@@ -63,12 +57,6 @@ struct ContentView: View {
 
             awsButton(icon: "network", title: "5xx HTTP Request") {
               await viewModel.make5xxRequest()
-            }
-
-            if viewModel.isNotContractTest() {
-              awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
-                await viewModel.getCognitoIdentityId()
-              })
             }
 
             /// UIKit Demo
@@ -126,14 +114,43 @@ struct ContentView: View {
                 showingANRForm = true
               })
 
-              awsButton(icon: viewModel.isJanking ? "pause.fill" : "play.fill", title: viewModel.isJanking ? "Stop UI Jank" : "Start UI Jank", action: {
-                viewModel.toggleUIJank()
-              })
+              Menu {
+                Button("Array Index Out of Bounds") {
+                  viewModel.triggerArrayIndexCrash()
+                }
 
-              Button(action: {
-                let array = []
-                _ = array[10] // Index out of bounds
-              }, label: {
+                Button("Force Unwrap Nil") {
+                  viewModel.triggerForceUnwrapCrash()
+                }
+
+                Button("Division by Zero") {
+                  viewModel.triggerDivisionByZeroCrash()
+                }
+
+                Button("Stack Overflow") {
+                  viewModel.triggerStackOverflowCrash()
+                }
+
+                Button("Memory Access Violation") {
+                  viewModel.triggerMemoryAccessCrash()
+                }
+
+                Button("Fatal Error") {
+                  viewModel.triggerFatalErrorCrash()
+                }
+
+                Button("Precondition Failure") {
+                  viewModel.triggerPreconditionCrash()
+                }
+
+                Button("Assert Failure") {
+                  viewModel.triggerAssertCrash()
+                }
+
+                Button("SIGABRT Signal") {
+                  viewModel.triggerAbortCrash()
+                }
+              } label: {
                 HStack {
                   Image(systemName: "exclamationmark.triangle")
                   Text("Trigger Crash")
@@ -143,7 +160,7 @@ struct ContentView: View {
                 .background(Color.red)
                 .foregroundColor(.white)
                 .cornerRadius(10)
-              })
+              }
 
               awsButton(icon: "tag", title: "Global Attributes", action: {
                 viewModel.showGlobalAttributesView()
@@ -208,35 +225,5 @@ struct ContentView: View {
       .cornerRadius(10)
     })
     .disabled(viewModel.isLoading)
-  }
-}
-
-// MARK: - Preview
-
-struct ContentView_Previews: PreviewProvider {
-  /// A lightweight mock view model for preview/testing
-  @MainActor
-  final class MockLoaderViewModel: LoaderViewModel {
-    init() {
-      // Provide dummy values to satisfy superclass init
-      super.init(cognitoPoolId: "mock-pool-id", region: "us-west-2")
-      isLoading = false
-      resultMessage = "AWS API results will appear here"
-    }
-
-    override func listS3Buckets() async {}
-    override func getCognitoIdentityId() async {}
-    override func showSessionDetails() {}
-    override func renewSession() {}
-    override func showUserInfo() {}
-    override func showCustomLogForm() {}
-    override func showCustomSpanForm() {}
-    override func showGlobalAttributesView() {}
-  }
-
-  static var previews: some View {
-    ContentView(viewModel: MockLoaderViewModel())
-      .previewDisplayName("Landing View")
-      .padding()
   }
 }

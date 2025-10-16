@@ -180,6 +180,10 @@ public class AwsOpenTelemetryRumBuilder {
       #endif
     }
 
+    if plan.crash {
+      KSCrashInstrumentation.install()
+    }
+
     // Session Events
     if plan.sessionEvents {
       _ = AwsSessionEventInstrumentation()

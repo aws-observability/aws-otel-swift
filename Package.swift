@@ -23,7 +23,8 @@ let package = Package(
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.2.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
     .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
-    .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0")
+    .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0"),
+    .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0"))
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -35,7 +36,8 @@ let package = Package(
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
+        .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift"),
+        .product(name: "Installations", package: "KSCrash")
       ],
       exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md"]
     ),
