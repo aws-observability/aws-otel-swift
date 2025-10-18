@@ -6,7 +6,7 @@ class PetClinicAPI: ObservableObject {
   private let decoder = JSONDecoder()
   private let encoder = JSONEncoder()
 
-  init(baseURL: String = "http://a7b9eb519723f42ae9aef8016a63ae42-902501018.us-west-2.elb.amazonaws.com") {
+  init(baseURL: String = "http://a61dafdaceaa340d5b3fc9d3a00f71c6-746455772.us-east-1.elb.amazonaws.com") {
     self.baseURL = baseURL
   }
 
