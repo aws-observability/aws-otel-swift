@@ -1391,6 +1391,13 @@
         const activePrewarm = span.attributes?.find((attr) => attr.key === 'active_prewarm')?.value
           ?.boolValue;
         const formattedDuration = formatDuration(span.duration);
+        
+        // HTTP-specific attributes
+        const httpMethod = span.attributes?.find((attr) => attr.key === 'http.method')?.value?.stringValue;
+        const httpStatusCode = span.attributes?.find((attr) => attr.key === 'http.status_code')?.value?.intValue;
+        const httpTarget = span.attributes?.find((attr) => attr.key === 'http.target')?.value?.stringValue;
+        const httpUrl = span.attributes?.find((attr) => attr.key === 'http.url')?.value?.stringValue;
+        const isHttpRequest = httpMethod || httpStatusCode || httpTarget || httpUrl;
 
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
@@ -1402,12 +1409,23 @@
           launchType ? '\nLaunch Type: ' + launchType : ''
         }${startType ? '\nStart Type: ' + startType : ''}${
           hangReporter ? '\nHang Reporter: ' + hangReporter : ''
-        }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}">
+        }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}${
+          isHttpRequest ? '\n' + [httpMethod, httpStatusCode, httpTarget || httpUrl].filter(Boolean).join(' ') : ''
+        }">
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
                     </div>
                     <div style="margin-left: ${startOffset}px; font-size: 0.9em; color: #333;">
                         <strong>${span.name}</strong> (${formattedDuration})
+                        ${
+                          isHttpRequest
+                            ? `<div style="font-size: 0.8em; color: #4caf50; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                                 ${httpMethod ? `<span style="background: #2196f3; color: white; padding: 1px 4px; border-radius: 2px; font-weight: bold;">${httpMethod}</span>` : ''}
+                                 ${httpStatusCode ? `<span style="background: ${httpStatusCode >= 200 && httpStatusCode < 300 ? '#4caf50' : httpStatusCode >= 400 ? '#f44336' : '#ff9800'}; color: white; padding: 1px 4px; border-radius: 2px;">${httpStatusCode}</span>` : ''}
+                                 ${httpTarget || httpUrl ? `<span style="color: #666; font-family: monospace; font-size: 0.9em;">${httpTarget || new URL(httpUrl).pathname}</span>` : ''}
+                               </div>`
+                            : ''
+                        }
                         ${
                           screenName
                             ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
