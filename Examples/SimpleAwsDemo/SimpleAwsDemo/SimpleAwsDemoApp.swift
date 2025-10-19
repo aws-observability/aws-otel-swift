@@ -16,6 +16,7 @@
 import UIKit
 import Foundation
 import AwsOpenTelemetryCore
+import OpenTelemetryApi
 
 let artificialDelay: TimeInterval = 0.25
 
@@ -25,6 +26,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   private let appMonitorId = "33868e1a-72af-4815-8605-46f5dc76c91b"
   private let region = "us-west-2"
+
+  private let debugScope = "debug.aws.demo"
+  var tracer: Tracer?
+  var logger: Logger?
 
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     print("AppDelegate: didFinishLaunchingWithOptions called")
@@ -49,15 +54,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 
   private func setupOpenTelemetry() {
+    let before = Date()
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
       logs: "http://localhost:4318/v1/logs",
       traces: "http://localhost:4318/v1/traces"
     )
+
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      sessionTimeout: 30,
+      sessionTimeout: 1 * 60, // 5 minutes
       debug: true
     )
 
@@ -68,6 +75,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       print("SDK is already initialized")
     } catch {
       print("Error initializing SDK: \(error)")
+    }
+    let after = Date()
+    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+    tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
+
+    // Record aws otel swift initialization span
+    // Initialization performance is not necessarily tied to aws-otel-swift performance, but a combination of
+    // this and the demo app.
+    if let span = tracer?.spanBuilder(spanName: "[DEBUG] AwsOtelSwift Initialization")
+      .setStartTime(time: before)
+      .startSpan() {
+      span.end(time: after)
+      print("Logged init time")
+    } else {
+      print("Unable to log init time")
     }
   }
 }

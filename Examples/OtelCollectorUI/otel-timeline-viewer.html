@@ -601,6 +601,50 @@
       .cancel-btn:hover {
         background: #5a6268;
       }
+
+      .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        background: #2196f3;
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: help;
+        margin-right: 4px;
+        vertical-align: middle;
+        position: relative;
+      }
+
+      .info-icon:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        top: 125%;
+        left: 0;
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: normal;
+        max-width: 250px;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .info-icon:hover::before {
+        content: '';
+        position: absolute;
+        top: 115%;
+        left: 8px;
+        border: 5px solid transparent;
+        border-bottom-color: #333;
+        z-index: 1000;
+      }
     </style>
   </head>
   <body>
@@ -654,9 +698,10 @@
       <input
         type="text"
         id="addFilterInput"
-        placeholder="Add filter (e.g., session ID, trace ID)..."
+        placeholder="key=value, key~value (like), substring, !substring"
         class="filter-input"
-        style="width: 300px"
+        style="width: 350px"
+        title="Structured filters (key=value) create subgroups first, then substring filters search within those groups"
       />
       <select id="typeFilter" class="filter-input" style="width: 120px">
         <option value="all">All Types</option>
@@ -698,6 +743,7 @@
     <div class="filters-bar">
       <label style="font-weight: bold; color: #333">Filters:</label>
       <div id="filterTags"></div>
+
       <button
         onclick="clearAllFilters()"
         style="
@@ -851,6 +897,9 @@
         document.getElementById('timeRangeSelect').value = settings.timeRange || 'all';
         document.getElementById('sessionSearchInput').value = settings.sessionSearch || '';
         customFilters = settings.customFilters || [];
+        substringFilterMode = settings.substringFilterMode || 'intersection';
+        structuredFilterMode = settings.structuredFilterMode || 'union';
+        updateSubstringModeButton();
         renderFilterTags();
 
         updateTimezoneToggle();
@@ -861,7 +910,8 @@
         const settings = {
           zoomLevel,
           useUTC,
-
+          substringFilterMode,
+          structuredFilterMode,
           filterText: '',
           typeFilter: document.getElementById('typeFilter').value,
           timeRange: document.getElementById('timeRangeSelect').value,
@@ -919,6 +969,8 @@
       let sessionColors = new Map();
       let allSessionData = new Map();
       let customFilters = [];
+      let substringFilterMode = 'intersection'; // 'intersection' or 'union'
+      let structuredFilterMode = 'union'; // 'intersection' or 'union'
 
       function formatDuration(durationMs) {
         if (durationMs < 1000) {
@@ -1074,43 +1126,90 @@
             (typeFilter === 'spans' && item.type === 'span') ||
             (typeFilter === 'logs' && item.type === 'log');
 
-          const matchesCustomFilters =
-            customFilters.length === 0 ||
-            customFilters.some((filter) => {
-              const filterLower = filter.toLowerCase();
+          // Separate structured (key=value), like (key~value), and substring filters
+          const structuredFilters = customFilters.filter((f) => f.includes('=') && !f.includes('~'));
+          const likeFilters = customFilters.filter((f) => f.includes('~'));
+          const substringFilters = customFilters.filter((f) => !f.includes('=') && !f.includes('~'));
 
-              // Handle key=value filters
-              if (filter.includes('=')) {
-                const [key, value] = filter.split('=', 2);
-                const keyLower = key.toLowerCase();
-                const valueLower = value.toLowerCase();
+          // Apply structured filters (intersection or union)
+          const matchesStructuredFilters = structuredFilters.length === 0 ||
+            (structuredFilterMode === 'intersection' ? structuredFilters.every : structuredFilters.some).call(structuredFilters, (filter) => {
+            const [key, value] = filter.split('=', 2);
+            const keyLower = key.toLowerCase();
+            const valueLower = value.toLowerCase();
 
-                if (keyLower === 'session.id') {
-                  return getSessionId(item).toLowerCase() === valueLower;
-                }
+            if (keyLower === 'session.id') {
+              return getSessionId(item).toLowerCase() === valueLower;
+            }
 
-                return item.attributes?.some(
-                  (attr) =>
-                    attr.key?.toLowerCase() === keyLower &&
-                    String(
-                      attr.value?.stringValue ||
-                        attr.value?.intValue ||
-                        attr.value?.doubleValue ||
-                        attr.value?.boolValue,
-                    ).toLowerCase() === valueLower,
-                );
-              }
+            if (keyLower === 'scopename') {
+              return item.scopeName?.toLowerCase() === valueLower;
+            }
 
-              // Handle general text filters
-              return (
-                item.traceId?.toLowerCase().includes(filterLower) ||
-                item.spanId?.toLowerCase().includes(filterLower) ||
-                item.name?.toLowerCase().includes(filterLower) ||
-                item.body?.toLowerCase().includes(filterLower) ||
-                getSessionId(item).toLowerCase().includes(filterLower) ||
+            return item.attributes?.some(
+              (attr) =>
+                attr.key?.toLowerCase() === keyLower &&
+                String(
+                  attr.value?.stringValue ||
+                    attr.value?.intValue ||
+                    attr.value?.doubleValue ||
+                    attr.value?.boolValue,
+                ).toLowerCase() === valueLower,
+            );
+          });
+
+          // Apply like filters (key~value substring matching)
+          const matchesLikeFilters = likeFilters.length === 0 ||
+            (structuredFilterMode === 'intersection' ? likeFilters.every : likeFilters.some).call(likeFilters, (filter) => {
+            const [key, value] = filter.split('~', 2);
+            const keyLower = key.toLowerCase();
+            const valueLower = value.toLowerCase();
+
+            if (keyLower === 'session.id') {
+              return getSessionId(item).toLowerCase().includes(valueLower);
+            }
+
+            if (keyLower === 'scopename') {
+              return item.scopeName?.toLowerCase().includes(valueLower) || false;
+            }
+
+            return item.attributes?.some(
+              (attr) =>
+                attr.key?.toLowerCase() === keyLower &&
+                String(
+                  attr.value?.stringValue ||
+                    attr.value?.intValue ||
+                    attr.value?.doubleValue ||
+                    attr.value?.boolValue,
+                ).toLowerCase().includes(valueLower),
+            ) || false;
+          });
+
+          // Then apply substring filters (intersection or union within the structured subgroup)
+          const matchesSubstringFilters =
+            substringFilters.length === 0 ||
+            (substringFilterMode === 'intersection'
+              ? substringFilters.every
+              : substringFilters.some
+            ).call(substringFilters, (filter) => {
+              const isNegated = filter.startsWith('!');
+              const searchTerm = isNegated ? filter.slice(1).toLowerCase() : filter.toLowerCase();
+              
+              const matches = (
+                item.traceId?.toLowerCase().includes(searchTerm) ||
+                item.spanId?.toLowerCase().includes(searchTerm) ||
+                item.name?.toLowerCase().includes(searchTerm) ||
+                item.body?.toLowerCase().includes(searchTerm) ||
+                item.scopeName?.toLowerCase().includes(searchTerm) ||
+                item.eventName?.toLowerCase().includes(searchTerm) ||
+                item.severityText?.toLowerCase().includes(searchTerm) ||
+                String(item.kind || '')
+                  .toLowerCase()
+                  .includes(searchTerm) ||
+                getSessionId(item).toLowerCase().includes(searchTerm) ||
                 item.attributes?.some(
                   (attr) =>
-                    attr.key?.toLowerCase().includes(filterLower) ||
+                    attr.key?.toLowerCase().includes(searchTerm) ||
                     String(
                       attr.value?.stringValue ||
                         attr.value?.intValue ||
@@ -1118,10 +1217,14 @@
                         attr.value?.boolValue,
                     )
                       .toLowerCase()
-                      .includes(filterLower),
+                      .includes(searchTerm),
                 )
               );
+              
+              return isNegated ? !matches : matches;
             });
+
+          const matchesCustomFilters = matchesStructuredFilters && matchesLikeFilters && matchesSubstringFilters;
 
           const matchesTimeRange = (() => {
             if (timeRangeValue === 'all') return true;
@@ -1298,7 +1401,7 @@
         const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
         const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
         const actualTimeRange = maxTime - minTime;
-        const timeRange = actualTimeRange * 1.2; // Add 10% padding after the latest event
+        const timeRange = actualTimeRange * 1.35; // Add padding after the latest event
 
         // Update header with timestamps
         const startTimeStr = formatTimeForDisplay(minTime);
@@ -1391,12 +1494,16 @@
         const activePrewarm = span.attributes?.find((attr) => attr.key === 'active_prewarm')?.value
           ?.boolValue;
         const formattedDuration = formatDuration(span.duration);
-        
+
         // HTTP-specific attributes
-        const httpMethod = span.attributes?.find((attr) => attr.key === 'http.method')?.value?.stringValue;
-        const httpStatusCode = span.attributes?.find((attr) => attr.key === 'http.status_code')?.value?.intValue;
-        const httpTarget = span.attributes?.find((attr) => attr.key === 'http.target')?.value?.stringValue;
-        const httpUrl = span.attributes?.find((attr) => attr.key === 'http.url')?.value?.stringValue;
+        const httpMethod = span.attributes?.find((attr) => attr.key === 'http.method')?.value
+          ?.stringValue;
+        const httpStatusCode = span.attributes?.find((attr) => attr.key === 'http.status_code')
+          ?.value?.intValue;
+        const httpTarget = span.attributes?.find((attr) => attr.key === 'http.target')?.value
+          ?.stringValue;
+        const httpUrl = span.attributes?.find((attr) => attr.key === 'http.url')?.value
+          ?.stringValue;
         const isHttpRequest = httpMethod || httpStatusCode || httpTarget || httpUrl;
 
         return `
@@ -1410,7 +1517,9 @@
         }${startType ? '\nStart Type: ' + startType : ''}${
           hangReporter ? '\nHang Reporter: ' + hangReporter : ''
         }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}${
-          isHttpRequest ? '\n' + [httpMethod, httpStatusCode, httpTarget || httpUrl].filter(Boolean).join(' ') : ''
+          isHttpRequest
+            ? '\n' + [httpMethod, httpStatusCode, httpTarget || httpUrl].filter(Boolean).join(' ')
+            : ''
         }">
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
@@ -1420,9 +1529,29 @@
                         ${
                           isHttpRequest
                             ? `<div style="font-size: 0.8em; color: #4caf50; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
-                                 ${httpMethod ? `<span style="background: #2196f3; color: white; padding: 1px 4px; border-radius: 2px; font-weight: bold;">${httpMethod}</span>` : ''}
-                                 ${httpStatusCode ? `<span style="background: ${httpStatusCode >= 200 && httpStatusCode < 300 ? '#4caf50' : httpStatusCode >= 400 ? '#f44336' : '#ff9800'}; color: white; padding: 1px 4px; border-radius: 2px;">${httpStatusCode}</span>` : ''}
-                                 ${httpTarget || httpUrl ? `<span style="color: #666; font-family: monospace; font-size: 0.9em;">${httpTarget || new URL(httpUrl).pathname}</span>` : ''}
+                                 ${
+                                   httpMethod
+                                     ? `<span style="background: #2196f3; color: white; padding: 1px 4px; border-radius: 2px; font-weight: bold;">${httpMethod}</span>`
+                                     : ''
+                                 }
+                                 ${
+                                   httpStatusCode
+                                     ? `<span style="background: ${
+                                         httpStatusCode >= 200 && httpStatusCode < 300
+                                           ? '#4caf50'
+                                           : httpStatusCode >= 400
+                                           ? '#f44336'
+                                           : '#ff9800'
+                                       }; color: white; padding: 1px 4px; border-radius: 2px;">${httpStatusCode}</span>`
+                                     : ''
+                                 }
+                                 ${
+                                   httpTarget || httpUrl
+                                     ? `<span style="color: #666; font-family: monospace; font-size: 0.9em;">${
+                                         httpTarget || new URL(httpUrl).pathname
+                                       }</span>`
+                                     : ''
+                                 }
                                </div>`
                             : ''
                         }
@@ -1740,19 +1869,94 @@
 
       function renderFilterTags() {
         const container = document.getElementById('filterTags');
-        container.innerHTML = customFilters
-          .map(
-            (filter) => `
-          <div class="filter-tag">
-            ${filter}
-            <span class="remove" onclick="removeCustomFilter('${filter.replace(
-              /'/g,
-              "\\'",
-            )}')">×</span>
-          </div>
-        `,
-          )
-          .join('');
+
+        const structuredFilters = customFilters.filter((f) => f.includes('=') && !f.includes('~'));
+        const likeFilters = customFilters.filter((f) => f.includes('~'));
+        const substringFilters = customFilters.filter((f) => !f.includes('=') && !f.includes('~'));
+
+        let html = '';
+
+        if (structuredFilters.length > 0 || likeFilters.length > 0 || substringFilters.length > 0) {
+          html +=
+            '<div style="font-family: monospace; font-size: 0.85em; color: #333; background: #f8f8f8; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;">WHERE ';
+
+          const allParts = [];
+
+          if (structuredFilters.length > 0) {
+            const structuredPart = structuredFilters
+              .map(
+                (f) =>
+                  `<span style="color: #2196f3; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                    /'/g,
+                    '&#39;',
+                  )}')">×${f.replace(/'/g, '&#39;')}</span>`,
+              )
+              .join(
+                ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleStructuredMode()">${
+                  structuredFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
+                }</span> `,
+              );
+
+            if (structuredFilters.length > 1) {
+              allParts.push(`(${structuredPart})`);
+            } else {
+              allParts.push(structuredPart);
+            }
+          }
+
+          if (substringFilters.length > 0) {
+            const substringPart = substringFilters
+              .map(
+                (f) => {
+                  const isNegated = f.startsWith('!');
+                  const displayTerm = isNegated ? f.slice(1) : f;
+                  const operator = isNegated ? 'NOT CONTAINS' : 'CONTAINS';
+                  return `<span style="color: #ff9800; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                    /'/g,
+                    '&#39;',
+                  )}')">×${operator}('${displayTerm.replace(/'/g, '&#39;')}')</span>`;
+                }
+              )
+              .join(
+                ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleSubstringMode()">${
+                  substringFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
+                }</span> `,
+              );
+
+            if (substringFilters.length > 1) {
+              allParts.push(`(${substringPart})`);
+            } else {
+              allParts.push(substringPart);
+            }
+          }
+
+          if (likeFilters.length > 0) {
+            const likePart = likeFilters
+              .map(
+                (f) =>
+                  `<span style="color: #9c27b0; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                    /'/g,
+                    '&#39;',
+                  )}')">×${f.replace(/'/g, '&#39;').replace('~', ' LIKE ')}</span>`,
+              )
+              .join(
+                ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleStructuredMode()">${
+                  structuredFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
+                }</span> `,
+              );
+
+            if (likeFilters.length > 1) {
+              allParts.push(`(${likePart})`);
+            } else {
+              allParts.push(likePart);
+            }
+          }
+
+          html += allParts.join(' <span style="color: #666; font-weight: bold;">AND</span> ');
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
       }
 
       function clearAllFilters() {
@@ -1760,6 +1964,29 @@
         saveSettings();
         renderFilterTags();
         applyFilters();
+      }
+
+      function toggleSubstringMode() {
+        substringFilterMode = substringFilterMode === 'intersection' ? 'union' : 'intersection';
+        updateSubstringModeButton();
+        renderFilterTags();
+        saveSettings();
+        applyFilters();
+      }
+
+      function toggleStructuredMode() {
+        structuredFilterMode = structuredFilterMode === 'intersection' ? 'union' : 'intersection';
+        renderFilterTags();
+        saveSettings();
+        applyFilters();
+      }
+
+      function updateSubstringModeButton() {
+        const button = document.getElementById('substringModeToggle');
+        if (button) {
+          button.textContent = substringFilterMode === 'intersection' ? 'AND' : 'OR';
+          button.style.background = substringFilterMode === 'intersection' ? '#2196f3' : '#ff9800';
+        }
       }
     </script>
   </body>
