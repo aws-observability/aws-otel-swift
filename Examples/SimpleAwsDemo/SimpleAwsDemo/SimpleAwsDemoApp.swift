@@ -2327,14 +2327,14 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
   }
 
   private func triggerAppHang(type: HangType, duration: TimeInterval) {
-    let durationText = String(format: "%.1fs", duration)
-    let toast = createToast(text: "Hang Starting in 3...")
+    let durationText = String(format: "%.2fs", duration)
+    let toast = createToast(text: "\(durationText) Hang Starting in 3...")
 
     var countdown = 3
     Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
       countdown -= 1
       if countdown > 0 {
-        toast.text = "Hang Starting in \(countdown)..."
+        toast.text = "\(durationText) Hang Starting in \(countdown)..."
       } else {
         timer.invalidate()
         toast.text = "\(type.displayName) for \(durationText)"
@@ -2358,7 +2358,7 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
             .startSpan()
           span.end(time: end)
 
-          toast.text = "Hang Completed!"
+          toast.text = "\(durationText) Hang Completed!"
 
           DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             toast.removeFromSuperview()
@@ -2814,14 +2814,14 @@ class HangConfigPickerView: UIViewController {
 
   private var selectedHangTypeIndex: Int = 0
   private var seconds: Int = 1
-  private var tenths: Int = 0
+  private var centiseconds: Int = 0
 
   var selectedHangType: HangType {
     return hangTypes[selectedHangTypeIndex]
   }
 
   var selectedDuration: TimeInterval {
-    return TimeInterval(seconds) + TimeInterval(tenths) / 10.0
+    return TimeInterval(seconds) + TimeInterval(centiseconds) / 100.0
   }
 
   override func viewDidLoad() {
@@ -2861,7 +2861,7 @@ extension HangConfigPickerView: UIPickerViewDataSource, UIPickerViewDelegate {
     switch component {
     case 0: return hangTypes.count
     case 1: return 60 // 0-59 seconds
-    case 2: return 10 // 0-9 tenths
+    case 2: return 100 // 0-99 centiseconds
     default: return 0
     }
   }
@@ -2870,7 +2870,7 @@ extension HangConfigPickerView: UIPickerViewDataSource, UIPickerViewDelegate {
     switch component {
     case 0: return hangTypes[row].displayName
     case 1: return "\(row) sec"
-    case 2: return ".\(row)"
+    case 2: return String(format: ".%02d", row)
     default: return nil
     }
   }
@@ -2879,7 +2879,7 @@ extension HangConfigPickerView: UIPickerViewDataSource, UIPickerViewDelegate {
     switch component {
     case 0: selectedHangTypeIndex = row
     case 1: seconds = row
-    case 2: tenths = row
+    case 2: centiseconds = row
     default: break
     }
   }
