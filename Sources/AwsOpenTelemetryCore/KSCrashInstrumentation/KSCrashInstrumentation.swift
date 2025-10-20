@@ -175,7 +175,15 @@ class KSCrashInstrumentation {
       _ = semaphore.wait(timeout: .now() + 1.0)
       let finalReport = appleFormatReport ?? "Failed to format crash report"
 
-      attributes["exception.stacktrace"] = AttributeValue.string(finalReport)
+      // Truncate stack trace to 30 KB
+      let maxBytes = 30 * 1024
+      let truncatedReport = if finalReport.utf8.count > maxBytes {
+        String(finalReport.utf8.prefix(maxBytes)) ?? finalReport
+      } else {
+        finalReport
+      }
+
+      attributes["exception.stacktrace"] = AttributeValue.string(truncatedReport)
 
       // Get timestamp
       let timestamp: Date = if let reportTimestamp = reportDict["timestamp"] as? String {
