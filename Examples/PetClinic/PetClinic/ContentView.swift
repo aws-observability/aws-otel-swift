@@ -101,7 +101,7 @@ struct ContentView: View {
                 // API Test Button
                 Button(action: {
                   Task { await loadOwners() }
-                }, label: {
+                }) {
                   HStack {
                     Image(systemName: "network")
                     Text("🌐 Test API Call")
@@ -111,32 +111,52 @@ struct ContentView: View {
                   .background(primaryGreen)
                   .foregroundColor(.white)
                   .cornerRadius(8)
-                })
+                }
 
-                // Network Error Button
+                // Network Error Button 404
                 Button(action: {
                   Task {
-                    let result = await api.simulateNetworkError()
+                    let result = await api.simulateNetworkError404()
                     if case let .failure(error) = result {
                       errorMessage = error.localizedDescription
                     }
                   }
-                }, label: {
+                }) {
                   HStack {
                     Image(systemName: "wifi.slash")
-                    Text("🚫 Simulate Network Error")
+                    Text("🚫 Simulate Network Error 404")
                   }
                   .frame(maxWidth: .infinity)
                   .padding()
                   .background(Color.orange)
                   .foregroundColor(.white)
                   .cornerRadius(8)
-                })
+                }
+
+                // Network Error Button 500
+                Button(action: {
+                  Task {
+                    let result = await api.simulateNetworkError500()
+                    if case let .failure(error) = result {
+                      errorMessage = error.localizedDescription
+                    }
+                  }
+                }) {
+                  HStack {
+                    Image(systemName: "wifi.slash")
+                    Text("🚫 Simulate Network Error 500")
+                  }
+                  .frame(maxWidth: .infinity)
+                  .padding()
+                  .background(Color.orange)
+                  .foregroundColor(.white)
+                  .cornerRadius(8)
+                }
 
                 // Crash Button
                 Button(action: {
                   api.triggerCrash()
-                }, label: {
+                }) {
                   HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                     Text("💥 Trigger App Crash")
@@ -146,12 +166,12 @@ struct ContentView: View {
                   .background(Color.red)
                   .foregroundColor(.white)
                   .cornerRadius(8)
-                })
+                }
 
                 // ANR Button
                 Button(action: {
                   api.triggerANR()
-                }, label: {
+                }) {
                   HStack {
                     Image(systemName: "clock.fill")
                     Text("⏰ Trigger ANR (10s block)")
@@ -161,7 +181,7 @@ struct ContentView: View {
                   .background(Color(red: 1.0, green: 0.42, blue: 0.0))
                   .foregroundColor(.white)
                   .cornerRadius(8)
-                })
+                }
 
                 // UI Jank Button
                 Button(action: {
@@ -169,7 +189,7 @@ struct ContentView: View {
                   if isJanking {
                     startJankSimulation()
                   }
-                }, label: {
+                }) {
                   HStack {
                     Image(systemName: isJanking ? "pause.fill" : "play.fill")
                     Text(isJanking ? "🟢 Stop UI Jank" : "🟡 Start UI Jank")
@@ -179,7 +199,7 @@ struct ContentView: View {
                   .background(isJanking ? Color.green : Color.orange)
                   .foregroundColor(.white)
                   .cornerRadius(8)
-                })
+                }
               }
             }
             .padding()
@@ -221,10 +241,10 @@ struct ContentView: View {
         .navigationBarItems(
           trailing: Button(action: {
             showingAddOwner = true
-          }, label: {
+          }) {
             Image(systemName: "plus")
               .foregroundColor(primaryGreen)
-          })
+          }
         )
         .background(backgroundColor)
         .task {
@@ -295,7 +315,7 @@ struct ContentView: View {
               // API Test Button
               Button(action: {
                 Task { await loadOwners() }
-              }, label: {
+              }) {
                 HStack {
                   Image(systemName: "network")
                   Text("🌐 Test API Call")
@@ -305,32 +325,52 @@ struct ContentView: View {
                 .background(primaryGreen)
                 .foregroundColor(.white)
                 .cornerRadius(8)
-              })
+              }
 
-              // Network Error Button
+              // Network Error Button - 404
               Button(action: {
                 Task {
-                  let result = await api.simulateNetworkError()
+                  let result = await api.simulateNetworkError404()
                   if case let .failure(error) = result {
                     errorMessage = error.localizedDescription
                   }
                 }
-              }, label: {
+              }) {
                 HStack {
                   Image(systemName: "wifi.slash")
-                  Text("🚫 Simulate Network Error")
+                  Text("🚫 Simulate Network Error 404")
                 }
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.orange)
                 .foregroundColor(.white)
                 .cornerRadius(8)
-              })
+              }
+
+              // Network Error Button - 500
+              Button(action: {
+                Task {
+                  let result = await api.simulateNetworkError500()
+                  if case let .failure(error) = result {
+                    errorMessage = error.localizedDescription
+                  }
+                }
+              }) {
+                HStack {
+                  Image(systemName: "wifi.slash")
+                  Text("🚫 Simulate Network Error 500")
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.orange)
+                .foregroundColor(.white)
+                .cornerRadius(8)
+              }
 
               // Crash Button
               Button(action: {
                 api.triggerCrash()
-              }, label: {
+              }) {
                 HStack {
                   Image(systemName: "exclamationmark.triangle.fill")
                   Text("💥 Trigger App Crash")
@@ -340,12 +380,12 @@ struct ContentView: View {
                 .background(Color.red)
                 .foregroundColor(.white)
                 .cornerRadius(8)
-              })
+              }
 
               // ANR Button
               Button(action: {
                 api.triggerANR()
-              }, label: {
+              }) {
                 HStack {
                   Image(systemName: "clock.fill")
                   Text("⏰ Trigger ANR (10s block)")
@@ -355,7 +395,7 @@ struct ContentView: View {
                 .background(Color(red: 1.0, green: 0.42, blue: 0.0)) // Orange
                 .foregroundColor(.white)
                 .cornerRadius(8)
-              })
+              }
 
               // UI Jank Button
               Button(action: {
@@ -363,7 +403,7 @@ struct ContentView: View {
                 if isJanking {
                   startJankSimulation()
                 }
-              }, label: {
+              }) {
                 HStack {
                   Image(systemName: isJanking ? "pause.fill" : "play.fill")
                   Text(isJanking ? "🟢 Stop UI Jank" : "🟡 Start UI Jank")
@@ -373,7 +413,7 @@ struct ContentView: View {
                 .background(isJanking ? Color.green : Color.orange)
                 .foregroundColor(.white)
                 .cornerRadius(8)
-              })
+              }
             }
             .padding(.horizontal)
 
@@ -390,13 +430,13 @@ struct ContentView: View {
       .tag(2)
     }
     .accentColor(primaryGreen)
-    .alert("Error", isPresented: .constant(errorMessage != nil), actions: {
+    .alert("Error", isPresented: .constant(errorMessage != nil)) {
       Button("OK") {
         errorMessage = nil
       }
-    }, message: {
+    } message: {
       Text(errorMessage ?? "")
-    })
+    }
   }
 
   private func loadOwners() async {
@@ -554,11 +594,11 @@ struct OwnerDetailView: View {
 
           Button(action: {
             showingAddPet = true
-          }, label: {
+          }) {
             Image(systemName: "plus.circle.fill")
               .font(.title2)
               .foregroundColor(primaryGreen)
-          })
+          }
         }
 
         if let pets = currentOwner.pets, !pets.isEmpty {
@@ -739,13 +779,13 @@ struct AddOwnerView: View {
             presentationMode.wrappedValue.dismiss()
           }
         )
-        .alert("Error", isPresented: $showingAlert, actions: {
+        .alert("Error", isPresented: $showingAlert) {
           Button("OK") {
             errorMessage = nil
           }
-        }, message: {
+        } message: {
           Text(errorMessage ?? "Unknown error")
-        })
+        }
       }
     }
   }
@@ -859,13 +899,13 @@ struct AddPetView: View {
       .task {
         await loadPetTypesIfNeeded()
       }
-      .alert("Error", isPresented: $showingAlert, actions: {
+      .alert("Error", isPresented: $showingAlert) {
         Button("OK") {
           errorMessage = nil
         }
-      }, message: {
+      } message: {
         Text(errorMessage ?? "Unknown error")
-      })
+      }
     }
   }
 
