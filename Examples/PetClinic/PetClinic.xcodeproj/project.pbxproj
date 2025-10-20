@@ -174,7 +174,7 @@
 			);
 			mainGroup = A1000011;
 			packageReferences = (
-				0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */,
+				3F829CE22E9F8F31001DFDE8 /* XCLocalSwiftPackageReference "../../../../aws-otel-swift" */,
 			);
 			productRefGroup = A1000013 /* Products */;
 			projectDirPath = "";
@@ -485,6 +485,10 @@
 		0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../aws-otel-swift";
+		};
+		3F829CE22E9F8F31001DFDE8 /* XCLocalSwiftPackageReference "../../../../aws-otel-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../../../aws-otel-swift";
 		};
 /* End XCLocalSwiftPackageReference section */
 

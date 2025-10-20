@@ -71,8 +71,12 @@ class PetClinicAPI: ObservableObject {
 
   // MARK: - Testing Endpoints
 
-  func simulateNetworkError() async -> APIResult<Void> {
+  func simulateNetworkError404() async -> APIResult<Void> {
     return await performVoidRequest(endpoint: "/api/nonexistent/error", method: "GET")
+  }
+
+  func simulateNetworkError500() async -> APIResult<Void> {
+    return await performVoidRequest(baseURL: "https://httpbin.org", endpoint: "/status/500", method: "GET")
   }
 
   func triggerCrash() {
@@ -122,7 +126,7 @@ class PetClinicAPI: ObservableObject {
     }
   }
 
-  private func performVoidRequest(endpoint: String, method: String, body: Codable? = nil) async -> APIResult<Void> {
+  private func performVoidRequest(baseURL: String, endpoint: String, method: String, body: Codable? = nil) async -> APIResult<Void> {
     guard let url = URL(string: baseURL + endpoint) else {
       return .failure(.unknown)
     }
@@ -152,5 +156,9 @@ class PetClinicAPI: ObservableObject {
     } catch {
       return .failure(.networkError(error))
     }
+  }
+
+  private func performVoidRequest(endpoint: String, method: String, body: Codable? = nil) async -> APIResult<Void> {
+    await performVoidRequest(baseURL: baseURL, endpoint: endpoint, method: method, body: body)
   }
 }
