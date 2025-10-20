@@ -7,7 +7,10 @@ import XCTest
  *
  * The ANR and Crash buttons are saved for last as they will terminate the test.
  */
-class PetClinicUITests: XCTestCase {
+final class PetClinicUITests: XCTestCase {
+  private let sleepIntervalSeconds: TimeInterval = 27 * 60 // 25 minutes
+  private let timeoutSeconds: TimeInterval = 30 * 60 // 30 minutes
+
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
@@ -16,23 +19,25 @@ class PetClinicUITests: XCTestCase {
     // Put teardown code here. This method is called after the invocation of each test method in the class.
   }
 
+  override class var runsForEachTargetApplicationUIConfiguration: Bool {
+    false
+  }
+
   @MainActor
   func testGenerateComprehensiveTelemetry() throws {
     let app = XCUIApplication()
     app.launch()
 
-    // Wait for app to load
-    sleep(2)
+    let numberOfIntervals = 4 // 4 times in 120 mins => once every 30 mins
 
-    navigateToOwnersScreen(app: app)
-    navigateToVetsScreen(app: app)
-    navigateToHomeScreen(app: app)
-    testUIJankFeature(app: app)
-    performFinalNavigationRound(app: app)
-    performDestructiveTests(app: app)
+    // Loop for the entire test session
+    for i in 0 ..< numberOfIntervals {
+      print("Generating telemetry for interval \(i + 1)...")
+      generateAllTelemetry(app: app)
 
-    // Wait for telemetry to be sent
-    sleep(30)
+      print("Idling for 28 minutes...")
+      idleFor28Minutes(app: app)
+    }
   }
 
   @MainActor
@@ -49,6 +54,36 @@ class PetClinicUITests: XCTestCase {
     app.buttons["💥 Trigger App Crash"].tap()
 
     // App will crash here
+
+    // Launch app again to capture telemetry
+    app.launch()
+  }
+
+  private func idleFor28Minutes(app: XCUIApplication) {
+    let startTime = Date()
+    let duration: TimeInterval = 28 * 60 // 28 minutes
+
+    // Perform periodic navigation while waiting
+    while Date().timeIntervalSince(startTime) < duration {
+      navigateToOwnersScreen(app: app)
+      navigateToVetsScreen(app: app)
+      sleep(30) // Wait 30 seconds between navigation cycles
+    }
+  }
+
+  private func generateAllTelemetry(app: XCUIApplication) {
+    // Wait for app to load
+    sleep(2)
+
+    navigateToOwnersScreen(app: app)
+    navigateToVetsScreen(app: app)
+    navigateToHomeScreen(app: app)
+    testUIJankFeature(app: app)
+    performFinalNavigationRound(app: app)
+    performDestructiveTests(app: app)
+
+    // Wait for telemetry to be sent
+    sleep(30)
   }
 
   private func navigateToOwnersScreen(app: XCUIApplication) {
@@ -101,8 +136,12 @@ class PetClinicUITests: XCTestCase {
     app.buttons["🌐 Test API Call"].tap()
     sleep(2)
 
-    // Test network error
-    app.buttons["🚫 Simulate Network Error"].tap()
+    // Test network error 404
+    app.buttons["🚫 Simulate Network Error 404"].tap()
+    sleep(2)
+
+    // Test network error 500
+    app.buttons["🚫 Simulate Network Error 500"].tap()
     sleep(2)
 
     // Test ANR (blocks for 10s)
