@@ -180,50 +180,52 @@ public class AwsOpenTelemetryRumBuilder {
       #endif
     }
 
-    if plan.crash {
-      KSCrashInstrumentation.install()
-    }
-
-    // Session Events
-    if plan.sessionEvents {
-      _ = AwsSessionEventInstrumentation()
-    }
-
-    // View instrumentation (UIKit/SwiftUI)
-    #if canImport(UIKit) && !os(watchOS)
-      if plan.view {
-        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW))
-        uiKitViewInstrumentation!.install()
-        AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
+    DispatchQueue.main.async {
+      if plan.crash {
+        KSCrashInstrumentation.install()
       }
-    #endif
 
-    // MetricKit (crashes)
-    #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
-      if let metricKitConfig = plan.metricKitConfig {
-        if #available(iOS 15.0, *) {
-          let metricKitSubscriber = AwsMetricKitSubscriber(config: metricKitConfig)
-          metricKitSubscriber.subscribe()
-          AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
-        } else {
-          AwsOpenTelemetryLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
+      // Session Events
+      if plan.sessionEvents {
+        _ = AwsSessionEventInstrumentation()
+      }
+
+      // View instrumentation (UIKit/SwiftUI)
+      #if canImport(UIKit) && !os(watchOS)
+        if plan.view {
+          self.uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW))
+          self.uiKitViewInstrumentation!.install()
+          AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = self.uiKitViewInstrumentation
         }
-      } else {
-        AwsOpenTelemetryLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
+      #endif
+
+      // MetricKit (crashes)
+      #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
+        if let metricKitConfig = plan.metricKitConfig {
+          if #available(iOS 15.0, *) {
+            let metricKitSubscriber = AwsMetricKitSubscriber(config: metricKitConfig)
+            metricKitSubscriber.subscribe()
+            AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
+          } else {
+            AwsOpenTelemetryLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
+          }
+        } else {
+          AwsOpenTelemetryLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
+        }
+      #endif
+
+      // Hang Detection
+      if plan.hang {
+        _ = HangInstrumentation.shared
       }
-    #endif
 
-    // Hang Detection
-    if plan.hang {
-      _ = HangInstrumentation.shared
-    }
-
-    // Network (URLSession)
-    if let urlSessionConfig = plan.urlSessionConfig {
-      let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
-      urlSessionInstrumentation.apply()
-    } else {
-      AwsOpenTelemetryLogger.info("AwsURLSessionInstrumentation not created - no urlSessionConfig in plan")
+      // Network (URLSession)
+      if let urlSessionConfig = plan.urlSessionConfig {
+        let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
+        urlSessionInstrumentation.apply()
+      } else {
+        AwsOpenTelemetryLogger.info("AwsURLSessionInstrumentation not created - no urlSessionConfig in plan")
+      }
     }
   }
 

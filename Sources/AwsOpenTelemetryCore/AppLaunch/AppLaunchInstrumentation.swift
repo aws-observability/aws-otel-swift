@@ -213,7 +213,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         .setEventName(provider.warmEndNotification.rawValue)
         .emit()
 
-      guard hasLostFocusBefore, hasLaunched, let startTime = lastWarmLaunchStart else {
+      guard hasLostFocusBefore, let startTime = lastWarmLaunchStart else {
         AwsOpenTelemetryLogger.debug("Cold launch not recorded or no warm start time available")
         return
       }
