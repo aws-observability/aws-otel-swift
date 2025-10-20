@@ -14,6 +14,7 @@
  */
 
 import UIKit
+import SwiftUI
 import Foundation
 import AwsOpenTelemetryCore
 import OpenTelemetryApi
@@ -49,7 +50,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     homeNavController.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "house"), tag: 0)
     homeNavController.interactivePopGestureRecognizer?.isEnabled = true
 
-    let settingsNavController = UINavigationController(rootViewController: SettingsViewController())
+    let settingsNavController = UINavigationController(rootViewController: SettingsHostingController())
     settingsNavController.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "gearshape"), tag: 1)
     settingsNavController.interactivePopGestureRecognizer?.isEnabled = true
 
@@ -75,7 +76,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      sessionTimeout: 1 * 60, // 5 minutes
+      sessionTimeout: 2 * 60,
       debug: true
     )
 
@@ -2802,8 +2803,8 @@ enum HangType: CaseIterable {
   var displayName: String {
     switch self {
     case .threadSleep: return "Thread Sleep"
-    case .syncNetworkCall: return "Sync Network Call"
-    case .cpuIntensiveTask: return "CPU Intensive Task"
+    case .syncNetworkCall: return "Blocking HTTP"
+    case .cpuIntensiveTask: return "CPU Busy"
     }
   }
 }

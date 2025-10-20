@@ -37,10 +37,10 @@ public enum AwsViewConstants {
 
   // UIKit
   public static let valueUIKit = "uikit"
-  public static let spanNameViewDidLoad = "viewDidLoad"
-  public static let spanNameViewWillAppear = "viewWillAppear"
-  public static let spanNameViewIsAppearing = "viewIsAppearing"
-  public static let spanNameViewDidAppear = "viewDidAppear"
+  public static let spanNameViewDidLoad = "ViewDidLoad"
+  public static let spanNameViewWillAppear = "ViewWillAppear"
+  public static let spanNameViewIsAppearing = "ViewIsAppearing"
+  public static let spanNameViewDidAppear = "ViewDidAppear"
   public static let attributeViewClass = "view.class"
   public static let statusAppBackgrounded = "app_backgrounded"
   public static let statusViewDisappeared = "view_disappeared"

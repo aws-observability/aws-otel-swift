@@ -389,7 +389,7 @@
         // Create log event for viewDidDisappear
         self.logger.logRecordBuilder()
           .setTimestamp(now)
-          .setEventName("viewDidDisappear")
+          .setEventName("ViewDidDisappear")
           .setAttributes([
             AwsViewConstants.attributeScreenName: AttributeValue.string(screenName),
             AwsViewConstants.attributeViewClass: AttributeValue.string(className),
