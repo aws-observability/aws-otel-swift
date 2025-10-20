@@ -20,6 +20,16 @@ import OpenTelemetryApi
 
 let artificialDelay: TimeInterval = 0.25
 
+// Global time formatting helper
+func timeAgo(from timestamp: Int) -> String {
+  let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
+  let formatter = RelativeDateTimeFormatter()
+  formatter.unitsStyle = .abbreviated
+  return formatter.localizedString(for: date, relativeTo: Date())
+}
+
+let debugScope = "SimpleAwsDemo.Debug"
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
@@ -27,7 +37,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   private let appMonitorId = "33868e1a-72af-4815-8605-46f5dc76c91b"
   private let region = "us-west-2"
 
-  private let debugScope = "debug.aws.demo"
   var tracer: Tracer?
   var logger: Logger?
 
@@ -38,9 +47,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let homeNavController = UINavigationController(rootViewController: HackerNewsViewController())
     homeNavController.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "house"), tag: 0)
+    homeNavController.interactivePopGestureRecognizer?.isEnabled = true
 
     let settingsNavController = UINavigationController(rootViewController: SettingsViewController())
     settingsNavController.tabBarItem = UITabBarItem(title: nil, image: UIImage(systemName: "gearshape"), tag: 1)
+    settingsNavController.interactivePopGestureRecognizer?.isEnabled = true
 
     let tabBarController = UITabBarController()
     tabBarController.viewControllers = [homeNavController, settingsNavController]
@@ -139,7 +150,7 @@ class HackerNewsViewController: UIViewController {
     navigationController?.hidesBarsOnSwipe = true
 
     let titleLabel = UILabel()
-    titleLabel.text = "Hacker News"
+    titleLabel.text = "AWS Hacker News"
     titleLabel.font = .systemFont(ofSize: 17, weight: .semibold)
     titleLabel.textAlignment = .left
     navigationItem.leftBarButtonItem = UIBarButtonItem(customView: titleLabel)
@@ -298,7 +309,9 @@ extension HackerNewsViewController: UITableViewDataSource, UITableViewDelegate {
 
   func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
     tableView.deselectRow(at: indexPath, animated: true)
+    guard !isLoading, indexPath.row < stories.count else { return }
     let story = stories[indexPath.row]
+    navigationItem.backButtonTitle = ""
     let commentsVC = CommentsViewController(story: story)
     navigationController?.pushViewController(commentsVC, animated: true)
   }
@@ -411,7 +424,8 @@ class StoryCell: UITableViewCell {
     titleLabel.text = story.title
 
     // Make username tappable
-    let fullText = "by \(story.by) • \(story.descendants) comments"
+    let timeAgoText = timeAgo(from: story.time)
+    let fullText = "by \(story.by) • \(timeAgoText) • \(story.descendants) comments"
     let attributedText = NSMutableAttributedString(string: fullText)
     let usernameRange = (fullText as NSString).range(of: story.by)
     attributedText.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: usernameRange)
@@ -474,6 +488,7 @@ class SkeletonCell: UITableViewCell {
 
   override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
     super.init(style: style, reuseIdentifier: reuseIdentifier)
+    selectionStyle = .none
     setupUI()
   }
 
@@ -528,6 +543,7 @@ class LoadingCell: UITableViewCell {
 
   override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
     super.init(style: style, reuseIdentifier: reuseIdentifier)
+    selectionStyle = .none
     setupUI()
   }
 
@@ -556,6 +572,37 @@ class LoadingCell: UITableViewCell {
       stackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
       stackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 20),
       stackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
+    ])
+  }
+}
+
+class EmptyCommentsCell: UITableViewCell {
+  private let emptyLabel = UILabel()
+
+  override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+    super.init(style: style, reuseIdentifier: reuseIdentifier)
+    selectionStyle = .none
+    setupUI()
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  private func setupUI() {
+    emptyLabel.text = "No comments yet"
+    emptyLabel.font = .systemFont(ofSize: 14)
+    emptyLabel.textColor = .secondaryLabel
+    emptyLabel.textAlignment = .left
+    emptyLabel.translatesAutoresizingMaskIntoConstraints = false
+
+    contentView.addSubview(emptyLabel)
+    NSLayoutConstraint.activate([
+      emptyLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+      emptyLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+      emptyLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+      emptyLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
     ])
   }
 }
@@ -616,6 +663,8 @@ class CommentsViewController: UIViewController {
     super.viewWillAppear(animated)
     navigationController?.hidesBarsOnSwipe = false
     navigationController?.setNavigationBarHidden(false, animated: animated)
+    navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    navigationController?.interactivePopGestureRecognizer?.delegate = self
   }
 
   override func viewWillDisappear(_ animated: Bool) {
@@ -626,12 +675,13 @@ class CommentsViewController: UIViewController {
   private func setupUI() {
     view.backgroundColor = .systemBackground
 
-    navigationItem.leftBarButtonItem = UIBarButtonItem(
-      image: UIImage(systemName: "chevron.left"),
-      style: .plain,
-      target: self,
-      action: #selector(backButtonTapped)
-    )
+    // Remove custom back button to allow swipe gesture
+    // navigationItem.leftBarButtonItem = UIBarButtonItem(
+    //   image: UIImage(systemName: "chevron.left"),
+    //   style: .plain,
+    //   target: self,
+    //   action: #selector(backButtonTapped)
+    // )
 
     let segmentedControl = UISegmentedControl(items: CommentSortType.allCases.map(\.displayName))
     segmentedControl.selectedSegmentIndex = 1 // Default to "Hot"
@@ -644,6 +694,7 @@ class CommentsViewController: UIViewController {
     tableView.register(SkeletonCommentCell.self, forCellReuseIdentifier: "SkeletonCommentCell")
     tableView.register(StoryHeaderCell.self, forCellReuseIdentifier: "StoryHeaderCell")
     tableView.register(LoadingCell.self, forCellReuseIdentifier: "LoadingCell")
+    tableView.register(EmptyCommentsCell.self, forCellReuseIdentifier: "EmptyCommentsCell")
     tableView.separatorStyle = .none
     tableView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -939,6 +990,9 @@ extension CommentsViewController: UITableViewDataSource, UITableViewDelegate {
     if isLoading {
       return 1 + 8 // 1 for story header + 8 skeleton comments
     }
+    if comments.isEmpty {
+      return 2 // 1 for story header + 1 for empty state
+    }
     let hasMoreComments = currentBatch * batchSize < allCommentIds.count
     return 1 + comments.count + (hasMoreComments ? 1 : 0) // 1 for story header + comments + loading cell
   }
@@ -954,6 +1008,11 @@ extension CommentsViewController: UITableViewDataSource, UITableViewDelegate {
       let cell = tableView.dequeueReusableCell(withIdentifier: "SkeletonCommentCell", for: indexPath) as! SkeletonCommentCell
       let depth = (indexPath.row - 1) % 3 // Vary depth for visual hierarchy
       cell.configure(depth: depth)
+      return cell
+    }
+
+    if comments.isEmpty {
+      let cell = tableView.dequeueReusableCell(withIdentifier: "EmptyCommentsCell", for: indexPath) as! EmptyCommentsCell
       return cell
     }
 
@@ -1036,6 +1095,7 @@ class StoryHeaderCell: UITableViewCell {
   private let titleLabel = UILabel()
   private let metaLabel = UILabel()
   private let urlButton = UIButton()
+  private let shareButton = UIButton()
   private var story: HNStory?
 
   override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -1058,9 +1118,14 @@ class StoryHeaderCell: UITableViewCell {
 
     urlButton.setTitleColor(.systemBlue, for: .normal)
     urlButton.titleLabel?.font = .systemFont(ofSize: 14)
+    urlButton.contentHorizontalAlignment = .left
     urlButton.addTarget(self, action: #selector(urlButtonTapped), for: .touchUpInside)
 
-    [titleLabel, metaLabel, urlButton].forEach {
+    shareButton.setImage(UIImage(systemName: "ellipsis"), for: .normal)
+    shareButton.tintColor = .secondaryLabel
+    shareButton.addTarget(self, action: #selector(shareButtonTapped), for: .touchUpInside)
+
+    [titleLabel, metaLabel, urlButton, shareButton].forEach {
       $0.translatesAutoresizingMaskIntoConstraints = false
       contentView.addSubview($0)
     }
@@ -1074,8 +1139,14 @@ class StoryHeaderCell: UITableViewCell {
       metaLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
       metaLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
 
+      shareButton.topAnchor.constraint(equalTo: metaLabel.bottomAnchor, constant: 8),
+      shareButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+      shareButton.widthAnchor.constraint(equalToConstant: 24),
+      shareButton.heightAnchor.constraint(equalToConstant: 24),
+
       urlButton.topAnchor.constraint(equalTo: metaLabel.bottomAnchor, constant: 8),
       urlButton.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
+      urlButton.trailingAnchor.constraint(equalTo: shareButton.leadingAnchor, constant: -8),
       urlButton.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
     ])
   }
@@ -1087,7 +1158,8 @@ class StoryHeaderCell: UITableViewCell {
     titleLabel.text = story.title
 
     // Make username tappable
-    let fullText = "\(story.score) points by \(story.by) • \(story.descendants) comments"
+    let timeAgoText = timeAgo(from: story.time)
+    let fullText = "\(story.score) points by \(story.by) • \(timeAgoText) • \(story.descendants) comments"
     let attributedText = NSMutableAttributedString(string: fullText)
     let usernameRange = (fullText as NSString).range(of: story.by)
     attributedText.addAttribute(.foregroundColor, value: UIColor.systemBlue, range: usernameRange)
@@ -1099,7 +1171,11 @@ class StoryHeaderCell: UITableViewCell {
 
     if let url = story.url {
       storyURL = url
-      urlButton.setTitle(url, for: .normal)
+      if let parsedURL = URL(string: url), let host = parsedURL.host {
+        urlButton.setTitle(host, for: .normal)
+      } else {
+        urlButton.setTitle(url, for: .normal)
+      }
       urlButton.isHidden = false
     } else {
       urlButton.isHidden = true
@@ -1119,6 +1195,25 @@ class StoryHeaderCell: UITableViewCell {
     guard let urlString = storyURL, let url = URL(string: urlString) else { return }
     UIApplication.shared.open(url)
   }
+
+  @objc private func shareButtonTapped() {
+    guard let story else { return }
+
+    var itemsToShare: [Any] = [story.title]
+    if let url = story.url {
+      itemsToShare.append(url)
+    }
+
+    let activityVC = UIActivityViewController(activityItems: itemsToShare, applicationActivities: nil)
+
+    if let viewController = findViewController() {
+      if let popover = activityVC.popoverPresentationController {
+        popover.sourceView = shareButton
+        popover.sourceRect = shareButton.bounds
+      }
+      viewController.present(activityVC, animated: true)
+    }
+  }
 }
 
 class SkeletonCommentCell: UITableViewCell {
@@ -1131,6 +1226,7 @@ class SkeletonCommentCell: UITableViewCell {
 
   override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
     super.init(style: style, reuseIdentifier: reuseIdentifier)
+    selectionStyle = .none
     setupUI()
   }
 
@@ -1516,13 +1612,6 @@ class CommentCell: UITableViewCell {
       }
     }.resume()
   }
-
-  private func timeAgo(from timestamp: Int) -> String {
-    let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
-    let formatter = RelativeDateTimeFormatter()
-    formatter.unitsStyle = .abbreviated
-    return formatter.localizedString(for: date, relativeTo: Date())
-  }
 }
 
 class IntrinsicTableView: UITableView {
@@ -1580,6 +1669,8 @@ class UserViewController: UIViewController {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(false, animated: animated)
     navigationController?.hidesBarsOnSwipe = false
+    navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    navigationController?.interactivePopGestureRecognizer?.delegate = self
   }
 
   override func viewWillDisappear(_ animated: Bool) {
@@ -1994,26 +2085,344 @@ extension UserViewController: UITableViewDataSource, UITableViewDelegate, UIScro
 }
 
 class SettingsViewController: UIViewController {
+  private let tableView = UITableView(frame: .zero, style: .insetGrouped)
+  private var sessionData: [(String, String)] = []
+  private var configData: [(String, String)] = []
+  private var troubleshootingData: [(String, String)] = []
+  private var timer: Timer?
+
   override func viewDidLoad() {
     super.viewDidLoad()
     setupUI()
+    loadSessionData()
+    startTimer()
+  }
+
+  override func viewWillAppear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    loadSessionData()
+    startTimer()
+  }
+
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    timer?.invalidate()
+    timer = nil
   }
 
   private func setupUI() {
-    view.backgroundColor = .systemBackground
-    title = "Settings"
+    view.backgroundColor = .systemGroupedBackground
 
-    let label = UILabel()
-    label.text = "Hello World"
-    label.font = .systemFont(ofSize: 24, weight: .medium)
-    label.textAlignment = .center
-    label.translatesAutoresizingMaskIntoConstraints = false
+    tableView.delegate = self
+    tableView.dataSource = self
+    tableView.register(UITableViewCell.self, forCellReuseIdentifier: "Cell")
+    tableView.translatesAutoresizingMaskIntoConstraints = false
 
-    view.addSubview(label)
+    view.addSubview(tableView)
     NSLayoutConstraint.activate([
-      label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-      label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+      tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+      tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
     ])
+  }
+
+  private func loadSessionData() {
+    configData = [
+      ("App Monitor ID", "33868e1a-72af-4815-8605-46f5dc76c91b"),
+      ("Region", "us-west-2"),
+      ("Logs Endpoint", "http://localhost:4318/v1/logs"),
+      ("Traces Endpoint", "http://localhost:4318/v1/traces")
+    ]
+
+    troubleshootingData = [
+      ("Trigger App Hang", "Tap to configure")
+    ]
+
+    guard let currentSession = AwsSessionManagerProvider.getInstance().peekSession() else {
+      sessionData = [
+        ("User ID", "nil"),
+        ("Previous Session", "nil"),
+        ("Current Session", "nil"),
+        ("Session Expiry", "nil")
+      ]
+      tableView.reloadData()
+      return
+    }
+
+    let expireTime = currentSession.expireTime
+    let userId = AwsUIDManagerProvider.getInstance().getUID()
+    let timeToExpiry = expireTime.timeIntervalSinceNow
+    let previousSessionId = AwsSessionManagerProvider.getInstance().peekSession()?.previousId ?? "nil"
+
+    sessionData = [
+      ("User ID", userId),
+      ("Previous Session", previousSessionId),
+      ("Current Session", currentSession.id),
+      ("Session Expiry", "\(Int(timeToExpiry)) seconds")
+    ]
+
+    tableView.reloadData()
+  }
+
+  private func startTimer() {
+    timer?.invalidate()
+    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+      self?.updateExpiryTime()
+    }
+  }
+
+  private func updateExpiryTime() {
+    guard let currentSession = AwsSessionManagerProvider.getInstance().peekSession() else {
+      return
+    }
+
+    let expireTime = currentSession.expireTime
+    let timeToExpiry = expireTime.timeIntervalSinceNow
+
+    let expiryText = timeToExpiry <= 0 ? "Expired" : "\(Int(timeToExpiry)) seconds"
+    sessionData[3] = ("Session Expiry", expiryText)
+
+    if let cell = tableView.cellForRow(at: IndexPath(row: 3, section: 1)) {
+      cell.detailTextLabel?.text = expiryText
+    }
+  }
+}
+
+extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
+  func numberOfSections(in tableView: UITableView) -> Int {
+    return 3
+  }
+
+  func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    switch section {
+    case 0: return configData.count
+    case 1: return sessionData.count
+    case 2: return troubleshootingData.count
+    default: return 0
+    }
+  }
+
+  func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+    return UITableView.automaticDimension
+  }
+
+  func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+    return 44
+  }
+
+  func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+    tableView.deselectRow(at: indexPath, animated: true)
+
+    if indexPath.section == 2, indexPath.row == 0 {
+      showHangTriggerPicker()
+      return
+    }
+
+    let (title, value): (String, String)
+    switch indexPath.section {
+    case 0: (title, value) = configData[indexPath.row]
+    case 1: (title, value) = sessionData[indexPath.row]
+    case 2: (title, value) = troubleshootingData[indexPath.row]
+    default: return
+    }
+
+    if title != "Session Expiry", indexPath.section != 2 {
+      UIPasteboard.general.string = value
+      showCopiedToast()
+    }
+  }
+
+  private func showCopiedToast() {
+    let toast = UILabel()
+    toast.text = "Copied to Clipboard"
+    toast.font = .systemFont(ofSize: 14, weight: .medium)
+    toast.textColor = .white
+    toast.backgroundColor = .black.withAlphaComponent(0.8)
+    toast.textAlignment = .center
+    toast.layer.cornerRadius = 8
+    toast.clipsToBounds = true
+    toast.translatesAutoresizingMaskIntoConstraints = false
+
+    view.addSubview(toast)
+    NSLayoutConstraint.activate([
+      toast.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      toast.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+      toast.widthAnchor.constraint(equalToConstant: 160),
+      toast.heightAnchor.constraint(equalToConstant: 36)
+    ])
+
+    toast.alpha = 0
+    UIView.animate(withDuration: 0.3, animations: {
+      toast.alpha = 1
+    }) { _ in
+      UIView.animate(withDuration: 0.3, delay: 1.5, animations: {
+        toast.alpha = 0
+      }) { _ in
+        toast.removeFromSuperview()
+      }
+    }
+  }
+
+  func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    let cell = UITableViewCell(style: .value1, reuseIdentifier: "Cell")
+
+    let (title, value): (String, String)
+    switch indexPath.section {
+    case 0: (title, value) = configData[indexPath.row]
+    case 1: (title, value) = sessionData[indexPath.row]
+    case 2: (title, value) = troubleshootingData[indexPath.row]
+    default: return cell
+    }
+
+    cell.textLabel?.text = title
+    cell.textLabel?.font = .monospacedSystemFont(ofSize: 13, weight: .medium)
+    cell.detailTextLabel?.text = value
+    cell.detailTextLabel?.numberOfLines = 0
+    cell.detailTextLabel?.lineBreakMode = .byWordWrapping
+    cell.detailTextLabel?.font = .monospacedSystemFont(ofSize: 13, weight: .regular)
+    cell.detailTextLabel?.textAlignment = .right
+
+    if indexPath.section == 2 {
+      cell.accessoryType = .disclosureIndicator
+      cell.selectionStyle = .default
+    } else if title != "Session Expiry" {
+      cell.selectionStyle = .default
+    } else {
+      cell.selectionStyle = .none
+    }
+
+    return cell
+  }
+
+  func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    switch section {
+    case 0: return "AWS Config"
+    case 1: return "User Session"
+    case 2: return "Troubleshooting"
+    default: return nil
+    }
+  }
+
+  private func showHangTriggerPicker() {
+    let alert = UIAlertController(title: "Trigger App Hang", message: "Select hang type and duration", preferredStyle: .actionSheet)
+
+    let pickerView = HangConfigPickerView()
+    alert.setValue(pickerView, forKey: "contentViewController")
+
+    alert.addAction(UIAlertAction(title: "Trigger Hang", style: .destructive) { _ in
+      let duration = pickerView.selectedDuration
+      let hangType = pickerView.selectedHangType
+      self.triggerAppHang(type: hangType, duration: duration)
+    })
+
+    alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+
+    if let popover = alert.popoverPresentationController {
+      popover.sourceView = tableView
+      popover.sourceRect = tableView.rectForRow(at: IndexPath(row: 0, section: 2))
+    }
+
+    present(alert, animated: true)
+  }
+
+  private func triggerAppHang(type: HangType, duration: TimeInterval) {
+    let durationText = String(format: "%.1fs", duration)
+    let toast = createToast(text: "Hang Starting in 3...")
+
+    var countdown = 3
+    Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
+      countdown -= 1
+      if countdown > 0 {
+        toast.text = "Hang Starting in \(countdown)..."
+      } else {
+        timer.invalidate()
+        toast.text = "\(type.displayName) for \(durationText)"
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+          let start = Date()
+
+          switch type {
+          case .threadSleep:
+            Thread.sleep(forTimeInterval: duration)
+          case .syncNetworkCall:
+            self.performSyncNetworkCall(duration: duration)
+          case .cpuIntensiveTask:
+            self.performCpuIntensiveTask(duration: duration)
+          }
+
+          let end = Date()
+          let span = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
+            .spanBuilder(spanName: "[DEBUG] Triggered Hang - \(type.displayName)")
+            .setStartTime(time: start)
+            .startSpan()
+          span.end(time: end)
+
+          toast.text = "Hang Completed!"
+
+          DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            toast.removeFromSuperview()
+          }
+        }
+      }
+    }
+  }
+
+  private func performSyncNetworkCall(duration: TimeInterval) {
+    let endTime = Date().addingTimeInterval(duration)
+    let semaphore = DispatchSemaphore(value: 0)
+
+    func makeRequest() {
+      guard Date() < endTime else {
+        semaphore.signal()
+        return
+      }
+
+      let url = URL(string: "https://httpbin.org/delay/1")!
+      let task = URLSession.shared.dataTask(with: url) { _, _, _ in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+          makeRequest()
+        }
+      }
+      task.resume()
+    }
+
+    makeRequest()
+    semaphore.wait()
+  }
+
+  private func performCpuIntensiveTask(duration: TimeInterval) {
+    let endTime = Date().addingTimeInterval(duration)
+    var counter = 0
+
+    while Date() < endTime {
+      for i in 0 ..< 100000 {
+        counter += i * i
+      }
+    }
+  }
+
+  private func createToast(text: String) -> UILabel {
+    let toast = UILabel()
+    toast.text = text
+    toast.font = .systemFont(ofSize: 16, weight: .medium)
+    toast.textColor = .white
+    toast.backgroundColor = .systemRed.withAlphaComponent(0.9)
+    toast.textAlignment = .center
+    toast.layer.cornerRadius = 8
+    toast.clipsToBounds = true
+    toast.translatesAutoresizingMaskIntoConstraints = false
+
+    guard let window = UIApplication.shared.windows.first else { return toast }
+    window.addSubview(toast)
+    NSLayoutConstraint.activate([
+      toast.centerXAnchor.constraint(equalTo: window.centerXAnchor),
+      toast.topAnchor.constraint(equalTo: window.safeAreaLayoutGuide.topAnchor, constant: 20),
+      toast.widthAnchor.constraint(equalToConstant: 200),
+      toast.heightAnchor.constraint(equalToConstant: 40)
+    ])
+
+    return toast
   }
 }
 
@@ -2207,6 +2616,8 @@ class ParentCommentViewController: UIViewController {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(false, animated: animated)
     navigationController?.hidesBarsOnSwipe = false
+    navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    navigationController?.interactivePopGestureRecognizer?.delegate = self
   }
 
   override func viewWillDisappear(_ animated: Bool) {
@@ -2334,6 +2745,24 @@ class ParentCommentViewController: UIViewController {
   }
 }
 
+extension CommentsViewController: UIGestureRecognizerDelegate {
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    return true
+  }
+}
+
+extension UserViewController: UIGestureRecognizerDelegate {
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    return true
+  }
+}
+
+extension ParentCommentViewController: UIGestureRecognizerDelegate {
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    return true
+  }
+}
+
 extension ParentCommentViewController: UITableViewDataSource, UITableViewDelegate {
   func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     if isLoading {
@@ -2362,5 +2791,96 @@ extension ParentCommentViewController: UITableViewDataSource, UITableViewDelegat
     }
 
     return UITableViewCell()
+  }
+}
+
+enum HangType: CaseIterable {
+  case threadSleep
+  case syncNetworkCall
+  case cpuIntensiveTask
+
+  var displayName: String {
+    switch self {
+    case .threadSleep: return "Thread Sleep"
+    case .syncNetworkCall: return "Sync Network Call"
+    case .cpuIntensiveTask: return "CPU Intensive Task"
+    }
+  }
+}
+
+class HangConfigPickerView: UIViewController {
+  private let pickerView = UIPickerView()
+  private let hangTypes = HangType.allCases
+
+  private var selectedHangTypeIndex: Int = 0
+  private var seconds: Int = 1
+  private var tenths: Int = 0
+
+  var selectedHangType: HangType {
+    return hangTypes[selectedHangTypeIndex]
+  }
+
+  var selectedDuration: TimeInterval {
+    return TimeInterval(seconds) + TimeInterval(tenths) / 10.0
+  }
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    setupUI()
+  }
+
+  private func setupUI() {
+    view.backgroundColor = .clear
+
+    pickerView.dataSource = self
+    pickerView.delegate = self
+    pickerView.selectRow(0, inComponent: 0, animated: false)
+    pickerView.selectRow(1, inComponent: 1, animated: false)
+    pickerView.selectRow(0, inComponent: 2, animated: false)
+    pickerView.translatesAutoresizingMaskIntoConstraints = false
+
+    view.addSubview(pickerView)
+
+    NSLayoutConstraint.activate([
+      pickerView.topAnchor.constraint(equalTo: view.topAnchor, constant: 20),
+      pickerView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+      pickerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+      pickerView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -20)
+    ])
+
+    preferredContentSize = CGSize(width: 320, height: 180)
+  }
+}
+
+extension HangConfigPickerView: UIPickerViewDataSource, UIPickerViewDelegate {
+  func numberOfComponents(in pickerView: UIPickerView) -> Int {
+    return 3
+  }
+
+  func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+    switch component {
+    case 0: return hangTypes.count
+    case 1: return 60 // 0-59 seconds
+    case 2: return 10 // 0-9 tenths
+    default: return 0
+    }
+  }
+
+  func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+    switch component {
+    case 0: return hangTypes[row].displayName
+    case 1: return "\(row) sec"
+    case 2: return ".\(row)"
+    default: return nil
+    }
+  }
+
+  func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+    switch component {
+    case 0: selectedHangTypeIndex = row
+    case 1: seconds = row
+    case 2: tenths = row
+    default: break
+    }
   }
 }

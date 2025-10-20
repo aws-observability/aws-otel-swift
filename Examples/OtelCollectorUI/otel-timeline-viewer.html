@@ -220,6 +220,30 @@
       .timeline-item:hover {
         background-color: #e3f2fd;
       }
+      .timeline-item {
+        position: relative;
+      }
+      .fullscreen-hover-btn {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: rgba(33, 150, 243, 0.8);
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 6px;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 10;
+      }
+      .timeline-item:hover .fullscreen-hover-btn {
+        opacity: 1;
+      }
+      .fullscreen-hover-btn:hover {
+        background: rgba(33, 150, 243, 1);
+      }
       .timeline-label {
         position: absolute;
         left: -125px;
@@ -318,6 +342,14 @@
         justify-content: space-between;
         align-items: center;
       }
+      .details-header h3 {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-all;
+        margin: 0;
+        flex: 1;
+        margin-right: 10px;
+      }
       .details-content {
         padding: 20px;
       }
@@ -349,32 +381,7 @@
       .detail-item:hover {
         background: #e3f2fd;
       }
-      .detail-tabs {
-        display: flex;
-        border-bottom: 1px solid #ddd;
-        margin-bottom: 15px;
-      }
-      .detail-tab {
-        padding: 10px 15px;
-        cursor: pointer;
-        border: none;
-        background: none;
-        color: #666;
-        border-bottom: 2px solid transparent;
-      }
-      .detail-tab.active {
-        color: #2196f3;
-        border-bottom-color: #2196f3;
-      }
-      .detail-tab:hover {
-        background: #f5f5f5;
-      }
-      .tab-content {
-        display: none;
-      }
-      .tab-content.active {
-        display: block;
-      }
+
       .json-view {
         background: #f8f8f8;
         border: 1px solid #ddd;
@@ -645,6 +652,90 @@
         border-bottom-color: #333;
         z-index: 1000;
       }
+
+      .fullscreen-modal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+      }
+      .fullscreen-modal.open {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fullscreen-content {
+        background: white;
+        border-radius: 8px;
+        width: 90vw;
+        height: 90vh;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+      }
+      .fullscreen-header {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .fullscreen-body {
+        flex: 1;
+        padding: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .fullscreen-json {
+        flex: 1;
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        overflow: auto;
+        line-height: 1.4;
+        white-space: pre;
+      }
+      .json-key {
+        color: #0451a5;
+        font-weight: bold;
+      }
+      .json-string {
+        color: #0a7d0a;
+      }
+      .json-number {
+        color: #098658;
+      }
+      .json-boolean {
+        color: #0000ff;
+      }
+      .json-null {
+        color: #808080;
+      }
+      .json-toggle {
+        cursor: pointer;
+        user-select: none;
+        color: #666;
+        margin-right: 4px;
+        font-weight: bold;
+      }
+      .json-toggle:hover {
+        color: #333;
+      }
+      .json-collapsed {
+        display: none;
+      }
+      .json-line {
+        margin-left: 20px;
+      }
     </style>
   </head>
   <body>
@@ -800,6 +891,18 @@
       </div>
     </div>
 
+    <div class="fullscreen-modal" id="fullscreenModal">
+      <div class="fullscreen-content">
+        <div class="fullscreen-header">
+          <h3>Raw JSON - Pretty Print</h3>
+          <button class="close-btn" onclick="closeFullscreenJson()">&times;</button>
+        </div>
+        <div class="fullscreen-body">
+          <div class="fullscreen-json" id="fullscreenJson"></div>
+        </div>
+      </div>
+    </div>
+
     <script>
       let allItems = [];
       let filteredItems = [];
@@ -807,16 +910,6 @@
       // Store items globally for click handlers
       window.showDetails = showDetails;
       window.closeDetails = closeDetails;
-      window.switchTab = switchTab;
-
-      function switchTab(tabName) {
-        document.querySelectorAll('.detail-tab').forEach((tab) => tab.classList.remove('active'));
-        document
-          .querySelectorAll('.tab-content')
-          .forEach((content) => content.classList.remove('active'));
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        document.getElementById(`${tabName}Content`).classList.add('active');
-      }
 
       document.getElementById('typeFilter').addEventListener('change', () => {
         saveSettings();
@@ -879,6 +972,9 @@
       window.showTimelineCursor = showTimelineCursor;
       window.hideTimelineCursor = hideTimelineCursor;
       window.toggleTimezone = toggleTimezone;
+      window.openFullscreenJson = openFullscreenJson;
+      window.closeFullscreenJson = closeFullscreenJson;
+      window.toggleCollapse = toggleCollapse;
 
       let zoomLevel = 1;
       let useUTC = true;
@@ -1023,6 +1119,13 @@
         loadDefaultData();
       });
 
+      // Close fullscreen modal on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeFullscreenJson();
+        }
+      });
+
       function refreshData() {
         allItems = [];
         filteredItems = [];
@@ -1127,63 +1230,79 @@
             (typeFilter === 'logs' && item.type === 'log');
 
           // Separate structured (key=value), like (key~value), and substring filters
-          const structuredFilters = customFilters.filter((f) => f.includes('=') && !f.includes('~'));
+          const structuredFilters = customFilters.filter(
+            (f) => f.includes('=') && !f.includes('~'),
+          );
           const likeFilters = customFilters.filter((f) => f.includes('~'));
-          const substringFilters = customFilters.filter((f) => !f.includes('=') && !f.includes('~'));
+          const substringFilters = customFilters.filter(
+            (f) => !f.includes('=') && !f.includes('~'),
+          );
 
           // Apply structured filters (intersection or union)
-          const matchesStructuredFilters = structuredFilters.length === 0 ||
-            (structuredFilterMode === 'intersection' ? structuredFilters.every : structuredFilters.some).call(structuredFilters, (filter) => {
-            const [key, value] = filter.split('=', 2);
-            const keyLower = key.toLowerCase();
-            const valueLower = value.toLowerCase();
+          const matchesStructuredFilters =
+            structuredFilters.length === 0 ||
+            (structuredFilterMode === 'intersection'
+              ? structuredFilters.every
+              : structuredFilters.some
+            ).call(structuredFilters, (filter) => {
+              const [key, value] = filter.split('=', 2);
+              const keyLower = key.toLowerCase();
+              const valueLower = value.toLowerCase();
 
-            if (keyLower === 'session.id') {
-              return getSessionId(item).toLowerCase() === valueLower;
-            }
+              if (keyLower === 'session.id') {
+                return getSessionId(item).toLowerCase() === valueLower;
+              }
 
-            if (keyLower === 'scopename') {
-              return item.scopeName?.toLowerCase() === valueLower;
-            }
+              if (keyLower === 'scopename') {
+                return item.scopeName?.toLowerCase() === valueLower;
+              }
 
-            return item.attributes?.some(
-              (attr) =>
-                attr.key?.toLowerCase() === keyLower &&
-                String(
-                  attr.value?.stringValue ||
-                    attr.value?.intValue ||
-                    attr.value?.doubleValue ||
-                    attr.value?.boolValue,
-                ).toLowerCase() === valueLower,
-            );
-          });
+              return item.attributes?.some(
+                (attr) =>
+                  attr.key?.toLowerCase() === keyLower &&
+                  String(
+                    attr.value?.stringValue ||
+                      attr.value?.intValue ||
+                      attr.value?.doubleValue ||
+                      attr.value?.boolValue,
+                  ).toLowerCase() === valueLower,
+              );
+            });
 
           // Apply like filters (key~value substring matching)
-          const matchesLikeFilters = likeFilters.length === 0 ||
-            (structuredFilterMode === 'intersection' ? likeFilters.every : likeFilters.some).call(likeFilters, (filter) => {
-            const [key, value] = filter.split('~', 2);
-            const keyLower = key.toLowerCase();
-            const valueLower = value.toLowerCase();
+          const matchesLikeFilters =
+            likeFilters.length === 0 ||
+            (structuredFilterMode === 'intersection' ? likeFilters.every : likeFilters.some).call(
+              likeFilters,
+              (filter) => {
+                const [key, value] = filter.split('~', 2);
+                const keyLower = key.toLowerCase();
+                const valueLower = value.toLowerCase();
 
-            if (keyLower === 'session.id') {
-              return getSessionId(item).toLowerCase().includes(valueLower);
-            }
+                if (keyLower === 'session.id') {
+                  return getSessionId(item).toLowerCase().includes(valueLower);
+                }
 
-            if (keyLower === 'scopename') {
-              return item.scopeName?.toLowerCase().includes(valueLower) || false;
-            }
+                if (keyLower === 'scopename') {
+                  return item.scopeName?.toLowerCase().includes(valueLower) || false;
+                }
 
-            return item.attributes?.some(
-              (attr) =>
-                attr.key?.toLowerCase() === keyLower &&
-                String(
-                  attr.value?.stringValue ||
-                    attr.value?.intValue ||
-                    attr.value?.doubleValue ||
-                    attr.value?.boolValue,
-                ).toLowerCase().includes(valueLower),
-            ) || false;
-          });
+                return (
+                  item.attributes?.some(
+                    (attr) =>
+                      attr.key?.toLowerCase() === keyLower &&
+                      String(
+                        attr.value?.stringValue ||
+                          attr.value?.intValue ||
+                          attr.value?.doubleValue ||
+                          attr.value?.boolValue,
+                      )
+                        .toLowerCase()
+                        .includes(valueLower),
+                  ) || false
+                );
+              },
+            );
 
           // Then apply substring filters (intersection or union within the structured subgroup)
           const matchesSubstringFilters =
@@ -1194,8 +1313,8 @@
             ).call(substringFilters, (filter) => {
               const isNegated = filter.startsWith('!');
               const searchTerm = isNegated ? filter.slice(1).toLowerCase() : filter.toLowerCase();
-              
-              const matches = (
+
+              const matches =
                 item.traceId?.toLowerCase().includes(searchTerm) ||
                 item.spanId?.toLowerCase().includes(searchTerm) ||
                 item.name?.toLowerCase().includes(searchTerm) ||
@@ -1218,13 +1337,13 @@
                     )
                       .toLowerCase()
                       .includes(searchTerm),
-                )
-              );
-              
+                );
+
               return isNegated ? !matches : matches;
             });
 
-          const matchesCustomFilters = matchesStructuredFilters && matchesLikeFilters && matchesSubstringFilters;
+          const matchesCustomFilters =
+            matchesStructuredFilters && matchesLikeFilters && matchesSubstringFilters;
 
           const matchesTimeRange = (() => {
             if (timeRangeValue === 'all') return true;
@@ -1524,8 +1643,12 @@
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
                     </div>
-                    <div style="margin-left: ${startOffset}px; font-size: 0.9em; color: #333;">
-                        <strong>${span.name}</strong> (${formattedDuration})
+                    <div style="margin-left: ${startOffset - 30}px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
+                        <button class="fullscreen-hover-btn" onclick="event.stopPropagation(); openFullscreenJson(${JSON.stringify(
+                          span,
+                        ).replace(/"/g, '&quot;')})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
+                        <div style="flex: 1;">
+                            <strong>${span.name}</strong> (${formattedDuration})
                         ${
                           isHttpRequest
                             ? `<div style="font-size: 0.8em; color: #4caf50; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
@@ -1584,11 +1707,12 @@
                           activePrewarm !== undefined
                             ? `<div style="font-size: 0.8em; color: #e91e63;">⚡ active_prewarm: ${activePrewarm}</div>`
                             : ''
-                        }
-                        <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
-                          0,
-                          8,
-                        )}...</div>
+                            }
+                            <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
+                              0,
+                              8,
+                            )}...</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1609,12 +1733,17 @@
                     <div class="timeline-label">${time}</div>
                     <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
                     </div>
-                    <div style="margin-left: ${offset + 20}px; font-size: 0.9em; color: #333;">
-                        <strong>${displayTitle}</strong>
-                        <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
-                          0,
-                          8,
-                        )}...</div>
+                    <div style="margin-left: ${offset - 30}px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
+                        <button class="fullscreen-hover-btn" onclick="event.stopPropagation(); openFullscreenJson(${JSON.stringify(
+                          log,
+                        ).replace(/"/g, '&quot;')})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
+                        <div style="flex: 1;">
+                            <strong>${displayTitle}</strong>
+                            <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
+                              0,
+                              8,
+                            )}...</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1629,7 +1758,7 @@
         const title = document.getElementById('detailsTitle');
         const content = document.getElementById('detailsContent');
 
-        title.textContent = item.type === 'span' ? `Span: ${item.name}` : `Log: ${item.body}`;
+        title.textContent = item.name || item.eventName || item.body || 'Event Details';
 
         let formattedHtml = `
                 <div class="detail-section">
@@ -1720,14 +1849,15 @@
         const jsonView = JSON.stringify(item, null, 2);
 
         const html = `
-          <div class="detail-tabs">
-            <button class="detail-tab active" data-tab="formatted" onclick="switchTab('formatted')">Formatted</button>
-            <button class="detail-tab" data-tab="json" onclick="switchTab('json')">Raw JSON</button>
-          </div>
-          <div id="formattedContent" class="tab-content active">
-            ${formattedHtml}
-          </div>
-          <div id="jsonContent" class="tab-content">
+          ${formattedHtml}
+          <div class="detail-section">
+            <div class="detail-title" style="display: flex; justify-content: space-between; align-items: center;">
+              Raw JSON
+              <button onclick="openFullscreenJson(${JSON.stringify(item).replace(
+                /"/g,
+                '&quot;',
+              )})" style="padding: 4px 8px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em;">View Fullscreen</button>
+            </div>
             <div class="json-view">${jsonView}</div>
           </div>
         `;
@@ -1906,17 +2036,15 @@
 
           if (substringFilters.length > 0) {
             const substringPart = substringFilters
-              .map(
-                (f) => {
-                  const isNegated = f.startsWith('!');
-                  const displayTerm = isNegated ? f.slice(1) : f;
-                  const operator = isNegated ? 'NOT CONTAINS' : 'CONTAINS';
-                  return `<span style="color: #ff9800; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
-                    /'/g,
-                    '&#39;',
-                  )}')">×${operator}('${displayTerm.replace(/'/g, '&#39;')}')</span>`;
-                }
-              )
+              .map((f) => {
+                const isNegated = f.startsWith('!');
+                const displayTerm = isNegated ? f.slice(1) : f;
+                const operator = isNegated ? 'NOT CONTAINS' : 'CONTAINS';
+                return `<span style="color: #ff9800; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                  /'/g,
+                  '&#39;',
+                )}')">×${operator}('${displayTerm.replace(/'/g, '&#39;')}')</span>`;
+              })
               .join(
                 ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleSubstringMode()">${
                   substringFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
@@ -1987,6 +2115,95 @@
           button.textContent = substringFilterMode === 'intersection' ? 'AND' : 'OR';
           button.style.background = substringFilterMode === 'intersection' ? '#2196f3' : '#ff9800';
         }
+      }
+
+      function openFullscreenJson(item) {
+        const modal = document.getElementById('fullscreenModal');
+        const jsonContainer = document.getElementById('fullscreenJson');
+        const modalTitle = modal.querySelector('.fullscreen-header h3');
+
+        const title = item.name || item.eventName || item.body || 'Event Details';
+        modalTitle.textContent = title;
+
+        jsonContainer.innerHTML = renderJsonWithCollapse(item, 0);
+        modal.classList.add('open');
+      }
+
+      function renderJsonWithCollapse(obj, depth = 0) {
+        if (obj === null) return '<span class="json-null">null</span>';
+        if (typeof obj === 'string')
+          return `<span class="json-string">"${formatJsonString(obj)}"</span>`;
+        if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+        if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+
+        const indent = '  '.repeat(depth);
+        const nextIndent = '  '.repeat(depth + 1);
+
+        if (Array.isArray(obj)) {
+          if (obj.length === 0) return '[]';
+          const id = 'collapse_' + Math.random().toString(36).substr(2, 9);
+          let html = `<span class="json-toggle" onclick="toggleCollapse('${id}')">[−]</span>[`;
+          html += `<div id="${id}">`;
+          obj.forEach((item, i) => {
+            html += `${i > 0 ? '<br>' : ''}${nextIndent}${renderJsonWithCollapse(item, depth + 1)}`;
+            if (i < obj.length - 1) html += ',';
+          });
+          html += `</div>${indent}]`;
+          return html;
+        }
+
+        if (typeof obj === 'object') {
+          const keys = Object.keys(obj);
+          if (keys.length === 0) return '{}';
+          const id = 'collapse_' + Math.random().toString(36).substr(2, 9);
+          let html = `<span class="json-toggle" onclick="toggleCollapse('${id}')">{−}</span>{`;
+          html += `<div id="${id}">`;
+          keys.forEach((key, i) => {
+            html += `${i > 0 ? '<br>' : ''}${nextIndent}<span class="json-key">"${escapeHtml(
+              key,
+            )}"</span>: ${renderJsonWithCollapse(obj[key], depth + 1)}`;
+            if (i < keys.length - 1) html += ',';
+          });
+          html += `</div>${indent}}`;
+          return html;
+        }
+
+        return String(obj);
+      }
+
+      function toggleCollapse(id) {
+        const element = document.getElementById(id);
+        const toggle = element.previousElementSibling;
+        if (element.style.display === 'none') {
+          element.style.display = 'block';
+          toggle.textContent = toggle.textContent.replace('[+]', '[−]').replace('{+}', '{−}');
+        } else {
+          element.style.display = 'none';
+          toggle.textContent = toggle.textContent.replace('[−]', '[+]').replace('{−}', '{+}');
+        }
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function formatJsonString(str) {
+        return escapeHtml(str)
+          .replace(/\\n/g, '<span style="color: #666;">\\n</span><br>&nbsp;&nbsp;&nbsp;&nbsp;')
+          .replace(/\\t/g, '<span style="color: #666;">\\t</span>')
+          .replace(/\\r/g, '<span style="color: #666;">\\r</span>')
+          .replace(/\\\\/g, '<span style="color: #666;">\\\\</span>')
+          .replace(/\\"/g, '<span style="color: #666;">\\"</span>')
+          .replace(/\n/g, '<span style="color: #666;">\\n</span><br>&nbsp;&nbsp;&nbsp;&nbsp;')
+          .replace(/\t/g, '<span style="color: #666;">\\t</span>')
+          .replace(/\r/g, '<span style="color: #666;">\\r</span>');
+      }
+
+      function closeFullscreenJson() {
+        const modal = document.getElementById('fullscreenModal');
+        modal.classList.remove('open');
       }
     </script>
   </body>

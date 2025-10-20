@@ -47,7 +47,6 @@ public class AwsSessionManager {
   /// Gets the current session without extending its expireTime time
   /// - Returns: The current session if one exists, nil otherwise
   public func peekSession() -> AwsSession? {
-    AwsOpenTelemetryLogger.debug("Peeking at current session: \(session?.id ?? "nil")")
     return session
   }
 
