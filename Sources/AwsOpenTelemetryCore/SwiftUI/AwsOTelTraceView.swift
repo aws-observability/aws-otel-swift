@@ -160,7 +160,7 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
 
     // Start view.duration span to track visibility time
     if let rootSpan = state.rootSpan {
-      let viewDurationSpan = tracer.spanBuilder(spanName: AwsViewConstants.spanNameViewDuration)
+      let viewDurationSpan = tracer.spanBuilder(spanName: AwsViewConstants.spanNameTimeOnScreen)
         .setSpanKind(spanKind: .client)
         .setStartTime(time: appearTime)
         .setParent(rootSpan)

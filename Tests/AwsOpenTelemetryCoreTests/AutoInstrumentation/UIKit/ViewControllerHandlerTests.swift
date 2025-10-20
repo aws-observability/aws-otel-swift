@@ -58,7 +58,7 @@ import Atomics
 
     // Span names
     private static let TimeToFirstAppear = "TimeToFirstAppear"
-    private static let spanNameViewDuration = "view.duration"
+    private static let spanNameTimeOnScreen = "view.duration"
     private static let spanNameViewDidLoad = "viewDidLoad"
     private static let spanNameViewWillAppear = "viewWillAppear"
     private static let spanNameViewIsAppearing = "viewIsAppearing"
@@ -226,7 +226,7 @@ import Atomics
       wait(timeout: Self.defaultTimeout) {
         let startedSpans = self.mockSpanProcessor.getStartedSpans()
         let spanNames = startedSpans.map(\.name)
-        return spanNames.contains(Self.spanNameViewDuration)
+        return spanNames.contains(Self.spanNameTimeOnScreen)
       }
 
       let startedSpans = mockSpanProcessor.getStartedSpans()
@@ -238,7 +238,7 @@ import Atomics
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewWillAppear), "Should create viewWillAppear span")
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewIsAppearing), "Should create viewIsAppearing span")
       XCTAssertTrue(endedSpanNames.contains(Self.spanNameViewDidAppear), "Should create viewDidAppear span")
-      XCTAssertTrue(startedSpanNames.contains(Self.spanNameViewDuration), "Should create view.duration span")
+      XCTAssertTrue(startedSpanNames.contains(Self.spanNameTimeOnScreen), "Should create view.duration span")
 
       // Verify all spans have view.type = uikit
       for span in startedSpans {

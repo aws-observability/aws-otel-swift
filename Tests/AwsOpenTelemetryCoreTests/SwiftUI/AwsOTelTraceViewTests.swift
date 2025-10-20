@@ -126,10 +126,10 @@ final class AwsOTelTraceViewTests: XCTestCase {
     XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameOnAppear })
     XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameOnDisappear })
     XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameView })
-    XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameViewDuration })
+    XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameTimeOnScreen })
 
     // Verify screen.name attribute is set on all spans
-    let expectedSpanNames = [AwsViewConstants.TimeToFirstAppear, AwsViewConstants.spanNameOnAppear, AwsViewConstants.spanNameOnDisappear, AwsViewConstants.spanNameView, AwsViewConstants.spanNameViewDuration]
+    let expectedSpanNames = [AwsViewConstants.TimeToFirstAppear, AwsViewConstants.spanNameOnAppear, AwsViewConstants.spanNameOnDisappear, AwsViewConstants.spanNameView, AwsViewConstants.spanNameTimeOnScreen]
     let allSpans = spans.filter { expectedSpanNames.contains($0.name) }
     for span in allSpans {
       XCTAssertEqual(span.attributes[AwsViewConstants.attributeScreenName]?.description, "TestView", "Span \(span.name) should have screen.name attribute")
@@ -151,7 +151,7 @@ final class AwsOTelTraceViewTests: XCTestCase {
     traceView.handleViewDisappear()
 
     let spans = mockSpanProcessor.getEndedSpans()
-    let durationSpans = spans.filter { $0.name == AwsViewConstants.spanNameViewDuration }
+    let durationSpans = spans.filter { $0.name == AwsViewConstants.spanNameTimeOnScreen }
     XCTAssertEqual(durationSpans.count, 1, "Should have exactly one view.duration span")
 
     let durationSpan = durationSpans.first!

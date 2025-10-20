@@ -26,7 +26,7 @@ final class AwsViewConstantsTests: XCTestCase {
   }
 
   func testUIKitSpanNames() {
-    XCTAssertEqual(AwsViewConstants.spanNameViewDuration, "view.duration")
+    XCTAssertEqual(AwsViewConstants.spanNameTimeOnScreen, "TimeOnScreen")
     XCTAssertEqual(AwsViewConstants.spanNameViewDidLoad, "viewDidLoad")
     XCTAssertEqual(AwsViewConstants.spanNameViewWillAppear, "viewWillAppear")
     XCTAssertEqual(AwsViewConstants.spanNameViewIsAppearing, "viewIsAppearing")

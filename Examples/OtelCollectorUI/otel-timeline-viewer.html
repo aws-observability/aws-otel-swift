@@ -1520,7 +1520,7 @@
         const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
         const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
         const actualTimeRange = maxTime - minTime;
-        const timeRange = actualTimeRange * 1.35; // Add padding after the latest event
+        const timeRange = actualTimeRange * 1.15; // Add padding after the latest event
 
         // Update header with timestamps
         const startTimeStr = formatTimeForDisplay(minTime);
@@ -1643,10 +1643,15 @@
                     <div class="timeline-label">${time}</div>
                     <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
                     </div>
-                    <div style="margin-left: ${startOffset - 30}px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
+                    <div style="margin-left: ${
+                      startOffset - 30
+                    }px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
                         <button class="fullscreen-hover-btn" onclick="event.stopPropagation(); openFullscreenJson(${JSON.stringify(
                           span,
-                        ).replace(/"/g, '&quot;')})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
+                        ).replace(
+                          /"/g,
+                          '&quot;',
+                        )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
                         <div style="flex: 1;">
                             <strong>${span.name}</strong> (${formattedDuration})
                         ${
@@ -1707,7 +1712,7 @@
                           activePrewarm !== undefined
                             ? `<div style="font-size: 0.8em; color: #e91e63;">⚡ active_prewarm: ${activePrewarm}</div>`
                             : ''
-                            }
+                        }
                             <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
                               0,
                               8,
@@ -1724,21 +1729,35 @@
         const sessionId = getSessionId(log);
         const sessionColor = getSessionColor(sessionId);
         const displayTitle = log.eventName || log.body;
+        const screenName = log.attributes?.find((attr) => attr.key === 'screen.name')?.value
+          ?.stringValue;
 
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
           log,
         ).replace(/"/g, '&quot;')})" 
-                     title="${displayTitle}\nSession: ${sessionId}">
+                     title="${displayTitle}\nSession: ${sessionId}${
+          screenName ? '\nScreen: ' + screenName : ''
+        }">
                     <div class="timeline-label">${time}</div>
                     <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
                     </div>
-                    <div style="margin-left: ${offset - 30}px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
+                    <div style="margin-left: ${
+                      offset - 30
+                    }px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
                         <button class="fullscreen-hover-btn" onclick="event.stopPropagation(); openFullscreenJson(${JSON.stringify(
                           log,
-                        ).replace(/"/g, '&quot;')})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
+                        ).replace(
+                          /"/g,
+                          '&quot;',
+                        )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
                         <div style="flex: 1;">
                             <strong>${displayTitle}</strong>
+                        ${
+                          screenName
+                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
+                            : ''
+                        }
                             <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
                               0,
                               8,

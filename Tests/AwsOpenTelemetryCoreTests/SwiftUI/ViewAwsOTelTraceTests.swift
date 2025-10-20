@@ -103,10 +103,10 @@ final class ViewAwsOTelTraceTests: XCTestCase {
       XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameOnAppear })
       XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameOnDisappear })
       XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameView })
-      XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameViewDuration })
+      XCTAssertTrue(spans.contains { $0.name == AwsViewConstants.spanNameTimeOnScreen })
 
       // Verify screen.name attribute is set on all spans
-      let expectedSpanNames = [AwsViewConstants.TimeToFirstAppear, AwsViewConstants.spanNameOnAppear, AwsViewConstants.spanNameOnDisappear, AwsViewConstants.spanNameView, AwsViewConstants.spanNameViewDuration]
+      let expectedSpanNames = [AwsViewConstants.TimeToFirstAppear, AwsViewConstants.spanNameOnAppear, AwsViewConstants.spanNameOnDisappear, AwsViewConstants.spanNameView, AwsViewConstants.spanNameTimeOnScreen]
       let allSpans = spans.filter { expectedSpanNames.contains($0.name) }
       for span in allSpans {
         XCTAssertEqual(span.attributes[AwsViewConstants.attributeScreenName]?.description, "HomeView", "Span \(span.name) should have screen.name attribute")

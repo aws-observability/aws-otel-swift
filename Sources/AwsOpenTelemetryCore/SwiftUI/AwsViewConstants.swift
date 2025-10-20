@@ -19,7 +19,7 @@ public enum AwsViewConstants {
   public static let TimeToFirstAppear = "TimeToFirstAppear"
   public static let attributeScreenName = "screen.name"
   public static let attributeViewType = "view.type"
-  public static let spanNameViewDuration = "view.duration"
+  public static let spanNameTimeOnScreen = "TimeOnScreen"
 
   // SwiftUI
   public static let valueSwiftUI = "swiftui"

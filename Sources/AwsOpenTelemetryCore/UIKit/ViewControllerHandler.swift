@@ -79,6 +79,7 @@
     /// The OpenTelemetry tracer used for creating spans
     /// This tracer is configured with appropriate instrumentation metadata
     private let tracer: Tracer
+    private let logger: Logger
 
     /// Weak reference to the parent UIKitViewInstrumentation instance
     /// Used for parent span lookup and avoiding retain cycles
@@ -118,6 +119,7 @@
      */
     init(tracer: Tracer, queue: DispatchQueue = DispatchQueue(label: ViewControllerHandler.queueLabel, qos: .utility)) {
       self.tracer = tracer
+      logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.UIKIT_VIEW)
       self.queue = queue
 
       NotificationCenter.default.addObserver(
@@ -358,7 +360,7 @@
 
         // Start visibility span
         let visibilitySpan = self.createSpan(
-          name: AwsViewConstants.spanNameViewDuration,
+          name: AwsViewConstants.spanNameTimeOnScreen,
           screenName: screenName,
           className: className,
           startTime: now
@@ -382,6 +384,19 @@
       }
 
       queue.async {
+        let className = viewController.className
+        let screenName = viewController.screenName
+        // Create log event for viewDidDisappear
+        self.logger.logRecordBuilder()
+          .setTimestamp(now)
+          .setEventName("viewDidDisappear")
+          .setAttributes([
+            AwsViewConstants.attributeScreenName: AttributeValue.string(screenName),
+            AwsViewConstants.attributeViewClass: AttributeValue.string(className),
+            AwsViewConstants.attributeViewType: AttributeValue.string(AwsViewConstants.valueUIKit)
+          ])
+          .emit()
+
         // End visibility span
         if let span = self.visibilitySpans.removeValue(forKey: id) {
           span.end(time: now)
