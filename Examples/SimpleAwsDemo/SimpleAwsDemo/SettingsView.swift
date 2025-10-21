@@ -51,10 +51,15 @@ struct SettingsView: View {
           }) {
             HStack {
               Text(item.0)
+                .font(.system(.caption, design: .monospaced, weight: .medium))
                 .foregroundColor(.primary)
-              Spacer()
+              Spacer(minLength: 20)
               Text(item.1)
+                .font(.system(.caption, design: .monospaced))
                 .foregroundColor(.secondary)
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: 200, alignment: .trailing)
+                .lineLimit(nil)
               Image(systemName: "chevron.right")
                 .foregroundColor(.secondary)
                 .font(.caption)

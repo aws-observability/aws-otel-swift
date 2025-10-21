@@ -29,6 +29,8 @@ public class HangInstrumentation {
   private let syncQueue = DispatchQueue(label: "\(AwsInstrumentationScopes.HANG).sync")
   private let watchdogQueue = DispatchQueue(label: AwsInstrumentationScopes.HANG, qos: .userInitiated)
 
+  private let maxStackTraceLines = 200
+
   private var hangStart: CFAbsoluteTime? {
     get { syncQueue.sync { _hangStart } }
     set { syncQueue.sync { _hangStart = newValue } }
@@ -153,21 +155,22 @@ public class HangInstrumentation {
         do {
           // Offload formatting work
           let crashReport = try PLCrashReport(data: rawStackTrace)
-          stacktrace = PLCrashReportTextFormatter.stringValue(for: crashReport, with: PLCrashReportTextFormatiOS)
-
-          let firstFrame = stacktrace.components(separatedBy: "Thread 0:\n").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression) ?? "unknown location"
-          span.setAttribute(key: "exception.message", value: "Hang detected at \(firstFrame)")
+          if let fullStacktrace = PLCrashReportTextFormatter.stringValue(for: crashReport, with: PLCrashReportTextFormatiOS) {
+            stacktrace = fullStacktrace.split(separator: "\n").prefix(self.maxStackTraceLines).joined(separator: "\n")
+            let firstFrame = stacktrace.components(separatedBy: "Thread 0:\n").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression) ?? "unknown location"
+            span.setAttribute(key: "exception.message", value: "Hang detected at \(firstFrame)")
+          }
         } catch {
-          span.setAttribute(key: "exception.stacktrace", value: "Failed to parse stack trace: \(error)")
+          span.setAttribute(key: "hang.stacktrace", value: "Failed to parse stack trace: \(error)")
         }
 
-        span.setAttribute(key: "exception.stacktrace", value: stacktrace)
+        span.setAttribute(key: "hang.stacktrace", value: stacktrace)
         span.end(time: Date(timeIntervalSinceReferenceDate: endTime))
         AwsOpenTelemetryLogger.debug("Recorded app hang")
       }
 
     } else {
-      span.setAttribute(key: "exception.stacktrace", value: stacktrace)
+      span.setAttribute(key: "hang.stacktrace", value: stacktrace)
       span.end(time: Date(timeIntervalSinceReferenceDate: endTime))
       return
     }

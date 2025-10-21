@@ -69,8 +69,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let before = Date()
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
-      logs: "http://localhost:4318/v1/logs",
-      traces: "http://localhost:4318/v1/traces"
+      // logs: "http://localhost:4318/v1/logs",
+      // traces: "http://localhost:4318/v1/traces"
+      logs: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum",
+      traces: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
     )
 
     let config = AwsOpenTelemetryConfig(

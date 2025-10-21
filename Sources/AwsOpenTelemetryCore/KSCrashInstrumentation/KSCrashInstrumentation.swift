@@ -183,7 +183,7 @@ class KSCrashInstrumentation {
         finalReport
       }
 
-      attributes["exception.stacktrace"] = AttributeValue.string(truncatedReport)
+      attributes["crash.stacktrace"] = AttributeValue.string(truncatedReport)
 
       // Get timestamp
       let timestamp: Date = if let reportTimestamp = reportDict["timestamp"] as? String {

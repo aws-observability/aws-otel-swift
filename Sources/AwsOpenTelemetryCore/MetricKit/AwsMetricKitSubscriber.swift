@@ -36,9 +36,10 @@
     func didReceive(_ payloads: [MXDiagnosticPayload]) {
       AwsOpenTelemetryLogger.debug("Received \(payloads.count) diagnostic payload(s)")
       for payload in payloads {
-        if config.crashes {
-          processCrashDiagnostics(payload.crashDiagnostics)
-        }
+        // Disable MXCrashDiagnostic for beta scope
+        // if config.crashes {
+        //   processCrashDiagnostics(payload.crashDiagnostics)
+        // }
 
         if config.hangs {
           processHangDiagnostics(payload.hangDiagnostics)

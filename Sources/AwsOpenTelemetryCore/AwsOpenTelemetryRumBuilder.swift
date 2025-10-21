@@ -172,6 +172,11 @@ public class AwsOpenTelemetryRumBuilder {
 
   /// Execute AwsInstrumentationPlan to build requested instrumentations
   private func buildInstrumentations(plan: AwsInstrumentationPlan) {
+    // Session Events
+    if plan.sessionEvents {
+      _ = AwsSessionEventInstrumentation()
+    }
+    
     // App Launch
     if plan.startup {
       // Only supported on iOS
@@ -179,17 +184,13 @@ public class AwsOpenTelemetryRumBuilder {
         _ = AppLaunchInstrumentation()
       #endif
     }
+    
+    
+    if plan.crash {
+      KSCrashInstrumentation.install()
+    }
 
     DispatchQueue.main.async {
-      if plan.crash {
-        KSCrashInstrumentation.install()
-      }
-
-      // Session Events
-      if plan.sessionEvents {
-        _ = AwsSessionEventInstrumentation()
-      }
-
       // View instrumentation (UIKit/SwiftUI)
       #if canImport(UIKit) && !os(watchOS)
         if plan.view {
