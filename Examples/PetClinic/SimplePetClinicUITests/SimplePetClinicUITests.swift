@@ -7,10 +7,7 @@ import XCTest
  *
  * The ANR and Crash buttons are saved for last as they will terminate the test.
  */
-final class PetClinicUITests: XCTestCase {
-  private let sleepIntervalSeconds: TimeInterval = 27 * 60 // 25 minutes
-  private let timeoutSeconds: TimeInterval = 30 * 60 // 30 minutes
-
+class SimplePetClinicUITests: XCTestCase {
   override func setUpWithError() throws {
     continueAfterFailure = false
   }
@@ -19,25 +16,23 @@ final class PetClinicUITests: XCTestCase {
     // Put teardown code here. This method is called after the invocation of each test method in the class.
   }
 
-  override class var runsForEachTargetApplicationUIConfiguration: Bool {
-    false
-  }
-
   @MainActor
   func testGenerateComprehensiveTelemetry() throws {
     let app = XCUIApplication()
     app.launch()
 
-    let numberOfIntervals = 4 // 4 times in 120 mins => once every 30 mins
+    // Wait for app to load
+    sleep(2)
 
-    // Loop for the entire test session
-    for i in 0 ..< numberOfIntervals {
-      print("Generating telemetry for interval \(i + 1)...")
-      generateAllTelemetry(app: app)
+    navigateToOwnersScreen(app: app)
+    navigateToVetsScreen(app: app)
+    navigateToHomeScreen(app: app)
+    testUIJankFeature(app: app)
+    performFinalNavigationRound(app: app)
+    performDestructiveTests(app: app)
 
-      print("Idling for 28 minutes...")
-      idleFor28Minutes(app: app)
-    }
+    // Wait for telemetry to be sent
+    sleep(30)
   }
 
   @MainActor
@@ -59,33 +54,6 @@ final class PetClinicUITests: XCTestCase {
     app.launch()
 
     sleep(2)
-  }
-
-  private func idleFor28Minutes(app: XCUIApplication) {
-    let startTime = Date()
-    let duration: TimeInterval = 28 * 60 // 28 minutes
-
-    // Perform periodic navigation while waiting
-    while Date().timeIntervalSince(startTime) < duration {
-      navigateToOwnersScreen(app: app)
-      navigateToVetsScreen(app: app)
-      sleep(30) // Wait 30 seconds between navigation cycles
-    }
-  }
-
-  private func generateAllTelemetry(app: XCUIApplication) {
-    // Wait for app to load
-    sleep(2)
-
-    navigateToOwnersScreen(app: app)
-    navigateToVetsScreen(app: app)
-    navigateToHomeScreen(app: app)
-    testUIJankFeature(app: app)
-    performFinalNavigationRound(app: app)
-    performDestructiveTests(app: app)
-
-    // Wait for telemetry to be sent
-    sleep(30)
   }
 
   private func navigateToOwnersScreen(app: XCUIApplication) {

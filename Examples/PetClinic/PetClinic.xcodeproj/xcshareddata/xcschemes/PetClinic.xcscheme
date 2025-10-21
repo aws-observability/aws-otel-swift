@@ -27,8 +27,15 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:LongSessionTestPlan.xctestplan">
+         </TestPlanReference>
+         <TestPlanReference
+            reference = "container:SimpleTestPlan.xctestplan">
+         </TestPlanReference>
+      </TestPlans>
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -38,6 +45,17 @@
                BlueprintIdentifier = "0F147AE22E7CCCE100FAE8B6"
                BuildableName = "PetClinicUITests.xctest"
                BlueprintName = "PetClinicUITests"
+               ReferencedContainer = "container:PetClinic.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3F7E32B92EA700490034E804"
+               BuildableName = "SimplePetClinicUITests.xctest"
+               BlueprintName = "SimplePetClinicUITests"
                ReferencedContainer = "container:PetClinic.xcodeproj">
             </BuildableReference>
          </TestableReference>

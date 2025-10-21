@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "595B6736-C403-40A2-A0B0-4588E5129C7B",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:PetClinic.xcodeproj",
+        "identifier" : "3F7E32B92EA700490034E804",
+        "name" : "SimplePetClinicUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
