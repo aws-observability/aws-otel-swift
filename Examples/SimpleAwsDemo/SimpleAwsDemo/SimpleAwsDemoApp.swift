@@ -43,7 +43,7 @@ let tracesEndpoint = "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
 
-  private let appMonitorId = "33868e1a-72af-4815-8605-46f5dc76c91b"
+  private let appMonitorId = "ec15809a-6501-42c4-8d6b-bab3ca46546f" // "33868e1a-72af-4815-8605-46f5dc76c91b"
   private let region = "us-west-2"
 
   var tracer: Tracer?
