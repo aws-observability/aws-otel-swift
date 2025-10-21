@@ -31,6 +31,14 @@ func timeAgo(from timestamp: Int) -> String {
 
 let debugScope = "SimpleAwsDemo.Debug"
 
+// gamma pdx
+let logsEndpoint = "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
+let tracesEndpoint = "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
+
+// local dev
+// let logsEndpoint = "http://localhost:4318/v1/logs",
+// let tracesEndpoint = "http://localhost:4318/v1/traces"
+
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
@@ -69,16 +77,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let before = Date()
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
-      // logs: "http://localhost:4318/v1/logs",
-      // traces: "http://localhost:4318/v1/traces"
-      logs: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum",
-      traces: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
+      logs: logsEndpoint,
+      traces: tracesEndpoint
     )
 
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      sessionTimeout: 2 * 60,
+      sessionTimeout: 1 * 60,
       debug: true
     )
 
