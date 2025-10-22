@@ -28,21 +28,19 @@ public protocol AppLaunchProvider {
   /// The name of the cold launch start marker. Typically, this occurs before the app is launched so the Notification API cannot help us here
   var coldStartName: String { get }
 
-  /// The notification that signals when the cold launch process completed
-  var coldEndNotification: Notification.Name { get }
-
   /// The notification that signals when a warm launch begins
   var warmStartNotification: Notification.Name { get }
 
-  /// The notification that signals when a warm launch ends
-  var warmEndNotification: Notification.Name { get }
+  /// The notification that signals when a cold or warm launch has completed
+  var launchEndNotification: Notification.Name { get }
 
-  /// Threshold in seconds above which a launch is considered pre-warm
+  /// Threshold above which a launch is considered pre-warm
   var preWarmFallbackThreshold: TimeInterval { get }
 
+  // Notification after which warm launches are allowed to be reported
   var hiddenNotification: Notification.Name { get }
 
-  /// Additional lifecycle events to record as log events. By default, cold
+  /// Additional lifecycle events to record as log events
   var additionalLifecycleEvents: [Notification.Name] { get }
 }
 
@@ -50,9 +48,8 @@ public protocol AppLaunchProvider {
 public class DefaultAppLaunchProvider: AppLaunchProvider {
   public let coldLaunchStartTime: Date?
   public let coldStartName: String
-  public let coldEndNotification: Notification.Name
   public let warmStartNotification: Notification.Name
-  public let warmEndNotification: Notification.Name
+  public let launchEndNotification: Notification.Name
   public let hiddenNotification: Notification.Name
   public let preWarmFallbackThreshold: TimeInterval = 30.0
   public let additionalLifecycleEvents: [Notification.Name]
@@ -66,18 +63,15 @@ public class DefaultAppLaunchProvider: AppLaunchProvider {
     coldStartName = "kp_proc.p_starttime"
 
     #if canImport(UIKit) && !os(watchOS)
-      coldEndNotification = UIApplication.didFinishLaunchingNotification
       warmStartNotification = UIApplication.willEnterForegroundNotification
-      warmEndNotification = UIApplication.didBecomeActiveNotification
+      launchEndNotification = UIApplication.didBecomeActiveNotification
       hiddenNotification = UIApplication.didEnterBackgroundNotification
       additionalLifecycleEvents = [
-        UIApplication.didBecomeActiveNotification,
+        UIApplication.didFinishLaunchingNotification,
         UIApplication.didEnterBackgroundNotification,
-        UIApplication.willEnterForegroundNotification,
         UIApplication.willResignActiveNotification,
         UIApplication.willTerminateNotification
       ]
-      AwsOpenTelemetryLogger.debug("DefaultAppLaunchProvider initialized with startTime: \(coldLaunchStartTime), coldEndNotification: \(coldEndNotification.rawValue), warmStartNotification: \(warmStartNotification.rawValue), warmEndNotification: \(warmEndNotification.rawValue)")
     #else
       // For platforms without UIKit, we can't provide meaningful app launch tracking
       fatalError("DefaultAppLaunchProvider requires UIKit for app launch notifications")
