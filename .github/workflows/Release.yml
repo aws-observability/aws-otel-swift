@@ -1,0 +1,25 @@
+name: Release Build
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The version to tag the release with, e.g., 1.2.0
+        required: true
+
+ # Publish to GitHub releases
+jobs:
+  build:
+    environment: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GH release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        # GITHUB_REF_NAME is a GitHub Actions environment variable that contains the short ref name of the branch or tag that triggered the workflow run.
+        run: |
+          gh release create --target "$GITHUB_REF_NAME" \ 
+             --title "Release v${{ github.event.inputs.version }}" \
+             --draft \
+             "v${{ github.event.inputs.version }}" \
+             .
