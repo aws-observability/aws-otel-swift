@@ -172,11 +172,9 @@ public class AwsOpenTelemetryRumBuilder {
 
   /// Execute AwsInstrumentationPlan to build requested instrumentations
   private func buildInstrumentations(plan: AwsInstrumentationPlan) {
-    // Session Events
-    if plan.sessionEvents {
-      _ = AwsSessionEventInstrumentation()
-    }
-    
+    let syncStart = Date()
+    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "aws-otel-swift.debug")
+
     // App Launch
     if plan.startup {
       // Only supported on iOS
@@ -184,21 +182,37 @@ public class AwsOpenTelemetryRumBuilder {
         _ = AppLaunchInstrumentation()
       #endif
     }
-    
-    
+
+    // View instrumentation (UIKit/SwiftUI)
+    #if canImport(UIKit) && !os(watchOS)
+      if plan.view {
+        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW))
+        uiKitViewInstrumentation!.install()
+        AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
+      }
+    #endif
+
+    // Network (URLSession)
+    if let urlSessionConfig = plan.urlSessionConfig {
+      let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
+      urlSessionInstrumentation.apply()
+    }
     if plan.crash {
       KSCrashInstrumentation.install()
     }
 
     DispatchQueue.main.async {
-      // View instrumentation (UIKit/SwiftUI)
-      #if canImport(UIKit) && !os(watchOS)
-        if plan.view {
-          self.uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW))
-          self.uiKitViewInstrumentation!.install()
-          AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = self.uiKitViewInstrumentation
-        }
-      #endif
+      let asyncStart = Date()
+
+      // Hang Detection
+      if plan.hang {
+        _ = HangInstrumentation.shared
+      }
+
+      // Session Events
+      if plan.sessionEvents {
+        _ = AwsSessionEventInstrumentation()
+      }
 
       // MetricKit (crashes)
       #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
@@ -215,19 +229,18 @@ public class AwsOpenTelemetryRumBuilder {
         }
       #endif
 
-      // Hang Detection
-      if plan.hang {
-        _ = HangInstrumentation.shared
-      }
-
-      // Network (URLSession)
-      if let urlSessionConfig = plan.urlSessionConfig {
-        let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
-        urlSessionInstrumentation.apply()
-      } else {
-        AwsOpenTelemetryLogger.info("AwsURLSessionInstrumentation not created - no urlSessionConfig in plan")
-      }
+      let asyncEnd = Date()
+      let span = tracer.spanBuilder(spanName: "[DEBUG] aws-otel-swift init (async)")
+        .setStartTime(time: asyncStart)
+        .startSpan()
+      span.end(time: asyncEnd)
     }
+
+    let syncEnd = Date()
+    let span = tracer.spanBuilder(spanName: "[DEBUG] aws-otel-swift init (blocking)")
+      .setStartTime(time: syncStart)
+      .startSpan()
+    span.end(time: syncEnd)
   }
 
   // MARK: - Resource methods

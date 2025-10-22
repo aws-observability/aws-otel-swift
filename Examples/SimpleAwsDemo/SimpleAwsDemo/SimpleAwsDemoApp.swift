@@ -32,19 +32,19 @@ func timeAgo(from timestamp: Int) -> String {
 let debugScope = "SimpleAwsDemo.Debug"
 
 // gamma pdx
-let logsEndpoint = "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
-let tracesEndpoint = "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
+// let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+// let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+
+let appMonitorId = "927baf95-96e9-412b-8126-3c3875669c66" // "33868e1a-72af-4815-8605-46f5dc76c91b"
+let region = "us-east-1"
 
 // local dev
-// let logsEndpoint = "http://localhost:4318/v1/logs",
-// let tracesEndpoint = "http://localhost:4318/v1/traces"
+let logsEndpoint = "http://localhost:4318/v1/logs"
+let tracesEndpoint = "http://localhost:4318/v1/traces"
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
   var window: UIWindow?
-
-  private let appMonitorId = "ec15809a-6501-42c4-8d6b-bab3ca46546f" // "33868e1a-72af-4815-8605-46f5dc76c91b"
-  private let region = "us-west-2"
 
   var tracer: Tracer?
   var logger: Logger?
@@ -74,7 +74,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 
   private func setupOpenTelemetry() {
-    let before = Date()
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = ExportOverride(
       logs: logsEndpoint,
@@ -84,7 +83,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      sessionTimeout: 1 * 60,
+      sessionTimeout: 30,
       debug: true
     )
 
@@ -99,18 +98,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     let after = Date()
     logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
     tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
-
-    // Record aws otel swift initialization span
-    // Initialization performance is not necessarily tied to aws-otel-swift performance, but a combination of
-    // this and the demo app.
-    if let span = tracer?.spanBuilder(spanName: "[DEBUG] AwsOtelSwift Initialization")
-      .setStartTime(time: before)
-      .startSpan() {
-      span.end(time: after)
-      print("Logged init time")
-    } else {
-      print("Unable to log init time")
-    }
   }
 }
 
@@ -2138,10 +2125,10 @@ class SettingsViewController: UIViewController {
 
   private func loadSessionData() {
     configData = [
-      ("App Monitor ID", "33868e1a-72af-4815-8605-46f5dc76c91b"),
-      ("Region", "us-west-2"),
-      ("Logs Endpoint", "http://localhost:4318/v1/logs"),
-      ("Traces Endpoint", "http://localhost:4318/v1/traces")
+      ("App Monitor ID", appMonitorId),
+      ("Region", region),
+      ("Logs Endpoint", logsEndpoint),
+      ("Traces Endpoint", tracesEndpoint)
     ]
 
     troubleshootingData = [

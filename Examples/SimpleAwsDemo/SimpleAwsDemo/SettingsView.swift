@@ -138,8 +138,8 @@ struct SettingsView: View {
 
   private func loadSessionData() {
     configData = [
-      ("App Monitor ID", "33868e1a-72af-4815-8605-46f5dc76c91b"),
-      ("Region", "us-west-2"),
+      ("App Monitor ID", appMonitorId),
+      ("Region", region),
       ("Logs Endpoint", logsEndpoint),
       ("Traces Endpoint", tracesEndpoint)
     ]

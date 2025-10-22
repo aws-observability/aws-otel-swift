@@ -29,7 +29,7 @@ public class HangInstrumentation {
   private let syncQueue = DispatchQueue(label: "\(AwsInstrumentationScopes.HANG).sync")
   private let watchdogQueue = DispatchQueue(label: AwsInstrumentationScopes.HANG, qos: .userInitiated)
 
-  private let maxStackTraceLines = 200
+  private let maxStackTraceLength: Int = 10 * 1000
 
   private var hangStart: CFAbsoluteTime? {
     get { syncQueue.sync { _hangStart } }
@@ -156,9 +156,9 @@ public class HangInstrumentation {
           // Offload formatting work
           let crashReport = try PLCrashReport(data: rawStackTrace)
           if let fullStacktrace = PLCrashReportTextFormatter.stringValue(for: crashReport, with: PLCrashReportTextFormatiOS) {
-            stacktrace = fullStacktrace.split(separator: "\n").prefix(self.maxStackTraceLines).joined(separator: "\n")
-            let firstFrame = stacktrace.components(separatedBy: "Thread 0:\n").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression) ?? "unknown location"
-            span.setAttribute(key: "exception.message", value: "Hang detected at \(firstFrame)")
+            stacktrace = String(fullStacktrace.prefix(self.maxStackTraceLength))
+            let firstFrame = stacktrace.components(separatedBy: "Thread 0:\n0").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression) ?? "unknown location"
+            span.setAttribute(key: "exception.message", value: "Hang detected on main thread at \(firstFrame)")
           }
         } catch {
           span.setAttribute(key: "hang.stacktrace", value: "Failed to parse stack trace: \(error)")
