@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OTEL Timeline Viewer</title>
+    <title>AWS OTEL UI</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -762,7 +762,7 @@
 
     <div class="header">
       <div class="title-bar">
-        <h1>OTEL Timeline Viewer</h1>
+        <h1>AWS OTEL UI</h1>
       </div>
     </div>
 
@@ -1641,7 +1641,11 @@
                           '&quot;',
                         )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
                         <div style="flex: 1;">
-                            <strong>${span.name}</strong> (${formattedDuration}) <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(span.timestamp)}</span>
+                            <strong>${
+                              span.name
+                            }</strong> (${formattedDuration}) <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(
+          span.timestamp,
+        )}</span>
                         ${
                           isHttpRequest
                             ? `<div style="font-size: 0.8em; color: #4caf50; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
@@ -1740,7 +1744,9 @@
                           '&quot;',
                         )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
                         <div style="flex: 1;">
-                            <strong>${displayTitle}</strong> <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(log.timestamp)}</span>
+                            <strong>${displayTitle}</strong> <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(
+          log.timestamp,
+        )}</span>
                         ${
                           screenName
                             ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
