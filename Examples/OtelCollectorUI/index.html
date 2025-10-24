@@ -1135,21 +1135,17 @@
 
       function loadDefaultData() {
         // Load spans from the current file
-        fetch('../out/traces.txt')
+        fetch('out/traces.jsonl')
           .then((response) => response.text())
           .then((data) => parseSpansData(data))
-          .catch(() => {
-            // Fallback to embedded data if file not accessible
-            const spansData = `{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"SimpleAwsDemo"}}]},"scopeSpans":[{"scope":{"name":"NSURLSession","version":"0.0.1"},"spans":[{"traceId":"5c537c524ec0aee3fd2b3633810609ab","spanId":"34d13046d889676b","name":"HTTP POST","kind":3,"startTimeUnixNano":"1760324709540306944","endTimeUnixNano":"1760324709593145856","attributes":[{"key":"http.method","value":{"stringValue":"POST"}},{"key":"http.status_code","value":{"intValue":"200"}},{"key":"http.url","value":{"stringValue":"http://localhost:4318/v1/traces"}}]}]}]}]}`;
-            parseSpansData(spansData);
+          .catch((err) => {
+            console.error('Failed to parse traces data:', err);
           });
-        fetch('../out/logs.txt')
+        fetch('out/logs.jsonl')
           .then((response) => response.text())
           .then((data) => parseLogsData(data))
-          .catch(() => {
-            // Fallback to embedded data if file not accessible
-            const logsData = `{"resourceLogs":[{"scopeLogs":[{"logRecords":[{"timeUnixNano":"1760320928970785024","body":{"stringValue":"session.end"},"attributes":[{"key":"session.id","value":{"stringValue":"2D45910F-DB3D-47CF-A6CF-8A1AEF1EBE54"}}]}]}]}]}`;
-            parseLogsData(logsData);
+          .catch((err) => {
+            console.error('Failed to parse logs data:', err);
           });
       }
 
@@ -1157,29 +1153,25 @@
         const lines = data.trim().split('\n');
         lines.forEach((line) => {
           if (line.trim()) {
-            try {
-              const spanData = JSON.parse(line);
-              if (spanData.resourceSpans) {
-                spanData.resourceSpans.forEach((resourceSpan) => {
-                  resourceSpan.scopeSpans?.forEach((scopeSpan) => {
-                    scopeSpan.spans?.forEach((span) => {
-                      const item = {
-                        type: 'span',
-                        ...span,
-                        timestamp: parseInt(span.startTimeUnixNano) / 1000000,
-                        endTime: parseInt(span.endTimeUnixNano) / 1000000,
-                        scopeName: scopeSpan.scope?.name,
-                        duration:
-                          (parseInt(span.endTimeUnixNano) - parseInt(span.startTimeUnixNano)) /
-                          1000000,
-                      };
-                      allItems.push(item);
-                    });
+            const spanData = JSON.parse(line);
+            if (spanData.resourceSpans) {
+              spanData.resourceSpans.forEach((resourceSpan) => {
+                resourceSpan.scopeSpans?.forEach((scopeSpan) => {
+                  scopeSpan.spans?.forEach((span) => {
+                    const item = {
+                      type: 'span',
+                      ...span,
+                      timestamp: parseInt(span.startTimeUnixNano) / 1000000,
+                      endTime: parseInt(span.endTimeUnixNano) / 1000000,
+                      scopeName: scopeSpan.scope?.name,
+                      duration:
+                        (parseInt(span.endTimeUnixNano) - parseInt(span.startTimeUnixNano)) /
+                        1000000,
+                    };
+                    allItems.push(item);
                   });
                 });
-              }
-            } catch (e) {
-              console.error('Error parsing span data:', e);
+              });
             }
           }
         });
@@ -1190,28 +1182,24 @@
         const lines = data.trim().split('\n');
         lines.forEach((line) => {
           if (line.trim()) {
-            try {
-              const logData = JSON.parse(line);
-              if (logData.resourceLogs) {
-                logData.resourceLogs.forEach((resourceLog) => {
-                  resourceLog.scopeLogs?.forEach((scopeLog) => {
-                    scopeLog.logRecords?.forEach((logRecord) => {
-                      const item = {
-                        type: 'log',
-                        ...logRecord,
-                        timestamp: parseInt(logRecord.timeUnixNano) / 1000000,
-                        observedTimeUnixNano: logRecord.observedTimeUnixNano
-                          ? parseInt(logRecord.observedTimeUnixNano) / 1000000
-                          : null,
-                        body: logRecord.body?.stringValue || '',
-                      };
-                      allItems.push(item);
-                    });
+            const logData = JSON.parse(line);
+            if (logData.resourceLogs) {
+              logData.resourceLogs.forEach((resourceLog) => {
+                resourceLog.scopeLogs?.forEach((scopeLog) => {
+                  scopeLog.logRecords?.forEach((logRecord) => {
+                    const item = {
+                      type: 'log',
+                      ...logRecord,
+                      timestamp: parseInt(logRecord.timeUnixNano) / 1000000,
+                      observedTimeUnixNano: logRecord.observedTimeUnixNano
+                        ? parseInt(logRecord.observedTimeUnixNano) / 1000000
+                        : null,
+                      body: logRecord.body?.stringValue || '',
+                    };
+                    allItems.push(item);
                   });
                 });
-              }
-            } catch (e) {
-              console.error('Error parsing log data:', e);
+              });
             }
           }
         });
@@ -1628,7 +1616,7 @@
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
           span,
-        ).replace(/"/g, '&quot;')})" 
+        ).replace(/"/g, '&quot;')})"
                      title="${span.name} - ${formattedDuration}\nSession: ${sessionId}${
           screenName ? '\nScreen: ' + screenName : ''
         }${span.scopeName ? '\nScope: ' + span.scopeName : ''}${
@@ -1653,7 +1641,7 @@
                           '&quot;',
                         )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
                         <div style="flex: 1;">
-                            <strong>${span.name}</strong> (${formattedDuration})
+                            <strong>${span.name}</strong> (${formattedDuration}) <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(span.timestamp)}</span>
                         ${
                           isHttpRequest
                             ? `<div style="font-size: 0.8em; color: #4caf50; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
@@ -1735,7 +1723,7 @@
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
           log,
-        ).replace(/"/g, '&quot;')})" 
+        ).replace(/"/g, '&quot;')})"
                      title="${displayTitle}\nSession: ${sessionId}${
           screenName ? '\nScreen: ' + screenName : ''
         }">
@@ -1752,7 +1740,7 @@
                           '&quot;',
                         )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
                         <div style="flex: 1;">
-                            <strong>${displayTitle}</strong>
+                            <strong>${displayTitle}</strong> <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(log.timestamp)}</span>
                         ${
                           screenName
                             ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
@@ -1828,7 +1816,7 @@
                         : ''
                     }
                 </div>
-                
+
                 <div class="detail-section">
                     <div class="detail-title">Identifiers</div>
                     ${
