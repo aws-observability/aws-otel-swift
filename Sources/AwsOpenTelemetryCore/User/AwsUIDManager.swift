@@ -4,7 +4,7 @@ import Foundation
 /// Provides thread-safe access to UID and handles persistence to UserDefaults.
 public class AwsUIDManager {
   private let uidKey = "aws-rum-user-id"
-  private let uid: String
+  private var uid: String
   private let lock = NSLock()
 
   /// Initializes the UID manager and restores or generates UID
@@ -22,6 +22,16 @@ public class AwsUIDManager {
   public func getUID() -> String {
     return lock.withLock {
       return uid
+    }
+  }
+
+  /// Sets a custom UID
+  /// - Parameter uid: The unique user identifier
+  /// - Warning: For privacy and security best practices, consider hashing this value before setting it
+  public func setUID(uid: String) {
+    return lock.withLock {
+      self.uid = uid
+      UserDefaults.standard.set(uid, forKey: uidKey)
     }
   }
 }
