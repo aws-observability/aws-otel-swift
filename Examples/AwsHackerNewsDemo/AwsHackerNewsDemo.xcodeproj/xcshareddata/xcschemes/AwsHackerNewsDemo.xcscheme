@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1640"
+   LastUpgradeVersion = "1630"
    version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "306BC6972E00C6AA00F19E48"
-               BuildableName = "SimpleAwsDemo.app"
-               BlueprintName = "SimpleAwsDemo"
-               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+               BuildableName = "AwsHackerNewsDemo.app"
+               BlueprintName = "AwsHackerNewsDemo"
+               ReferencedContainer = "container:AwsHackerNewsDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -27,16 +27,8 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
-      <TestPlans>
-         <TestPlanReference
-            reference = "container:UITests.xctestplan"
-            default = "YES">
-         </TestPlanReference>
-         <TestPlanReference
-            reference = "container:PerformanceTests.xctestplan">
-         </TestPlanReference>
-      </TestPlans>
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldAutocreateTestPlan = "YES">
       <Testables>
          <TestableReference
             skipped = "NO"
@@ -46,7 +38,7 @@
                BlueprintIdentifier = "3F9C08CC2E68E8000017439E"
                BuildableName = "UITests.xctest"
                BlueprintName = "UITests"
-               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+               ReferencedContainer = "container:AwsHackerNewsDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -57,7 +49,7 @@
                BlueprintIdentifier = "3FEA797B2E833B050026E7AB"
                BuildableName = "PerformanceTests.xctest"
                BlueprintName = "PerformanceTests"
-               ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+               ReferencedContainer = "container:AwsHackerNewsDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -77,18 +69,11 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "306BC6972E00C6AA00F19E48"
-            BuildableName = "SimpleAwsDemo.app"
-            BlueprintName = "SimpleAwsDemo"
-            ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+            BuildableName = "AwsHackerNewsDemo.app"
+            BlueprintName = "AwsHackerNewsDemo"
+            ReferencedContainer = "container:AwsHackerNewsDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <EnvironmentVariables>
-         <EnvironmentVariable
-            key = "CFNETWORK_DIAGNOSTICS"
-            value = "3"
-            isEnabled = "YES">
-         </EnvironmentVariable>
-      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -101,9 +86,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "306BC6972E00C6AA00F19E48"
-            BuildableName = "SimpleAwsDemo.app"
-            BlueprintName = "SimpleAwsDemo"
-            ReferencedContainer = "container:SimpleAwsDemo.xcodeproj">
+            BuildableName = "AwsHackerNewsDemo.app"
+            BlueprintName = "AwsHackerNewsDemo"
+            ReferencedContainer = "container:AwsHackerNewsDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

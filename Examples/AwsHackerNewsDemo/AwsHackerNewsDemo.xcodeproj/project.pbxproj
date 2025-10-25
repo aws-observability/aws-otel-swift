@@ -22,19 +22,19 @@
 			containerPortal = 306BC6902E00C6AA00F19E48 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 306BC6972E00C6AA00F19E48;
-			remoteInfo = SimpleAwsDemo;
+			remoteInfo = AwsHackerNewsDemo;
 		};
 		3FEA79822E833B050026E7AB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 306BC6902E00C6AA00F19E48 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 306BC6972E00C6AA00F19E48;
-			remoteInfo = SimpleAwsDemo;
+			remoteInfo = AwsHackerNewsDemo;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SimpleAwsDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		306BC6982E00C6AA00F19E48 /* AwsHackerNewsDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AwsHackerNewsDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F0925712E7E1459006566D8 /* UITests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = UITests.xctestplan; sourceTree = "<group>"; };
 		3F9C08CD2E68E8000017439E /* UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FEA797C2E833B050026E7AB /* PerformanceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerformanceTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -42,9 +42,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		306BC69A2E00C6AA00F19E48 /* SimpleAwsDemo */ = {
+		306BC69A2E00C6AA00F19E48 /* AwsHackerNewsDemo */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SimpleAwsDemo;
+			path = AwsHackerNewsDemo;
 			sourceTree = "<group>";
 		};
 		3F9C08CE2E68E8000017439E /* UITests */ = {
@@ -95,7 +95,7 @@
 			children = (
 				3FEA79872E833B710026E7AB /* PerformanceTests.xctestplan */,
 				3F0925712E7E1459006566D8 /* UITests.xctestplan */,
-				306BC69A2E00C6AA00F19E48 /* SimpleAwsDemo */,
+				306BC69A2E00C6AA00F19E48 /* AwsHackerNewsDemo */,
 				3F9C08CE2E68E8000017439E /* UITests */,
 				3FEA797D2E833B050026E7AB /* PerformanceTests */,
 				30BF3C382E0481DF000DFBF5 /* Frameworks */,
@@ -106,7 +106,7 @@
 		306BC6992E00C6AA00F19E48 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */,
+				306BC6982E00C6AA00F19E48 /* AwsHackerNewsDemo.app */,
 				3F9C08CD2E68E8000017439E /* UITests.xctest */,
 				3FEA797C2E833B050026E7AB /* PerformanceTests.xctest */,
 			);
@@ -123,9 +123,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		306BC6972E00C6AA00F19E48 /* SimpleAwsDemo */ = {
+		306BC6972E00C6AA00F19E48 /* AwsHackerNewsDemo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 306BC6A42E00C6AC00F19E48 /* Build configuration list for PBXNativeTarget "SimpleAwsDemo" */;
+			buildConfigurationList = 306BC6A42E00C6AC00F19E48 /* Build configuration list for PBXNativeTarget "AwsHackerNewsDemo" */;
 			buildPhases = (
 				306BC6942E00C6AA00F19E48 /* Sources */,
 				306BC6952E00C6AA00F19E48 /* Frameworks */,
@@ -136,9 +136,9 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				306BC69A2E00C6AA00F19E48 /* SimpleAwsDemo */,
+				306BC69A2E00C6AA00F19E48 /* AwsHackerNewsDemo */,
 			);
-			name = SimpleAwsDemo;
+			name = AwsHackerNewsDemo;
 			packageProductDependencies = (
 				30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */,
 				30BF3C362E047FB0000DFBF5 /* AWSS3 */,
@@ -147,8 +147,8 @@
 				5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */,
 				5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */,
 			);
-			productName = SimpleAwsDemo;
-			productReference = 306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */;
+			productName = AwsHackerNewsDemo;
+			productReference = 306BC6982E00C6AA00F19E48 /* AwsHackerNewsDemo.app */;
 			productType = "com.apple.product-type.application";
 		};
 		3F9C08CC2E68E8000017439E /* UITests */ = {
@@ -220,7 +220,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 306BC6932E00C6AA00F19E48 /* Build configuration list for PBXProject "SimpleAwsDemo" */;
+			buildConfigurationList = 306BC6932E00C6AA00F19E48 /* Build configuration list for PBXProject "AwsHackerNewsDemo" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -238,7 +238,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				306BC6972E00C6AA00F19E48 /* SimpleAwsDemo */,
+				306BC6972E00C6AA00F19E48 /* AwsHackerNewsDemo */,
 				3F9C08CC2E68E8000017439E /* UITests */,
 				3FEA797B2E833B050026E7AB /* PerformanceTests */,
 			);
@@ -297,12 +297,12 @@
 /* Begin PBXTargetDependency section */
 		3F9C08D42E68E8000017439E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 306BC6972E00C6AA00F19E48 /* SimpleAwsDemo */;
+			target = 306BC6972E00C6AA00F19E48 /* AwsHackerNewsDemo */;
 			targetProxy = 3F9C08D32E68E8000017439E /* PBXContainerItemProxy */;
 		};
 		3FEA79832E833B050026E7AB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 306BC6972E00C6AA00F19E48 /* SimpleAwsDemo */;
+			target = 306BC6972E00C6AA00F19E48 /* AwsHackerNewsDemo */;
 			targetProxy = 3FEA79822E833B050026E7AB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -427,7 +427,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SimpleAwsDemo/SimpleAwsDemo.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AwsHackerNewsDemo/AwsHackerNewsDemo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -447,20 +447,17 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = AwsRumDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = AwsHackerNewsDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
+				SDKROOT = iphoneos;
 				STRIP_STYLE = debugging;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 2.4;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -469,7 +466,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = SimpleAwsDemo/SimpleAwsDemo.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AwsHackerNewsDemo/AwsHackerNewsDemo.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -488,20 +485,17 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 15.4;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = AwsRumDemo;
+				PRODUCT_BUNDLE_IDENTIFIER = AwsHackerNewsDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				REGISTER_APP_GROUPS = YES;
-				SDKROOT = auto;
+				SDKROOT = iphoneos;
 				STRIP_STYLE = debugging;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
-				XROS_DEPLOYMENT_TARGET = 2.4;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -522,7 +516,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SimpleAwsDemo;
+				TEST_TARGET_NAME = AwsHackerNewsDemo;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -544,7 +538,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SimpleAwsDemo;
+				TEST_TARGET_NAME = AwsHackerNewsDemo;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -572,7 +566,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SimpleAwsDemo;
+				TEST_TARGET_NAME = AwsHackerNewsDemo;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Debug;
@@ -600,7 +594,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = SimpleAwsDemo;
+				TEST_TARGET_NAME = AwsHackerNewsDemo;
 				XROS_DEPLOYMENT_TARGET = 2.5;
 			};
 			name = Release;
@@ -608,7 +602,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		306BC6932E00C6AA00F19E48 /* Build configuration list for PBXProject "SimpleAwsDemo" */ = {
+		306BC6932E00C6AA00F19E48 /* Build configuration list for PBXProject "AwsHackerNewsDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				306BC6A22E00C6AC00F19E48 /* Debug */,
@@ -617,7 +611,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		306BC6A42E00C6AC00F19E48 /* Build configuration list for PBXNativeTarget "SimpleAwsDemo" */ = {
+		306BC6A42E00C6AC00F19E48 /* Build configuration list for PBXNativeTarget "AwsHackerNewsDemo" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				306BC6A52E00C6AC00F19E48 /* Debug */,

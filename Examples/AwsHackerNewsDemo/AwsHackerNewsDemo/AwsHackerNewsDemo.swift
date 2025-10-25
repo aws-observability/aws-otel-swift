@@ -29,18 +29,18 @@ func timeAgo(from timestamp: Int) -> String {
   return formatter.localizedString(for: date, relativeTo: Date())
 }
 
-let debugScope = "SimpleAwsDemo.Debug"
-
-// gamma pdx
-// let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
-// let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+let debugScope = "AwsHackerNewsDemo.Debug"
 
 let appMonitorId = "927baf95-96e9-412b-8126-3c3875669c66" // "33868e1a-72af-4815-8605-46f5dc76c91b"
 let region = "us-east-1"
 
+// gamma iad
+// let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+// let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+
 // local dev
-let logsEndpoint = "http://localhost:4318/v1/logs"
-let tracesEndpoint = "http://localhost:4318/v1/traces"
+let logsEndpoint = "http://localhost:3000/v1/logs"
+let tracesEndpoint = "http://localhost:3000/v1/traces"
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -95,7 +95,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     } catch {
       print("Error initializing SDK: \(error)")
     }
-    let after = Date()
     logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
     tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
   }
@@ -2409,7 +2408,8 @@ extension SettingsViewController: UITableViewDataSource, UITableViewDelegate {
     toast.clipsToBounds = true
     toast.translatesAutoresizingMaskIntoConstraints = false
 
-    guard let window = UIApplication.shared.windows.first else { return toast }
+    guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+          let window = windowScene.windows.first else { return toast }
     window.addSubview(toast)
     NSLayoutConstraint.activate([
       toast.centerXAnchor.constraint(equalTo: window.centerXAnchor),

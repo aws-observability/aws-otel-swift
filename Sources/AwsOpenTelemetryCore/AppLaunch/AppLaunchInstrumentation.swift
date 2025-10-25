@@ -20,6 +20,9 @@ import OpenTelemetryApi
   import UIKit
 #endif
 
+// Capture prewarm flag as early as possible - global initialization happens before class loading
+let hasActivePrewarmFlag: Bool = ProcessInfo.processInfo.environment["ActivePrewarm"] != nil
+
 protocol AppLaunchProtocol {
   func onWarmStart()
   func onLaunchEnd()
@@ -41,14 +44,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   private static var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AppLaunchInstrumentation.instrumentationKey)
   private static var logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AppLaunchInstrumentation.instrumentationKey)
 
-  // launch detectors
-  var hasActivePrewarmFlag: Bool {
-    return Self.hasActivePrewarmFlag
-  }
-
-  static var hasActivePrewarmFlag: Bool {
-    return ProcessInfo.processInfo.environment["ActivePrewarm"] != nil
-  }
+  // Launch detectors - using global variable for earliest capture
 
   private static var hasLaunched = false
   private static var hasLostFocusBefore = false
@@ -144,7 +140,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
           .setAttribute(key: "launch_end_name", value: provider.launchEndNotification.rawValue)
           .startSpan()
           .end(time: endTime)
-        lastWarmLaunchStart = nil // clear unused warm start
+        lastWarmLaunchStart = nil // clear stale warm start timestamps
         hasLaunched = true // only record one cold launch per application lifecycle
         return
       }
@@ -153,14 +149,13 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       if hasLostFocusBefore, let startTime = lastWarmLaunchStart {
         lastWarmLaunchStart = nil
         let duration = endTime.timeIntervalSince(startTime)
-        let isPrewarm = isPrewarmLaunch(duration: duration)
 
-        AwsOpenTelemetryLogger.debug("Recording warm launch: duration=\(duration)s, isPrewarm=\(isPrewarm)")
+        AwsOpenTelemetryLogger.debug("Recording warm launch: duration=\(duration)s")
 
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
-          .setAttribute(key: "start.type", value: isPrewarm ? "prewarm" : "warm")
-          .setAttribute(key: "active_prewarm", value: hasActivePrewarmFlag)
+          .setAttribute(key: "start.type", value: "warm")
+          .setAttribute(key: "active_prewarm", value: false)
           .setAttribute(key: "launch_start_name", value: provider.warmStartNotification.rawValue)
           .setAttribute(key: "launch_end_name", value: provider.launchEndNotification.rawValue)
           .startSpan()
