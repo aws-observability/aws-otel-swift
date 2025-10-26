@@ -20,8 +20,9 @@ import OpenTelemetryApi
   import UIKit
 #endif
 
-// Capture prewarm flag as early as possible - global initialization happens before class loading
-let hasActivePrewarmFlag: Bool = ProcessInfo.processInfo.environment["ActivePrewarm"] != nil
+// We want to capture active prewarm flag as early as possible, since it allegedly gets cleared
+// after `UIApplication.didFinishLaunchingNotification`
+let isActivePrewarm: Bool = ProcessInfo.processInfo.environment["ActivePrewarm"] != nil
 
 protocol AppLaunchProtocol {
   func onWarmStart()
@@ -30,44 +31,45 @@ protocol AppLaunchProtocol {
   func onHidden()
 }
 
-public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
-  private static var provider: AppLaunchProvider?
+public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
+  static var provider: AppLaunchProvider?
   private static let lock: NSLock = .init()
 
-  // lifecycle event de-dupping map
+  // We need static reference to persist the observers
+  static var shared: AwsAppLaunchInstrumentation?
+
+  // Observer references for cleanup
+  var launchEndObserver: NSObjectProtocol?
+  var warmStartObserver: NSObjectProtocol?
+  var hiddenObserver: NSObjectProtocol?
   var lifecycleObservers: [String: NSObjectProtocol] = [:]
 
   static var instrumentationKey: String {
     return AwsInstrumentationScopes.APP_START
   }
 
-  private static var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AppLaunchInstrumentation.instrumentationKey)
-  private static var logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AppLaunchInstrumentation.instrumentationKey)
+  static var tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsAppLaunchInstrumentation.instrumentationKey)
+  static var logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsAppLaunchInstrumentation.instrumentationKey)
 
-  // Launch detectors - using global variable for earliest capture
+  // Launch detectors
+  static var hasLaunched = false
+  static var hasLostFocusBefore = false
+  static var lastWarmLaunchStart: Date?
 
-  private static var hasLaunched = false
-  private static var hasLostFocusBefore = false
-  private static var lastWarmLaunchStart: Date?
-
-  func isPrewarmLaunch(duration: TimeInterval) -> Bool {
-    return Self.isPrewarmLaunch(duration: duration)
-  }
-
-  static func isPrewarmLaunch(duration: TimeInterval) -> Bool {
+  static func isPrewarm(duration: TimeInterval) -> Bool {
     guard let provider else { return false }
-    return hasActivePrewarmFlag || (provider.preWarmFallbackThreshold > 0 && duration > provider.preWarmFallbackThreshold)
+    return isActivePrewarm || (provider.preWarmFallbackThreshold > 0 && duration > provider.preWarmFallbackThreshold)
   }
 
   public init(provider: AppLaunchProvider = DefaultAppLaunchProvider.shared) {
     super.init()
 
     Self.provider = provider
-    AwsOpenTelemetryLogger.debug("AppLaunchInstrumentation initializing with provider: \(type(of: provider))")
+    AwsOpenTelemetryLogger.debug("AwsAppLaunchInstrumentation initializing with provider: \(type(of: provider))")
 
     // Setup launch end handler
     AwsOpenTelemetryLogger.debug("Setting up launch end observer for: \(provider.launchEndNotification.rawValue)")
-    NotificationCenter.default.addObserver(
+    launchEndObserver = NotificationCenter.default.addObserver(
       forName: provider.launchEndNotification,
       object: nil,
       queue: OperationQueue()
@@ -77,7 +79,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
 
     // Setup warm launch start handler
     AwsOpenTelemetryLogger.debug("Setting up warm start observer for: \(provider.warmStartNotification.rawValue)")
-    NotificationCenter.default.addObserver(
+    warmStartObserver = NotificationCenter.default.addObserver(
       forName: provider.warmStartNotification,
       object: nil,
       queue: OperationQueue()
@@ -85,14 +87,20 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       Self.onWarmStart()
     }
 
-    // Setup hidden event handler
+    // Setup hidden event handler - only needed until first background event
     AwsOpenTelemetryLogger.debug("Setting up onHidden observer for: \(provider.hiddenNotification.rawValue)")
-    NotificationCenter.default.addObserver(
+    hiddenObserver = NotificationCenter.default.addObserver(
       forName: provider.hiddenNotification,
       object: nil,
       queue: OperationQueue()
-    ) { _ in
+    ) { [weak self] _ in
       Self.onHidden()
+      // Remove observer after first use since we only need to know app was backgrounded once
+      if let observer = self?.hiddenObserver {
+        NotificationCenter.default.removeObserver(observer)
+        self?.hiddenObserver = nil
+        AwsOpenTelemetryLogger.debug("Removed onHidden observer after first background event")
+      }
     }
 
     // Setup observers
@@ -112,7 +120,7 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         Self.onLifecycleEvent(name: notification.name.rawValue)
       }
     }
-    AwsOpenTelemetryLogger.debug("AppLaunchInstrumentation initialized with \(lifecycleObservers.count) observers")
+    AwsOpenTelemetryLogger.debug("AwsAppLaunchInstrumentation initialized with \(lifecycleObservers.count) observers")
   }
 
   func onLaunchEnd() {
@@ -128,14 +136,14 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       // Handle cold launch
       if !hasLaunched, let startTime = provider.coldLaunchStartTime {
         let duration = endTime.timeIntervalSince(startTime)
-        let isPrewarm = isPrewarmLaunch(duration: duration)
+        let isPrewarm = isPrewarm(duration: duration)
 
         AwsOpenTelemetryLogger.debug("Recording cold launch: duration=\(duration)s, isPrewarm=\(isPrewarm)")
 
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
           .setAttribute(key: "start.type", value: isPrewarm ? "prewarm" : "cold")
-          .setAttribute(key: "active_prewarm", value: hasActivePrewarmFlag)
+          .setAttribute(key: "active_prewarm", value: isActivePrewarm)
           .setAttribute(key: "launch_start_name", value: provider.coldStartName)
           .setAttribute(key: "launch_end_name", value: provider.launchEndNotification.rawValue)
           .startSpan()
@@ -195,6 +203,22 @@ public class AppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   @objc static func onHidden() {
     lock.withLock {
       hasLostFocusBefore = true
+    }
+  }
+
+  deinit {
+    // Clean up all observers
+    if let observer = launchEndObserver {
+      NotificationCenter.default.removeObserver(observer)
+    }
+    if let observer = warmStartObserver {
+      NotificationCenter.default.removeObserver(observer)
+    }
+    if let observer = hiddenObserver {
+      NotificationCenter.default.removeObserver(observer)
+    }
+    for observer in lifecycleObservers.values {
+      NotificationCenter.default.removeObserver(observer)
     }
   }
 }

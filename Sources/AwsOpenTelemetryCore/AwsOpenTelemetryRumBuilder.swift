@@ -179,7 +179,7 @@ public class AwsOpenTelemetryRumBuilder {
     if plan.startup {
       // Only supported on iOS
       #if canImport(UIKit) && !os(watchOS)
-        _ = AppLaunchInstrumentation()
+        AwsAppLaunchInstrumentation.shared = AwsAppLaunchInstrumentation()
       #endif
     }
 
