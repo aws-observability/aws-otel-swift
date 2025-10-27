@@ -12,8 +12,9 @@ import OpenTelemetryApi
 #endif
 
 class KSCrashInstrumentation {
-  static let scopeName = "software.amazon.opentelemetry.KSCrash"
   private static var isInstalled = false
+
+  private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.KSCRASH)
   private static let reporter = KSCrash.shared
 
   static func updateUserInfo() {
@@ -81,8 +82,6 @@ class KSCrashInstrumentation {
 
     AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processing \(reportIDs.count) stored crashes")
 
-    let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
-
     for (index, reportID) in reportIDs.enumerated() {
       AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processing crash report \(index + 1)/\(reportIDs.count)")
 
@@ -131,7 +130,7 @@ class KSCrashInstrumentation {
           }
 
           if let address = error["address"] as? Int64 {
-            attributes["crash.address"] = AttributeValue.string(String(format: "0x%llx", address))
+            attributes["exception.address"] = AttributeValue.string(String(format: "0x%llx", address))
           }
         }
       }
@@ -183,7 +182,7 @@ class KSCrashInstrumentation {
         finalReport
       }
 
-      attributes["crash.stacktrace"] = AttributeValue.string(truncatedReport)
+      attributes["exception.stacktrace"] = AttributeValue.string(truncatedReport)
 
       // Get timestamp
       let timestamp: Date = if let reportTimestamp = reportDict["timestamp"] as? String {
