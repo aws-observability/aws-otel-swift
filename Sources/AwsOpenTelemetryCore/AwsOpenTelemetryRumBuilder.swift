@@ -206,7 +206,7 @@ public class AwsOpenTelemetryRumBuilder {
 
       // Hang Detection
       if plan.hang {
-        _ = HangInstrumentation.shared
+        _ = AwsHangInstrumentation.shared
       }
 
       // Session Events

@@ -109,7 +109,7 @@ try AwsOpenTelemetryRumBuilder.create(config: config).build()
   "body": { "string": "hang" },
   "attributes": {
     "hang.hang_duration": { "double": 20000000000 },
-    "hang.stacktrace": {
+    "exception.stacktrace": {
       "string": "{\n  \"callStacks\" : [\n    {\n      \"threadAttributed\" : true,\n      \"callStackRootFrames\" : [\n        {\n          \"binaryUUID\" : \"0102E659-3745-41D7-95D5-1757A41FFA60\",\n          \"offsetIntoBinaryTextSegment\" : 123,\n          \"sampleCount\" : 20,\n          \"binaryName\" : \"testBinaryName\",\n          \"address\" : 74565\n        }\n      ]\n    }\n  ],\n  \"callStackPerThread\" : true\n}"
     }
   },

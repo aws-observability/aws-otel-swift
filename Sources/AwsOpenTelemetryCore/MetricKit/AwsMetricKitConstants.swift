@@ -9,7 +9,7 @@ public class AwsMetricKitConstants {
   public static let hangDuration = "hang.hang_duration"
 
   /// Attribute name for hang `callStackTree`
-  public static let hangCallStack = "hang.stacktrace"
+  public static let hangCallStack = "exception.stacktrace"
 
   // MARK: - App launch constants
 
