@@ -31,16 +31,16 @@ func timeAgo(from timestamp: Int) -> String {
 
 let debugScope = "AwsHackerNewsDemo.Debug"
 
-let appMonitorId = "927baf95-96e9-412b-8126-3c3875669c66" // "33868e1a-72af-4815-8605-46f5dc76c91b"
+let appMonitorId = "927baf95-96e9-412b-8126-3c3875669c66"
 let region = "us-east-1"
 
 // gamma iad
-// let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
-// let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
 
 // local dev
-let logsEndpoint = "http://localhost:3000/v1/logs"
-let tracesEndpoint = "http://localhost:3000/v1/traces"
+// let logsEndpoint = "http://localhost:3000/v1/logs"
+// let tracesEndpoint = "http://localhost:3000/v1/traces"
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -754,7 +754,7 @@ class CommentsViewController: UIViewController {
 
     for id in ids {
       group.enter()
-      loadCommentWithDepth(id: id, depth: 0, maxDepth: 1) { node in
+      loadCommentWithDepth(id: id, depth: 0, maxDepth: 1) { [weak self] node in
         if let node {
           nodes.append(node)
         }
@@ -768,7 +768,7 @@ class CommentsViewController: UIViewController {
   }
 
   private func loadCommentWithDepth(id: Int, depth: Int, maxDepth: Int, completion: @escaping (CommentNode?) -> Void) {
-    loadComment(id: id) { comment in
+    loadComment(id: id) { [weak self] comment in
       guard let comment, !comment.deleted, !comment.dead else {
         completion(nil)
         return
@@ -789,7 +789,7 @@ class CommentsViewController: UIViewController {
 
       for kidId in kidsToLoad {
         group.enter()
-        self.loadCommentWithDepth(id: kidId, depth: depth + 1, maxDepth: maxDepth) { childNode in
+        self?.loadCommentWithDepth(id: kidId, depth: depth + 1, maxDepth: maxDepth) { childNode in
           if let childNode {
             children.append(childNode)
           }
@@ -810,14 +810,14 @@ class CommentsViewController: UIViewController {
 
     for id in ids {
       group.enter()
-      loadComment(id: id) { comment in
+      loadComment(id: id) { [weak self] comment in
         guard let comment, !comment.deleted, !comment.dead else {
           group.leave()
           return
         }
 
         if let kids = comment.kids, !kids.isEmpty {
-          self.loadCommentsRecursively(ids: kids, depth: depth + 1) { children in
+          self?.loadCommentsRecursively(ids: kids, depth: depth + 1) { children in
             let node = CommentNode(comment: comment, children: children, depth: depth)
             nodes.append(node)
             group.leave()
@@ -925,7 +925,7 @@ class CommentsViewController: UIViewController {
 
     for id in unloadedIds {
       group.enter()
-      loadCommentWithDepth(id: id, depth: comment.depth + 1, maxDepth: comment.depth + 3) { childNode in
+      loadCommentWithDepth(id: id, depth: comment.depth + 1, maxDepth: comment.depth + 3) { [weak self] childNode in
         if let childNode {
           newChildren.append(childNode)
         }
@@ -933,12 +933,12 @@ class CommentsViewController: UIViewController {
       }
     }
 
-    group.notify(queue: .main) {
+    group.notify(queue: .main) { [weak self] in
       DispatchQueue.main.asyncAfter(deadline: .now() + artificialDelay) {
         comment.children.append(contentsOf: newChildren)
         comment.loadedToMaxDepth = true
-        self.sortComments()
-        self.tableView.reloadData()
+        self?.sortComments()
+        self?.tableView.reloadData()
       }
     }
   }

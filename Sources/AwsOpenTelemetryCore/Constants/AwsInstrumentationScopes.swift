@@ -27,4 +27,5 @@ public enum AwsInstrumentationScopes {
   public static let HANG = "software.amazon.opentelemetry.Hang"
   public static let PING_HANG_REPORTER = "software.amazon.opentelemetry.PingHangReporter"
   public static let RUNLOOP_HANG_REPORTER = "software.amazon.opentelemetry.RunLoopHangReporter"
+  public static let KSCRASH = "software.amazon.opentelemetry.KSCrash"
 }

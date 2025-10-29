@@ -1,3 +1,19 @@
+
+/*
+ * Copyright Amazon.com, Inc. or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 import Foundation
 import OpenTelemetryApi
 
@@ -11,26 +27,29 @@ import OpenTelemetryApi
   import KSCrashFilters
 #endif
 
-class KSCrashInstrumentation {
-  private static var isInstalled = false
+protocol CrashProtocol {
+  static func install()
+  static func cacheCrashContext(session: AwsSession?)
+  static func recoverCrashContext(from rawCrash: [String: Any],
+                                  log: LogRecordBuilder,
+                                  attributes: [String: AttributeValue]) -> [String: AttributeValue]
+  static func processStoredCrashes()
+}
 
+class KSCrashInstrumentation: CrashProtocol {
+  public static let maxStackTraceBytes = 30 * 1024 // 30 KB
+  public private(set) static var isInstalled: Bool = false
   private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.KSCRASH)
-  private static let reporter = KSCrash.shared
-
-  static func updateUserInfo() {
-    var userInfo: [String: Any] = [:]
-
-    // Add session ID
-    let session = AwsSessionManagerProvider.getInstance().getSession()
-    userInfo["session_id"] = session.id
-
-    // Add user ID
-    let uidManager = AwsUIDManagerProvider.getInstance()
-    userInfo["user_id"] = uidManager.getUID()
-
-    reporter.userInfo = userInfo
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation updated user info: \(userInfo)")
-  }
+  static let reporter = KSCrash.shared
+  private static let timestampFormatter: ISO8601DateFormatter = {
+    // Example KSCrash timestamp: `2025-10-28T03:30:53.604204Z`
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [
+      .withInternetDateTime,
+      .withFractionalSeconds
+    ]
+    return formatter
+  }()
 
   static func install() {
     guard !isInstalled else {
@@ -54,34 +73,53 @@ class KSCrashInstrumentation {
     }
 
     // Set initial user info
-    updateUserInfo()
+    cacheCrashContext()
 
     // Process any stored crashes asynchronously
     DispatchQueue.global(qos: .utility).async {
       processStoredCrashes()
     }
+
+    // Update crash context on session start
+    NotificationCenter.default.addObserver(
+      forName: AwsSessionEventInstrumentation.sessionEventNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let sessionEvent = notification.object as? AwsSessionEvent, sessionEvent.eventType == .start {
+        DispatchQueue.global(qos: .utility).async {
+          cacheCrashContext(session: sessionEvent.session)
+        }
+      }
+    }
   }
 
-  private static func processStoredCrashes() {
+  static func cacheCrashContext(session: AwsSession? = nil) {
+    var userInfo: [String: Any] = [:]
+    userInfo["user.id"] = AwsUIDManagerProvider.getInstance().getUID() // Add user ID
+
+    let session = session ?? AwsSessionManagerProvider.getInstance().getSession()
+    userInfo[AwsSessionConstants.id] = session.id
+    if let prevSessionId = session.previousId {
+      userInfo[AwsSessionConstants.previousId] = prevSessionId
+    }
+    reporter.userInfo = userInfo
+    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation updated user info: \(userInfo)")
+  }
+
+  /// Report cached crashes from KSCrash store (just a local file)
+  static func processStoredCrashes() {
+    // Init
     AwsOpenTelemetryLogger.debug("KSCrashInstrumentation KSCrash installed: \(isInstalled)")
     AwsOpenTelemetryLogger.debug("KSCrashInstrumentation KSCrash crashed last launch: \(reporter.crashedLastLaunch)")
-
     guard let reportStore = reporter.reportStore else {
       AwsOpenTelemetryLogger.debug("KSCrashInstrumentation no report store available")
       return
     }
 
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation report store available, checking for reports")
+    // Pull crash reports
     let reportIDs = reportStore.reportIDs
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation found \(reportIDs.count) report IDs: \(reportIDs)")
-
-    guard !reportIDs.isEmpty else {
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation no stored crashes found")
-      return
-    }
-
     AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processing \(reportIDs.count) stored crashes")
-
     for (index, reportID) in reportIDs.enumerated() {
       AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processing crash report \(index + 1)/\(reportIDs.count)")
 
@@ -91,126 +129,106 @@ class KSCrashInstrumentation {
         continue
       }
 
-      var attributes: [String: AttributeValue] = [:]
-      let reportDict = crashReport.value
-
-      // Extract crash information
-      if let crash = reportDict["crash"] as? [String: Any] {
-        if let error = crash["error"] as? [String: Any] {
-          if let signal = error["signal"] as? [String: Any] {
-            if let signalName = signal["name"] as? String {
-              attributes["crash.signal"] = AttributeValue.string(signalName)
-              AwsOpenTelemetryLogger.debug("KSCrashInstrumentation extracted signal: \(signalName)")
-            }
-            if let signalCode = signal["code"] as? Int {
-              attributes["crash.signal_code"] = AttributeValue.int(signalCode)
-            }
-          }
-
-          if let type = error["type"] as? String {
-            attributes["exception.type"] = AttributeValue.string(type)
-            AwsOpenTelemetryLogger.debug("KSCrashInstrumentation extracted exception type: \(type)")
-          }
-
-          if let reason = error["reason"] as? String, !reason.isEmpty {
-            attributes["exception.message"] = AttributeValue.string(reason)
-            AwsOpenTelemetryLogger.debug("KSCrashInstrumentation extracted exception reason: \(reason)")
-          } else {
-            // Create fallback message from signal and type
-            var fallbackMessage = "Crash detected"
-            if let signal = error["signal"] as? [String: Any],
-               let signalName = signal["name"] as? String {
-              fallbackMessage = "\(signalName) signal"
-            }
-            if let type = error["type"] as? String {
-              fallbackMessage += " (\(type))"
-            }
-            attributes["exception.message"] = AttributeValue.string(fallbackMessage)
-            AwsOpenTelemetryLogger.debug("KSCrashInstrumentation created fallback message: \(fallbackMessage)")
-          }
-
-          if let address = error["address"] as? Int64 {
-            attributes["exception.address"] = AttributeValue.string(String(format: "0x%llx", address))
-          }
-        }
-      }
-
-      // Extract user information if available
-      if let user = reportDict["user"] as? [String: Any] {
-        // Extract session and user IDs specifically
-        if let sessionId = user["session_id"] as? String {
-          attributes["session.id"] = AttributeValue.string(sessionId)
-          AwsOpenTelemetryLogger.debug("KSCrashInstrumentation extracted session ID: \(sessionId)")
-        }
-        if let userId = user["user_id"] as? String {
-          attributes["user.id"] = AttributeValue.string(userId)
-          AwsOpenTelemetryLogger.debug("KSCrashInstrumentation extracted user ID: \(userId)")
-        }
-      }
-
-      // Add JSON representation of crash report
-      // do {
-      //   let jsonData = try JSONSerialization.data(withJSONObject: reportDict, options: [.prettyPrinted])
-      //   if let jsonString = String(data: jsonData, encoding: .utf8) {
-      //     attributes["exception.json"] = AttributeValue.string(jsonString)
-      //   }
-      // } catch {
-      //   AwsOpenTelemetryLogger.debug("KSCrashInstrumentation failed to serialize JSON: \(error)")
-      // }
-
-      // Use KSCrash's Apple formatter
-      let filter = CrashReportFilterAppleFmt()
-      let semaphore = DispatchSemaphore(value: 0)
-      var appleFormatReport: String?
-
-      filter.filterReports([crashReport]) { reports, _ in
-        if let reports,
-           let firstReport = reports.first as? CrashReportString {
-          appleFormatReport = firstReport.value
-        }
-        semaphore.signal()
-      }
-
-      _ = semaphore.wait(timeout: .now() + 1.0)
-      let finalReport = appleFormatReport ?? "Failed to format crash report"
-
-      // Truncate stack trace to 30 KB
-      let maxBytes = 30 * 1024
-      let truncatedReport = if finalReport.utf8.count > maxBytes {
-        String(finalReport.utf8.prefix(maxBytes)) ?? finalReport
-      } else {
-        finalReport
-      }
-
-      attributes["exception.stacktrace"] = AttributeValue.string(truncatedReport)
-
-      // Get timestamp
-      let timestamp: Date = if let reportTimestamp = reportDict["timestamp"] as? String {
-        dateFormatter.date(from: reportTimestamp) ?? Date()
-      } else {
-        Date()
-      }
-
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation emitting crash log with \(attributes.count) attributes")
-      logger.logRecordBuilder()
-        .setEventName("device.crash")
-        .setTimestamp(timestamp)
-        .setAttributes(attributes)
-        .emit()
+      // Report crash as log event
+      reportCrash(crashReport: crashReport)
 
       // Delete processed report
       reportStore.deleteReport(with: id)
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation deleted processed crash report \(id)")
+      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation reported and deleted crash report with id= \(id)")
     }
 
     AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processed \(reportIDs.count) stored crashes")
   }
 
-  private static var dateFormatter: DateFormatter {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZZZZZ"
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.timeZone = TimeZone(secondsFromGMT: 0)
-    return formatter
+  // Report a KSCrash report in Apple format
+  private static func reportCrash(crashReport: CrashReportDictionary) {
+    let rawCrash: [String: Any] = crashReport.value
+    let log: any LogRecordBuilder = logger.logRecordBuilder()
+      .setEventName("device.crash")
+
+    var attributes: [String: AttributeValue] = [
+      "exception.type": AttributeValue.string("crash"),
+      // When `recovered_context` is true, then the following original attributes will be recovered,
+      // and the crash event will be backfilled to the original session.
+      // 1. `session.id`
+      // 2. `session.previous_id` (if any existed)
+      // 3. `user.id`
+      // 4. original `timestamp`
+      "recovered_context": AttributeValue.bool(false)
+    ]
+
+    // Attempt to recovert the original crash context
+    attributes = recoverCrashContext(from: rawCrash, log: log, attributes: attributes)
+
+    // Get stack trace in Apple format and emit log event in async callback
+    // If the iOS application was built with `strip styles` set to `debugging symbols`, then KSCrash will
+    // also perform on-device symbolication.
+    CrashReportFilterAppleFmt().filterReports([crashReport]) { reports, _ in
+      var appleFormatReport = (reports?.first as? CrashReportString)?.value ?? "Failed to format crash report"
+      if appleFormatReport.utf8.count > maxStackTraceBytes {
+        appleFormatReport = String(appleFormatReport.utf8.prefix(maxStackTraceBytes)) ?? appleFormatReport
+      }
+      attributes["exception.stacktrace"] = AttributeValue.string(appleFormatReport)
+
+      // Prints the location of the first frame for the thread that crashed. For example,
+      // `Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172`
+      attributes["exception.message"] = AttributeValue.string(extractCrashMessage(from: appleFormatReport))
+
+      _ = log.setAttributes(attributes)
+      log.emit()
+    }
+  }
+
+  /// Get first frame of crashed thread for the crash message. This is useful for grouping
+  static func extractCrashMessage(from stackTrace: String) -> String {
+    let lines = stackTrace.components(separatedBy: "\n")
+    guard let crashedLine = lines.first(where: { $0.range(of: #"Thread \d+ Crashed:"#, options: .regularExpression) != nil }),
+          let threadMatch = crashedLine.range(of: #"Thread (\d+) Crashed:"#, options: .regularExpression),
+          let crashedIndex = lines.firstIndex(of: crashedLine),
+          let firstFrame = lines.dropFirst(crashedIndex + 1).first(where: { $0.hasPrefix("0   ") }) else {
+      return "Crash detected at unknown location"
+    }
+
+    let threadNumber = String(crashedLine[threadMatch]).replacingOccurrences(of: #"Thread (\d+) Crashed:"#, with: "$1", options: .regularExpression)
+    let cleanFrame = String(firstFrame.dropFirst(2)) // Remove "0 " prefix
+      .replacingOccurrences(of: #"[\s\t]+"#, with: " ", options: .regularExpression) // reduce white spaces to single spaces
+      .trimmingCharacters(in: .whitespaces) // trim white spaces
+    return "Crash detected on thread \(threadNumber) at \(cleanFrame)"
+  }
+
+  /// If sessionId and timestamp can be recovered, then attempt to restore original context.
+  /// However, if user session context cannot be recovered, then we use the current timestamp
+  /// and let sessions/user id processors do their work. For this edge case, users can look
+  /// at the current `session.previous_id` to see if the previous session had crashed.
+  static func recoverCrashContext(from rawCrash: [String: Any],
+                                  log: LogRecordBuilder,
+                                  attributes: [String: AttributeValue]) -> [String: AttributeValue] {
+    guard let report = rawCrash["report"] as? [String: Any],
+          let timestampString = report["timestamp"] as? String,
+          let timestamp = timestampFormatter.date(from: timestampString),
+          let userInfo = rawCrash["user"] as? [String: Any],
+          let sessionId = userInfo[AwsSessionConstants.id] as? String else {
+      _ = log.setTimestamp(Date()) // just for clarity (upstream already does this)
+      return attributes
+    }
+    var mutatedAttributes = attributes
+
+    // required attributes for recovery
+    _ = log.setTimestamp(timestamp)
+    mutatedAttributes[AwsSessionConstants.id] = AttributeValue.string(sessionId)
+
+    // `user.id` is only nice-to-have for crash recovery, so we will grab it without blocking the overall recovery attempt
+    if let userId = userInfo["user.id"] as? String {
+      mutatedAttributes["user.id"] = AttributeValue.string(userId)
+    }
+
+    // `session.previous_id` is also nice-to-have, and may not even exist if there was no previous session
+    if let previousSessionId = userInfo[AwsSessionConstants.previousId] as? String {
+      mutatedAttributes[AwsSessionConstants.previousId] = AttributeValue.string(previousSessionId)
+    }
+
+    // Confirms that original context was recovered, since this may not be obvious
+    mutatedAttributes["recovered_context"] = AttributeValue.bool(true)
+    return mutatedAttributes
   }
 }
