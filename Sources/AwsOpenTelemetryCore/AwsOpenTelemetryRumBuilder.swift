@@ -208,6 +208,10 @@ public class AwsOpenTelemetryRumBuilder {
     } else {
       AwsOpenTelemetryLogger.info("AwsURLSessionInstrumentation not created - no urlSessionConfig in plan")
     }
+
+    if plan.hang {
+      _ = AwsHangInstrumentation.shared
+    }
   }
 
   // MARK: - Resource methods
@@ -361,7 +365,7 @@ public class AwsOpenTelemetryRumBuilder {
       MultiLogRecordExporter(logRecordExporters: [
         logsExporter,
         StdoutLogExporter()
-      ]) // TODO: Replace with upstream's once it's made public
+      ])
     } else {
       logsExporter
     }

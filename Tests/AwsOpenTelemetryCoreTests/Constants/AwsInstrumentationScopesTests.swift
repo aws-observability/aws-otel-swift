@@ -32,4 +32,8 @@ final class AwsInstrumentationScopesTests: XCTestCase {
   func testUIKitView() {
     XCTAssertEqual(AwsInstrumentationScopes.UIKIT_VIEW, "software.amazon.opentelemetry.UIKitView")
   }
+
+  func testHangs() {
+    XCTAssertEqual(AwsInstrumentationScopes.HANG, "software.amazon.opentelemetry.Hang")
+  }
 }
