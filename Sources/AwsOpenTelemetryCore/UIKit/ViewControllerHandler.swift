@@ -78,8 +78,13 @@
 
     /// The OpenTelemetry tracer used for creating spans
     /// This tracer is configured with appropriate instrumentation metadata
-    private let tracer: Tracer
-    private let logger: Logger
+    private static var logger: Logger {
+      return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.UIKIT_VIEW)
+    }
+
+    private static var tracer: Tracer {
+      return OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW)
+    }
 
     /// Weak reference to the parent UIKitViewInstrumentation instance
     /// Used for parent span lookup and avoiding retain cycles
@@ -117,9 +122,7 @@
      * @param tracer The OpenTelemetry tracer to use for span creation
      * @param queue The dispatch queue for span operations
      */
-    init(tracer: Tracer, queue: DispatchQueue = DispatchQueue(label: ViewControllerHandler.queueLabel, qos: .utility)) {
-      self.tracer = tracer
-      logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.UIKIT_VIEW)
+    init(queue: DispatchQueue = DispatchQueue(label: ViewControllerHandler.queueLabel, qos: .utility)) {
       self.queue = queue
 
       NotificationCenter.default.addObserver(
@@ -173,20 +176,6 @@
       let now = Date()
 
       queue.async {
-        // End visibility spans gracefully (these are expected to end)
-        for span in self.visibilitySpans.values {
-          span.status = .ok // Visibility ending due to background is normal
-          span.end(time: now)
-        }
-
-        // End incomplete lifecycle spans with cancelled status
-        for id in self.parentSpans.keys {
-          self.endAllSpans(for: id, time: now, status: .error(description: AwsViewConstants.statusAppBackgrounded))
-        }
-
-        // Clear all cached spans
-        self.clearAllSpans()
-
         AwsOpenTelemetryLogger.debug("[ViewControllerHandler] Cleaned up spans due to app backgrounding")
       }
     }
@@ -194,7 +183,7 @@
     @objc func applicationWillEnterForeground(_ notification: Notification? = nil) {
       queue.async {
         // Reset any remaining state when returning to foreground
-        self.clearAllSpans()
+        // self.clearAllSpans()
 
         AwsOpenTelemetryLogger.debug("[ViewControllerHandler] Reset state due to app foregrounding")
       }
@@ -202,278 +191,69 @@
 
     // MARK: - Lifecycle Event Handlers
 
-    func onViewDidLoadStart(_ viewController: UIViewController, now: Date = Date()) {
+    func onViewDidLoad(_ viewController: UIViewController, now: Date = Date()) {
       guard let uiKitViewInstrumentation,
             viewController.shouldCaptureView(using: uiKitViewInstrumentation) else {
         return
       }
 
-      let id = UUID().uuidString
-      let state = ViewInstrumentationState(identifier: id)
-      state.viewDidLoadSpanCreated = true
-      viewController.instrumentationState = state
-
-      let className = viewController.className
-      let screenName = viewController.screenName
-
-      let parentSpanName = AwsViewConstants.TimeToFirstAppear // Single parent span for all views
-
       queue.async {
-        // Create parent span
-        let parentSpan = self.createSpan(
-          name: parentSpanName,
-          screenName: screenName,
-          className: className,
-          startTime: now
-        )
-
-        // Create viewDidLoad child span
-        let viewDidLoadSpan = self.createSpan(
-          name: AwsViewConstants.spanNameViewDidLoad,
-          parent: parentSpan,
-          screenName: screenName,
-          className: className,
-          startTime: now
-        )
-
-        self.parentSpans[id] = parentSpan
-        self.viewDidLoadSpans[id] = viewDidLoadSpan
+        viewController.instrumentationState = ViewInstrumentationState()
+        viewController.instrumentationState?.loadTime = now
       }
     }
 
-    func onViewDidLoadEnd(_ viewController: UIViewController, now: Date = Date()) {
-      guard let id = viewController.instrumentationState?.identifier else {
+    func onViewWillAppear(_ viewController: UIViewController, now: Date = Date()) {
+      guard let uiKitViewInstrumentation,
+            viewController.shouldCaptureView(using: uiKitViewInstrumentation) else {
+        return
+      }
+    }
+
+    func onViewDidAppear(_ viewController: UIViewController, now: Date = Date()) {
+      guard let uiKitViewInstrumentation,
+            viewController.shouldCaptureView(using: uiKitViewInstrumentation) else {
         return
       }
 
       queue.async {
-        if let span = self.viewDidLoadSpans.removeValue(forKey: id) {
-          span.end(time: now)
-        }
-      }
-    }
-
-    func onViewWillAppearStart(_ viewController: UIViewController, now: Date = Date()) {
-      guard let id = viewController.instrumentationState?.identifier else {
-        return
-      }
-
-      viewController.instrumentationState?.viewWillAppearSpanCreated = true
-
-      let className = viewController.className
-      let screenName = viewController.screenName
-
-      queue.async {
-        guard let parentSpan = self.parentSpans[id] else {
+        guard let state = viewController.instrumentationState else {
           return
         }
-
-        let span = self.createSpan(
-          name: AwsViewConstants.spanNameViewWillAppear,
-          parent: parentSpan,
-          screenName: screenName,
-          className: className,
-          startTime: now
-        )
-
-        self.viewWillAppearSpans[id] = span
-      }
-    }
-
-    func onViewWillAppearEnd(_ viewController: UIViewController, now: Date = Date()) {
-      guard let id = viewController.instrumentationState?.identifier else {
-        return
-      }
-
-      let className = viewController.className
-      let screenName = viewController.screenName
-
-      queue.async {
-        // End viewWillAppear span
-        if let span = self.viewWillAppearSpans.removeValue(forKey: id) {
-          span.end(time: now)
+        // create TimeToFirstAppear span
+        if !state.didAppear,
+           let loadTime = state.loadTime {
+          state.didAppear = true
+          Self.tracer.spanBuilder(spanName: "TimeToFirstAppear")
+            .setStartTime(time: loadTime)
+            .setAttribute(key: AwsViewConstants.attributeScreenName, value: viewController.screenName)
+            .setAttribute(key: AwsViewConstants.attributeViewType, value: AwsViewConstants.valueUIKit)
+            .startSpan()
+            .end(time: now)
         }
-
-        // Start viewIsAppearing span to measure animation time
-        guard let parentSpan = self.parentSpans[id] else {
-          return
-        }
-
-        let span = self.createSpan(
-          name: AwsViewConstants.spanNameViewIsAppearing,
-          parent: parentSpan,
-          screenName: screenName,
-          className: className,
-          startTime: now
-        )
-
-        self.viewIsAppearingSpans[id] = span
-        viewController.instrumentationState?.viewIsAppearingSpanCreated = true
-      }
-    }
-
-    func onViewDidAppearStart(_ viewController: UIViewController, now: Date = Date()) {
-      guard let id = viewController.instrumentationState?.identifier else {
-        return
-      }
-
-      viewController.instrumentationState?.viewDidAppearSpanCreated = true
-
-      let className = viewController.className
-      let screenName = viewController.screenName
-
-      queue.async {
-        guard let parentSpan = self.parentSpans[id] else {
-          return
-        }
-
-        let span = self.createSpan(
-          name: AwsViewConstants.spanNameViewDidAppear,
-          parent: parentSpan,
-          screenName: screenName,
-          className: className,
-          startTime: now
-        )
-
-        self.viewDidAppearSpans[id] = span
-      }
-    }
-
-    func onViewDidAppearEnd(_ viewController: UIViewController, now: Date = Date()) {
-      guard let id = viewController.instrumentationState?.identifier else {
-        return
-      }
-
-      let className = viewController.className
-      let screenName = viewController.screenName
-
-      queue.async {
-        // End viewIsAppearing span if it exists
-        if let span = self.viewIsAppearingSpans.removeValue(forKey: id) {
-          span.end(time: now)
-        }
-
-        // End viewDidAppear span
-        if let span = self.viewDidAppearSpans.removeValue(forKey: id) {
-          span.end(time: now)
-        }
-
-        // Start visibility span
-        let visibilitySpan = self.createSpan(
-          name: AwsViewConstants.spanNameTimeOnScreen,
-          screenName: screenName,
-          className: className,
-          startTime: now
-        )
-
-        self.visibilitySpans[id] = visibilitySpan
-
-        guard let parentSpan = self.parentSpans[id] else {
-          return
-        }
-
-        // End the parent span when viewDidAppear completes
-        parentSpan.end(time: now)
-        self.clearSpans(for: id)
+        // create ViewDidAppear log event
+        Self.logger.logRecordBuilder()
+          .setEventName("ViewDidAppear")
+          .setTimestamp(now)
+          .setAttributes([
+            AwsViewConstants.attributeScreenName: AttributeValue.string(viewController.screenName),
+            AwsViewConstants.attributeViewType: AttributeValue.string(AwsViewConstants.valueUIKit)
+          ])
+          .emit()
       }
     }
 
     func onViewDidDisappear(_ viewController: UIViewController, now: Date = Date()) {
-      guard let id = viewController.instrumentationState?.identifier else {
+      guard let uiKitViewInstrumentation,
+            viewController.shouldCaptureView(using: uiKitViewInstrumentation) else {
         return
       }
 
       queue.async {
-        let className = viewController.className
-        let screenName = viewController.screenName
-        // Create log event for viewDidDisappear
-        self.logger.logRecordBuilder()
-          .setTimestamp(now)
-          .setEventName("ViewDidDisappear")
-          .setAttributes([
-            AwsViewConstants.attributeScreenName: AttributeValue.string(screenName),
-            AwsViewConstants.attributeViewClass: AttributeValue.string(className),
-            AwsViewConstants.attributeViewType: AttributeValue.string(AwsViewConstants.valueUIKit)
-          ])
-          .emit()
-
-        // End visibility span
-        if let span = self.visibilitySpans.removeValue(forKey: id) {
-          span.end(time: now)
+        guard let state = viewController.instrumentationState else {
+          return
         }
-
-        // Force end all remaining spans
-        self.endAllSpans(for: id, time: now, status: .error(description: AwsViewConstants.statusViewDisappeared))
       }
-    }
-
-    // MARK: - Helper Methods
-
-    /// Creates a span with common attributes for view controller instrumentation
-    private func createSpan(name: String,
-                            parent: Span? = nil,
-                            screenName: String,
-                            className: String,
-                            startTime: Date) -> Span {
-      let builder = tracer.spanBuilder(spanName: name)
-        .setSpanKind(spanKind: .client)
-        .setAttribute(key: AwsViewConstants.attributeScreenName, value: screenName)
-        .setAttribute(key: AwsViewConstants.attributeViewClass, value: className)
-        .setAttribute(key: AwsViewConstants.attributeViewType, value: AwsViewConstants.valueUIKit)
-        .setStartTime(time: startTime)
-
-      if let parent {
-        builder.setParent(parent)
-      }
-
-      return builder.startSpan()
-    }
-
-    private func endAllSpans(for id: String, time: Date, status: Status) {
-      if let span = viewDidLoadSpans.removeValue(forKey: id) {
-        span.status = status
-        span.end(time: time)
-      }
-
-      if let span = viewWillAppearSpans.removeValue(forKey: id) {
-        span.status = status
-        span.end(time: time)
-      }
-
-      if let span = viewIsAppearingSpans.removeValue(forKey: id) {
-        span.status = status
-        span.end(time: time)
-      }
-
-      if let span = viewDidAppearSpans.removeValue(forKey: id) {
-        span.status = status
-        span.end(time: time)
-      }
-
-      if let span = parentSpans.removeValue(forKey: id) {
-        span.status = status
-        span.end(time: time)
-      }
-
-      clearSpans(for: id)
-    }
-
-    private func clearSpans(for id: String) {
-      parentSpans.removeValue(forKey: id)
-      viewDidLoadSpans.removeValue(forKey: id)
-      viewWillAppearSpans.removeValue(forKey: id)
-      viewIsAppearingSpans.removeValue(forKey: id)
-      viewDidAppearSpans.removeValue(forKey: id)
-    }
-
-    private func clearAllSpans() {
-      parentSpans.removeAll()
-      viewDidLoadSpans.removeAll()
-      viewWillAppearSpans.removeAll()
-      viewIsAppearingSpans.removeAll()
-      viewDidAppearSpans.removeAll()
-      visibilitySpans.removeAll()
     }
   }
-
 #endif

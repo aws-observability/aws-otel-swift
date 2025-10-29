@@ -281,19 +281,9 @@
     @objc func traceViewDidLoad() {
       // Get handler directly without singleton
       if let handler = UIViewController.instrumentationHandler {
-        // Prevent duplicate instrumentation
-        if let state = instrumentationState, state.viewDidLoadSpanCreated {
-          traceViewDidLoad() // Call original implementation
-          return
-        }
-
-        // Start span, call original, end span
-        handler.onViewDidLoadStart(self)
-        traceViewDidLoad() // Call original implementation
-        handler.onViewDidLoadEnd(self)
-      } else {
-        traceViewDidLoad() // Call original implementation
+        handler.onViewDidLoad(self)
       }
+      traceViewDidLoad() // Call original implementation
     }
 
     /**
@@ -310,19 +300,9 @@
      */
     @objc func traceViewWillAppear(_ animated: Bool) {
       if let handler = UIViewController.instrumentationHandler {
-        // Prevent duplicate instrumentation
-        if let state = instrumentationState, state.viewWillAppearSpanCreated {
-          traceViewWillAppear(animated) // Call original implementation
-          return
-        }
-
-        // Start span, call original, end span
-        handler.onViewWillAppearStart(self)
-        traceViewWillAppear(animated) // Call original implementation
-        handler.onViewWillAppearEnd(self)
-      } else {
-        traceViewWillAppear(animated) // Call original implementation
+        handler.onViewWillAppear(self)
       }
+      traceViewWillAppear(animated) // Call original implementation
     }
 
     /**
@@ -339,19 +319,9 @@
      */
     @objc func traceViewDidAppear(_ animated: Bool) {
       if let handler = UIViewController.instrumentationHandler {
-        // Prevent duplicate instrumentation
-        if let state = instrumentationState, state.viewDidAppearSpanCreated {
-          traceViewDidAppear(animated) // Call original implementation
-          return
-        }
-
-        // Start span, call original, end span
-        handler.onViewDidAppearStart(self)
-        traceViewDidAppear(animated) // Call original implementation
-        handler.onViewDidAppearEnd(self)
-      } else {
-        traceViewDidAppear(animated) // Call original implementation
+        handler.onViewDidAppear(self)
       }
+      traceViewDidAppear(animated) // Call original implementation
     }
 
     /**
@@ -368,12 +338,9 @@
      */
     @objc func traceViewDidDisappear(_ animated: Bool) {
       if let handler = UIViewController.instrumentationHandler {
-        // Call handler (viewDidDisappear only has one method, not start/end)
         handler.onViewDidDisappear(self)
-        traceViewDidDisappear(animated) // Call original implementation
-      } else {
-        traceViewDidDisappear(animated) // Call original implementation
       }
+      traceViewDidDisappear(animated) // Call original implementation
     }
   }
 

@@ -186,7 +186,7 @@ public class AwsOpenTelemetryRumBuilder {
     // View instrumentation (UIKit/SwiftUI)
     #if canImport(UIKit) && !os(watchOS)
       if plan.view {
-        uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW))
+        uiKitViewInstrumentation = UIKitViewInstrumentation()
         uiKitViewInstrumentation!.install()
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
       }

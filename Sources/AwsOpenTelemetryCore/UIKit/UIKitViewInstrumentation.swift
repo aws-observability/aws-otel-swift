@@ -32,9 +32,6 @@
    * to control instrumentation.
    */
   public final class UIKitViewInstrumentation {
-    /// The OpenTelemetry tracer used for creating spans
-    public let tracer: Tracer
-
     /// The handler responsible for processing view controller lifecycle events
     /// This component manages the actual span creation and lifecycle tracking
     let handler: ViewControllerHandler
@@ -59,9 +56,8 @@
      *
      * @param tracer The OpenTelemetry tracer to use for span creation
      */
-    public convenience init(tracer: Tracer) {
+    public convenience init() {
       self.init(
-        tracer: tracer,
         bundle: .main
       )
     }
@@ -76,12 +72,10 @@
      * @param tracer The OpenTelemetry tracer to use for span creation
      * @param bundle The bundle to use for filtering view controllers
      */
-    init(tracer: Tracer,
-         bundle: Bundle) {
-      self.tracer = tracer
+    init(bundle: Bundle) {
       bundlePath = bundle.bundlePath
       lock = NSLock()
-      handler = ViewControllerHandler(tracer: tracer)
+      handler = ViewControllerHandler()
 
       // Set the circular reference after initialization to enable parent span lookup
       handler.setUIKitViewInstrumentation(self)

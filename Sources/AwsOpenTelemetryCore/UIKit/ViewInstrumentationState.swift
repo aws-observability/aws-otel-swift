@@ -49,20 +49,8 @@ class ViewInstrumentationState: NSObject {
   /// Typically set to the view controller's class name or custom name
   var identifier: String?
 
-  /// Tracks whether a span has been created for viewDidLoad
-  var viewDidLoadSpanCreated = false
-
-  /// Tracks whether a span has been created for viewWillAppear
-  var viewWillAppearSpanCreated = false
-
-  /// Tracks whether a span has been created for viewIsAppearing
-  var viewIsAppearingSpanCreated = false
-
-  /// Tracks whether a span has been created for viewDidAppear
-  var viewDidAppearSpanCreated = false
-
-  /// Tracks whether a span has been created for viewDidDisappear
-  var viewDidDisappearSpanCreated = false
+  var loadTime: Date?
+  var didAppear = false
 
   /**
    * Creates a new instrumentation state instance.
@@ -70,6 +58,6 @@ class ViewInstrumentationState: NSObject {
    * @param identifier Optional identifier for debugging purposes
    */
   init(identifier: String? = nil) {
-    self.identifier = identifier
+    self.identifier = identifier ?? UUID().uuidString
   }
 }

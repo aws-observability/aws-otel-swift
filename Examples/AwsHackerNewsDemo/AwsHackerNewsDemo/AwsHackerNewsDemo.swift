@@ -35,12 +35,12 @@ let appMonitorId = "927baf95-96e9-412b-8126-3c3875669c66"
 let region = "us-east-1"
 
 // gamma iad
-let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
-let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+// let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+// let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
 
 // local dev
-// let logsEndpoint = "http://localhost:3000/v1/logs"
-// let tracesEndpoint = "http://localhost:3000/v1/traces"
+let logsEndpoint = "http://localhost:3000/v1/logs"
+let tracesEndpoint = "http://localhost:3000/v1/traces"
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
