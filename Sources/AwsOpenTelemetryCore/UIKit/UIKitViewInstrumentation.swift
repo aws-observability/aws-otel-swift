@@ -31,6 +31,7 @@
    * View controllers can implement `ViewControllerCustomization`
    * to control instrumentation.
    */
+
   public final class UIKitViewInstrumentation {
     /// The handler responsible for processing view controller lifecycle events
     /// This component manages the actual span creation and lifecycle tracking

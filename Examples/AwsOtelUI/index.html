@@ -1592,6 +1592,11 @@
         const sessionColor = getSessionColor(sessionId);
         const screenName = span.attributes?.find((attr) => attr.key === 'screen.name')?.value
           ?.stringValue;
+        const appScreenName = span.attributes?.find((attr) => attr.key === 'app.screen.name')?.value
+          ?.stringValue;
+        const appScreenParentName = span.attributes?.find(
+          (attr) => attr.key === 'app.screen.parent_screen.name',
+        )?.value?.stringValue;
         const launchType = span.attributes?.find((attr) => attr.key === 'launch.type')?.value
           ?.stringValue;
         const startType = span.attributes?.find((attr) => attr.key === 'start.type')?.value
@@ -1619,6 +1624,8 @@
         ).replace(/"/g, '&quot;')})"
                      title="${span.name} - ${formattedDuration}\nSession: ${sessionId}${
           screenName ? '\nScreen: ' + screenName : ''
+        }${appScreenName ? '\nApp Screen: ' + appScreenName : ''}${
+          appScreenParentName ? '\nParent Screen: ' + appScreenParentName : ''
         }${span.scopeName ? '\nScope: ' + span.scopeName : ''}${
           launchType ? '\nLaunch Type: ' + launchType : ''
         }${startType ? '\nStart Type: ' + startType : ''}${
@@ -1681,6 +1688,16 @@
                             : ''
                         }
                         ${
+                          appScreenName
+                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 Screen: ${appScreenName}</div>`
+                            : ''
+                        }
+                        ${
+                          appScreenParentName
+                            ? `<div style="font-size: 0.8em; color: #607d8b;">⬆️ Parent: ${appScreenParentName}</div>`
+                            : ''
+                        }
+                        ${
                           span.scopeName
                             ? `<div style="font-size: 0.8em; color: #666;">🔧 ${span.scopeName}</div>`
                             : ''
@@ -1721,16 +1738,22 @@
         const sessionId = getSessionId(log);
         const sessionColor = getSessionColor(sessionId);
         const displayTitle = log.eventName || log.body;
-        const screenName = log.attributes?.find((attr) => attr.key === 'screen.name')?.value
+        const appScreenName = log.attributes?.find((attr) => attr.key === 'app.screen.name')?.value
           ?.stringValue;
+        const appScreenInteraction = log.attributes?.find(
+          (attr) => attr.key === 'app.screen.interaction',
+        )?.value?.intValue;
+        const appScreenParentName = log.attributes?.find(
+          (attr) => attr.key === 'app.screen.parent_screen.name',
+        )?.value?.stringValue;
 
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
           log,
         ).replace(/"/g, '&quot;')})"
-                     title="${displayTitle}\nSession: ${sessionId}${
-          screenName ? '\nScreen: ' + screenName : ''
-        }">
+                     title="${appScreenName ? '\nScreen: ' + appScreenName : ''}${
+          appScreenInteraction ? '\Interaction: ' + appScreenInteraction : ''
+        }${appScreenParentName ? '\nParent Screen: ' + appScreenParentName : ''}">
                     <div class="timeline-label">${time}</div>
                     <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
                     </div>
@@ -1748,8 +1771,18 @@
           log.timestamp,
         )}</span>
                         ${
-                          screenName
-                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
+                          appScreenName
+                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 Screen: ${appScreenName}</div>`
+                            : ''
+                        }
+                        ${
+                          appScreenInteraction
+                            ? `<div style="font-size: 0.8em; color: #9c27b0;">👆 Interaction: ${appScreenInteraction}</div>`
+                            : ''
+                        }
+                        ${
+                          appScreenParentName
+                            ? `<div style="font-size: 0.8em; color: #607d8b;">⬆️ Parent: ${appScreenParentName}</div>`
                             : ''
                         }
                             <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(

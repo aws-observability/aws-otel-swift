@@ -419,6 +419,7 @@ public class AwsOpenTelemetryRumBuilder {
       .add(spanProcessor: GlobalAttributesSpanProcessor(globalAttributesManager: GlobalAttributesProvider.getInstance()))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
       .add(spanProcessor: AwsUIDSpanProcessor(uidManager: AwsUIDManagerProvider.getInstance()))
+      .add(spanProcessor: AwsScreenSpanProcessor(screenManager: AwsScreenManagerProvider.getInstance()))
       .with(resource: resource)
 
     // Apply all customizers in order
@@ -442,7 +443,8 @@ public class AwsOpenTelemetryRumBuilder {
     let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
     let sessionProcessor = AwsSessionLogRecordProcessor(nextProcessor: uidProcessor)
-    let globalAttributesProcessor = GlobalAttributesLogRecordProcessor(nextProcessor: sessionProcessor)
+    let screenProcessor = AwsScreenLogRecordProcessor(nextProcessor: sessionProcessor)
+    let globalAttributesProcessor = GlobalAttributesLogRecordProcessor(nextProcessor: screenProcessor)
 
     let builder = LoggerProviderBuilder()
       .with(processors: [globalAttributesProcessor])

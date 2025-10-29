@@ -45,3 +45,23 @@ public enum AwsViewConstants {
   public static let statusAppBackgrounded = "app_backgrounded"
   public static let statusViewDisappeared = "view_disappeared"
 }
+
+enum AwsViewType: String, CaseIterable {
+  case uikit
+  case swiftui
+}
+
+class AwsView {
+  static let screenName = "app.screen.name"
+  static let type = "app.screen.type"
+}
+
+class AwsViewDidAppear: AwsView {
+  static let name = "app.screen.view_did_appear"
+  static let interaction = "app.screen.interaction"
+  static let parentName = "app.screen.parent_screen.name"
+}
+
+class AwsTimeToFirstAppear: AwsView {
+  static let name = "app.screen.time_to_first_appear"
+}

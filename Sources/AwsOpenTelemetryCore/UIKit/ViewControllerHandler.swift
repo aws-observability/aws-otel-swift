@@ -224,22 +224,20 @@
         if !state.didAppear,
            let loadTime = state.loadTime {
           state.didAppear = true
-          Self.tracer.spanBuilder(spanName: "TimeToFirstAppear")
+          Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppear.name)
             .setStartTime(time: loadTime)
-            .setAttribute(key: AwsViewConstants.attributeScreenName, value: viewController.screenName)
-            .setAttribute(key: AwsViewConstants.attributeViewType, value: AwsViewConstants.valueUIKit)
+            .setAttribute(key: AwsTimeToFirstAppear.screenName, value: viewController.screenName)
+            .setAttribute(key: AwsTimeToFirstAppear.type, value: AwsViewType.uikit.rawValue)
             .startSpan()
             .end(time: now)
         }
-        // create ViewDidAppear log event
-        Self.logger.logRecordBuilder()
-          .setEventName("ViewDidAppear")
-          .setTimestamp(now)
-          .setAttributes([
-            AwsViewConstants.attributeScreenName: AttributeValue.string(viewController.screenName),
-            AwsViewConstants.attributeViewType: AttributeValue.string(AwsViewConstants.valueUIKit)
-          ])
-          .emit()
+
+        // Log ViewDidAppear
+        AwsScreenManagerProvider.getInstance().logViewDidAppear(
+          screen: viewController.screenName,
+          type: .uikit,
+          timestamp: now
+        )
       }
     }
 
