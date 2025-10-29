@@ -172,6 +172,12 @@ public class AwsOpenTelemetryRumBuilder {
 
   /// Execute AwsInstrumentationPlan to build requested instrumentations
   private func buildInstrumentations(plan: AwsInstrumentationPlan) {
+    // App Launch
+    if plan.startup {
+      // Only supported by default for environments that support UIKit lifecycle notifications
+      AwsAppLaunchInstrumentation.shared = AwsAppLaunchInstrumentation()
+    }
+
     // Session Events
     if plan.sessionEvents {
       _ = AwsSessionEventInstrumentation()
