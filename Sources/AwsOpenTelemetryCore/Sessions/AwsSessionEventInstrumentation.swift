@@ -40,7 +40,9 @@ public struct AwsSessionEvent {
 /// - All session events are converted to OpenTelemetry log records with appropriate attributes
 /// - Session end events include duration and end time attributes
 public class AwsSessionEventInstrumentation {
-  private let logger: Logger
+  private static var logger: Logger {
+    return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsSessionEventInstrumentation.instrumentationKey)
+  }
 
   /// Queue for storing session events that were created before instrumentation was initialized.
   /// This allows capturing session events that occur during application startup before
@@ -63,30 +65,17 @@ public class AwsSessionEventInstrumentation {
   /// Controls whether new sessions are queued or immediately processed via notifications.
   static var isApplied = false
 
-  public init() {
-    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsSessionEventInstrumentation.instrumentationKey)
-    AwsOpenTelemetryLogger.debug("Initializing AwsSessionEventInstrumentation")
-
-    guard !AwsSessionEventInstrumentation.isApplied else {
+  static func install() {
+    guard !isApplied else {
       return
     }
 
-    AwsOpenTelemetryLogger.debug("Applying AwsSessionEventInstrumentation")
+    AwsOpenTelemetryLogger.debug("Installing AwsSessionEventInstrumentation")
 
-    AwsSessionEventInstrumentation.isApplied = true
+    isApplied = true
     // Process any queued sessions
     processQueuedSessions()
 
-    // Start observing for new session notifications
-    NotificationCenter.default.addObserver(
-      forName: AwsSessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { notification in
-      if let sessionEvent = notification.object as? AwsSessionEvent {
-        self.createSessionEvent(session: sessionEvent.session, eventType: sessionEvent.eventType)
-      }
-    }
     AwsOpenTelemetryLogger.info("AwsSessionEventInstrumentation applied successfully")
   }
 
@@ -95,7 +84,7 @@ public class AwsSessionEventInstrumentation {
   /// This method is called during the `apply()` process to handle any sessions that
   /// were created before the instrumentation was initialized. It creates log records
   /// for all queued sessions and then clears the queue.
-  private func processQueuedSessions() {
+  private static func processQueuedSessions() {
     let sessionEvents = AwsSessionEventInstrumentation.queue
     AwsOpenTelemetryLogger.debug("Processing \(sessionEvents.count) queued session events")
 
@@ -117,7 +106,7 @@ public class AwsSessionEventInstrumentation {
   /// - Parameters:
   ///   - session: The session to create an event for
   ///   - eventType: The type of event to create (start or end)
-  private func createSessionEvent(session: AwsSession, eventType: SessionEventType) {
+  private static func createSessionEvent(session: AwsSession, eventType: SessionEventType) {
     switch eventType {
     case .start:
       createSessionStartEvent(session: session)
@@ -131,12 +120,11 @@ public class AwsSessionEventInstrumentation {
   /// Creates an OpenTelemetry log record with session attributes including ID, start time,
   /// and previous session ID (if available).
   /// - Parameter session: The session that has started
-  private func createSessionStartEvent(session: AwsSession) {
+  private static func createSessionStartEvent(session: AwsSession) {
     AwsOpenTelemetryLogger.debug("Creating session.start event for session ID: \(session.id)")
 
     var attributes: [String: AttributeValue] = [
-      AwsSessionConstants.id: AttributeValue.string(session.id),
-      AwsSessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds))
+      AwsSessionConstants.id: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
@@ -146,9 +134,9 @@ public class AwsSessionEventInstrumentation {
     /// Create `session.start` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setBody(AttributeValue.string(AwsSessionConstants.sessionStartEvent))
+      .setEventName(AwsSessionConstants.sessionStartEvent)
       .setAttributes(attributes)
-      .setObservedTimestamp(Date())
+      .setTimestamp(session.startTime)
       .emit()
   }
 
@@ -157,7 +145,7 @@ public class AwsSessionEventInstrumentation {
   /// Creates an OpenTelemetry log record with session attributes including ID, start time,
   /// end time, duration, and previous session ID (if available).
   /// - Parameter session: The expired session
-  private func createSessionEndEvent(session: AwsSession) {
+  private static func createSessionEndEvent(session: AwsSession) {
     guard let endTime = session.endTime,
           let duration = session.duration else {
       AwsOpenTelemetryLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
@@ -168,9 +156,7 @@ public class AwsSessionEventInstrumentation {
 
     var attributes: [String: AttributeValue] = [
       AwsSessionConstants.id: AttributeValue.string(session.id),
-      AwsSessionConstants.startTime: AttributeValue.double(Double(session.startTime.timeIntervalSince1970.toNanoseconds)),
-      AwsSessionConstants.endTime: AttributeValue.double(Double(endTime.timeIntervalSince1970.toNanoseconds)),
-      AwsSessionConstants.duration: AttributeValue.double(Double(duration.toNanoseconds))
+      AwsSessionConstants.duration: AttributeValue.string(String(duration))
     ]
 
     if let previousId = session.previousId {
@@ -180,9 +166,9 @@ public class AwsSessionEventInstrumentation {
     /// Create `session.end`` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setBody(AttributeValue.string(AwsSessionConstants.sessionEndEvent))
+      .setEventName(AwsSessionConstants.sessionEndEvent)
       .setAttributes(attributes)
-      .setObservedTimestamp(Date())
+      .setTimestamp(endTime)
       .emit()
   }
 
@@ -196,10 +182,7 @@ public class AwsSessionEventInstrumentation {
   static func addSession(session: AwsSession, eventType: SessionEventType) {
     if isApplied {
       AwsOpenTelemetryLogger.debug("Posting notification for \(eventType) session event: \(session.id)")
-      NotificationCenter.default.post(
-        name: sessionEventNotification,
-        object: AwsSessionEvent(session: session, eventType: eventType)
-      )
+      createSessionEvent(session: session, eventType: eventType)
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.

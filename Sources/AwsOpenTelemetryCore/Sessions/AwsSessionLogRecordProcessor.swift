@@ -22,34 +22,22 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
   /// - Parameter logRecord: The log record being processed
   func onEmit(logRecord: ReadableLogRecord) {
-    var newAttributes = logRecord.attributes
+    var enhancedRecord = logRecord
 
-    // For session.start and session.end events, preserve existing session attributes
-    if let body = logRecord.body,
-       case let .string(bodyString) = body,
-       bodyString == AwsSessionConstants.sessionStartEvent || bodyString == AwsSessionConstants.sessionEndEvent {
-      // Do nothing
-      // - Session start and end events already have their intended session ids.
-      // - Overwriting them here will also cause session end to have the wrong current and prev session ids.
-    } else {
-      // For other log records, add current session attributes
+    // Only add session attributes if they don't already exist
+    if logRecord.attributes[AwsSessionConstants.id] == nil || logRecord.attributes[AwsSessionConstants.previousId] == nil {
       let session = sessionManager.getSession()
-      newAttributes[AwsSessionConstants.id] = AttributeValue.string(session.id)
-      if let previousId = session.previousId {
-        newAttributes[AwsSessionConstants.previousId] = AttributeValue.string(previousId)
+
+      // Add session.id if not already present
+      if logRecord.attributes[AwsSessionConstants.id] == nil {
+        enhancedRecord.setAttribute(key: AwsSessionConstants.id, value: session.id)
+      }
+
+      // Add session.previous_id if not already present and session has a previous ID
+      if logRecord.attributes[AwsSessionConstants.previousId] == nil, let previousId = session.previousId {
+        enhancedRecord.setAttribute(key: AwsSessionConstants.previousId, value: previousId)
       }
     }
-
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
 
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }

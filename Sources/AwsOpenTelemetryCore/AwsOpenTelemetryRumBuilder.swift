@@ -174,7 +174,7 @@ public class AwsOpenTelemetryRumBuilder {
   private func buildInstrumentations(plan: AwsInstrumentationPlan) {
     // Session Events
     if plan.sessionEvents {
-      _ = AwsSessionEventInstrumentation()
+      AwsSessionEventInstrumentation.install()
     }
 
     // View instrumentation (UIKit/SwiftUI)
