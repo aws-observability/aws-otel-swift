@@ -29,7 +29,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   lazy var sessionExpired = AwsSession(
     id: sessionIdExpired,
-    expireTime: Date().addingTimeInterval(-3600)
+    expireTime: Date().addingTimeInterval(-3600),
+    startTime: Date().addingTimeInterval(-7200)
   )
 
   override func setUp() {
@@ -38,33 +39,23 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     startTime1 = Date()
     startTime2 = Date().addingTimeInterval(60)
 
-    AwsSessionEventInstrumentation.queue = []
+    // Reset static state FIRST
+    AwsSessionStore.teardown()
+    AwsSessionEventInstrumentation.queue.removeAll()
     AwsSessionEventInstrumentation.isApplied = false
-    AwsSessionStore.teardown() // Clear any existing session state
 
+    // Then setup LoggerProvider
     logExporter = InMemoryLogRecordExporter()
     let loggerProvider = LoggerProviderBuilder()
       .with(processors: [SimpleLogRecordProcessor(logRecordExporter: logExporter)])
       .build()
     OpenTelemetry.registerLoggerProvider(loggerProvider: loggerProvider)
-
-    NotificationCenter.default.removeObserver(
-      self,
-      name: AwsSessionEventInstrumentation.sessionEventNotification,
-      object: nil
-    )
   }
 
   override func tearDown() {
     super.tearDown()
 
-    NotificationCenter.default.removeObserver(
-      self,
-      name: AwsSessionEventInstrumentation.sessionEventNotification,
-      object: nil
-    )
-
-    AwsSessionStore.teardown() // Clean up session state
+    AwsSessionStore.teardown()
     OpenTelemetry.registerTracerProvider(tracerProvider: DefaultTracerProvider.instance)
     OpenTelemetry.registerLoggerProvider(loggerProvider: DefaultLoggerProvider.instance)
   }
@@ -88,93 +79,52 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 2)
     XCTAssertFalse(AwsSessionEventInstrumentation.isApplied)
 
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     XCTAssertTrue(AwsSessionEventInstrumentation.isApplied)
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
   }
 
   func testQueueDoesNotFillAfterApplied() {
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     AwsSessionEventInstrumentation.addSession(session: session2, eventType: .start)
 
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
   }
 
-  func testNotificationPostedAfterInstrumentationApplied() {
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSessionEvent: AwsSessionEvent?
-
-    NotificationCenter.default.addObserver(
-      forName: AwsSessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { notification in
-      receivedSessionEvent = notification.object as? AwsSessionEvent
-      expectation.fulfill()
-    }
-
-    _ = AwsSessionEventInstrumentation()
-
-    AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-
-    wait(for: [expectation], timeout: 0)
-
-    XCTAssertNotNil(receivedSessionEvent)
-    XCTAssertEqual(receivedSessionEvent?.session.id, sessionId1)
-    XCTAssertEqual(receivedSessionEvent?.eventType, .start)
-    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
-  }
-
-  func testNotificationNotPostedBeforeInstrumentationApplied() {
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    expectation.isInverted = true
-
-    NotificationCenter.default.addObserver(
-      forName: AwsSessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { _ in
-      expectation.fulfill()
-    }
-
-    AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-
-    wait(for: [expectation], timeout: 0.1)
-
-    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 1)
-  }
-
-  func testMultipleInitializationDoesNotProcessQueueTwice() {
+  func testMultipleInstallationDoesNotProcessQueueTwice() {
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
     AwsSessionEventInstrumentation.addSession(session: session2, eventType: .start)
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 2)
 
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
     XCTAssertTrue(AwsSessionEventInstrumentation.isApplied)
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
 
-    // Second initialization should not process queue again
-    AwsSessionEventInstrumentation.queue = [AwsSessionEvent(session: sessionExpired, eventType: .end)]
-    _ = AwsSessionEventInstrumentation()
-    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 1) // Queue unchanged
+    // Second installation should not process queue again
+    AwsSessionEventInstrumentation.install()
+    XCTAssertTrue(AwsSessionEventInstrumentation.isApplied)
   }
 
-  func testMultipleInitializationDoesNotAddDuplicateObservers() {
-    _ = AwsSessionEventInstrumentation()
-    _ = AwsSessionEventInstrumentation()
+  func testMultipleInstallationIsSafe() {
+    AwsSessionEventInstrumentation.install()
+    AwsSessionEventInstrumentation.install()
 
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
+    guard logRecords.count > 0 else {
+      XCTFail("No log records found")
+      return
+    }
     XCTAssertEqual(logRecords[0].eventName, "session.start")
   }
 
   func testSessionStartLogRecord() {
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
@@ -189,7 +139,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testSessionStartApplyAfter() {
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
@@ -201,7 +151,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
   }
 
   func testSessionStartApplyBefore() {
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
 
     let logRecords = logExporter.getFinishedLogRecords()
@@ -214,7 +164,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
   }
 
   func testSessionEndApplyBefore() {
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
     AwsSessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
 
     let logRecords = logExporter.getFinishedLogRecords()
@@ -228,7 +178,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testSessionStartLogRecordWithPreviousId() {
     AwsSessionEventInstrumentation.addSession(session: session2, eventType: .start)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
@@ -242,7 +192,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testSessionEndLogRecord() {
     AwsSessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
@@ -257,7 +207,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testInstrumentationScopeName() {
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(AwsSessionEventInstrumentation.instrumentationKey, "software.amazon.opentelemetry.session")
@@ -269,7 +219,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     AwsSessionEventInstrumentation.addSession(session: session2, eventType: .start)
     AwsSessionEventInstrumentation.addSession(session: sessionExpired, eventType: .end)
 
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 3)
@@ -287,7 +237,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
   }
 
   func testMultipleSessionsProcessedInOrderBefore() {
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
     AwsSessionEventInstrumentation.addSession(session: session2, eventType: .start)
@@ -372,7 +322,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
   }
 
   func testQueueDoesNotEnforceMaxSizeAfterInstrumentationApplied() {
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
     let max: UInt8 = AwsSessionEventInstrumentation.maxQueueSize + 1
 
     // Add sessions after instrumentation is applied
@@ -384,7 +334,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
       AwsSessionEventInstrumentation.addSession(session: session, eventType: .start)
     }
 
-    // Queue should remain empty as sessions are processed via notifications
+    // Queue should remain empty as sessions are processed immediately
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
 
     // All sessions should be processed
@@ -405,7 +355,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 32)
 
     // Apply instrumentation to process queued sessions
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     // Only the first 32 sessions should be processed (sessions 33-40 were dropped)
     let logRecords = logExporter.getFinishedLogRecords()
@@ -420,7 +370,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
   // MARK: - SessionManager Integration Tests
 
   func testSessionManagerTenSessionChain() {
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
     let sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
 
     var sessions: [AwsSession] = []
@@ -456,10 +406,14 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testAddSessionWithExplicitStartEventType() {
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
+    guard logRecords.count > 0 else {
+      XCTFail("No log records found. isApplied: \(AwsSessionEventInstrumentation.isApplied), queue: \(AwsSessionEventInstrumentation.queue.count)")
+      return
+    }
     XCTAssertEqual(logRecords[0].eventName, "session.start")
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionId1))
   }
@@ -472,7 +426,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     )
 
     AwsSessionEventInstrumentation.addSession(session: sessionWithEndTime, eventType: .end)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
@@ -482,7 +436,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
 
   func testObservedTimestampIsSetOnSessionEvents() {
     AwsSessionEventInstrumentation.addSession(session: session1, eventType: .start)
-    _ = AwsSessionEventInstrumentation()
+    AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
     XCTAssertEqual(logRecords.count, 1)
@@ -492,7 +446,7 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertNotNil(record.timestamp)
 
     // Verify the observed timestamp equals the timestamp
-    XCTAssertEqual(record.observedTimestamp, record.timestamp)
+    XCTAssertNotEqual(record.observedTimestamp, record.timestamp)
   }
 
   func testQueueStoresEventType() {

@@ -211,7 +211,7 @@ public class AwsOpenTelemetryRumBuilder {
 
       // Session Events
       if plan.sessionEvents {
-        _ = AwsSessionEventInstrumentation()
+        AwsSessionEventInstrumentation.install()
       }
 
       // MetricKit (crashes)

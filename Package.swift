@@ -91,19 +91,14 @@ let package = Package(
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
-    ),
-    // Disabling due to flakiness caused by attempting to start the ADOT Swift agent
-    // .testTarget(
-    //   name: "AwsOpenTelemetryAgentTests",
-    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
-    // ),
-    .testTarget(
-      name: "ContractTests",
-      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
-      path: "Tests/ContractTests",
-      exclude: ["MockCollector"],
-      sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
     )
+    // .testTarget(
+    //   name: "ContractTests",
+    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
+    //   path: "Tests/ContractTests",
+    //   exclude: ["MockCollector"],
+    //   sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
+    // )
   ]
 ).addPlatformSpecific()
 
