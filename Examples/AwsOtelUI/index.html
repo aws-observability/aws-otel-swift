@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AWS OTEL UI</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        height: 100vh;
+        display: grid;
+        grid-template-columns: 200px 1fr 0;
+        grid-template-rows: auto auto auto 1fr;
+        grid-template-areas:
+          'sidebar header header'
+          'sidebar topbar topbar'
+          'sidebar filters filters'
+          'sidebar content details';
+        transition: grid-template-columns 0.3s;
+      }
+      body.details-open {
+        grid-template-columns: 200px 1fr 400px;
+      }
+      .left-sidebar {
+        grid-area: sidebar;
+        background: #f8f9fa;
+        border-right: 1px solid #e0e0e0;
+        padding: 20px;
+        overflow-y: auto;
+      }
+      .header {
+        grid-area: header;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .title-bar {
+        padding: 15px 20px 10px 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .title-bar h1 {
+        margin: 0;
+        font-size: 1.5em;
+        color: #333;
+      }
+      .top-bar {
+        grid-area: topbar;
+        height: 60px;
+        background: #e3f2fd;
+        border-bottom: 1px solid #2196f3;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 0 20px;
+        box-sizing: border-box;
+      }
+      .filters-bar {
+        grid-area: filters;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 10px 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #filterTags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+      }
+      .filter-tag {
+        background: #2196f3;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .filter-tag .remove {
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.5em;
+        line-height: 1;
+      }
+      .filter-tag .remove {
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .add-filter-input {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9em;
+        min-width: 200px;
+      }
+      .filter-input {
+        padding: 6px;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        font-size: 0.9em;
+        background: white;
+        color: #333;
+      }
+      .top-bar label {
+        font-weight: bold;
+        color: #1976d2;
+        font-size: 1em;
+      }
+      .time-range-select {
+        padding: 6px 10px;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        font-size: 0.9em;
+        background: white;
+        color: #333;
+        cursor: pointer;
+      }
+      .zoom-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .zoom-control input[type='range'] {
+        width: 120px;
+      }
+      .zoom-control span {
+        font-size: 0.9em;
+        color: #333;
+        min-width: 40px;
+      }
+      .container {
+        grid-area: content;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .sidebar-section {
+        margin-bottom: 30px;
+      }
+      .sidebar-title {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 15px;
+        font-size: 1.1em;
+      }
+      .controls {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .file-input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      .timeline {
+        flex: 1;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #fafafa;
+        display: flex;
+        flex-direction: column;
+      }
+      .timeline-header {
+        background: #fff;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 10px;
+        font-weight: bold;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .timeline-timestamps {
+        font-size: 0.8em;
+        color: #666;
+        font-weight: normal;
+      }
+      .timeline-content {
+        flex: 1;
+        padding: 20px;
+        position: relative;
+        overflow: auto;
+      }
+      .timeline-axis {
+        position: absolute;
+        left: 100px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #ddd;
+      }
+      .timeline-item {
+        position: relative;
+        margin: 8px 0;
+        padding-left: 35px;
+        min-height: 40px;
+        cursor: pointer;
+        padding: 8px;
+        padding-left: 35px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+      .timeline-item:hover {
+        background-color: #e3f2fd;
+      }
+      .timeline-item {
+        position: relative;
+      }
+      .fullscreen-hover-btn {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        background: rgba(33, 150, 243, 0.8);
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 4px 6px;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+        z-index: 10;
+      }
+      .timeline-item:hover .fullscreen-hover-btn {
+        opacity: 1;
+      }
+      .fullscreen-hover-btn:hover {
+        background: rgba(33, 150, 243, 1);
+      }
+      .timeline-label {
+        position: absolute;
+        left: -125px;
+        top: 0;
+        width: 90px;
+        font-size: 0.7em;
+        color: #666;
+        text-align: right;
+        padding-right: 8px;
+      }
+      .span-bar {
+        position: relative;
+        height: 20px;
+        background: linear-gradient(90deg, #2196f3, #1976d2);
+        border-radius: 10px;
+        margin: 5px 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+      }
+      .span-bar:hover {
+        transform: scaleY(1.2);
+        box-shadow: 0 4px 8px rgba(33, 150, 243, 0.5);
+      }
+      .log-marker {
+        position: relative;
+        margin: 5px 0;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-block;
+        font-size: 20px;
+        font-weight: bold;
+        /* color: #9c27b0; */
+        line-height: 20px;
+        /* background: transparent; */
+        border: none;
+        padding: 0;
+      }
+      .log-marker:hover {
+        transform: scale(1.2);
+        color: #7b1fa2;
+      }
+      .log-marker::before {
+        content: '✕';
+      }
+      .item-header {
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+      .item-time {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      .item-details {
+        font-size: 0.85em;
+        color: #555;
+      }
+      .trace-id {
+        font-family: monospace;
+        background: #f0f0f0;
+        padding: 2px 4px;
+        border-radius: 2px;
+        font-size: 0.8em;
+      }
+      .duration {
+        background: #4caf50;
+        color: white;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.8em;
+        margin-left: 10px;
+      }
+      .status-200 {
+        border-left-color: #4caf50;
+      }
+      .status-error {
+        border-left-color: #f44336;
+      }
+
+      .details-panel {
+        grid-area: details;
+        background: white;
+        border-left: 1px solid #ddd;
+        overflow-y: auto;
+        display: none;
+      }
+      .details-panel.open {
+        display: block;
+      }
+      .details-header {
+        padding: 20px;
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .details-header h3 {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-all;
+        margin: 0;
+        flex: 1;
+        margin-right: 10px;
+      }
+      .details-content {
+        padding: 20px;
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        cursor: pointer;
+        color: #666;
+      }
+      .detail-section {
+        margin-bottom: 20px;
+      }
+      .detail-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+      }
+      .detail-item {
+        margin: 5px 0;
+        padding: 5px;
+        background: #f9f9f9;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.9em;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .detail-item:hover {
+        background: #e3f2fd;
+      }
+
+      .json-view {
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        font-family: monospace;
+        font-size: 0.85em;
+        white-space: pre-wrap;
+        overflow-x: auto;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .sessions-panel {
+        margin-bottom: 0;
+      }
+      .sessions-header {
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #333;
+        font-size: 1.1em;
+      }
+      .session-item {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85em;
+      }
+      .session-item:hover {
+        background: #f0f8ff;
+        border-color: #2196f3;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      .session-item.active {
+        background: #e3f2fd;
+        border-color: #2196f3;
+        box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+      }
+      .session-id {
+        font-weight: bold;
+        margin-bottom: 6px;
+        word-break: break-all;
+        font-size: 0.8em;
+      }
+      .session-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        font-size: 0.75em;
+        color: #666;
+      }
+      .session-stat {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .zoom-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .zoom-controls label {
+        font-weight: bold;
+        color: #333;
+        font-size: 0.9em;
+      }
+      .zoom-controls input[type='range'] {
+        width: 100%;
+      }
+      .zoom-controls span {
+        font-weight: bold;
+        color: #2196f3;
+        text-align: center;
+        font-size: 0.9em;
+      }
+      .timeline-container {
+        position: relative;
+        min-width: 100%;
+        width: max-content;
+      }
+      .timeline-ruler {
+        position: sticky;
+        top: 0;
+        background: #f8f8f8;
+        border-bottom: 1px solid #ddd;
+        height: 35px;
+        margin-left: 100px;
+        z-index: 10;
+        display: flex;
+        align-items: flex-end;
+      }
+      .session-group {
+        margin-bottom: 30px;
+        border-left: 4px solid;
+        padding-left: 20px;
+        margin-left: 98px;
+      }
+      .session-group-header {
+        font-weight: bold;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.8);
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      .timeline-tick {
+        position: absolute;
+        height: 15px;
+        border-left: 1px solid #999;
+        font-size: 0.65em;
+        color: #666;
+        padding-left: 5px;
+        white-space: nowrap;
+        min-width: 60px;
+      }
+      .timeline-tick.major {
+        height: 25px;
+        border-left-color: #333;
+        font-weight: bold;
+        font-size: 0.7em;
+      }
+      .timeline-cursor {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #ff5722;
+        pointer-events: none;
+        z-index: 50;
+        display: none;
+      }
+
+      .timeline-timestamp-follow {
+        position: fixed;
+        background: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 1000;
+        display: none;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal.open {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 400px;
+        max-width: 90vw;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+      .modal-header {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body {
+        padding: 20px;
+      }
+      .time-input-group {
+        margin-bottom: 15px;
+      }
+      .time-input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+      }
+      .time-input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+      .apply-btn {
+        padding: 8px 16px;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .apply-btn:hover {
+        background: #1976d2;
+      }
+      .cancel-btn {
+        padding: 8px 16px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .cancel-btn:hover {
+        background: #5a6268;
+      }
+
+      .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        background: #2196f3;
+        color: white;
+        border-radius: 50%;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: help;
+        margin-right: 4px;
+        vertical-align: middle;
+        position: relative;
+      }
+
+      .info-icon:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        top: 125%;
+        left: 0;
+        background: #333;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: normal;
+        white-space: normal;
+        max-width: 250px;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      .info-icon:hover::before {
+        content: '';
+        position: absolute;
+        top: 115%;
+        left: 8px;
+        border: 5px solid transparent;
+        border-bottom-color: #333;
+        z-index: 1000;
+      }
+
+      .fullscreen-modal {
+        display: none;
+        position: fixed;
+        z-index: 3000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+      }
+      .fullscreen-modal.open {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .fullscreen-content {
+        background: white;
+        border-radius: 8px;
+        width: 90vw;
+        height: 90vh;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+      }
+      .fullscreen-header {
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .fullscreen-body {
+        flex: 1;
+        padding: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .fullscreen-json {
+        flex: 1;
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-size: 14px;
+        overflow: auto;
+        line-height: 1.4;
+        white-space: pre;
+      }
+      .json-key {
+        color: #0451a5;
+        font-weight: bold;
+      }
+      .json-string {
+        color: #0a7d0a;
+      }
+      .json-number {
+        color: #098658;
+      }
+      .json-boolean {
+        color: #0000ff;
+      }
+      .json-null {
+        color: #808080;
+      }
+      .json-toggle {
+        cursor: pointer;
+        user-select: none;
+        color: #666;
+        margin-right: 4px;
+        font-weight: bold;
+      }
+      .json-toggle:hover {
+        color: #333;
+      }
+      .json-collapsed {
+        display: none;
+      }
+      .json-line {
+        margin-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="left-sidebar">
+      <div class="sessions-panel" id="sessionsPanel">
+        <div class="sessions-header">Sessions</div>
+        <input
+          type="text"
+          id="sessionSearchInput"
+          placeholder="Search sessions..."
+          style="
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+          "
+        />
+        <div id="sessionsList">Loading sessions...</div>
+      </div>
+    </div>
+
+    <div class="header">
+      <div class="title-bar">
+        <h1>AWS OTEL UI</h1>
+      </div>
+    </div>
+
+    <div class="top-bar">
+      <button
+        onclick="refreshData()"
+        style="
+          padding: 6px 12px;
+          background: #4caf50;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.9em;
+        "
+      >
+        Refresh Data
+      </button>
+      <div class="zoom-control">
+        <label for="zoomSlider">Zoom:</label>
+        <input type="range" id="zoomSlider" min="0.1" max="5" value="1" step="0.1" />
+        <span id="zoomValue">1.0x</span>
+      </div>
+      <input
+        type="text"
+        id="addFilterInput"
+        placeholder="key=value, key~value (like), substring, !substring"
+        class="filter-input"
+        style="width: 350px"
+        title="Structured filters (key=value) create subgroups first, then substring filters search within those groups"
+      />
+      <select id="typeFilter" class="filter-input" style="width: 120px">
+        <option value="all">All Types</option>
+        <option value="spans">Spans Only</option>
+        <option value="logs">Logs Only</option>
+      </select>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 10px">
+        <div
+          id="timezoneToggle"
+          onclick="toggleTimezone()"
+          style="
+            display: flex;
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            overflow: hidden;
+          "
+        >
+          <div id="utcOption" style="padding: 6px 12px; background: #ff9800; color: white">UTC</div>
+          <div id="localOption" style="padding: 6px 12px; color: #666">Local</div>
+        </div>
+        <label>Time Range:</label>
+        <select id="timeRangeSelect" class="time-range-select">
+          <option value="all">All Time</option>
+          <option value="15m">Last 15 minutes</option>
+          <option value="30m">Last 30 minutes</option>
+          <option value="1h">Last 1 hour</option>
+          <option value="2h">Last 2 hours</option>
+          <option value="6h">Last 6 hours</option>
+          <option value="12h">Last 12 hours</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="custom">Custom Range...</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="filters-bar">
+      <label style="font-weight: bold; color: #333">Filters:</label>
+      <div id="filterTags"></div>
+
+      <button
+        onclick="clearAllFilters()"
+        style="
+          padding: 4px 8px;
+          background: #f44336;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 0.8em;
+        "
+      >
+        Clear All
+      </button>
+    </div>
+
+    <div class="container">
+      <div class="timeline">
+        <div class="timeline-header">Timeline View</div>
+        <div class="timeline-content" id="timelineContent">
+          <p>Loading OTEL data...</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="details-panel" id="detailsPanel">
+      <div class="details-header">
+        <h3 id="detailsTitle">Event Details</h3>
+        <button class="close-btn" onclick="closeDetails()">&times;</button>
+      </div>
+      <div class="details-content" id="detailsContent">Click on an event to see details</div>
+    </div>
+
+    <div class="modal" id="timeRangeModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Custom Time Range</h3>
+          <button class="close-btn" onclick="closeTimeRangeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="time-input-group">
+            <label for="customStartTime">Start Time:</label>
+            <input type="datetime-local" id="customStartTime" class="time-input" />
+          </div>
+          <div class="time-input-group">
+            <label for="customEndTime">End Time:</label>
+            <input type="datetime-local" id="customEndTime" class="time-input" />
+          </div>
+          <div class="modal-actions">
+            <button onclick="applyCustomTimeRange()" class="apply-btn">Apply</button>
+            <button onclick="closeTimeRangeModal()" class="cancel-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="fullscreen-modal" id="fullscreenModal">
+      <div class="fullscreen-content">
+        <div class="fullscreen-header">
+          <h3>Raw JSON - Pretty Print</h3>
+          <button class="close-btn" onclick="closeFullscreenJson()">&times;</button>
+        </div>
+        <div class="fullscreen-body">
+          <div class="fullscreen-json" id="fullscreenJson"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let allItems = [];
+      let filteredItems = [];
+
+      // Store items globally for click handlers
+      window.showDetails = showDetails;
+      window.closeDetails = closeDetails;
+
+      document.getElementById('typeFilter').addEventListener('change', () => {
+        saveSettings();
+        applyFilters();
+      });
+      document.getElementById('zoomSlider').addEventListener('input', updateZoom);
+      document.getElementById('timeRangeSelect').addEventListener('change', handleTimeRangeChange);
+      document.getElementById('sessionSearchInput').addEventListener('input', () => {
+        saveSettings();
+        populateSessionsList();
+      });
+      document.getElementById('addFilterInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addCustomFilter(e.target.value.trim());
+          e.target.value = '';
+        }
+      });
+
+      let customTimeRange = { start: null, end: null };
+
+      function handleTimeRangeChange() {
+        const value = document.getElementById('timeRangeSelect').value;
+        if (value === 'custom') {
+          openTimeRangeModal();
+        } else {
+          customTimeRange = { start: null, end: null };
+          saveSettings();
+          populateSessionsList();
+          applyFilters();
+        }
+      }
+
+      function openTimeRangeModal() {
+        document.getElementById('timeRangeModal').classList.add('open');
+      }
+
+      function closeTimeRangeModal() {
+        document.getElementById('timeRangeModal').classList.remove('open');
+        if (customTimeRange.start === null && customTimeRange.end === null) {
+          document.getElementById('timeRangeSelect').value = 'all';
+        }
+      }
+
+      function applyCustomTimeRange() {
+        const startTime = document.getElementById('customStartTime').value;
+        const endTime = document.getElementById('customEndTime').value;
+
+        customTimeRange = {
+          start: startTime ? new Date(startTime) : null,
+          end: endTime ? new Date(endTime) : null,
+        };
+
+        closeTimeRangeModal();
+        populateSessionsList();
+        applyFilters();
+      }
+
+      window.closeTimeRangeModal = closeTimeRangeModal;
+      window.applyCustomTimeRange = applyCustomTimeRange;
+      window.showTimelineCursor = showTimelineCursor;
+      window.hideTimelineCursor = hideTimelineCursor;
+      window.toggleTimezone = toggleTimezone;
+      window.openFullscreenJson = openFullscreenJson;
+      window.closeFullscreenJson = closeFullscreenJson;
+      window.toggleCollapse = toggleCollapse;
+
+      let zoomLevel = 1;
+      let useUTC = true;
+
+      // Load settings from localStorage
+      function loadSettings() {
+        const settings = JSON.parse(localStorage.getItem('otelViewerSettings') || '{}');
+
+        zoomLevel = settings.zoomLevel || 1;
+        useUTC = settings.useUTC !== undefined ? settings.useUTC : true;
+
+        document.getElementById('zoomSlider').value = zoomLevel;
+        document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+
+        document.getElementById('typeFilter').value = settings.typeFilter || 'all';
+        document.getElementById('timeRangeSelect').value = settings.timeRange || 'all';
+        document.getElementById('sessionSearchInput').value = settings.sessionSearch || '';
+        customFilters = settings.customFilters || [];
+        substringFilterMode = settings.substringFilterMode || 'intersection';
+        structuredFilterMode = settings.structuredFilterMode || 'union';
+        updateSubstringModeButton();
+        renderFilterTags();
+
+        updateTimezoneToggle();
+      }
+
+      // Save settings to localStorage
+      function saveSettings() {
+        const settings = {
+          zoomLevel,
+          useUTC,
+          substringFilterMode,
+          structuredFilterMode,
+          filterText: '',
+          typeFilter: document.getElementById('typeFilter').value,
+          timeRange: document.getElementById('timeRangeSelect').value,
+          sessionSearch: document.getElementById('sessionSearchInput').value,
+          customFilters,
+        };
+        localStorage.setItem('otelViewerSettings', JSON.stringify(settings));
+      }
+
+      function updateZoom() {
+        zoomLevel = parseFloat(document.getElementById('zoomSlider').value);
+        document.getElementById('zoomValue').textContent = zoomLevel.toFixed(1) + 'x';
+        saveSettings();
+        renderTimeline();
+      }
+
+      function toggleTimezone() {
+        useUTC = !useUTC;
+        updateTimezoneToggle();
+        saveSettings();
+        renderTimeline();
+      }
+
+      function updateTimezoneToggle() {
+        const utcOption = document.getElementById('utcOption');
+        const localOption = document.getElementById('localOption');
+
+        if (useUTC) {
+          utcOption.style.background = '#ff9800';
+          utcOption.style.color = 'white';
+          localOption.style.background = 'transparent';
+          localOption.style.color = '#666';
+        } else {
+          localOption.style.background = '#ff9800';
+          localOption.style.color = 'white';
+          utcOption.style.background = 'transparent';
+          utcOption.style.color = '#666';
+        }
+      }
+
+      function formatTimeForDisplay(timestamp) {
+        const date = new Date(timestamp);
+        if (useUTC) {
+          return date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+        } else {
+          return date.toLocaleTimeString();
+        }
+      }
+
+      function formatTimeStringForCursor(timestamp) {
+        const date = new Date(timestamp);
+        return useUTC ? date.toISOString() : date.toLocaleString();
+      }
+
+      let sessionColors = new Map();
+      let allSessionData = new Map();
+      let customFilters = [];
+      let substringFilterMode = 'intersection'; // 'intersection' or 'union'
+      let structuredFilterMode = 'union'; // 'intersection' or 'union'
+
+      function formatDuration(durationMs) {
+        if (durationMs < 1000) {
+          return durationMs.toFixed(2) + 'ms';
+        } else if (durationMs < 60000) {
+          return (durationMs / 1000).toFixed(2) + 's';
+        } else if (durationMs < 3600000) {
+          return (durationMs / 60000).toFixed(2) + 'min';
+        } else {
+          return (durationMs / 3600000).toFixed(2) + 'h';
+        }
+      }
+
+      function formatTimeAgo(timestamp) {
+        const now = Date.now();
+        const diff = now - timestamp;
+
+        if (diff < 60000) {
+          return Math.floor(diff / 1000) + 's ago';
+        } else if (diff < 3600000) {
+          return Math.floor(diff / 60000) + 'm ago';
+        } else if (diff < 86400000) {
+          return Math.floor(diff / 3600000) + 'h ago';
+        } else {
+          return Math.floor(diff / 86400000) + 'd ago';
+        }
+      }
+
+      function getSessionColor(sessionId) {
+        if (!sessionColors.has(sessionId)) {
+          const colors = [
+            '#2196f3',
+            '#4caf50',
+            '#ff9800',
+            '#9c27b0',
+            '#f44336',
+            '#00bcd4',
+            '#795548',
+            '#607d8b',
+          ];
+          const colorIndex = sessionColors.size % colors.length;
+          sessionColors.set(sessionId, colors[colorIndex]);
+        }
+        return sessionColors.get(sessionId);
+      }
+
+      // Auto-load data when page loads
+      window.addEventListener('load', () => {
+        loadSettings();
+        loadDefaultData();
+      });
+
+      // Close fullscreen modal on Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeFullscreenJson();
+        }
+      });
+
+      function refreshData() {
+        allItems = [];
+        filteredItems = [];
+        document.getElementById('timelineContent').innerHTML = '<p>Refreshing data...</p>';
+        loadDefaultData();
+      }
+
+      function loadDefaultData() {
+        // Load spans from the current file
+        fetch('out/traces.jsonl')
+          .then((response) => response.text())
+          .then((data) => parseSpansData(data))
+          .catch((err) => {
+            console.error('Failed to parse traces data:', err);
+          });
+        fetch('out/logs.jsonl')
+          .then((response) => response.text())
+          .then((data) => parseLogsData(data))
+          .catch((err) => {
+            console.error('Failed to parse logs data:', err);
+          });
+      }
+
+      function parseSpansData(data) {
+        const lines = data.trim().split('\n');
+        lines.forEach((line) => {
+          if (line.trim()) {
+            const spanData = JSON.parse(line);
+            if (spanData.resourceSpans) {
+              spanData.resourceSpans.forEach((resourceSpan) => {
+                resourceSpan.scopeSpans?.forEach((scopeSpan) => {
+                  scopeSpan.spans?.forEach((span) => {
+                    const item = {
+                      type: 'span',
+                      ...span,
+                      timestamp: parseInt(span.startTimeUnixNano) / 1000000,
+                      endTime: parseInt(span.endTimeUnixNano) / 1000000,
+                      scopeName: scopeSpan.scope?.name,
+                      duration:
+                        (parseInt(span.endTimeUnixNano) - parseInt(span.startTimeUnixNano)) /
+                        1000000,
+                    };
+                    allItems.push(item);
+                  });
+                });
+              });
+            }
+          }
+        });
+        updateTimeline();
+      }
+
+      function parseLogsData(data) {
+        const lines = data.trim().split('\n');
+        lines.forEach((line) => {
+          if (line.trim()) {
+            const logData = JSON.parse(line);
+            if (logData.resourceLogs) {
+              logData.resourceLogs.forEach((resourceLog) => {
+                resourceLog.scopeLogs?.forEach((scopeLog) => {
+                  scopeLog.logRecords?.forEach((logRecord) => {
+                    const item = {
+                      type: 'log',
+                      ...logRecord,
+                      timestamp: parseInt(logRecord.timeUnixNano) / 1000000,
+                      observedTimeUnixNano: logRecord.observedTimeUnixNano
+                        ? parseInt(logRecord.observedTimeUnixNano) / 1000000
+                        : null,
+                      body: logRecord.body?.stringValue || '',
+                    };
+                    allItems.push(item);
+                  });
+                });
+              });
+            }
+          }
+        });
+        updateTimeline();
+      }
+
+      function applyFilters() {
+        const filterText = '';
+        const typeFilter = document.getElementById('typeFilter').value;
+        const timeRangeValue = document.getElementById('timeRangeSelect').value;
+
+        filteredItems = allItems.filter((item) => {
+          const matchesType =
+            typeFilter === 'all' ||
+            (typeFilter === 'spans' && item.type === 'span') ||
+            (typeFilter === 'logs' && item.type === 'log');
+
+          // Separate structured (key=value), like (key~value), and substring filters
+          const structuredFilters = customFilters.filter(
+            (f) => f.includes('=') && !f.includes('~'),
+          );
+          const likeFilters = customFilters.filter((f) => f.includes('~'));
+          const substringFilters = customFilters.filter(
+            (f) => !f.includes('=') && !f.includes('~'),
+          );
+
+          // Apply structured filters (intersection or union)
+          const matchesStructuredFilters =
+            structuredFilters.length === 0 ||
+            (structuredFilterMode === 'intersection'
+              ? structuredFilters.every
+              : structuredFilters.some
+            ).call(structuredFilters, (filter) => {
+              const [key, value] = filter.split('=', 2);
+              const keyLower = key.toLowerCase();
+              const valueLower = value.toLowerCase();
+
+              if (keyLower === 'session.id') {
+                return getSessionId(item).toLowerCase() === valueLower;
+              }
+
+              if (keyLower === 'scopename') {
+                return item.scopeName?.toLowerCase() === valueLower;
+              }
+
+              return item.attributes?.some(
+                (attr) =>
+                  attr.key?.toLowerCase() === keyLower &&
+                  String(
+                    attr.value?.stringValue ||
+                      attr.value?.intValue ||
+                      attr.value?.doubleValue ||
+                      attr.value?.boolValue,
+                  ).toLowerCase() === valueLower,
+              );
+            });
+
+          // Apply like filters (key~value substring matching)
+          const matchesLikeFilters =
+            likeFilters.length === 0 ||
+            (structuredFilterMode === 'intersection' ? likeFilters.every : likeFilters.some).call(
+              likeFilters,
+              (filter) => {
+                const [key, value] = filter.split('~', 2);
+                const keyLower = key.toLowerCase();
+                const valueLower = value.toLowerCase();
+
+                if (keyLower === 'session.id') {
+                  return getSessionId(item).toLowerCase().includes(valueLower);
+                }
+
+                if (keyLower === 'scopename') {
+                  return item.scopeName?.toLowerCase().includes(valueLower) || false;
+                }
+
+                return (
+                  item.attributes?.some(
+                    (attr) =>
+                      attr.key?.toLowerCase() === keyLower &&
+                      String(
+                        attr.value?.stringValue ||
+                          attr.value?.intValue ||
+                          attr.value?.doubleValue ||
+                          attr.value?.boolValue,
+                      )
+                        .toLowerCase()
+                        .includes(valueLower),
+                  ) || false
+                );
+              },
+            );
+
+          // Then apply substring filters (intersection or union within the structured subgroup)
+          const matchesSubstringFilters =
+            substringFilters.length === 0 ||
+            (substringFilterMode === 'intersection'
+              ? substringFilters.every
+              : substringFilters.some
+            ).call(substringFilters, (filter) => {
+              const isNegated = filter.startsWith('!');
+              const searchTerm = isNegated ? filter.slice(1).toLowerCase() : filter.toLowerCase();
+
+              const matches =
+                item.traceId?.toLowerCase().includes(searchTerm) ||
+                item.spanId?.toLowerCase().includes(searchTerm) ||
+                item.name?.toLowerCase().includes(searchTerm) ||
+                item.body?.toLowerCase().includes(searchTerm) ||
+                item.scopeName?.toLowerCase().includes(searchTerm) ||
+                item.eventName?.toLowerCase().includes(searchTerm) ||
+                item.severityText?.toLowerCase().includes(searchTerm) ||
+                String(item.kind || '')
+                  .toLowerCase()
+                  .includes(searchTerm) ||
+                getSessionId(item).toLowerCase().includes(searchTerm) ||
+                item.attributes?.some(
+                  (attr) =>
+                    attr.key?.toLowerCase().includes(searchTerm) ||
+                    String(
+                      attr.value?.stringValue ||
+                        attr.value?.intValue ||
+                        attr.value?.doubleValue ||
+                        attr.value?.boolValue,
+                    )
+                      .toLowerCase()
+                      .includes(searchTerm),
+                );
+
+              return isNegated ? !matches : matches;
+            });
+
+          const matchesCustomFilters =
+            matchesStructuredFilters && matchesLikeFilters && matchesSubstringFilters;
+
+          const matchesTimeRange = (() => {
+            if (timeRangeValue === 'all') return true;
+
+            const itemTime = new Date(item.timestamp);
+            const now = new Date();
+
+            if (timeRangeValue === 'custom') {
+              if (customTimeRange.start && itemTime < customTimeRange.start) return false;
+              if (customTimeRange.end && itemTime > customTimeRange.end) return false;
+              return true;
+            }
+
+            // Handle preset time ranges
+            const timeMap = {
+              '15m': 15 * 60 * 1000,
+              '30m': 30 * 60 * 1000,
+              '1h': 60 * 60 * 1000,
+              '2h': 2 * 60 * 60 * 1000,
+              '6h': 6 * 60 * 60 * 1000,
+              '12h': 12 * 60 * 60 * 1000,
+              '24h': 24 * 60 * 60 * 1000,
+            };
+
+            const timeAgo = timeMap[timeRangeValue];
+            if (timeAgo) {
+              const cutoffTime = new Date(now.getTime() - timeAgo);
+              return itemTime >= cutoffTime;
+            }
+
+            return true;
+          })();
+
+          return matchesType && matchesTimeRange && matchesCustomFilters;
+        });
+
+        renderTimeline();
+      }
+
+      function selectSession(sessionId) {
+        if (sessionId !== 'all') {
+          const filterText = `session.id=${sessionId}`;
+          if (customFilters.includes(filterText)) {
+            removeCustomFilter(filterText);
+          } else {
+            addCustomFilter(filterText);
+          }
+        }
+      }
+
+      function getSessionId(item) {
+        const sessionAttr = item.attributes?.find((attr) => attr.key === 'session.id');
+        return sessionAttr?.value?.stringValue || 'unknown';
+      }
+
+      function populateSessionsList() {
+        const sessionData = new Map();
+        const timeRangeValue = document.getElementById('timeRangeSelect').value;
+        const searchText = document.getElementById('sessionSearchInput').value.toLowerCase();
+
+        // Filter items by time range first
+        const timeFilteredItems = allItems.filter((item) => {
+          if (timeRangeValue === 'all') return true;
+
+          const itemTime = new Date(item.timestamp);
+          const now = new Date();
+
+          if (timeRangeValue === 'custom') {
+            if (customTimeRange.start && itemTime < customTimeRange.start) return false;
+            if (customTimeRange.end && itemTime > customTimeRange.end) return false;
+            return true;
+          }
+
+          const timeMap = {
+            '15m': 15 * 60 * 1000,
+            '30m': 30 * 60 * 1000,
+            '1h': 60 * 60 * 1000,
+            '2h': 2 * 60 * 60 * 1000,
+            '6h': 6 * 60 * 60 * 1000,
+            '12h': 12 * 60 * 60 * 1000,
+            '24h': 24 * 60 * 60 * 1000,
+          };
+
+          const timeAgo = timeMap[timeRangeValue];
+          if (timeAgo) {
+            const cutoffTime = new Date(now.getTime() - timeAgo);
+            return itemTime >= cutoffTime;
+          }
+
+          return true;
+        });
+
+        // Collect session data from time-filtered items
+        timeFilteredItems.forEach((item) => {
+          const sessionId = getSessionId(item);
+          if (sessionId !== 'unknown') {
+            if (!sessionData.has(sessionId)) {
+              sessionData.set(sessionId, {
+                id: sessionId,
+                events: [],
+                minTime: Infinity,
+                maxTime: -Infinity,
+              });
+            }
+            const session = sessionData.get(sessionId);
+            session.events.push(item);
+            session.minTime = Math.min(session.minTime, item.timestamp);
+            session.maxTime = Math.max(session.maxTime, item.endTime || item.timestamp);
+          }
+        });
+
+        const sessionsList = document.getElementById('sessionsList');
+        if (sessionData.size === 0) {
+          sessionsList.innerHTML =
+            '<div style="padding: 15px; color: #666;">No sessions found</div>';
+          return;
+        }
+
+        let html = '';
+
+        // Add individual sessions (filtered by search)
+        Array.from(sessionData.values())
+          .filter((session) => !searchText || session.id.toLowerCase().includes(searchText))
+          .sort((a, b) => b.maxTime - a.maxTime)
+          .forEach((session) => {
+            const duration = session.maxTime - session.minTime;
+            const timeAgo = formatTimeAgo(session.maxTime);
+            const isFiltered = customFilters.includes(`session.id=${session.id}`);
+            html += `
+            <div class="session-item ${isFiltered ? 'active' : ''}" data-session-id="${
+              session.id
+            }" onclick="selectSession('${session.id}')" onmouseenter="highlightSessionEvents('${
+              session.id
+            }', true)" onmouseleave="highlightSessionEvents('${session.id}', false)">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div class="session-id">${session.id}</div>
+                ${
+                  isFiltered
+                    ? `<button onclick="event.stopPropagation(); removeCustomFilter('session.id=${session.id}')" style="background: #f44336; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;">×</button>`
+                    : ''
+                }
+              </div>
+              <div class="session-stats">
+                <div class="session-stat">🕰️ Started ${timeAgo}</div>
+                <div class="session-stat">⏱️ ${formatDuration(duration)} elapsed</div>
+                <div class="session-stat">📊 ${session.events.length} events total</div>
+              </div>
+            </div>
+          `;
+          });
+
+        sessionsList.innerHTML = html;
+      }
+
+      function updateTimeline() {
+        // Sort all items by timestamp
+        allItems.sort((a, b) => a.timestamp - b.timestamp);
+        populateSessionsList();
+        applyFilters();
+      }
+
+      function renderTimeline() {
+        const content = document.getElementById('timelineContent');
+        const header = document.querySelector('.timeline-header');
+
+        if (filteredItems.length === 0) {
+          content.innerHTML =
+            '<div class="timeline-container"><div class="timeline-axis"></div><p>No items to display. Try adjusting your filters.</p></div>';
+          header.innerHTML = '<span>Timeline View</span>';
+          return;
+        }
+
+        // Calculate timeline scale with zoom
+        const minTime = Math.min(...filteredItems.map((item) => item.timestamp));
+        const maxTime = Math.max(...filteredItems.map((item) => item.endTime || item.timestamp));
+        const actualTimeRange = maxTime - minTime;
+        const timeRange = actualTimeRange * 1.15; // Add padding after the latest event
+
+        // Update header with timestamps
+        const startTimeStr = formatTimeForDisplay(minTime);
+        const endTimeStr = formatTimeForDisplay(maxTime);
+        const durationStr = formatDuration(timeRange);
+        header.innerHTML = `
+          <span>Timeline View</span>
+          <div class="timeline-timestamps">
+            ${startTimeStr} → ${endTimeStr} (${durationStr})
+          </div>
+        `;
+
+        // Use available width with zoom
+        const timelineContent = document.querySelector('.timeline-content');
+        const availableWidth = timelineContent.clientWidth - 40; // Account for padding
+        const baseWidth = Math.max(600, availableWidth);
+        const timelineWidth = baseWidth * zoomLevel;
+
+        // Generate timeline ruler
+        const rulerHtml = generateTimelineRuler(minTime, timeRange, timelineWidth);
+
+        // Group items by session
+        const sessionGroups = new Map();
+        filteredItems.forEach((item) => {
+          const sessionId = getSessionId(item);
+          if (!sessionGroups.has(sessionId)) {
+            sessionGroups.set(sessionId, []);
+          }
+          sessionGroups.get(sessionId).push(item);
+        });
+
+        // Sort sessions by earliest timestamp, then items within sessions
+        const sortedSessions = Array.from(sessionGroups.entries())
+          .map(([sessionId, items]) => {
+            items.sort((a, b) => a.timestamp - b.timestamp);
+            return [sessionId, items, Math.min(...items.map((item) => item.timestamp))];
+          })
+          .sort(([, , aMinTime], [, , bMinTime]) => aMinTime - bMinTime)
+          .map(([sessionId, items]) => [sessionId, items]);
+
+        const sessionGroupsHtml = sortedSessions
+          .map(([sessionId, items]) => {
+            const sessionColor = getSessionColor(sessionId);
+            const itemsHtml = items
+              .map((item) => {
+                if (item.type === 'span') {
+                  return renderSpanItem(item, minTime, timeRange, timelineWidth);
+                } else {
+                  return renderLogItem(item, minTime, timeRange, timelineWidth);
+                }
+              })
+              .join('');
+
+            return `
+            <div class="session-group" style="border-left-color: ${sessionColor};">
+              ${itemsHtml}
+            </div>
+          `;
+          })
+          .join('');
+
+        const html = `
+                <div class="timeline-timestamp-follow" id="timelineTimestampFollow"></div>
+                <div class="timeline-container" style="width: ${timelineWidth}px;" onmousemove="showTimelineCursor(event, ${minTime}, ${timeRange}, ${timelineWidth})" onmouseleave="hideTimelineCursor()">
+                    ${rulerHtml}
+                    <div class="timeline-axis"></div>
+                    <div class="timeline-cursor" id="timelineCursor"></div>
+                    ${sessionGroupsHtml}
+                </div>
+            `;
+
+        content.innerHTML = html;
+      }
+
+      function renderSpanItem(span, minTime, timeRange, timelineWidth) {
+        const startOffset = ((span.timestamp - minTime) / timeRange) * timelineWidth;
+        const duration = span.endTime - span.timestamp;
+        const barWidth = Math.max(20, (duration / timeRange) * timelineWidth);
+        const time = formatTimeForDisplay(span.timestamp);
+        const sessionId = getSessionId(span);
+        const sessionColor = getSessionColor(sessionId);
+        const screenName = span.attributes?.find((attr) => attr.key === 'screen.name')?.value
+          ?.stringValue;
+        const launchType = span.attributes?.find((attr) => attr.key === 'launch.type')?.value
+          ?.stringValue;
+        const startType = span.attributes?.find((attr) => attr.key === 'start.type')?.value
+          ?.stringValue;
+        const hangReporter = span.attributes?.find((attr) => attr.key === 'hang.reporter')?.value
+          ?.stringValue;
+        const activePrewarm = span.attributes?.find((attr) => attr.key === 'active_prewarm')?.value
+          ?.boolValue;
+        const formattedDuration = formatDuration(span.duration);
+
+        // HTTP-specific attributes
+        const httpMethod = span.attributes?.find((attr) => attr.key === 'http.method')?.value
+          ?.stringValue;
+        const httpStatusCode = span.attributes?.find((attr) => attr.key === 'http.status_code')
+          ?.value?.intValue;
+        const httpTarget = span.attributes?.find((attr) => attr.key === 'http.target')?.value
+          ?.stringValue;
+        const httpUrl = span.attributes?.find((attr) => attr.key === 'http.url')?.value
+          ?.stringValue;
+        const isHttpRequest = httpMethod || httpStatusCode || httpTarget || httpUrl;
+
+        return `
+                <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
+          span,
+        ).replace(/"/g, '&quot;')})"
+                     title="${span.name} - ${formattedDuration}\nSession: ${sessionId}${
+          screenName ? '\nScreen: ' + screenName : ''
+        }${span.scopeName ? '\nScope: ' + span.scopeName : ''}${
+          launchType ? '\nLaunch Type: ' + launchType : ''
+        }${startType ? '\nStart Type: ' + startType : ''}${
+          hangReporter ? '\nHang Reporter: ' + hangReporter : ''
+        }${activePrewarm !== undefined ? '\nactive_prewarm: ' + activePrewarm : ''}${
+          isHttpRequest
+            ? '\n' + [httpMethod, httpStatusCode, httpTarget || httpUrl].filter(Boolean).join(' ')
+            : ''
+        }">
+                    <div class="timeline-label">${time}</div>
+                    <div class="span-bar" style="left: ${startOffset}px; width: ${barWidth}px; background: linear-gradient(90deg, ${sessionColor}, ${sessionColor}dd);">
+                    </div>
+                    <div style="margin-left: ${
+                      startOffset - 30
+                    }px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
+                        <button class="fullscreen-hover-btn" onclick="event.stopPropagation(); openFullscreenJson(${JSON.stringify(
+                          span,
+                        ).replace(
+                          /"/g,
+                          '&quot;',
+                        )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
+                        <div style="flex: 1;">
+                            <strong>${
+                              span.name
+                            }</strong> (${formattedDuration}) <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(
+          span.timestamp,
+        )}</span>
+                        ${
+                          isHttpRequest
+                            ? `<div style="font-size: 0.8em; color: #4caf50; display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                                 ${
+                                   httpMethod
+                                     ? `<span style="background: #2196f3; color: white; padding: 1px 4px; border-radius: 2px; font-weight: bold;">${httpMethod}</span>`
+                                     : ''
+                                 }
+                                 ${
+                                   httpStatusCode
+                                     ? `<span style="background: ${
+                                         httpStatusCode >= 200 && httpStatusCode < 300
+                                           ? '#4caf50'
+                                           : httpStatusCode >= 400
+                                           ? '#f44336'
+                                           : '#ff9800'
+                                       }; color: white; padding: 1px 4px; border-radius: 2px;">${httpStatusCode}</span>`
+                                     : ''
+                                 }
+                                 ${
+                                   httpTarget || httpUrl
+                                     ? `<span style="color: #666; font-family: monospace; font-size: 0.9em;">${
+                                         httpTarget || new URL(httpUrl).pathname
+                                       }</span>`
+                                     : ''
+                                 }
+                               </div>`
+                            : ''
+                        }
+                        ${
+                          screenName
+                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
+                            : ''
+                        }
+                        ${
+                          span.scopeName
+                            ? `<div style="font-size: 0.8em; color: #666;">🔧 ${span.scopeName}</div>`
+                            : ''
+                        }
+                        ${
+                          launchType
+                            ? `<div style="font-size: 0.8em; color: #ff9800;">🚀 ${launchType}</div>`
+                            : ''
+                        }
+                        ${
+                          startType
+                            ? `<div style="font-size: 0.8em; color: #4caf50;">▶️ ${startType}</div>`
+                            : ''
+                        }
+                        ${
+                          hangReporter
+                            ? `<div style="font-size: 0.8em; color: #9c27b0;">⏸️ ${hangReporter}</div>`
+                            : ''
+                        }
+                        ${
+                          activePrewarm !== undefined
+                            ? `<div style="font-size: 0.8em; color: #e91e63;">⚡ active_prewarm: ${activePrewarm}</div>`
+                            : ''
+                        }
+                            <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
+                              0,
+                              8,
+                            )}...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function renderLogItem(log, minTime, timeRange, timelineWidth) {
+        const offset = ((log.timestamp - minTime) / timeRange) * timelineWidth;
+        const time = formatTimeForDisplay(log.timestamp);
+        const sessionId = getSessionId(log);
+        const sessionColor = getSessionColor(sessionId);
+        const displayTitle = log.eventName || log.body;
+        const screenName = log.attributes?.find((attr) => attr.key === 'screen.name')?.value
+          ?.stringValue;
+
+        return `
+                <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
+          log,
+        ).replace(/"/g, '&quot;')})"
+                     title="${displayTitle}\nSession: ${sessionId}${
+          screenName ? '\nScreen: ' + screenName : ''
+        }">
+                    <div class="timeline-label">${time}</div>
+                    <div class="log-marker" style="left: ${offset}px; color: ${sessionColor};">
+                    </div>
+                    <div style="margin-left: ${
+                      offset - 30
+                    }px; font-size: 0.9em; color: #333; display: flex; align-items: flex-start; gap: 8px;">
+                        <button class="fullscreen-hover-btn" onclick="event.stopPropagation(); openFullscreenJson(${JSON.stringify(
+                          log,
+                        ).replace(
+                          /"/g,
+                          '&quot;',
+                        )})" title="View fullscreen JSON" style="position: static; margin-top: 2px;">⛶</button>
+                        <div style="flex: 1;">
+                            <strong>${displayTitle}</strong> <span style="color: #999; font-size: 0.8em;">${formatTimeAgo(
+          log.timestamp,
+        )}</span>
+                        ${
+                          screenName
+                            ? `<div style="font-size: 0.8em; color: #2196f3;">📱 ${screenName}</div>`
+                            : ''
+                        }
+                            <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
+                              0,
+                              8,
+                            )}...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+      }
+
+      function formatTime(timestamp) {
+        return formatTimeForDisplay(timestamp);
+      }
+
+      function showDetails(item) {
+        const panel = document.getElementById('detailsPanel');
+        const title = document.getElementById('detailsTitle');
+        const content = document.getElementById('detailsContent');
+
+        title.textContent = item.name || item.eventName || item.body || 'Event Details';
+
+        let formattedHtml = `
+                <div class="detail-section">
+                    <div class="detail-title">Basic Information</div>
+                    <div class="detail-item">Type: ${item.type}</div>
+                    <div class="detail-item">Timestamp: ${new Date(
+                      item.timestamp,
+                    ).toISOString()}</div>
+                    ${
+                      item.observedTimeUnixNano
+                        ? `<div class="detail-item">Observed Time: ${new Date(
+                            item.observedTimeUnixNano,
+                          ).toISOString()}</div>`
+                        : ''
+                    }
+                    ${
+                      item.endTime
+                        ? `<div class="detail-item">End Time: ${new Date(
+                            item.endTime,
+                          ).toISOString()}</div>`
+                        : ''
+                    }
+                    ${
+                      item.duration
+                        ? `<div class="detail-item">Duration: ${formatDuration(
+                            item.duration,
+                          )}</div>`
+                        : ''
+                    }
+                    ${
+                      item.eventName
+                        ? `<div class="detail-item">Event Name: ${item.eventName}</div>`
+                        : ''
+                    }
+                    ${
+                      item.severityText
+                        ? `<div class="detail-item">Severity Text: ${item.severityText}</div>`
+                        : ''
+                    }
+                    ${
+                      item.severityNumber !== null && item.severityNumber !== undefined
+                        ? `<div class="detail-item">Severity Number: ${item.severityNumber}</div>`
+                        : ''
+                    }
+                    ${
+                      item.flags !== null && item.flags !== undefined
+                        ? `<div class="detail-item">Flags: ${item.flags}</div>`
+                        : ''
+                    }
+                </div>
+
+                <div class="detail-section">
+                    <div class="detail-title">Identifiers</div>
+                    ${
+                      item.traceId
+                        ? `<div class="detail-item" onclick="addCustomFilter('traceId=${item.traceId}')">Trace ID: ${item.traceId}</div>`
+                        : ''
+                    }
+                    ${
+                      item.spanId
+                        ? `<div class="detail-item" onclick="addCustomFilter('spanId=${item.spanId}')">Span ID: ${item.spanId}</div>`
+                        : ''
+                    }
+                    ${item.kind ? `<div class="detail-item">Kind: ${item.kind}</div>` : ''}
+                </div>
+            `;
+
+        if (item.attributes && item.attributes.length > 0) {
+          formattedHtml += `
+                    <div class="detail-section">
+                        <div class="detail-title">Attributes</div>
+                        ${item.attributes
+                          .map((attr) => {
+                            let value =
+                              attr.value.stringValue ||
+                              attr.value.intValue ||
+                              attr.value.doubleValue;
+                            if (attr.value.boolValue !== undefined) {
+                              value = attr.value.boolValue;
+                            }
+                            return `<div class="detail-item" onclick="addCustomFilter('${attr.key}=${value}')">${attr.key}: ${value}</div>`;
+                          })
+                          .join('')}
+                    </div>
+                `;
+        }
+
+        const jsonView = JSON.stringify(item, null, 2);
+
+        const html = `
+          ${formattedHtml}
+          <div class="detail-section">
+            <div class="detail-title" style="display: flex; justify-content: space-between; align-items: center;">
+              Raw JSON
+              <button onclick="openFullscreenJson(${JSON.stringify(item).replace(
+                /"/g,
+                '&quot;',
+              )})" style="padding: 4px 8px; background: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em;">View Fullscreen</button>
+            </div>
+            <div class="json-view">${jsonView}</div>
+          </div>
+        `;
+
+        content.innerHTML = html;
+        panel.classList.add('open');
+        document.body.classList.add('details-open');
+      }
+
+      function closeDetails() {
+        document.getElementById('detailsPanel').classList.remove('open');
+        document.body.classList.remove('details-open');
+      }
+
+      function showTimelineCursor(event, minTime, timeRange, timelineWidth) {
+        const cursor = document.getElementById('timelineCursor');
+        const followTimestamp = document.getElementById('timelineTimestampFollow');
+        const container = event.currentTarget;
+        const rect = container.getBoundingClientRect();
+        const x = event.clientX - rect.left - 100;
+
+        if (x >= 0 && x <= timelineWidth) {
+          const timeOffset = (x / timelineWidth) * timeRange;
+          const currentTime = minTime + timeOffset;
+          const timeStr = formatTimeStringForCursor(currentTime);
+
+          cursor.style.left = x + 100 + 'px';
+          cursor.style.display = 'block';
+
+          followTimestamp.textContent = timeStr;
+          followTimestamp.style.left = event.clientX + 15 + 'px';
+          followTimestamp.style.top = event.clientY - 10 + 'px';
+          followTimestamp.style.display = 'block';
+        }
+      }
+
+      function hideTimelineCursor() {
+        const cursor = document.getElementById('timelineCursor');
+        const followTimestamp = document.getElementById('timelineTimestampFollow');
+        if (cursor) {
+          cursor.style.display = 'none';
+        }
+        if (followTimestamp) {
+          followTimestamp.style.display = 'none';
+        }
+      }
+
+      function generateTimelineRuler(minTime, timeRange, timelineWidth) {
+        const tickInterval = calculateTickInterval(timeRange);
+        const startTick = Math.floor(minTime / tickInterval) * tickInterval;
+        let ticks = '';
+        let lastMajorOffset = -100; // Track spacing between major ticks
+
+        for (let time = startTick; time <= minTime + timeRange; time += tickInterval) {
+          if (time < minTime) continue;
+
+          const offset = ((time - minTime) / timeRange) * timelineWidth;
+          if (offset > timelineWidth) break;
+
+          const isMajor = (time - startTick) % (tickInterval * 5) === 0;
+
+          // Only show major tick labels if they have enough space
+          const showLabel = isMajor && offset - lastMajorOffset > 80;
+          if (showLabel) lastMajorOffset = offset;
+
+          const timeStr = showLabel ? formatTickTime(time) : '';
+
+          ticks += `<div class="timeline-tick ${
+            isMajor ? 'major' : ''
+          }" style="left: ${offset}px;">${timeStr}</div>`;
+        }
+
+        return `<div class="timeline-ruler" style="width: ${
+          timelineWidth + 100
+        }px;">${ticks}</div>`;
+      }
+
+      function calculateTickInterval(timeRange) {
+        // Adjust tick interval based on zoom level - more zoom = finer ticks
+        const baseInterval = timeRange / (20 * zoomLevel); // Target ~20 major ticks per zoom level
+
+        // Round to nice intervals
+        if (baseInterval < 1000) return 100; // 100ms
+        if (baseInterval < 5000) return 1000; // 1 second
+        if (baseInterval < 10000) return 5000; // 5 seconds
+        if (baseInterval < 30000) return 10000; // 10 seconds
+        if (baseInterval < 60000) return 30000; // 30 seconds
+        if (baseInterval < 300000) return 60000; // 1 minute
+        if (baseInterval < 600000) return 300000; // 5 minutes
+        if (baseInterval < 1800000) return 600000; // 10 minutes
+        return 1800000; // 30 minutes
+      }
+
+      function formatTickTime(timestamp) {
+        const date = new Date(timestamp);
+        if (useUTC) {
+          return date.toISOString().substring(11, 19); // HH:MM:SS
+        } else {
+          return date.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+        }
+      }
+
+      function highlightSessionEvents(sessionId, highlight) {
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach((item) => {
+          const itemSessionId = item.dataset.sessionId;
+          if (itemSessionId === sessionId) {
+            if (highlight) {
+              item.style.backgroundColor = '#e3f2fd';
+            } else {
+              item.style.backgroundColor = '';
+            }
+          }
+        });
+      }
+
+      function addCustomFilter(filterText) {
+        if (filterText && !customFilters.includes(filterText)) {
+          customFilters.push(filterText);
+          saveSettings();
+          renderFilterTags();
+          populateSessionsList();
+          applyFilters();
+        }
+      }
+
+      function removeCustomFilter(filterText) {
+        customFilters = customFilters.filter((f) => f !== filterText);
+        saveSettings();
+        renderFilterTags();
+        populateSessionsList();
+        applyFilters();
+      }
+
+      function renderFilterTags() {
+        const container = document.getElementById('filterTags');
+
+        const structuredFilters = customFilters.filter((f) => f.includes('=') && !f.includes('~'));
+        const likeFilters = customFilters.filter((f) => f.includes('~'));
+        const substringFilters = customFilters.filter((f) => !f.includes('=') && !f.includes('~'));
+
+        let html = '';
+
+        if (structuredFilters.length > 0 || likeFilters.length > 0 || substringFilters.length > 0) {
+          html +=
+            '<div style="font-family: monospace; font-size: 0.85em; color: #333; background: #f8f8f8; padding: 4px 8px; border-radius: 4px; border: 1px solid #ddd;">WHERE ';
+
+          const allParts = [];
+
+          if (structuredFilters.length > 0) {
+            const structuredPart = structuredFilters
+              .map(
+                (f) =>
+                  `<span style="color: #2196f3; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                    /'/g,
+                    '&#39;',
+                  )}')">×${f.replace(/'/g, '&#39;')}</span>`,
+              )
+              .join(
+                ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleStructuredMode()">${
+                  structuredFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
+                }</span> `,
+              );
+
+            if (structuredFilters.length > 1) {
+              allParts.push(`(${structuredPart})`);
+            } else {
+              allParts.push(structuredPart);
+            }
+          }
+
+          if (substringFilters.length > 0) {
+            const substringPart = substringFilters
+              .map((f) => {
+                const isNegated = f.startsWith('!');
+                const displayTerm = isNegated ? f.slice(1) : f;
+                const operator = isNegated ? 'NOT CONTAINS' : 'CONTAINS';
+                return `<span style="color: #ff9800; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                  /'/g,
+                  '&#39;',
+                )}')">×${operator}('${displayTerm.replace(/'/g, '&#39;')}')</span>`;
+              })
+              .join(
+                ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleSubstringMode()">${
+                  substringFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
+                }</span> `,
+              );
+
+            if (substringFilters.length > 1) {
+              allParts.push(`(${substringPart})`);
+            } else {
+              allParts.push(substringPart);
+            }
+          }
+
+          if (likeFilters.length > 0) {
+            const likePart = likeFilters
+              .map(
+                (f) =>
+                  `<span style="color: #9c27b0; font-weight: bold; cursor: pointer; text-decoration: underline;" onclick="removeCustomFilter('${f.replace(
+                    /'/g,
+                    '&#39;',
+                  )}')">×${f.replace(/'/g, '&#39;').replace('~', ' LIKE ')}</span>`,
+              )
+              .join(
+                ` <span style="color: #666; cursor: pointer; font-weight: bold; padding: 2px 4px; border-radius: 2px; background: #e0e0e0;" onclick="toggleStructuredMode()">${
+                  structuredFilterMode === 'intersection' ? 'INTERSECT' : 'UNION'
+                }</span> `,
+              );
+
+            if (likeFilters.length > 1) {
+              allParts.push(`(${likePart})`);
+            } else {
+              allParts.push(likePart);
+            }
+          }
+
+          html += allParts.join(' <span style="color: #666; font-weight: bold;">AND</span> ');
+          html += '</div>';
+        }
+
+        container.innerHTML = html;
+      }
+
+      function clearAllFilters() {
+        customFilters = [];
+        saveSettings();
+        renderFilterTags();
+        applyFilters();
+      }
+
+      function toggleSubstringMode() {
+        substringFilterMode = substringFilterMode === 'intersection' ? 'union' : 'intersection';
+        updateSubstringModeButton();
+        renderFilterTags();
+        saveSettings();
+        applyFilters();
+      }
+
+      function toggleStructuredMode() {
+        structuredFilterMode = structuredFilterMode === 'intersection' ? 'union' : 'intersection';
+        renderFilterTags();
+        saveSettings();
+        applyFilters();
+      }
+
+      function updateSubstringModeButton() {
+        const button = document.getElementById('substringModeToggle');
+        if (button) {
+          button.textContent = substringFilterMode === 'intersection' ? 'AND' : 'OR';
+          button.style.background = substringFilterMode === 'intersection' ? '#2196f3' : '#ff9800';
+        }
+      }
+
+      function openFullscreenJson(item) {
+        const modal = document.getElementById('fullscreenModal');
+        const jsonContainer = document.getElementById('fullscreenJson');
+        const modalTitle = modal.querySelector('.fullscreen-header h3');
+
+        const title = item.name || item.eventName || item.body || 'Event Details';
+        modalTitle.textContent = title;
+
+        jsonContainer.innerHTML = renderJsonWithCollapse(item, 0);
+        modal.classList.add('open');
+      }
+
+      function renderJsonWithCollapse(obj, depth = 0) {
+        if (obj === null) return '<span class="json-null">null</span>';
+        if (typeof obj === 'string')
+          return `<span class="json-string">"${formatJsonString(obj)}"</span>`;
+        if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+        if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+
+        const indent = '  '.repeat(depth);
+        const nextIndent = '  '.repeat(depth + 1);
+
+        if (Array.isArray(obj)) {
+          if (obj.length === 0) return '[]';
+          const id = 'collapse_' + Math.random().toString(36).substr(2, 9);
+          let html = `<span class="json-toggle" onclick="toggleCollapse('${id}')">[−]</span>[`;
+          html += `<div id="${id}">`;
+          obj.forEach((item, i) => {
+            html += `${i > 0 ? '<br>' : ''}${nextIndent}${renderJsonWithCollapse(item, depth + 1)}`;
+            if (i < obj.length - 1) html += ',';
+          });
+          html += `</div>${indent}]`;
+          return html;
+        }
+
+        if (typeof obj === 'object') {
+          const keys = Object.keys(obj);
+          if (keys.length === 0) return '{}';
+          const id = 'collapse_' + Math.random().toString(36).substr(2, 9);
+          let html = `<span class="json-toggle" onclick="toggleCollapse('${id}')">{−}</span>{`;
+          html += `<div id="${id}">`;
+          keys.forEach((key, i) => {
+            html += `${i > 0 ? '<br>' : ''}${nextIndent}<span class="json-key">"${escapeHtml(
+              key,
+            )}"</span>: ${renderJsonWithCollapse(obj[key], depth + 1)}`;
+            if (i < keys.length - 1) html += ',';
+          });
+          html += `</div>${indent}}`;
+          return html;
+        }
+
+        return String(obj);
+      }
+
+      function toggleCollapse(id) {
+        const element = document.getElementById(id);
+        const toggle = element.previousElementSibling;
+        if (element.style.display === 'none') {
+          element.style.display = 'block';
+          toggle.textContent = toggle.textContent.replace('[+]', '[−]').replace('{+}', '{−}');
+        } else {
+          element.style.display = 'none';
+          toggle.textContent = toggle.textContent.replace('[−]', '[+]').replace('{−}', '{+}');
+        }
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      function formatJsonString(str) {
+        return escapeHtml(str)
+          .replace(/\\n/g, '<span style="color: #666;">\\n</span><br>&nbsp;&nbsp;&nbsp;&nbsp;')
+          .replace(/\\t/g, '<span style="color: #666;">\\t</span>')
+          .replace(/\\r/g, '<span style="color: #666;">\\r</span>')
+          .replace(/\\\\/g, '<span style="color: #666;">\\\\</span>')
+          .replace(/\\"/g, '<span style="color: #666;">\\"</span>')
+          .replace(/\n/g, '<span style="color: #666;">\\n</span><br>&nbsp;&nbsp;&nbsp;&nbsp;')
+          .replace(/\t/g, '<span style="color: #666;">\\t</span>')
+          .replace(/\r/g, '<span style="color: #666;">\\r</span>');
+      }
+
+      function closeFullscreenJson() {
+        const modal = document.getElementById('fullscreenModal');
+        modal.classList.remove('open');
+      }
+    </script>
+  </body>
+</html>
