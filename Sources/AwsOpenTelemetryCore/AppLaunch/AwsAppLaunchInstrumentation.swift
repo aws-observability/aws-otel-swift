@@ -65,10 +65,10 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     super.init()
 
     Self.provider = provider
-    AwsOpenTelemetryLogger.debug("AwsAppLaunchInstrumentation initializing with provider: \(type(of: provider))")
+    AwsInternalLogger.debug("AwsAppLaunchInstrumentation initializing with provider: \(type(of: provider))")
 
     // Setup launch end handler
-    AwsOpenTelemetryLogger.debug("Setting up launch end observer for: \(provider.launchEndNotification.rawValue)")
+    AwsInternalLogger.debug("Setting up launch end observer for: \(provider.launchEndNotification.rawValue)")
     launchEndObserver = NotificationCenter.default.addObserver(
       forName: provider.launchEndNotification,
       object: nil,
@@ -78,7 +78,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     }
 
     // Setup warm launch start handler
-    AwsOpenTelemetryLogger.debug("Setting up warm start observer for: \(provider.warmStartNotification.rawValue)")
+    AwsInternalLogger.debug("Setting up warm start observer for: \(provider.warmStartNotification.rawValue)")
     warmStartObserver = NotificationCenter.default.addObserver(
       forName: provider.warmStartNotification,
       object: nil,
@@ -88,7 +88,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     }
 
     // Setup hidden event handler - only needed until first background event
-    AwsOpenTelemetryLogger.debug("Setting up onHidden observer for: \(provider.hiddenNotification.rawValue)")
+    AwsInternalLogger.debug("Setting up onHidden observer for: \(provider.hiddenNotification.rawValue)")
     hiddenObserver = NotificationCenter.default.addObserver(
       forName: provider.hiddenNotification,
       object: nil,
@@ -99,19 +99,19 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       if let observer = self?.hiddenObserver {
         NotificationCenter.default.removeObserver(observer)
         self?.hiddenObserver = nil
-        AwsOpenTelemetryLogger.debug("Removed onHidden observer after first background event")
+        AwsInternalLogger.debug("Removed onHidden observer after first background event")
       }
     }
 
     // Setup observers
-    AwsOpenTelemetryLogger.debug("Setting up \(provider.additionalLifecycleEvents.count) additional lifecycle observers")
+    AwsInternalLogger.debug("Setting up \(provider.additionalLifecycleEvents.count) additional lifecycle observers")
     for event in provider.additionalLifecycleEvents {
       guard lifecycleObservers[event.rawValue] == nil else {
-        AwsOpenTelemetryLogger.debug("Skipping duplicate observer for: \(event.rawValue)")
+        AwsInternalLogger.debug("Skipping duplicate observer for: \(event.rawValue)")
         continue
       }
 
-      AwsOpenTelemetryLogger.debug("Setting up lifecycle observer for: \(event.rawValue)")
+      AwsInternalLogger.debug("Setting up lifecycle observer for: \(event.rawValue)")
       lifecycleObservers[event.rawValue] = NotificationCenter.default.addObserver(
         forName: event,
         object: nil,
@@ -120,7 +120,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         Self.onLifecycleEvent(name: notification.name.rawValue)
       }
     }
-    AwsOpenTelemetryLogger.debug("AwsAppLaunchInstrumentation initialized with \(lifecycleObservers.count) observers")
+    AwsInternalLogger.debug("AwsAppLaunchInstrumentation initialized with \(lifecycleObservers.count) observers")
   }
 
   func onLaunchEnd() {
@@ -128,7 +128,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   }
 
   @objc static func onLaunchEnd() {
-    AwsOpenTelemetryLogger.debug("onColdEnd called")
+    AwsInternalLogger.debug("onColdEnd called")
     lock.withLock {
       guard let provider else { return }
       let endTime = Date()
@@ -138,7 +138,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         let duration = endTime.timeIntervalSince(startTime)
         let isPrewarm = isPrewarm(duration: duration)
 
-        AwsOpenTelemetryLogger.debug("Recording cold launch: duration=\(duration)s, isPrewarm=\(isPrewarm)")
+        AwsInternalLogger.debug("Recording cold launch: duration=\(duration)s, isPrewarm=\(isPrewarm)")
 
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
@@ -158,7 +158,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         lastWarmLaunchStart = nil
         let duration = endTime.timeIntervalSince(startTime)
 
-        AwsOpenTelemetryLogger.debug("Recording warm launch: duration=\(duration)s")
+        AwsInternalLogger.debug("Recording warm launch: duration=\(duration)s")
 
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
@@ -177,7 +177,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   }
 
   @objc static func onWarmStart() {
-    AwsOpenTelemetryLogger.debug("onWarmStart called")
+    AwsInternalLogger.debug("onWarmStart called")
     lock.withLock {
       let now = Date()
       lastWarmLaunchStart = now
@@ -189,7 +189,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   }
 
   @objc static func onLifecycleEvent(name: String) {
-    AwsOpenTelemetryLogger.debug("onLifecycleEvent called: \(name)")
+    AwsInternalLogger.debug("onLifecycleEvent called: \(name)")
 
     logger.logRecordBuilder()
       .setEventName(name)

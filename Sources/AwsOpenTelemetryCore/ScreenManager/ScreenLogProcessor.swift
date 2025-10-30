@@ -16,7 +16,7 @@ class AwsScreenLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, screenManager: AwsScreenManager? = nil) {
     self.nextProcessor = nextProcessor
     self.screenManager = screenManager ?? AwsScreenManagerProvider.getInstance()
-    AwsOpenTelemetryLogger.debug("Initializing AwsSessionLogRecordProcessor")
+    AwsInternalLogger.debug("Initializing AwsSessionLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor

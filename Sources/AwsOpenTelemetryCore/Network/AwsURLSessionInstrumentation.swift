@@ -80,10 +80,10 @@ public class AwsURLSessionInstrumentation {
     let requestURL = url.absoluteString
 
     for url in urlsToExclude where requestURL.hasPrefix(url) {
-      AwsOpenTelemetryLogger.debug("Excluding requestUrl=\(url)")
+      AwsInternalLogger.debug("Excluding requestUrl=\(url)")
       return true
     }
-    AwsOpenTelemetryLogger.debug("Recording requestUrl=\(url)")
+    AwsInternalLogger.debug("Recording requestUrl=\(url)")
     return false
   }
 }

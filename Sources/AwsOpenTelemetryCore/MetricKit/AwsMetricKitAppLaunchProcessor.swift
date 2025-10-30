@@ -37,14 +37,14 @@
     static func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
       guard let diagnostics else { return }
       let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: scopeName)
-      AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) app launch diagnostic(s)")
+      AwsInternalLogger.debug("Processing \(diagnostics.count) app launch diagnostic(s)")
 
       for launch in diagnostics {
         guard let endTime = appBecameActiveTime else {
           // Cache first diagnostic to prevent race condition
           if cachedLaunchDiagnostic == nil {
             cachedLaunchDiagnostic = launch
-            AwsOpenTelemetryLogger.debug("Caching app launch diagnostic - waiting for app to become active")
+            AwsInternalLogger.debug("Caching app launch diagnostic - waiting for app to become active")
           }
           continue
         }
@@ -53,13 +53,13 @@
 
         // Discard abnormally long launches. This may happen in pre-warm launches.
         guard launchDurationSeconds <= 180 else {
-          AwsOpenTelemetryLogger.debug("Skipping app launch span - duration too long: \(launchDurationSeconds)s")
+          AwsInternalLogger.debug("Skipping app launch span - duration too long: \(launchDurationSeconds)s")
           continue
         }
         let startTime = endTime.addingTimeInterval(-launchDurationSeconds)
         let launchType = isColdStart ? "cold" : "warm"
 
-        AwsOpenTelemetryLogger.debug("Creating app launch span with duration \(launchDurationSeconds)s")
+        AwsInternalLogger.debug("Creating app launch span with duration \(launchDurationSeconds)s")
         let span = tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
           .setAttribute(key: AwsMetricKitConstants.appLaunchDuration, value: AttributeValue.double(launchDurationSeconds))

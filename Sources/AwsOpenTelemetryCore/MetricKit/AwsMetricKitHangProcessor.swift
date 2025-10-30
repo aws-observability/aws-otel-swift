@@ -9,12 +9,12 @@
     static func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
       guard let diagnostics else { return }
       let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
-      AwsOpenTelemetryLogger.debug("Processing \(diagnostics.count) hang diagnostic(s)")
+      AwsInternalLogger.debug("Processing \(diagnostics.count) hang diagnostic(s)")
 
       for hang in diagnostics {
         let attributes = buildHangAttributes(from: hang)
 
-        AwsOpenTelemetryLogger.debug("Emitting hang log record with \(attributes.count) attributes")
+        AwsInternalLogger.debug("Emitting hang log record with \(attributes.count) attributes")
         logger.logRecordBuilder()
           .setEventName("device.hang")
           .setAttributes(attributes)

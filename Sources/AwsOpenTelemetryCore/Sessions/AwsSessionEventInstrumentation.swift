@@ -70,13 +70,13 @@ public class AwsSessionEventInstrumentation {
       return
     }
 
-    AwsOpenTelemetryLogger.debug("Installing AwsSessionEventInstrumentation")
+    AwsInternalLogger.debug("Installing AwsSessionEventInstrumentation")
 
     isApplied = true
     // Process any queued sessions
     processQueuedSessions()
 
-    AwsOpenTelemetryLogger.info("AwsSessionEventInstrumentation applied successfully")
+    AwsInternalLogger.info("AwsSessionEventInstrumentation applied successfully")
   }
 
   /// Process any sessions that were queued before instrumentation was applied.
@@ -86,10 +86,10 @@ public class AwsSessionEventInstrumentation {
   /// for all queued sessions and then clears the queue.
   private static func processQueuedSessions() {
     let sessionEvents = AwsSessionEventInstrumentation.queue
-    AwsOpenTelemetryLogger.debug("Processing \(sessionEvents.count) queued session events")
+    AwsInternalLogger.debug("Processing \(sessionEvents.count) queued session events")
 
     if sessionEvents.isEmpty {
-      AwsOpenTelemetryLogger.debug("No queued session events to process")
+      AwsInternalLogger.debug("No queued session events to process")
       return
     }
 
@@ -98,7 +98,7 @@ public class AwsSessionEventInstrumentation {
     }
 
     AwsSessionEventInstrumentation.queue.removeAll()
-    AwsOpenTelemetryLogger.debug("All queued session events processed successfully")
+    AwsInternalLogger.debug("All queued session events processed successfully")
   }
 
   /// Create session start or end log record based on the specified event type.
@@ -121,7 +121,7 @@ public class AwsSessionEventInstrumentation {
   /// and previous session ID (if available).
   /// - Parameter session: The session that has started
   private static func createSessionStartEvent(session: AwsSession) {
-    AwsOpenTelemetryLogger.debug("Creating session.start event for session ID: \(session.id)")
+    AwsInternalLogger.debug("Creating session.start event for session ID: \(session.id)")
 
     var attributes: [String: AttributeValue] = [
       AwsSessionConstants.id: AttributeValue.string(session.id)
@@ -147,11 +147,11 @@ public class AwsSessionEventInstrumentation {
   /// - Parameter session: The expired session
   private static func createSessionEndEvent(session: AwsSession) {
     guard let endTime = session.endTime else {
-      AwsOpenTelemetryLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
+      AwsInternalLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
       return
     }
 
-    AwsOpenTelemetryLogger.debug("Creating session.end event for session ID: \(session.id)")
+    AwsInternalLogger.debug("Creating session.end event for session ID: \(session.id)")
 
     var attributes: [String: AttributeValue] = [
       AwsSessionConstants.id: AttributeValue.string(session.id)
@@ -179,16 +179,16 @@ public class AwsSessionEventInstrumentation {
   /// - Parameter session: The session to process
   static func addSession(session: AwsSession, eventType: SessionEventType) {
     if isApplied {
-      AwsOpenTelemetryLogger.debug("Posting notification for \(eventType) session event: \(session.id)")
+      AwsInternalLogger.debug("Posting notification for \(eventType) session event: \(session.id)")
       createSessionEvent(session: session, eventType: eventType)
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
       if queue.count >= maxQueueSize {
-        AwsOpenTelemetryLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping new session event: \(session.id)")
+        AwsInternalLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping new session event: \(session.id)")
         return
       }
-      AwsOpenTelemetryLogger.debug("Queueing \(eventType) session event for later processing: \(session.id)")
+      AwsInternalLogger.debug("Queueing \(eventType) session event for later processing: \(session.id)")
       queue.append(AwsSessionEvent(session: session, eventType: eventType))
     }
   }

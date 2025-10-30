@@ -30,7 +30,7 @@ public class OfflineStorage {
 
     container.loadPersistentStores { _, error in
       if let error {
-        AwsOpenTelemetryLogger.error("CoreData error: \(error)")
+        AwsInternalLogger.error("CoreData error: \(error)")
       }
     }
     return container
@@ -71,7 +71,7 @@ public class OfflineStorage {
       }
       return (startTime: startTime, createdAt: createdAt)
     } catch {
-      AwsOpenTelemetryLogger.error("Failed to read hang record: \(error)")
+      AwsInternalLogger.error("Failed to read hang record: \(error)")
       return nil
     }
   }
@@ -89,7 +89,7 @@ public class OfflineStorage {
       record.setValue(endTime, forKey: "endTime")
       return saveContext()
     } catch {
-      AwsOpenTelemetryLogger.error("Failed to update hang record: \(error)")
+      AwsInternalLogger.error("Failed to update hang record: \(error)")
       return false
     }
   }
@@ -106,7 +106,7 @@ public class OfflineStorage {
       }
       return saveContext()
     } catch {
-      AwsOpenTelemetryLogger.error("Failed to delete hang record: \(error)")
+      AwsInternalLogger.error("Failed to delete hang record: \(error)")
       return false
     }
   }
@@ -127,7 +127,7 @@ public class OfflineStorage {
         return (id: id, startTime: startTime, createdAt: createdAt)
       }
     } catch {
-      AwsOpenTelemetryLogger.error("Failed to get unresolved hangs: \(error)")
+      AwsInternalLogger.error("Failed to get unresolved hangs: \(error)")
       return []
     }
   }
@@ -146,7 +146,7 @@ public class OfflineStorage {
         _ = saveContext()
       }
     } catch {
-      AwsOpenTelemetryLogger.error("Failed to enforce storage limit: \(error)")
+      AwsInternalLogger.error("Failed to enforce storage limit: \(error)")
     }
   }
 
@@ -155,7 +155,7 @@ public class OfflineStorage {
       try context.save()
       return true
     } catch {
-      AwsOpenTelemetryLogger.error("Failed to save context: \(error)")
+      AwsInternalLogger.error("Failed to save context: \(error)")
       return false
     }
   }

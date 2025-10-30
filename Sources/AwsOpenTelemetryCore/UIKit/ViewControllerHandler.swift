@@ -176,7 +176,7 @@
       let now = Date()
 
       queue.async {
-        AwsOpenTelemetryLogger.debug("[ViewControllerHandler] Cleaned up spans due to app backgrounding")
+        AwsInternalLogger.debug("[ViewControllerHandler] Cleaned up spans due to app backgrounding")
       }
     }
 
@@ -185,7 +185,7 @@
         // Reset any remaining state when returning to foreground
         // self.clearAllSpans()
 
-        AwsOpenTelemetryLogger.debug("[ViewControllerHandler] Reset state due to app foregrounding")
+        AwsInternalLogger.debug("[ViewControllerHandler] Reset state due to app foregrounding")
       }
     }
 

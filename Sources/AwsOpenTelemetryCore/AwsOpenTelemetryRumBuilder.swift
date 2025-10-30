@@ -74,13 +74,13 @@ public class AwsOpenTelemetryRumBuilder {
   public static func create(config: AwsOpenTelemetryConfig) throws -> AwsOpenTelemetryRumBuilder {
     // Check if the SDK is already initialized
     guard !AwsOpenTelemetryAgent.shared.isInitialized else {
-      AwsOpenTelemetryLogger.debug("SDK is already initialized.")
+      AwsInternalLogger.debug("SDK is already initialized.")
       throw AwsOpenTelemetryConfigError.alreadyInitialized
     }
 
     // Store the configuration in the shared instance
     AwsOpenTelemetryAgent.shared.configuration = config
-    AwsOpenTelemetryLogger.info("Creating builder with region: \(config.aws.region), appMonitorId: \(config.aws.rumAppMonitorId)")
+    AwsInternalLogger.info("Creating builder with region: \(config.aws.region), appMonitorId: \(config.aws.rumAppMonitorId)")
 
     return AwsOpenTelemetryRumBuilder(config: config)
   }
@@ -158,7 +158,7 @@ public class AwsOpenTelemetryRumBuilder {
 
     // Mark the SDK as initialized
     AwsOpenTelemetryAgent.shared.isInitialized = true
-    AwsOpenTelemetryLogger.info("AwsOpenTelemetry initialized successfully")
+    AwsInternalLogger.info("AwsOpenTelemetry initialized successfully")
 
     buildInstrumentations(plan: instrumentationPlan)
 
@@ -222,10 +222,10 @@ public class AwsOpenTelemetryRumBuilder {
             metricKitSubscriber.subscribe()
             AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
           } else {
-            AwsOpenTelemetryLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
+            AwsInternalLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
           }
         } else {
-          AwsOpenTelemetryLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
+          AwsInternalLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
         }
       #endif
 

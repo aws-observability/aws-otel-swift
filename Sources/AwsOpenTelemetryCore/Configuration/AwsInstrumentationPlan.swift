@@ -49,7 +49,7 @@ struct AwsInstrumentationPlan {
   /// Creates an AwsInstrumentationPlan from AwsOpenTelemetryConfig
   static func from(config: AwsOpenTelemetryConfig) -> AwsInstrumentationPlan {
     guard let telemetry: TelemetryConfig = config.telemetry else {
-      AwsOpenTelemetryLogger.debug("No telemetry config provided, using default plan")
+      AwsInternalLogger.debug("No telemetry config provided, using default plan")
       return Self.default
     }
 
@@ -60,7 +60,7 @@ struct AwsInstrumentationPlan {
     let sessionEventsEnabled = telemetry.sessionEvents?.enabled == true
     let viewEnabled = telemetry.view?.enabled == true
 
-    AwsOpenTelemetryLogger.debug("Creating instrumentation plan: sessionEvents=\(sessionEventsEnabled), view=\(viewEnabled), crash=\(crashEnabled), hang=\(hangEnabled), startup=\(startupEnabled), network=\(networkEnabled)")
+    AwsInternalLogger.debug("Creating instrumentation plan: sessionEvents=\(sessionEventsEnabled), view=\(viewEnabled), crash=\(crashEnabled), hang=\(hangEnabled), startup=\(startupEnabled), network=\(networkEnabled)")
 
     let urlSessionConfig = networkEnabled ? AwsURLSessionConfig(region: config.aws.region, exportOverride: config.exportOverride) : nil
     let metricKitConfig = (crashEnabled || hangEnabled || startupEnabled) ? AwsMetricKitConfig(crashes: crashEnabled, hangs: hangEnabled, startup: startupEnabled) : nil
@@ -73,10 +73,10 @@ struct AwsInstrumentationPlan {
         let overrides = [tracesInfo, logsInfo].filter { !$0.isEmpty }.joined(separator: ", ")
         overrideInfo = overrides.isEmpty ? "" : ", overrides: \(overrides)"
       }
-      AwsOpenTelemetryLogger.debug("URLSession config created for region: \(config.aws.region)\(overrideInfo)")
+      AwsInternalLogger.debug("URLSession config created for region: \(config.aws.region)\(overrideInfo)")
     }
     if metricKitConfig != nil {
-      AwsOpenTelemetryLogger.debug("MetricKit config created with crashes=\(crashEnabled), hangs=\(hangEnabled), startup=\(startupEnabled)")
+      AwsInternalLogger.debug("MetricKit config created with crashes=\(crashEnabled), hangs=\(hangEnabled), startup=\(startupEnabled)")
     }
 
     return AwsInstrumentationPlan(

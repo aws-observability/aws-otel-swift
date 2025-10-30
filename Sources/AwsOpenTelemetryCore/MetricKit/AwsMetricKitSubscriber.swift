@@ -18,23 +18,23 @@
       if #available(iOS 16.0, *), config.startup {
         AwsMetricKitAppLaunchProcessor.initialize()
       }
-      AwsOpenTelemetryLogger.debug("Successfully initialized")
+      AwsInternalLogger.debug("Successfully initialized")
     }
 
     func subscribe() {
-      AwsOpenTelemetryLogger.debug("Registering with MXMetricManager")
+      AwsInternalLogger.debug("Registering with MXMetricManager")
       MXMetricManager.shared.add(self)
-      AwsOpenTelemetryLogger.debug("Successfully registered with MXMetricManager")
+      AwsInternalLogger.debug("Successfully registered with MXMetricManager")
     }
 
     deinit {
-      AwsOpenTelemetryLogger.debug("Unregistering from MXMetricManager")
+      AwsInternalLogger.debug("Unregistering from MXMetricManager")
       MXMetricManager.shared.remove(self)
-      AwsOpenTelemetryLogger.debug("Successfully deinitialized")
+      AwsInternalLogger.debug("Successfully deinitialized")
     }
 
     func didReceive(_ payloads: [MXDiagnosticPayload]) {
-      AwsOpenTelemetryLogger.debug("Received \(payloads.count) diagnostic payload(s)")
+      AwsInternalLogger.debug("Received \(payloads.count) diagnostic payload(s)")
       for payload in payloads {
         // Disable MXCrashDiagnostic for beta scope
         // if config.crashes {

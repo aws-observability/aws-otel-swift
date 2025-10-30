@@ -30,7 +30,7 @@ public class AwsSessionSpanProcessor: SpanProcessor {
   /// Initializes the span processor with a session manager
   /// - Parameter sessionManager: The session manager to use for retrieving session IDs
   public init(sessionManager: AwsSessionManager?) {
-    AwsOpenTelemetryLogger.debug("Initializing AwsSessionSpanProcessor")
+    AwsInternalLogger.debug("Initializing AwsSessionSpanProcessor")
     self.sessionManager = sessionManager ?? AwsSessionManagerProvider.getInstance()
   }
 
@@ -44,7 +44,7 @@ public class AwsSessionSpanProcessor: SpanProcessor {
     if session.previousId != nil {
       span.setAttribute(key: AwsSessionConstants.previousId, value: session.previousId!)
     }
-    AwsOpenTelemetryLogger.debug("Session attributes added to span: \(session.id)")
+    AwsInternalLogger.debug("Session attributes added to span: \(session.id)")
   }
 
   /// Called when a span ends - no action needed for session tracking

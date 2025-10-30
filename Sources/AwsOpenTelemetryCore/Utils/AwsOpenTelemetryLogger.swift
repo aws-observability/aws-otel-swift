@@ -17,7 +17,7 @@ import Foundation
 import os.log
 
 /// Centralized logging utility for AWS OpenTelemetry SDK that respects debug configuration
-public enum AwsOpenTelemetryLogger {
+public enum AwsInternalLogger {
   /// Log level types
   private enum LogLevel: String {
     case debug = "DEBUG"

@@ -18,7 +18,7 @@ class AwsUIDLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, uidManager: AwsUIDManager? = nil) {
     self.nextProcessor = nextProcessor
     self.uidManager = uidManager ?? AwsUIDManagerProvider.getInstance()
-    AwsOpenTelemetryLogger.debug("Initializing AwsUIDLogRecordProcessor")
+    AwsInternalLogger.debug("Initializing AwsUIDLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds UID and forwards to next processor

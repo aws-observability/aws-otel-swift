@@ -21,7 +21,7 @@ public class AwsScreenManagerProvider {
   public static func getInstance() -> AwsScreenManager {
     return lock.withLock {
       if _instance == nil {
-        AwsOpenTelemetryLogger.debug("Creating default AwsScreenManager instance")
+        AwsInternalLogger.debug("Creating default AwsScreenManager instance")
         _instance = AwsScreenManager()
       }
       return _instance!

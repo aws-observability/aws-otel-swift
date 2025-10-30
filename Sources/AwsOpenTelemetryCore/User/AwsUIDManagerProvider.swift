@@ -36,7 +36,7 @@ public class AwsUIDManagerProvider {
   public static func getInstance() -> AwsUIDManager {
     return lock.withLock {
       if _instance == nil {
-        AwsOpenTelemetryLogger.debug("Creating default AwsUIDManager instance")
+        AwsInternalLogger.debug("Creating default AwsUIDManager instance")
         _instance = AwsUIDManager()
       }
       return _instance!

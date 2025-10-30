@@ -53,11 +53,11 @@ class KSCrashInstrumentation: CrashProtocol {
 
   static func install() {
     guard !isInstalled else {
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation already installed")
+      AwsInternalLogger.debug("KSCrashInstrumentation already installed")
       return
     }
 
-    AwsOpenTelemetryLogger.debug("Installing KSCrashInstrumentation")
+    AwsInternalLogger.debug("Installing KSCrashInstrumentation")
 
     do {
       let config = KSCrashConfiguration()
@@ -66,9 +66,9 @@ class KSCrashInstrumentation: CrashProtocol {
 
       try reporter.install(with: config)
       isInstalled = true
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation installed successfully")
+      AwsInternalLogger.debug("KSCrashInstrumentation installed successfully")
     } catch {
-      AwsOpenTelemetryLogger.error("KSCrashInstrumentation failed to install: \(error)")
+      AwsInternalLogger.error("KSCrashInstrumentation failed to install: \(error)")
       return
     }
 
@@ -104,28 +104,28 @@ class KSCrashInstrumentation: CrashProtocol {
       userInfo[AwsSessionConstants.previousId] = prevSessionId
     }
     reporter.userInfo = userInfo
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation updated user info: \(userInfo)")
+    AwsInternalLogger.debug("KSCrashInstrumentation updated user info: \(userInfo)")
   }
 
   /// Report cached crashes from KSCrash store (just a local file)
   static func processStoredCrashes() {
     // Init
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation KSCrash installed: \(isInstalled)")
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation KSCrash crashed last launch: \(reporter.crashedLastLaunch)")
+    AwsInternalLogger.debug("KSCrashInstrumentation KSCrash installed: \(isInstalled)")
+    AwsInternalLogger.debug("KSCrashInstrumentation KSCrash crashed last launch: \(reporter.crashedLastLaunch)")
     guard let reportStore = reporter.reportStore else {
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation no report store available")
+      AwsInternalLogger.debug("KSCrashInstrumentation no report store available")
       return
     }
 
     // Pull crash reports
     let reportIDs = reportStore.reportIDs
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processing \(reportIDs.count) stored crashes")
+    AwsInternalLogger.debug("KSCrashInstrumentation processing \(reportIDs.count) stored crashes")
     for (index, reportID) in reportIDs.enumerated() {
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processing crash report \(index + 1)/\(reportIDs.count)")
+      AwsInternalLogger.debug("KSCrashInstrumentation processing crash report \(index + 1)/\(reportIDs.count)")
 
       guard let id = reportID as? Int64,
             let crashReport = reportStore.report(for: id) else {
-        AwsOpenTelemetryLogger.debug("KSCrashInstrumentation failed to load crash report \(reportID)")
+        AwsInternalLogger.debug("KSCrashInstrumentation failed to load crash report \(reportID)")
         continue
       }
 
@@ -134,10 +134,10 @@ class KSCrashInstrumentation: CrashProtocol {
 
       // Delete processed report
       reportStore.deleteReport(with: id)
-      AwsOpenTelemetryLogger.debug("KSCrashInstrumentation reported and deleted crash report with id= \(id)")
+      AwsInternalLogger.debug("KSCrashInstrumentation reported and deleted crash report with id= \(id)")
     }
 
-    AwsOpenTelemetryLogger.debug("KSCrashInstrumentation processed \(reportIDs.count) stored crashes")
+    AwsInternalLogger.debug("KSCrashInstrumentation processed \(reportIDs.count) stored crashes")
   }
 
   // Report a KSCrash report in Apple format

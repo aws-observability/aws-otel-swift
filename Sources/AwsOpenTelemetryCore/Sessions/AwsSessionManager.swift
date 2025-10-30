@@ -26,7 +26,7 @@ public class AwsSessionManager {
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
   public init(configuration: AwsSessionConfig = .default) {
-    AwsOpenTelemetryLogger.debug("Initializing AwsSessionManager with timeout: \(configuration.sessionTimeout)s")
+    AwsInternalLogger.debug("Initializing AwsSessionManager with timeout: \(configuration.sessionTimeout)s")
     self.configuration = configuration
     restoreSessionFromDisk()
   }
@@ -36,7 +36,7 @@ public class AwsSessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> AwsSession {
-    AwsOpenTelemetryLogger.debug("Getting current session: id=$\(session?.id ?? "nil")")
+    AwsInternalLogger.debug("Getting current session: id=$\(session?.id ?? "nil")")
     // We only lock once when fetching the current session to expire with thread safety
     return lock.withLock {
       refreshSession()
@@ -56,7 +56,7 @@ public class AwsSessionManager {
     let previousId = session?.id
     let newId = UUID().uuidString
 
-    AwsOpenTelemetryLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
+    AwsInternalLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
 
     /// Queue the previous session for a `session.end` event
     if let previousSession = session {
@@ -80,14 +80,14 @@ public class AwsSessionManager {
     if session == nil || session!.isExpired() {
       // Start new session if none exists or expired
       if session == nil {
-        AwsOpenTelemetryLogger.debug("No session exists, creating new one")
+        AwsInternalLogger.debug("No session exists, creating new one")
       } else {
-        AwsOpenTelemetryLogger.debug("Session expired, creating new one")
+        AwsInternalLogger.debug("Session expired, creating new one")
       }
       startSession()
     } else {
       // Otherwise, extend the existing session but preserve the startTime
-      AwsOpenTelemetryLogger.debug("Extending existing session: \(session!.id)")
+      AwsInternalLogger.debug("Extending existing session: \(session!.id)")
       session = AwsSession(
         id: session!.id,
         expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
@@ -109,6 +109,6 @@ public class AwsSessionManager {
   /// Restores a previously saved session from UserDefaults
   private func restoreSessionFromDisk() {
     session = AwsSessionStore.load()
-    AwsOpenTelemetryLogger.info("Attempted to restore session from disk id=\(session?.id ?? "none")")
+    AwsInternalLogger.info("Attempted to restore session from disk id=\(session?.id ?? "none")")
   }
 }

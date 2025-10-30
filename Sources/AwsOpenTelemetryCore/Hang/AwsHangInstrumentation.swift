@@ -44,7 +44,7 @@ public class AwsHangInstrumentation {
   static let shared = AwsHangInstrumentation()
 
   public init(stackTraceCollector: StackTraceCollector = PLStackTraceCollector()) {
-    AwsOpenTelemetryLogger.debug("AwsHangInstrumentation: Initializing")
+    AwsInternalLogger.debug("AwsHangInstrumentation: Initializing")
     hangPredetectionThreshold = hangThreshold * 2 / 3 // lower threshold to collect stacktrace during ongoing hangs
     tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.HANG)
     logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.HANG)
@@ -53,7 +53,7 @@ public class AwsHangInstrumentation {
   }
 
   func startWatchdog() {
-    AwsOpenTelemetryLogger.debug("AwsHangInstrumentation: Starting watchdog")
+    AwsInternalLogger.debug("AwsHangInstrumentation: Starting watchdog")
 
     DispatchQueue.main.async {
       self.setupRunLoopObserver()
@@ -67,7 +67,7 @@ public class AwsHangInstrumentation {
   // We use run loop hang to report hangs because of its precision and ability to
   // handle edge cases without much hassle (e.g. when application is moved to background)
   func setupRunLoopObserver() {
-    AwsOpenTelemetryLogger.debug("AwsHangInstrumentation: Setting up RunLoop observer")
+    AwsInternalLogger.debug("AwsHangInstrumentation: Setting up RunLoop observer")
     let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue | CFRunLoopActivity.afterWaiting.rawValue, true, 0) { [weak self] _, activity in
       guard let self else { return }
 
@@ -77,12 +77,12 @@ public class AwsHangInstrumentation {
         hangStart = now
       } else if activity == CFRunLoopActivity.beforeWaiting {
         guard let hangStart else {
-          AwsOpenTelemetryLogger.debug("Activity is BeforeWaiting without hangStart")
+          AwsInternalLogger.debug("Activity is BeforeWaiting without hangStart")
           return
         }
         let hangDuration = now - hangStart
         if hangDuration >= hangThreshold {
-          AwsOpenTelemetryLogger.debug("RunLoop reporter detected hang of \(Int(hangDuration * 1000))ms")
+          AwsInternalLogger.debug("RunLoop reporter detected hang of \(Int(hangDuration * 1000))ms")
           reportHang(startTime: hangStart, endTime: now)
         }
         self.hangStart = nil // if main thread is resolved, then there is no ongoing hang anymore
@@ -97,7 +97,7 @@ public class AwsHangInstrumentation {
   // trace before the main thread has recovered. This must be done from a background thread
   // because the main thread is obviously unavailable during a hang.
   func startBackgroundMonitoring() {
-    AwsOpenTelemetryLogger.debug("Starting background monitoring")
+    AwsInternalLogger.debug("Starting background monitoring")
 
     monitoringTimer = DispatchSource.makeTimerSource(queue: watchdogQueue)
     monitoringTimer?.schedule(deadline: .now(), repeating: .milliseconds(100))
@@ -123,15 +123,15 @@ public class AwsHangInstrumentation {
 
     // Collect the live stack trace because there is an ongoing hang that is likely to exceed our hang threshold
     if hangDuration >= hangPredetectionThreshold {
-      AwsOpenTelemetryLogger.debug("Ping reporter detected an ongoing hang of \(Int(hangDuration * 1000))ms")
+      AwsInternalLogger.debug("Ping reporter detected an ongoing hang of \(Int(hangDuration * 1000))ms")
 
       // We rely on StackTraceCollector to safely generate live reports
       guard let liveReportData = stackTraceCollector.generateLiveStackTrace() else {
-        AwsOpenTelemetryLogger.debug("Failed to generate live stack trace")
+        AwsInternalLogger.debug("Failed to generate live stack trace")
         return
       }
       rawStackTrace = liveReportData
-      AwsOpenTelemetryLogger.debug("Captured raw stack trace in \(Int((CFAbsoluteTimeGetCurrent() - now) * 1000))ms")
+      AwsInternalLogger.debug("Captured raw stack trace in \(Int((CFAbsoluteTimeGetCurrent() - now) * 1000))ms")
     }
   }
 
@@ -148,13 +148,13 @@ public class AwsHangInstrumentation {
         span.setAttribute(key: "exception.message", value: liveStackTrace.message)
         span.setAttribute(key: "exception.stacktrace", value: liveStackTrace.stacktrace)
         span.end(time: Date(timeIntervalSinceReferenceDate: endTime))
-        AwsOpenTelemetryLogger.debug("Recorded app hang WITH stack trace")
+        AwsInternalLogger.debug("Recorded app hang WITH stack trace")
       }
     } else {
       span.setAttribute(key: "exception.message", value: "Hang detected at unknown location")
       span.setAttribute(key: "exception.stacktrace", value: "No stack trace captured")
       span.end(time: Date(timeIntervalSinceReferenceDate: endTime))
-      AwsOpenTelemetryLogger.debug("Recorded app hang WITHOUT stack trace")
+      AwsInternalLogger.debug("Recorded app hang WITHOUT stack trace")
     }
   }
 }

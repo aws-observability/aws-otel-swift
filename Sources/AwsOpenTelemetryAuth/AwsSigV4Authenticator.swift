@@ -140,7 +140,7 @@ public class AwsSigV4Authenticator {
 
       return request
     } catch {
-      AwsOpenTelemetryLogger.error("[AwsOpenTelemetryAuth] Error signing request: \(error)")
+      AwsInternalLogger.error("[AwsOpenTelemetryAuth] Error signing request: \(error)")
       return urlRequest
     }
   }
