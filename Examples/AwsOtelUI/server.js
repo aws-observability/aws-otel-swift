@@ -11,23 +11,21 @@ const LogService = root.opentelemetry.proto.collector.logs.v1.ExportLogsServiceR
 
 console.log('Using official OpenTelemetry protobuf definitions');
 
-// Helper function to extract readable strings from binary data
-function extractReadableData(buffer) {
-  const text = buffer.toString('utf8');
-  const readable = text.replace(/[\x00-\x1F\x7F-\xFF]/g, (char) => {
-    const code = char.charCodeAt(0);
-    return code >= 32 && code <= 126 ? char : '';
-  });
-
-  // Extract meaningful strings (3+ characters)
-  const strings = readable.match(/[a-zA-Z0-9._-]{3,}/g) || [];
-  const uniqueStrings = [...new Set(strings)];
-
-  return {
-    hex: buffer.toString('hex'),
-    extractedStrings: uniqueStrings,
-    rawText: readable,
-  };
+// Helper function to extract data from protobuf buffer
+function extractReadableData(buffer, service) {
+  try {
+    const decoded = service.decode(buffer);
+    return {
+      decoded: decoded.toJSON(),
+      extractedStrings: [],
+    };
+  } catch (err) {
+    return {
+      error: err.message,
+      extractedStrings: [],
+      hex: buffer.toString('hex').substring(0, 200),
+    };
+  }
 }
 
 const app = express();
@@ -64,11 +62,10 @@ app.post('/v1/traces', (req, res) => {
   } catch (err) {
     console.log('Error decoding traces:', err.message);
     if (Buffer.isBuffer(req.body)) {
-      const extracted = extractReadableData(req.body);
+      const extracted = extractReadableData(req.body, TraceService);
       data = JSON.stringify({
         type: 'protobuf_trace_data_error',
-        error: err.message,
-        extractedStrings: extracted.extractedStrings,
+        ...extracted,
       });
     } else {
       data = JSON.stringify(req.body);
@@ -96,11 +93,10 @@ app.post('/v1/logs', (req, res) => {
   } catch (err) {
     console.log('Error decoding logs:', err.message);
     if (Buffer.isBuffer(req.body)) {
-      const extracted = extractReadableData(req.body);
+      const extracted = extractReadableData(req.body, LogService);
       data = JSON.stringify({
         type: 'protobuf_log_data_error',
-        error: err.message,
-        extractedStrings: extracted.extractedStrings,
+        ...extracted,
       });
     } else {
       data = JSON.stringify(req.body);
