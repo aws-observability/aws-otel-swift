@@ -40,7 +40,8 @@ public class AwsScreenManager {
   func logViewDidAppear(screen: String,
                         type: AwsViewType,
                         timestamp: Date,
-                        additionalAttributes: [String: AttributeValue]? = nil) {
+                        additionalAttributes: [String: AttributeValue]? = nil,
+                        logger: Logger = logger) {
     queue.async {
       var attributes: [String: AttributeValue] = [
         AwsViewDidAppear.screenName: AttributeValue.string(screen),
@@ -56,7 +57,7 @@ public class AwsScreenManager {
         attributes.merge(additionalAttributes) { _, new in new }
       }
 
-      Self.logger.logRecordBuilder()
+      logger.logRecordBuilder()
         .setEventName(AwsViewDidAppear.name)
         .setTimestamp(timestamp)
         .setAttributes(attributes)

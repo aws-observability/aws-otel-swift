@@ -236,7 +236,9 @@
         AwsScreenManagerProvider.getInstance().logViewDidAppear(
           screen: viewController.screenName,
           type: .uikit,
-          timestamp: now
+          timestamp: now,
+          additionalAttributes: nil,
+          logger: Self.logger
         )
       }
     }

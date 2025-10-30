@@ -71,15 +71,11 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     guard isViewInstrumentationEnabled else {
       return content()
         .onAppear() // placeholder to satisfy return type
-        .onDisappear()
     }
 
     return content()
       .onAppear {
         handleViewAppear()
-      }
-      .onDisappear {
-        handleViewDisappear()
       }
   }
 
@@ -108,10 +104,12 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     }
 
     // Record ViewDidAppear log event
-    AwsScreenManagerProvider.getInstance().logViewDidAppear(screen: screenName, type: .swiftui, timestamp: now, additionalAttributes: attributes)
-  }
-
-  func handleViewDisappear() {
-    // noop
+    AwsScreenManagerProvider.getInstance().logViewDidAppear(
+      screen: screenName,
+      type: .swiftui,
+      timestamp: now,
+      additionalAttributes: attributes,
+      logger: Self.logger
+    )
   }
 }
