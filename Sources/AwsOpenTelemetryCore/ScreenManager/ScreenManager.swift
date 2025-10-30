@@ -26,29 +26,42 @@ public struct AwsScreenView {
 public class AwsScreenManager {
   private(set) var interaction = 0
   public private(set) var previousView: String?
-  private let lock = NSLock()
+  private let queue: DispatchQueue
+  private static let queueLabel = "software.amazon.opentelemetry.AwsScreenManager"
+
+  init(queue: DispatchQueue = DispatchQueue(label: queueLabel, qos: .utility)) {
+    self.queue = queue
+  }
 
   private static var logger: Logger {
-    return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.UIKIT_VIEW)
+    return OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.SCREEN_MANAGER)
   }
 
   func logViewDidAppear(screen: String,
                         type: AwsViewType,
-                        timestamp: Date) {
-    lock.withLock {
+                        timestamp: Date,
+                        additionalAttributes: [String: AttributeValue]? = nil) {
+    queue.async {
       var attributes: [String: AttributeValue] = [
         AwsViewDidAppear.screenName: AttributeValue.string(screen),
         AwsViewDidAppear.type: AttributeValue.string(type.rawValue),
         AwsViewDidAppear.interaction: AttributeValue.int(self.interaction)
       ]
+
       if let previousView = self.previousView {
         attributes[AwsViewDidAppear.parentName] = AttributeValue.string(previousView)
       }
+
+      if let additionalAttributes {
+        attributes.merge(additionalAttributes) { _, new in new }
+      }
+
       Self.logger.logRecordBuilder()
         .setEventName(AwsViewDidAppear.name)
         .setTimestamp(timestamp)
         .setAttributes(attributes)
         .emit()
+
       self.previousView = screen
       self.interaction += 1
     }

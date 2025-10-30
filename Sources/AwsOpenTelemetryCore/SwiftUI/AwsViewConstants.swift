@@ -13,39 +13,6 @@
  * permissions and limitations under the License.
  */
 
-/// Constants used by view instrumentation for span names and attributes
-public enum AwsViewConstants {
-  // Common
-  public static let TimeToFirstAppear = "TimeToFirstAppear"
-  public static let attributeScreenName = "screen.name"
-  public static let attributeViewType = "view.type"
-  public static let spanNameTimeOnScreen = "TimeOnScreen"
-
-  // SwiftUI
-  public static let valueSwiftUI = "swiftui"
-  public static let spanNameView = "view"
-  public static let spanNameBody = "body"
-  public static let valueBody = "body"
-  public static let spanNameOnAppear = "onAppear"
-  public static let valueOnAppear = "onAppear"
-  public static let spanNameOnDisappear = "onDisappear"
-  public static let valueOnDisappear = "onDisappear"
-  public static let attributeViewLifecycle = "view.lifecycle"
-  public static let attributeViewBodyCount = "view.body.count"
-  public static let attributeViewAppearCount = "view.appear.count"
-  public static let attributeViewDisappearCount = "view.disappear.count"
-
-  // UIKit
-  public static let valueUIKit = "uikit"
-  public static let spanNameViewDidLoad = "ViewDidLoad"
-  public static let spanNameViewWillAppear = "ViewWillAppear"
-  public static let spanNameViewIsAppearing = "ViewIsAppearing"
-  public static let spanNameViewDidAppear = "ViewDidAppear"
-  public static let attributeViewClass = "view.class"
-  public static let statusAppBackgrounded = "app_backgrounded"
-  public static let statusViewDisappeared = "view_disappeared"
-}
-
 enum AwsViewType: String, CaseIterable {
   case uikit
   case swiftui

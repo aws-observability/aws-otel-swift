@@ -21,13 +21,20 @@ import OpenTelemetrySdk
 /// Creates spans for root view, body evaluations, onAppear/onDisappear events, and timeToFirstAppear.
 @available(iOS 13, macOS 10.15, tvOS 13, watchOS 6.0, *)
 public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
-  let instrumentationName = AwsInstrumentationScopes.SWIFTUI_VIEW
-  let instrumentationVersion = AwsOpenTelemetryAgent.version
-  let tracer: Tracer
-  let logger: Logger
+  private static var tracer: Tracer {
+    OpenTelemetry.instance.tracerProvider.get(
+      instrumentationName: AwsInstrumentationScopes.SWIFTUI_VIEW
+    )
+  }
 
-  @State private var state = ViewTraceState()
-  @State private var bodyEvaluationCount = 0
+  private static var logger: Logger {
+    OpenTelemetry.instance.loggerProvider.get(
+      instrumentationScopeName: AwsInstrumentationScopes.SWIFTUI_VIEW
+    )
+  }
+
+  @State private var initializationTime = Date()
+  @State private var hasAppeared = false
 
   private let content: () -> Content
   private let screenName: String
@@ -48,13 +55,6 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     self.screenName = screenName
     self.attributes = attributes
     self.content = content
-    tracer = OpenTelemetry.instance.tracerProvider.get(
-      instrumentationName: instrumentationName,
-      instrumentationVersion: instrumentationVersion
-    )
-    logger = OpenTelemetry.instance.loggerProvider.get(
-      instrumentationScopeName: instrumentationName
-    )
   }
 
   /// Convenience initializer with string attributes (auto-converted to AttributeValue).
@@ -64,14 +64,6 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     self.screenName = screenName
     self.attributes = attributes.mapValues { AttributeValue.string($0) }
     self.content = content
-
-    tracer = OpenTelemetry.instance.tracerProvider.get(
-      instrumentationName: instrumentationName,
-      instrumentationVersion: instrumentationVersion
-    )
-    logger = OpenTelemetry.instance.loggerProvider.get(
-      instrumentationScopeName: instrumentationName
-    )
   }
 
   public var body: some SwiftUI.View {
@@ -81,9 +73,6 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
         .onAppear() // placeholder to satisfy return type
         .onDisappear()
     }
-
-    // Track body evaluation
-    bodyEvaluationCount += 1
 
     return content()
       .onAppear {
@@ -100,70 +89,29 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
       return
     }
 
-    let appearTime = Date()
+    let now = Date()
 
-    // Create time to first draw span on first appear
-    if state.appearCount == 0 {
-      let timeToFirstAppearSpan = tracer.spanBuilder(spanName: AwsViewConstants.TimeToFirstAppear)
-        .setSpanKind(spanKind: .client)
-        .setStartTime(time: state.initializationTime)
+    // Record TimeToFirstAppear span
+    if !hasAppeared {
+      hasAppeared = true
+      let span = Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppear.name)
+        .setAttribute(key: AwsTimeToFirstAppear.screenName, value: screenName)
+        .setAttribute(key: AwsTimeToFirstAppear.type, value: AwsViewType.swiftui.rawValue)
+        .setStartTime(time: initializationTime)
         .startSpan()
 
-      timeToFirstAppearSpan.setAttribute(key: AwsViewConstants.attributeScreenName, value: screenName)
-      timeToFirstAppearSpan.setAttribute(key: AwsViewConstants.attributeViewLifecycle, value: AwsViewConstants.TimeToFirstAppear)
-      timeToFirstAppearSpan.end(time: appearTime)
+      for (key, value) in attributes {
+        span.setAttribute(key: key, value: value)
+      }
+
+      span.end(time: now)
     }
 
-    state.appearCount += 1
-
-    // Create .onAppear
-    let onAppearSpan = tracer.spanBuilder(spanName: AwsViewConstants.spanNameOnAppear)
-      .setSpanKind(spanKind: .client)
-      .setStartTime(time: appearTime)
-      .startSpan()
-
-    onAppearSpan.setAttribute(key: AwsViewConstants.attributeScreenName, value: screenName)
-    onAppearSpan.setAttribute(key: AwsViewConstants.attributeViewLifecycle, value: AwsViewConstants.valueOnAppear)
-    onAppearSpan.setAttribute(key: AwsViewConstants.attributeViewAppearCount, value: state.appearCount)
-    onAppearSpan.end()
-
-    // Start view.duration span to track visibility time
-    let viewDurationSpan = tracer.spanBuilder(spanName: AwsViewConstants.spanNameTimeOnScreen)
-      .setSpanKind(spanKind: .client)
-      .setStartTime(time: appearTime)
-      .startSpan()
-
-    viewDurationSpan.setAttribute(key: AwsViewConstants.attributeScreenName, value: screenName)
-    viewDurationSpan.setAttribute(key: AwsViewConstants.attributeViewType, value: AwsViewConstants.valueSwiftUI)
-
-    state.durationSpan = viewDurationSpan
+    // Record ViewDidAppear log event
+    AwsScreenManagerProvider.getInstance().logViewDidAppear(screen: screenName, type: .swiftui, timestamp: now, additionalAttributes: attributes)
   }
 
   func handleViewDisappear() {
-    // Check if SwiftUI instrumentation is enabled
-    guard isViewInstrumentationEnabled else {
-      return
-    }
-
-    let disappearTime = Date()
-
-    // Create .onDisappear log
-    logger.logRecordBuilder()
-      .setEventName("ViewDidDisappear")
-      .setTimestamp(disappearTime)
-      .setAttributes([
-        AwsViewConstants.attributeScreenName: AttributeValue.string(screenName),
-        AwsViewConstants.attributeViewLifecycle: AttributeValue.string(AwsViewConstants.valueOnDisappear),
-        AwsViewConstants.attributeViewDisappearCount: AttributeValue.int(state.disappearCount + 1)
-      ])
-      .emit()
-
-    // End TimeOnScreen span when view disappears
-    if let viewDurationSpan = state.durationSpan {
-      viewDurationSpan.end(time: disappearTime)
-      state.durationSpan = nil
-    }
-
-    state.disappearCount += 1
+    // noop
   }
 }
