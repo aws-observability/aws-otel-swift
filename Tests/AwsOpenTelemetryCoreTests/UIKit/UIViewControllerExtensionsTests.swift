@@ -44,12 +44,12 @@ import XCTest
       XCTAssertNil(viewController.instrumentationState)
 
       // Set a state
-      let state = ViewInstrumentationState(identifier: "test-id")
+      let state = ViewInstrumentationState()
       viewController.instrumentationState = state
 
       // Should retrieve the same state
       XCTAssertNotNil(viewController.instrumentationState)
-      XCTAssertEqual(viewController.instrumentationState?.identifier, "test-id")
+      XCTAssertNotNil(viewController.instrumentationState)
 
       // Set to nil
       viewController.instrumentationState = nil
@@ -60,23 +60,22 @@ import XCTest
       let viewController1 = UIViewController()
       let viewController2 = UIViewController()
 
-      let state1 = ViewInstrumentationState(identifier: "vc1")
-      let state2 = ViewInstrumentationState(identifier: "vc2")
+      let state1 = ViewInstrumentationState()
+      let state2 = ViewInstrumentationState()
 
       viewController1.instrumentationState = state1
       viewController2.instrumentationState = state2
 
       // Each view controller should have its own state
-      XCTAssertEqual(viewController1.instrumentationState?.identifier, "vc1")
-      XCTAssertEqual(viewController2.instrumentationState?.identifier, "vc2")
-      XCTAssertNotEqual(viewController1.instrumentationState?.identifier,
-                        viewController2.instrumentationState?.identifier)
+      XCTAssertNotNil(viewController1.instrumentationState)
+      XCTAssertNotNil(viewController2.instrumentationState)
+      XCTAssertTrue(viewController1.instrumentationState !== viewController2.instrumentationState)
     }
 
     // MARK: - Handler Management Tests
 
     func testSetInstrumentationHandler() {
-      let handler = ViewControllerHandler(tracer: tracer)
+      let handler = ViewControllerHandler()
 
       // Set the handler
       UIViewController.setInstrumentationHandler(handler)
@@ -109,7 +108,7 @@ import XCTest
         var shouldCaptureView: Bool { shouldCapture }
       }
 
-      let uiKitViewInstrumentation = UIKitViewInstrumentation(tracer: tracer)
+      let uiKitViewInstrumentation = UIKitViewInstrumentation()
 
       let captureVC = TestViewController(shouldCapture: true)
       let noCaptureVC = TestViewController(shouldCapture: false)
@@ -120,7 +119,7 @@ import XCTest
 
     func testBundleFiltering() {
       let testBundle = Bundle(for: type(of: self))
-      let testBundleInstrumentation = UIKitViewInstrumentation(tracer: tracer, bundle: testBundle)
+      let testBundleInstrumentation = UIKitViewInstrumentation(bundle: testBundle)
 
       let viewController = UIViewController()
 
@@ -152,7 +151,7 @@ import XCTest
       // Simulate concurrent access to instrumentation state
       for i in 0 ..< 50 {
         DispatchQueue.global().async {
-          let state = ViewInstrumentationState(identifier: "concurrent-\(i)")
+          let state = ViewInstrumentationState()
           viewController.instrumentationState = state
 
           // Verify we can read it back

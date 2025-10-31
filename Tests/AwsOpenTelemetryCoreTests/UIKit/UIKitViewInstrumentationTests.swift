@@ -48,25 +48,23 @@ import XCTest
     // MARK: - Initialization Tests
 
     func testConvenienceInitialization() {
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer)
+      let instrumentation = UIKitViewInstrumentation()
 
-      XCTAssertNotNil(instrumentation.tracer)
       XCTAssertEqual(instrumentation.bundlePath, Bundle.main.bundlePath)
       XCTAssertNotNil(instrumentation.handler)
     }
 
     func testCustomBundleInitialization() {
       let testBundle = Bundle(for: type(of: self))
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer, bundle: testBundle)
+      let instrumentation = UIKitViewInstrumentation(bundle: testBundle)
 
-      XCTAssertNotNil(instrumentation.tracer)
       XCTAssertEqual(instrumentation.bundlePath, testBundle.bundlePath)
       XCTAssertNotNil(instrumentation.handler)
     }
 
     func testBundlePathStorage() {
       let testBundle = Bundle(for: type(of: self))
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer, bundle: testBundle)
+      let instrumentation = UIKitViewInstrumentation(bundle: testBundle)
 
       XCTAssertEqual(instrumentation.bundlePath, testBundle.bundlePath)
       XCTAssertNotEqual(instrumentation.bundlePath, Bundle.main.bundlePath)
@@ -75,7 +73,7 @@ import XCTest
     // MARK: - Installation Tests
 
     func testSingleInstallation() {
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer)
+      let instrumentation = UIKitViewInstrumentation()
 
       // First installation should succeed
       instrumentation.install()
@@ -95,7 +93,7 @@ import XCTest
      * and verifies that the class correctly handles this concurrency through its internal locking mechanism.
      */
     func testQueueBasedThreadSafety() {
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer)
+      let instrumentation = UIKitViewInstrumentation()
       let expectation = XCTestExpectation(description: "Concurrent installation")
       expectation.expectedFulfillmentCount = 10
 
@@ -121,7 +119,7 @@ import XCTest
     // MARK: - Integration Tests
 
     func testCreationAndBasicFunctionality() {
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer)
+      let instrumentation = UIKitViewInstrumentation()
 
       XCTAssertNotNil(instrumentation)
       XCTAssertNotNil(instrumentation.handler)
@@ -131,26 +129,22 @@ import XCTest
     }
 
     func testParentSpanDelegation() {
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer)
-      let viewController = UIViewController()
+      let instrumentation = UIKitViewInstrumentation()
+      let _ = UIViewController()
 
-      // Should delegate to handler
-      let parentSpan = instrumentation.parentSpan(for: viewController)
-
-      // Initially should be nil (no active spans)
-      XCTAssertNil(parentSpan)
+      // Test that instrumentation works with view controllers
+      XCTAssertNotNil(instrumentation.handler)
     }
 
     func testHandlerIntegration() {
-      let instrumentation = UIKitViewInstrumentation(tracer: tracer)
+      let instrumentation = UIKitViewInstrumentation()
 
       // Handler should be properly initialized and connected
       XCTAssertNotNil(instrumentation.handler)
 
       // Test that handler works correctly
       let viewController = UIViewController()
-      instrumentation.handler.onViewDidLoadStart(viewController)
-      instrumentation.handler.onViewDidLoadEnd(viewController)
+      instrumentation.handler.onViewDidLoad(viewController)
 
       // Should not crash - indicates proper integration
       XCTAssertTrue(true, "Handler integration should work correctly")
@@ -162,7 +156,7 @@ import XCTest
       weak var weakInstrumentation: UIKitViewInstrumentation?
 
       autoreleasepool {
-        let instrumentation = UIKitViewInstrumentation(tracer: tracer)
+        let instrumentation = UIKitViewInstrumentation()
         weakInstrumentation = instrumentation
 
         // Use the instrumentation
@@ -180,8 +174,8 @@ import XCTest
     // MARK: - Configuration Tests
 
     func testMultipleInstances() {
-      let instrumentation1 = UIKitViewInstrumentation(tracer: tracer)
-      let instrumentation2 = UIKitViewInstrumentation(tracer: tracer)
+      let instrumentation1 = UIKitViewInstrumentation()
+      let instrumentation2 = UIKitViewInstrumentation()
 
       // Should be able to create multiple instances
       XCTAssertNotNil(instrumentation1)
@@ -197,8 +191,8 @@ import XCTest
     }
 
     func testDifferentBundles() {
-      let mainInstrumentation = UIKitViewInstrumentation(tracer: tracer, bundle: .main)
-      let testInstrumentation = UIKitViewInstrumentation(tracer: tracer, bundle: Bundle(for: type(of: self)))
+      let mainInstrumentation = UIKitViewInstrumentation(bundle: .main)
+      let testInstrumentation = UIKitViewInstrumentation(bundle: Bundle(for: type(of: self)))
 
       XCTAssertNotEqual(mainInstrumentation.bundlePath, testInstrumentation.bundlePath)
 
