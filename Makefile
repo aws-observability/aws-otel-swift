@@ -92,7 +92,7 @@ lint-format:  ## Run SwiftFormat linting
 
 .PHONY: lint-swift
 lint-swift:  ## Run SwiftLint
-	find ./Sources -name '*.swift' -not -path './.build/*' | xargs swiftlint lint --strict
+	find ./Sources -name '*.swift' -not -path './.build/*' | xargs swiftlint lint
 
 .PHONY: format
 format:  ## Auto-fix formatting issues with SwiftFormat

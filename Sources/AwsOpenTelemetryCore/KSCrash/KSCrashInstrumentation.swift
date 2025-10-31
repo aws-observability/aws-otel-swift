@@ -163,7 +163,7 @@ class KSCrashInstrumentation: CrashProtocol {
 
     // Pull crash reports
     let reportIDs = reportStore.reportIDs
-    for (_, reportID) in reportIDs.enumerated() {
+    for reportID in reportIDs {
       guard let id = reportID as? Int64,
             let crashReport = reportStore.report(for: id) else {
         AwsInternalLogger.debug("KSCrashInstrumentation failed to load crash report \(reportID)")
