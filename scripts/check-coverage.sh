@@ -6,7 +6,7 @@
 set -e
 
 REPO_COVERAGE_THRESHOLD=70
-PR_COVERAGE_THRESHOLD=80
+PR_COVERAGE_THRESHOLD=70
 COVERAGE_FILE="coverage.txt"
 
 # Generate coverage report

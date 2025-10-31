@@ -116,3 +116,5 @@ node_modules/
 
 logs.jsonl
 traces.jsonl
+
+default.profraw

@@ -42,7 +42,8 @@ public class GlobalAttributesManager {
 
   public func removeAttribute(key: String) {
     lock.withLock {
-      attributes.removeValue(forKey: key)
+      // throwaway assignment because upstream does not support @discardable
+      _ = attributes.removeValue(forKey: key)
     }
   }
 

@@ -2,6 +2,7 @@ import XCTest
 import OpenTelemetryApi
 @testable import AwsOpenTelemetryCore
 @testable import OpenTelemetrySdk
+@testable import TestUtils
 
 final class AwsSessionLogRecordProcessorTests: XCTestCase {
   var mockSessionManager: MockSessionManager!

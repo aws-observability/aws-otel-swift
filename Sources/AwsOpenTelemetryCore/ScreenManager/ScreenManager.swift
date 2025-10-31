@@ -27,7 +27,7 @@ public class AwsScreenManager {
   private var _viewDidAppear = false
   private var _currentScreen: String?
 
-  // thread-safe getters
+  // thread-safe getters and setters
 
   public var currentScreen: String? {
     get {
@@ -40,7 +40,7 @@ public class AwsScreenManager {
     }
   }
 
-  private var viewDidAppear: Bool {
+  private(set) var viewDidAppear: Bool {
     get {
       return queue.sync { _viewDidAppear }
     }
@@ -51,7 +51,7 @@ public class AwsScreenManager {
     }
   }
 
-  private var interaction: Int {
+  private(set) var interaction: Int {
     get {
       return queue.sync { _interaction }
     }
