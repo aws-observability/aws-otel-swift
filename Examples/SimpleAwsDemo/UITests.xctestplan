@@ -1,0 +1,34 @@
+{
+  "configurations" : [
+    {
+      "id" : "873F6EEC-8E7D-44D1-B3DC-94E9411C4BDA",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "environmentVariableEntries" : [
+      {
+        "key" : "CFNETWORK_DIAGNOSTICS",
+        "value" : "3"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:SimpleAwsDemo.xcodeproj",
+      "identifier" : "306BC6972E00C6AA00F19E48",
+      "name" : "SimpleAwsDemo"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:SimpleAwsDemo.xcodeproj",
+        "identifier" : "3F9C08CC2E68E8000017439E",
+        "name" : "UITests"
+      }
+    }
+  ],
+  "version" : 1
+}
