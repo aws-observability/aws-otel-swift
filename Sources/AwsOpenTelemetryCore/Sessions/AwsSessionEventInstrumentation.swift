@@ -53,10 +53,6 @@ public class AwsSessionEventInstrumentation {
   /// Maximum number of sessions that can be queued before instrumentation is applied
   static let maxQueueSize: UInt8 = 32
 
-  /// Notification name for new session events.
-  /// Used to broadcast session creation and expiration events after instrumentation is applied.
-  static let sessionEventNotification = Notification.Name(AwsSessionConstants.sessionEventNotification)
-
   static var instrumentationKey: String {
     return AwsInstrumentationScopes.SESSION
   }
@@ -70,13 +66,9 @@ public class AwsSessionEventInstrumentation {
       return
     }
 
-    AwsInternalLogger.debug("Installing AwsSessionEventInstrumentation")
-
     isApplied = true
     // Process any queued sessions
     processQueuedSessions()
-
-    AwsInternalLogger.info("AwsSessionEventInstrumentation applied successfully")
   }
 
   /// Process any sessions that were queued before instrumentation was applied.
@@ -89,7 +81,6 @@ public class AwsSessionEventInstrumentation {
     AwsInternalLogger.debug("Processing \(sessionEvents.count) queued session events")
 
     if sessionEvents.isEmpty {
-      AwsInternalLogger.debug("No queued session events to process")
       return
     }
 
@@ -98,7 +89,6 @@ public class AwsSessionEventInstrumentation {
     }
 
     AwsSessionEventInstrumentation.queue.removeAll()
-    AwsInternalLogger.debug("All queued session events processed successfully")
   }
 
   /// Create session start or end log record based on the specified event type.
@@ -121,20 +111,18 @@ public class AwsSessionEventInstrumentation {
   /// and previous session ID (if available).
   /// - Parameter session: The session that has started
   private static func createSessionStartEvent(session: AwsSession) {
-    AwsInternalLogger.debug("Creating session.start event for session ID: \(session.id)")
-
     var attributes: [String: AttributeValue] = [
-      AwsSessionConstants.id: AttributeValue.string(session.id)
+      AwsSessionSemConv.id: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
-      attributes[AwsSessionConstants.previousId] = AttributeValue.string(previousId)
+      attributes[AwsSessionSemConv.previousId] = AttributeValue.string(previousId)
     }
 
     /// Create `session.start` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setEventName(AwsSessionConstants.sessionStartEvent)
+      .setEventName(AwsSessionStartSemConv.name)
       .setAttributes(attributes)
       .setTimestamp(session.startTime)
       .emit()
@@ -151,20 +139,18 @@ public class AwsSessionEventInstrumentation {
       return
     }
 
-    AwsInternalLogger.debug("Creating session.end event for session ID: \(session.id)")
-
     var attributes: [String: AttributeValue] = [
-      AwsSessionConstants.id: AttributeValue.string(session.id)
+      AwsSessionSemConv.id: AttributeValue.string(session.id)
     ]
 
     if let previousId = session.previousId {
-      attributes[AwsSessionConstants.previousId] = AttributeValue.string(previousId)
+      attributes[AwsSessionSemConv.previousId] = AttributeValue.string(previousId)
     }
 
     /// Create `session.end`` log record according to otel semantic convention
     /// https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
-      .setEventName(AwsSessionConstants.sessionEndEvent)
+      .setEventName(AwsSessionEndSemConv.name)
       .setAttributes(attributes)
       .setTimestamp(endTime)
       .emit()
@@ -179,16 +165,18 @@ public class AwsSessionEventInstrumentation {
   /// - Parameter session: The session to process
   static func addSession(session: AwsSession, eventType: SessionEventType) {
     if isApplied {
-      AwsInternalLogger.debug("Posting notification for \(eventType) session event: \(session.id)")
       createSessionEvent(session: session, eventType: eventType)
+      // post event for subscribers
+      if eventType == .start {
+        NotificationCenter.default.post(name: SessionStartNotification, object: session)
+      }
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
       if queue.count >= maxQueueSize {
-        AwsInternalLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping new session event: \(session.id)")
+        AwsInternalLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping latest session event: \(session.id)")
         return
       }
-      AwsInternalLogger.debug("Queueing \(eventType) session event for later processing: \(session.id)")
       queue.append(AwsSessionEvent(session: session, eventType: eventType))
     }
   }

@@ -84,10 +84,10 @@
       }
 
       // Report TimeToFirstAppear
-      Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppear.name)
+      Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppearSemConv.name)
         .setStartTime(time: loadTime)
-        .setAttribute(key: AwsTimeToFirstAppear.screenName, value: viewController.screenName)
-        .setAttribute(key: AwsTimeToFirstAppear.type, value: AwsViewType.uikit.rawValue)
+        .setAttribute(key: AwsTimeToFirstAppearSemConv.screenName, value: viewController.screenName)
+        .setAttribute(key: AwsTimeToFirstAppearSemConv.type, value: AwsViewType.uikit.rawValue)
         .startSpan()
         .end(time: now)
 

@@ -30,5 +30,7 @@ public class AwsUIDManager {
       self.uid = uid
       UserDefaults.standard.set(uid, forKey: uidKey)
     }
+
+    NotificationCenter.default.post(name: AwsUserIdChangeNotification, object: uid)
   }
 }

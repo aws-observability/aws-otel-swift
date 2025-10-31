@@ -26,7 +26,6 @@ public class AwsSessionManager {
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
   public init(configuration: AwsSessionConfig = .default) {
-    AwsInternalLogger.debug("Initializing AwsSessionManager with timeout: \(configuration.sessionTimeout)s")
     self.configuration = configuration
     restoreSessionFromDisk()
   }
@@ -36,7 +35,6 @@ public class AwsSessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> AwsSession {
-    AwsInternalLogger.debug("Getting current session: id=$\(session?.id ?? "nil")")
     // We only lock once when fetching the current session to expire with thread safety
     return lock.withLock {
       refreshSession()
@@ -78,16 +76,9 @@ public class AwsSessionManager {
   /// Refreshes the current session, creating new one if expired or extending existing one
   private func refreshSession() {
     if session == nil || session!.isExpired() {
-      // Start new session if none exists or expired
-      if session == nil {
-        AwsInternalLogger.debug("No session exists, creating new one")
-      } else {
-        AwsInternalLogger.debug("Session expired, creating new one")
-      }
       startSession()
     } else {
       // Otherwise, extend the existing session but preserve the startTime
-      AwsInternalLogger.debug("Extending existing session: \(session!.id)")
       session = AwsSession(
         id: session!.id,
         expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
@@ -109,6 +100,5 @@ public class AwsSessionManager {
   /// Restores a previously saved session from UserDefaults
   private func restoreSessionFromDisk() {
     session = AwsSessionStore.load()
-    AwsInternalLogger.info("Attempted to restore session from disk id=\(session?.id ?? "none")")
   }
 }

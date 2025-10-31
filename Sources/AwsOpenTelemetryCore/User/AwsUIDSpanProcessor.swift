@@ -10,7 +10,7 @@ class AwsUIDSpanProcessor: SpanProcessor {
   /// Indicates that this processor doesn't need to be called when spans end
   var isEndRequired: Bool = false
   /// The attribute key used to store UID in spans
-  var userIdKey = "user.id"
+  var userIdKey = AwsUserSemvConv.id
   /// Reference to the UID manager for retrieving current UID
   private var uidManager: AwsUIDManager
 

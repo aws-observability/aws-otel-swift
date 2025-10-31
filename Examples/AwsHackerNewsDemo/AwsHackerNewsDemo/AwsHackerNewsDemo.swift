@@ -220,7 +220,6 @@ class HackerNewsViewController: UIViewController {
     guard startIndex < allStoryIds.count else { return }
 
     isLoadingMore = true
-    print("DEBUG: isLoadingMore set to true, reloading table")
     tableView.reloadData() // Immediately show loading cell
     let pageIds = Array(allStoryIds[startIndex ..< endIndex])
     loadStoryDetails(ids: pageIds, isLoadingMore: currentPage > 0)

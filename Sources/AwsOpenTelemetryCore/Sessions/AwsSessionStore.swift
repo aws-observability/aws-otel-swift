@@ -44,11 +44,9 @@ class AwsSessionStore {
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save
   static func scheduleSave(session: AwsSession) {
-    AwsInternalLogger.debug("Scheduling session save: \(session.id)")
     pendingSession = session
 
     if saveTimer == nil {
-      AwsInternalLogger.debug("Creating save timer with interval: \(saveInterval)s")
       // save initial session
       saveImmediately(session: session)
 
@@ -56,7 +54,6 @@ class AwsSessionStore {
       saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
         // only write to disk if it is a new sesssion
         if let pending = pendingSession, prevSession != pending {
-          AwsInternalLogger.debug("Timer triggered, saving pending session")
           saveImmediately(session: pending)
         }
       }
@@ -79,15 +76,11 @@ class AwsSessionStore {
     prevSession = session
     // clear pending session, since it is now outdated
     pendingSession = nil
-
-    AwsInternalLogger.debug("Session saved successfully")
   }
 
   /// Loads a previously saved session from UserDefaults
   /// - Returns: The saved session if ID, startTime, and expireTime exist. nil otherwise
   static func load() -> AwsSession? {
-    AwsInternalLogger.debug("Loading session from UserDefaults")
-
     guard let startTime = UserDefaults.standard.object(forKey: startTimeKey) as? Date,
           let id = UserDefaults.standard.string(forKey: idKey),
           let expireTime = UserDefaults.standard.object(forKey: expireTimeKey) as? Date,

@@ -18,7 +18,7 @@
       if #available(iOS 16.0, *), config.startup {
         AwsMetricKitAppLaunchProcessor.initialize()
       } else {
-        AwsInternalLogger.debug("ADOT Swift only officially supports iOS 16")
+        AwsInternalLogger.error("ADOT Swift only officially supports iOS 16")
       }
     }
 
@@ -31,7 +31,6 @@
     }
 
     func didReceive(_ payloads: [MXDiagnosticPayload]) {
-      AwsInternalLogger.debug("Received \(payloads.count) diagnostic payload(s)")
       for payload in payloads {
         // Disable MXCrashDiagnostic for beta scope
         // if config.crashes {

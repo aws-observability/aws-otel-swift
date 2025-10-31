@@ -89,9 +89,9 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     // Record TimeToFirstAppear span
     if !hasAppeared {
       hasAppeared = true
-      let span = Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppear.name)
-        .setAttribute(key: AwsTimeToFirstAppear.screenName, value: screenName)
-        .setAttribute(key: AwsTimeToFirstAppear.type, value: AwsViewType.swiftui.rawValue)
+      let span = Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppearSemConv.name)
+        .setAttribute(key: AwsTimeToFirstAppearSemConv.screenName, value: screenName)
+        .setAttribute(key: AwsTimeToFirstAppearSemConv.type, value: AwsViewType.swiftui.rawValue)
         .setStartTime(time: loadTime)
         .startSpan()
 

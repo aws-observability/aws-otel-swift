@@ -65,10 +65,8 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     super.init()
 
     Self.provider = provider
-    AwsInternalLogger.debug("AwsAppLaunchInstrumentation initializing with provider: \(type(of: provider))")
 
     // Setup launch end handler
-    AwsInternalLogger.debug("Setting up launch end observer for: \(provider.launchEndNotification.rawValue)")
     launchEndObserver = NotificationCenter.default.addObserver(
       forName: provider.launchEndNotification,
       object: nil,
@@ -78,7 +76,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     }
 
     // Setup warm launch start handler
-    AwsInternalLogger.debug("Setting up warm start observer for: \(provider.warmStartNotification.rawValue)")
     warmStartObserver = NotificationCenter.default.addObserver(
       forName: provider.warmStartNotification,
       object: nil,
@@ -88,7 +85,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     }
 
     // Setup hidden event handler - only needed until first background event
-    AwsInternalLogger.debug("Setting up onHidden observer for: \(provider.hiddenNotification.rawValue)")
     hiddenObserver = NotificationCenter.default.addObserver(
       forName: provider.hiddenNotification,
       object: nil,
@@ -99,19 +95,16 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       if let observer = self?.hiddenObserver {
         NotificationCenter.default.removeObserver(observer)
         self?.hiddenObserver = nil
-        AwsInternalLogger.debug("Removed onHidden observer after first background event")
       }
     }
 
     // Setup observers
-    AwsInternalLogger.debug("Setting up \(provider.additionalLifecycleEvents.count) additional lifecycle observers")
     for event in provider.additionalLifecycleEvents {
       guard lifecycleObservers[event.rawValue] == nil else {
         AwsInternalLogger.debug("Skipping duplicate observer for: \(event.rawValue)")
         continue
       }
 
-      AwsInternalLogger.debug("Setting up lifecycle observer for: \(event.rawValue)")
       lifecycleObservers[event.rawValue] = NotificationCenter.default.addObserver(
         forName: event,
         object: nil,
@@ -120,7 +113,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         Self.onLifecycleEvent(name: notification.name.rawValue)
       }
     }
-    AwsInternalLogger.debug("AwsAppLaunchInstrumentation initialized with \(lifecycleObservers.count) observers")
   }
 
   func onLaunchEnd() {
@@ -128,7 +120,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   }
 
   @objc static func onLaunchEnd() {
-    AwsInternalLogger.debug("onColdEnd called")
     lock.withLock {
       guard let provider else { return }
       let endTime = Date()
@@ -137,8 +128,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
       if !hasLaunched, let startTime = provider.coldLaunchStartTime {
         let duration = endTime.timeIntervalSince(startTime)
         let isPrewarm = isPrewarm(duration: duration)
-
-        AwsInternalLogger.debug("Recording cold launch: duration=\(duration)s, isPrewarm=\(isPrewarm)")
 
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
@@ -158,8 +147,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
         lastWarmLaunchStart = nil
         let duration = endTime.timeIntervalSince(startTime)
 
-        AwsInternalLogger.debug("Recording warm launch: duration=\(duration)s")
-
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
           .setAttribute(key: "start.type", value: "warm")
@@ -177,7 +164,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   }
 
   @objc static func onWarmStart() {
-    AwsInternalLogger.debug("onWarmStart called")
     lock.withLock {
       let now = Date()
       lastWarmLaunchStart = now
@@ -189,8 +175,6 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   }
 
   @objc static func onLifecycleEvent(name: String) {
-    AwsInternalLogger.debug("onLifecycleEvent called: \(name)")
-
     logger.logRecordBuilder()
       .setEventName(name)
       .emit()

@@ -83,7 +83,6 @@ public class AwsURLSessionInstrumentation {
       AwsInternalLogger.debug("Excluding requestUrl=\(url)")
       return true
     }
-    AwsInternalLogger.debug("Recording requestUrl=\(url)")
     return false
   }
 }

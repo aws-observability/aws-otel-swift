@@ -76,6 +76,8 @@ public class AwsScreenManager {
     currentScreen = screen
     interaction += 1
     viewDidAppear = false
+
+    NotificationCenter.default.post(name: AwsScreenChangeNotification, object: screen)
   }
 
   func logViewDidAppear(screen: String,
@@ -96,9 +98,9 @@ public class AwsScreenManager {
     viewDidAppear = true
 
     var attributes: [String: AttributeValue] = [
-      AwsViewDidAppear.screenName: AttributeValue.string(screen),
-      AwsViewDidAppear.type: AttributeValue.string(type.rawValue),
-      AwsViewDidAppear.interaction: AttributeValue.int(interaction)
+      AwsViewDidAppearSemConv.screenName: AttributeValue.string(screen),
+      AwsViewDidAppearSemConv.type: AttributeValue.string(type.rawValue),
+      AwsViewDidAppearSemConv.interaction: AttributeValue.int(interaction)
     ]
 
     if let additionalAttributes {
@@ -106,7 +108,7 @@ public class AwsScreenManager {
     }
 
     logger.logRecordBuilder()
-      .setEventName(AwsViewDidAppear.name)
+      .setEventName(AwsViewDidAppearSemConv.name)
       .setTimestamp(timestamp)
       .setAttributes(attributes)
       .emit()

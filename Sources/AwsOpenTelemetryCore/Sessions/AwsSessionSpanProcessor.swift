@@ -30,7 +30,6 @@ public class AwsSessionSpanProcessor: SpanProcessor {
   /// Initializes the span processor with a session manager
   /// - Parameter sessionManager: The session manager to use for retrieving session IDs
   public init(sessionManager: AwsSessionManager?) {
-    AwsInternalLogger.debug("Initializing AwsSessionSpanProcessor")
     self.sessionManager = sessionManager ?? AwsSessionManagerProvider.getInstance()
   }
 
@@ -40,11 +39,10 @@ public class AwsSessionSpanProcessor: SpanProcessor {
   ///   - span: The span being started
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     let session = sessionManager.getSession()
-    span.setAttribute(key: AwsSessionConstants.id, value: session.id)
+    span.setAttribute(key: AwsSessionSemConv.id, value: session.id)
     if session.previousId != nil {
-      span.setAttribute(key: AwsSessionConstants.previousId, value: session.previousId!)
+      span.setAttribute(key: AwsSessionSemConv.previousId, value: session.previousId!)
     }
-    AwsInternalLogger.debug("Session attributes added to span: \(session.id)")
   }
 
   /// Called when a span ends - no action needed for session tracking

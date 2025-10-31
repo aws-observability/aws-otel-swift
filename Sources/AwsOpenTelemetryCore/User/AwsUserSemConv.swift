@@ -13,22 +13,10 @@
  * permissions and limitations under the License.
  */
 
-enum AwsViewType: String, CaseIterable {
-  case uikit
-  case swiftui
+import Foundation
+
+public class AwsUserSemvConv {
+  static let id = "user.id"
 }
 
-class AwsView {
-  static let screenName = "screen.name"
-  static let type = "app.screen.type"
-}
-
-class AwsViewDidAppear: AwsView {
-  static let name = "app.screen.view_did_appear"
-  static let interaction = "app.screen.interaction"
-  static let parentName = "app.screen.parent_screen.name"
-}
-
-class AwsTimeToFirstAppear: AwsView {
-  static let name = "app.screen.time_to_first_appear"
-}
+public let AwsUserIdChangeNotification = Notification.Name("software.amazon.opentelemetry.User")

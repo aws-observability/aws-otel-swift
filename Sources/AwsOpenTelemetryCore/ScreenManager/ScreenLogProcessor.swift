@@ -16,7 +16,6 @@ class AwsScreenLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, screenManager: AwsScreenManager? = nil) {
     self.nextProcessor = nextProcessor
     self.screenManager = screenManager ?? AwsScreenManagerProvider.getInstance()
-    AwsInternalLogger.debug("Initializing AwsSessionLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
@@ -25,8 +24,8 @@ class AwsScreenLogRecordProcessor: LogRecordProcessor {
     var enhancedRecord = logRecord
 
     // Only add session attributes if they don't already exist
-    if let screenName = screenManager.currentScreen, logRecord.attributes[AwsView.screenName] == nil {
-      enhancedRecord.setAttribute(key: AwsView.screenName, value: screenName)
+    if let screenName = screenManager.currentScreen, logRecord.attributes[AwsViewSemConv.screenName] == nil {
+      enhancedRecord.setAttribute(key: AwsViewSemConv.screenName, value: screenName)
     }
 
     nextProcessor.onEmit(logRecord: enhancedRecord)

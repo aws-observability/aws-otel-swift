@@ -16,7 +16,6 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, sessionManager: AwsSessionManager? = nil) {
     self.nextProcessor = nextProcessor
     self.sessionManager = sessionManager ?? AwsSessionManagerProvider.getInstance()
-    AwsInternalLogger.debug("Initializing AwsSessionLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
@@ -25,17 +24,17 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
     var enhancedRecord = logRecord
 
     // Only add session attributes if they don't already exist
-    if logRecord.attributes[AwsSessionConstants.id] == nil || logRecord.attributes[AwsSessionConstants.previousId] == nil {
+    if logRecord.attributes[AwsSessionSemConv.id] == nil || logRecord.attributes[AwsSessionSemConv.previousId] == nil {
       let session = sessionManager.getSession()
 
       // Add session.id if not already present
-      if logRecord.attributes[AwsSessionConstants.id] == nil {
-        enhancedRecord.setAttribute(key: AwsSessionConstants.id, value: session.id)
+      if logRecord.attributes[AwsSessionSemConv.id] == nil {
+        enhancedRecord.setAttribute(key: AwsSessionSemConv.id, value: session.id)
       }
 
       // Add session.previous_id if not already present and session has a previous ID
-      if logRecord.attributes[AwsSessionConstants.previousId] == nil, let previousId = session.previousId {
-        enhancedRecord.setAttribute(key: AwsSessionConstants.previousId, value: previousId)
+      if logRecord.attributes[AwsSessionSemConv.previousId] == nil, let previousId = session.previousId {
+        enhancedRecord.setAttribute(key: AwsSessionSemConv.previousId, value: previousId)
       }
     }
 

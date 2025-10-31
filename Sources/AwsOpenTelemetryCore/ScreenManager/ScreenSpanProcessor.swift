@@ -30,7 +30,6 @@ public class AwsScreenSpanProcessor: SpanProcessor {
   /// Initializes the span processor with a session manager
   /// - Parameter sessionManager: The session manager to use for retrieving session IDs
   public init(screenManager: AwsScreenManager?) {
-    AwsInternalLogger.debug("Initializing AwsSessionSpanProcessor")
     self.screenManager = screenManager ?? AwsScreenManagerProvider.getInstance()
   }
 
@@ -39,8 +38,8 @@ public class AwsScreenSpanProcessor: SpanProcessor {
   ///   - parentContext: The parent span context (unused)
   ///   - span: The span being started
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
-    if let screenName = screenManager.currentScreen, span.getAttributes()[AwsView.screenName] == nil {
-      span.setAttribute(key: AwsView.screenName, value: screenName)
+    if let screenName = screenManager.currentScreen, span.getAttributes()[AwsViewSemConv.screenName] == nil {
+      span.setAttribute(key: AwsViewSemConv.screenName, value: screenName)
     }
   }
 

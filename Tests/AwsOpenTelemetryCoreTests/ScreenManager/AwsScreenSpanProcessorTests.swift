@@ -26,22 +26,22 @@ final class AwsScreenSpanProcessorTests: XCTestCase {
 
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
 
-    XCTAssertEqual(mockSpan.capturedAttributes[AwsView.screenName], AttributeValue.string("HomeScreen"))
+    XCTAssertEqual(mockSpan.capturedAttributes[AwsViewSemConv.screenName], AttributeValue.string("HomeScreen"))
   }
 
   func testOnStartWithNilScreenName() {
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
 
-    XCTAssertNil(mockSpan.capturedAttributes[AwsView.screenName])
+    XCTAssertNil(mockSpan.capturedAttributes[AwsViewSemConv.screenName])
   }
 
   func testOnStartDoesNotOverrideExistingScreenName() {
     screenManager.setCurrent(screen: "HomeScreen")
-    mockSpan.capturedAttributes[AwsView.screenName] = AttributeValue.string("ExistingScreen")
+    mockSpan.capturedAttributes[AwsViewSemConv.screenName] = AttributeValue.string("ExistingScreen")
 
     spanProcessor.onStart(parentContext: nil, span: mockSpan)
 
-    XCTAssertEqual(mockSpan.capturedAttributes[AwsView.screenName], AttributeValue.string("ExistingScreen"))
+    XCTAssertEqual(mockSpan.capturedAttributes[AwsViewSemConv.screenName], AttributeValue.string("ExistingScreen"))
   }
 
   func testOnEndDoesNothing() {

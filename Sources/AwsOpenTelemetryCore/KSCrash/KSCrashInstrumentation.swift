@@ -29,7 +29,10 @@ import OpenTelemetryApi
 
 protocol CrashProtocol {
   static func install()
-  static func cacheCrashContext(session: AwsSession?)
+  static func cacheCrashContext(session: AwsSession?,
+                                userId: String?,
+                                screenName: String?)
+
   static func recoverCrashContext(from rawCrash: [String: Any],
                                   log: LogRecordBuilder,
                                   attributes: [String: AttributeValue]) -> [String: AttributeValue]
@@ -57,8 +60,6 @@ class KSCrashInstrumentation: CrashProtocol {
       return
     }
 
-    AwsInternalLogger.debug("Installing KSCrashInstrumentation")
-
     do {
       let config = KSCrashConfiguration()
       config.enableSigTermMonitoring = false
@@ -66,7 +67,6 @@ class KSCrashInstrumentation: CrashProtocol {
 
       try reporter.install(with: config)
       isInstalled = true
-      AwsInternalLogger.debug("KSCrashInstrumentation installed successfully")
     } catch {
       AwsInternalLogger.error("KSCrashInstrumentation failed to install: \(error)")
       return
@@ -82,27 +82,66 @@ class KSCrashInstrumentation: CrashProtocol {
 
     // Update crash context on session start
     NotificationCenter.default.addObserver(
-      forName: AwsSessionEventInstrumentation.sessionEventNotification,
+      forName: SessionStartNotification,
       object: nil,
       queue: nil
     ) { notification in
-      if let sessionEvent = notification.object as? AwsSessionEvent, sessionEvent.eventType == .start {
+      if let session = notification.object as? AwsSession {
         DispatchQueue.global(qos: .utility).async {
-          cacheCrashContext(session: sessionEvent.session)
+          cacheCrashContext(session: session)
+        }
+      }
+    }
+
+    // Update crash context on user change
+    NotificationCenter.default.addObserver(
+      forName: AwsUserIdChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let userId = notification.object as? String {
+        DispatchQueue.global(qos: .utility).async {
+          cacheCrashContext(session: nil, userId: userId)
+        }
+      }
+    }
+
+    // Update crash context on screen change
+    NotificationCenter.default.addObserver(
+      forName: AwsScreenChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let screen = notification.object as? String {
+        DispatchQueue.global(qos: .utility).async {
+          cacheCrashContext(session: nil, userId: nil, screenName: screen)
         }
       }
     }
   }
 
-  static func cacheCrashContext(session: AwsSession? = nil) {
+  static func cacheCrashContext(session: AwsSession? = nil,
+                                userId: String? = nil,
+                                screenName: String? = nil) {
     var userInfo: [String: Any] = [:]
-    userInfo["user.id"] = AwsUIDManagerProvider.getInstance().getUID() // Add user ID
 
-    let session = session ?? AwsSessionManagerProvider.getInstance().getSession()
-    userInfo[AwsSessionConstants.id] = session.id
+    // user
+    let userId = userId ?? AwsUIDManagerProvider.getInstance().getUID()
+    userInfo[AwsUserSemvConv.id] = userId
+
+    // session
+    let sessionManager = AwsSessionManagerProvider.getInstance()
+    let session = session ?? sessionManager.peekSession() ?? sessionManager.getSession()
+
+    userInfo[AwsSessionSemConv.id] = session.id
     if let prevSessionId = session.previousId {
-      userInfo[AwsSessionConstants.previousId] = prevSessionId
+      userInfo[AwsSessionSemConv.previousId] = prevSessionId
     }
+
+    // screen
+    let screen = screenName ?? AwsScreenManagerProvider.getInstance().currentScreen
+    userInfo[AwsViewSemConv.screenName] = screen
+
     reporter.userInfo = userInfo
     AwsInternalLogger.debug("KSCrashInstrumentation updated user info: \(userInfo)")
   }
@@ -110,8 +149,6 @@ class KSCrashInstrumentation: CrashProtocol {
   /// Report cached crashes from KSCrash store (just a local file)
   static func processStoredCrashes() {
     // Init
-    AwsInternalLogger.debug("KSCrashInstrumentation KSCrash installed: \(isInstalled)")
-    AwsInternalLogger.debug("KSCrashInstrumentation KSCrash crashed last launch: \(reporter.crashedLastLaunch)")
     guard let reportStore = reporter.reportStore else {
       AwsInternalLogger.debug("KSCrashInstrumentation no report store available")
       return
@@ -119,10 +156,7 @@ class KSCrashInstrumentation: CrashProtocol {
 
     // Pull crash reports
     let reportIDs = reportStore.reportIDs
-    AwsInternalLogger.debug("KSCrashInstrumentation processing \(reportIDs.count) stored crashes")
     for (index, reportID) in reportIDs.enumerated() {
-      AwsInternalLogger.debug("KSCrashInstrumentation processing crash report \(index + 1)/\(reportIDs.count)")
-
       guard let id = reportID as? Int64,
             let crashReport = reportStore.report(for: id) else {
         AwsInternalLogger.debug("KSCrashInstrumentation failed to load crash report \(reportID)")
@@ -134,7 +168,6 @@ class KSCrashInstrumentation: CrashProtocol {
 
       // Delete processed report
       reportStore.deleteReport(with: id)
-      AwsInternalLogger.debug("KSCrashInstrumentation reported and deleted crash report with id= \(id)")
     }
 
     AwsInternalLogger.debug("KSCrashInstrumentation processed \(reportIDs.count) stored crashes")
@@ -207,24 +240,30 @@ class KSCrashInstrumentation: CrashProtocol {
           let timestampString = report["timestamp"] as? String,
           let timestamp = timestampFormatter.date(from: timestampString),
           let userInfo = rawCrash["user"] as? [String: Any],
-          let sessionId = userInfo[AwsSessionConstants.id] as? String else {
+          let sessionId = userInfo[AwsSessionSemConv.id] as? String else {
       _ = log.setTimestamp(Date()) // just for clarity (upstream already does this)
+      AwsInternalLogger.debug("KSCrashInstrumentation failed to recover crash context")
       return attributes
     }
     var mutatedAttributes = attributes
 
     // required attributes for recovery
     _ = log.setTimestamp(timestamp)
-    mutatedAttributes[AwsSessionConstants.id] = AttributeValue.string(sessionId)
+    mutatedAttributes[AwsSessionSemConv.id] = AttributeValue.string(sessionId)
 
     // `user.id` is only nice-to-have for crash recovery, so we will grab it without blocking the overall recovery attempt
-    if let userId = userInfo["user.id"] as? String {
-      mutatedAttributes["user.id"] = AttributeValue.string(userId)
+    if let userId = userInfo[AwsUserSemvConv.id] as? String {
+      mutatedAttributes[AwsUserSemvConv.id] = AttributeValue.string(userId)
+    }
+
+    // `screen.name` is also nice-to-have, and may not exist if a screen had not been registered at the time
+    if let screenName = userInfo[AwsViewSemConv.screenName] as? String {
+      mutatedAttributes[AwsViewSemConv.screenName] = AttributeValue.string(screenName)
     }
 
     // `session.previous_id` is also nice-to-have, and may not even exist if there was no previous session
-    if let previousSessionId = userInfo[AwsSessionConstants.previousId] as? String {
-      mutatedAttributes[AwsSessionConstants.previousId] = AttributeValue.string(previousSessionId)
+    if let previousSessionId = userInfo[AwsSessionSemConv.previousId] as? String {
+      mutatedAttributes[AwsSessionSemConv.previousId] = AttributeValue.string(previousSessionId)
     }
 
     // Confirms that original context was recovered, since this may not be obvious

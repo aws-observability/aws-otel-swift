@@ -80,7 +80,6 @@ public class AwsOpenTelemetryRumBuilder {
 
     // Store the configuration in the shared instance
     AwsOpenTelemetryAgent.shared.configuration = config
-    AwsInternalLogger.info("Creating builder with region: \(config.aws.region), appMonitorId: \(config.aws.rumAppMonitorId)")
 
     return AwsOpenTelemetryRumBuilder(config: config)
   }
@@ -222,10 +221,8 @@ public class AwsOpenTelemetryRumBuilder {
             metricKitSubscriber.subscribe()
             AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
           } else {
-            AwsInternalLogger.info("MetricKit subscriber not available - requires iOS 15.0+")
+            AwsInternalLogger.error("MetricKit subscriber not available - requires iOS 15.0+")
           }
-        } else {
-          AwsInternalLogger.info("MetricKit subscriber not created - no MetricKit config in plan")
         }
       #endif
 

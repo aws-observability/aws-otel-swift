@@ -46,8 +46,8 @@ final class KSCrashInstrumentationTests: XCTestCase {
     KSCrashInstrumentation.cacheCrashContext(session: session)
 
     let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
-    XCTAssertEqual(userInfo?[AwsSessionConstants.id], "cache-session-id")
-    XCTAssertEqual(userInfo?[AwsSessionConstants.previousId], "cache-prev-id")
+    XCTAssertEqual(userInfo?[AwsSessionSemConv.id], "cache-session-id")
+    XCTAssertEqual(userInfo?[AwsSessionSemConv.previousId], "cache-prev-id")
     XCTAssertNotNil(userInfo?["user.id"])
   }
 
@@ -134,8 +134,8 @@ final class KSCrashInstrumentationTests: XCTestCase {
         "timestamp": "2025-10-28T21:38:55.554842Z"
       ],
       "user": [
-        AwsSessionConstants.id: "test-session-id",
-        AwsSessionConstants.previousId: "test-prev-session-id",
+        AwsSessionSemConv.id: "test-session-id",
+        AwsSessionSemConv.previousId: "test-prev-session-id",
         "user.id": "test-user-id"
       ]
     ]
@@ -147,8 +147,8 @@ final class KSCrashInstrumentationTests: XCTestCase {
     )
 
     XCTAssertEqual(result["recovered_context"]?.description, "true")
-    XCTAssertEqual(result[AwsSessionConstants.id]?.description, "test-session-id")
-    XCTAssertEqual(result[AwsSessionConstants.previousId]?.description, "test-prev-session-id")
+    XCTAssertEqual(result[AwsSessionSemConv.id]?.description, "test-session-id")
+    XCTAssertEqual(result[AwsSessionSemConv.previousId]?.description, "test-prev-session-id")
     XCTAssertEqual(result["user.id"]?.description, "test-user-id")
   }
 
@@ -167,7 +167,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     )
 
     XCTAssertEqual(result["recovered_context"]?.description, "false")
-    XCTAssertNil(result[AwsSessionConstants.id])
+    XCTAssertNil(result[AwsSessionSemConv.id])
   }
 
   func testRecoverCrashContextMissingUserInfo() {
@@ -189,7 +189,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     )
 
     XCTAssertEqual(result["recovered_context"]?.description, "false")
-    XCTAssertNil(result[AwsSessionConstants.id])
+    XCTAssertNil(result[AwsSessionSemConv.id])
   }
 
   func testRecoverCrashContextPartialUserInfo() {
@@ -203,7 +203,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
         "timestamp": "2025-10-28T21:38:55.554842Z"
       ],
       "user": [
-        AwsSessionConstants.id: "test-session-id"
+        AwsSessionSemConv.id: "test-session-id"
         // Missing prev_session_id and user.id
       ]
     ]
@@ -215,8 +215,8 @@ final class KSCrashInstrumentationTests: XCTestCase {
     )
 
     XCTAssertEqual(result["recovered_context"]?.description, "true")
-    XCTAssertEqual(result[AwsSessionConstants.id]?.description, "test-session-id")
-    XCTAssertNil(result[AwsSessionConstants.previousId])
+    XCTAssertEqual(result[AwsSessionSemConv.id]?.description, "test-session-id")
+    XCTAssertNil(result[AwsSessionSemConv.previousId])
     XCTAssertNil(result["user.id"])
   }
 }

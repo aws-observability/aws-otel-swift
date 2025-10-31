@@ -107,7 +107,6 @@
       UIViewController.installViewInstrumentation(handler: handler)
 
       isInstalled = true
-      AwsInternalLogger.debug("[UIKitViewInstrumentation] Successfully installed view instrumentation")
     }
   }
 

@@ -68,7 +68,7 @@ final class ViewAwsOTelTraceTests: XCTestCase {
 
       // Check if any spans were created with screen name
       if let firstSpan = spans.first {
-        if let screenName = firstSpan.attributes[AwsView.screenName] {
+        if let screenName = firstSpan.attributes[AwsViewSemConv.screenName] {
           XCTAssertEqual(screenName.description, "HomeView")
         }
       }
@@ -93,7 +93,7 @@ final class ViewAwsOTelTraceTests: XCTestCase {
 
       // Verify spans have the screen.name attribute
       for span in spans {
-        XCTAssertEqual(span.attributes[AwsView.screenName]?.description, "TestView")
+        XCTAssertEqual(span.attributes[AwsViewSemConv.screenName]?.description, "TestView")
       }
     }
   }

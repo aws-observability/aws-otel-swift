@@ -34,7 +34,7 @@ final class AwsScreenLogProcessorTests: XCTestCase {
 
     XCTAssertEqual(mockNextProcessor.processedLogRecords.count, 1)
     let processedRecord = mockNextProcessor.processedLogRecords[0]
-    XCTAssertEqual(processedRecord.attributes[AwsView.screenName], AttributeValue.string("HomeScreen"))
+    XCTAssertEqual(processedRecord.attributes[AwsViewSemConv.screenName], AttributeValue.string("HomeScreen"))
   }
 
   func testOnEmitWithNilScreenName() {
@@ -42,7 +42,7 @@ final class AwsScreenLogProcessorTests: XCTestCase {
 
     XCTAssertEqual(mockNextProcessor.processedLogRecords.count, 1)
     let processedRecord = mockNextProcessor.processedLogRecords[0]
-    XCTAssertNil(processedRecord.attributes[AwsView.screenName])
+    XCTAssertNil(processedRecord.attributes[AwsViewSemConv.screenName])
   }
 
   func testOnEmitDoesNotOverrideExistingScreenName() {
@@ -55,14 +55,14 @@ final class AwsScreenLogProcessorTests: XCTestCase {
       spanContext: nil,
       severity: .info,
       body: AttributeValue.string("Test log message"),
-      attributes: [AwsView.screenName: AttributeValue.string("ExistingScreen")]
+      attributes: [AwsViewSemConv.screenName: AttributeValue.string("ExistingScreen")]
     )
 
     logProcessor.onEmit(logRecord: recordWithExistingScreenName)
 
     XCTAssertEqual(mockNextProcessor.processedLogRecords.count, 1)
     let processedRecord = mockNextProcessor.processedLogRecords[0]
-    XCTAssertEqual(processedRecord.attributes[AwsView.screenName], AttributeValue.string("ExistingScreen"))
+    XCTAssertEqual(processedRecord.attributes[AwsViewSemConv.screenName], AttributeValue.string("ExistingScreen"))
   }
 
   func testShutdownReturnsSuccess() {

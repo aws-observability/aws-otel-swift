@@ -9,12 +9,10 @@
     static func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) {
       guard let diagnostics else { return }
       let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: scopeName)
-      AwsInternalLogger.debug("Processing \(diagnostics.count) crash diagnostic(s)")
 
       for crash in diagnostics {
         let attributes = buildCrashAttributes(from: crash)
 
-        AwsInternalLogger.debug("Emitting crash log record with \(attributes.count) attributes")
         logger.logRecordBuilder()
           .setEventName("device.crash")
           .setTimestamp(Date())

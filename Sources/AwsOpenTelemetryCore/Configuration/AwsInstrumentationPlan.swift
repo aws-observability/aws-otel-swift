@@ -60,8 +60,6 @@ struct AwsInstrumentationPlan {
     let sessionEventsEnabled = telemetry.sessionEvents?.enabled == true
     let viewEnabled = telemetry.view?.enabled == true
 
-    AwsInternalLogger.debug("Creating instrumentation plan: sessionEvents=\(sessionEventsEnabled), view=\(viewEnabled), crash=\(crashEnabled), hang=\(hangEnabled), startup=\(startupEnabled), network=\(networkEnabled)")
-
     let urlSessionConfig = networkEnabled ? AwsURLSessionConfig(region: config.aws.region, exportOverride: config.exportOverride) : nil
     let metricKitConfig = (crashEnabled || hangEnabled || startupEnabled) ? AwsMetricKitConfig(crashes: crashEnabled, hangs: hangEnabled, startup: startupEnabled) : nil
 
@@ -73,10 +71,6 @@ struct AwsInstrumentationPlan {
         let overrides = [tracesInfo, logsInfo].filter { !$0.isEmpty }.joined(separator: ", ")
         overrideInfo = overrides.isEmpty ? "" : ", overrides: \(overrides)"
       }
-      AwsInternalLogger.debug("URLSession config created for region: \(config.aws.region)\(overrideInfo)")
-    }
-    if metricKitConfig != nil {
-      AwsInternalLogger.debug("MetricKit config created with crashes=\(crashEnabled), hangs=\(hangEnabled), startup=\(startupEnabled)")
     }
 
     return AwsInstrumentationPlan(

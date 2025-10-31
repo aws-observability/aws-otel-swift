@@ -4,8 +4,6 @@ import OpenTelemetryApi
 
 /// AWS OTel log record processor that adds UID to all log records
 class AwsUIDLogRecordProcessor: LogRecordProcessor {
-  /// The attribute key used to store UID in log records
-  var userIdKey = "user.id"
   /// Reference to the UID manager for retrieving current UID
   private var uidManager: AwsUIDManager
   /// The next processor in the chain
@@ -18,7 +16,6 @@ class AwsUIDLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, uidManager: AwsUIDManager? = nil) {
     self.nextProcessor = nextProcessor
     self.uidManager = uidManager ?? AwsUIDManagerProvider.getInstance()
-    AwsInternalLogger.debug("Initializing AwsUIDLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds UID and forwards to next processor
@@ -26,7 +23,7 @@ class AwsUIDLogRecordProcessor: LogRecordProcessor {
   func onEmit(logRecord: ReadableLogRecord) {
     let uid = uidManager.getUID()
     var enhancedRecord = logRecord
-    enhancedRecord.setAttribute(key: userIdKey, value: uid)
+    enhancedRecord.setAttribute(key: AwsUserSemvConv.id, value: uid)
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
 

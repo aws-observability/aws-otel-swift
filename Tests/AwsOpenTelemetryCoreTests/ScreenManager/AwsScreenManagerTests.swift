@@ -64,10 +64,10 @@ final class AwsScreenManagerTests: XCTestCase {
     let logs = logExporter.getExportedLogs()
     XCTAssertEqual(logs.count, 1)
     let logRecord = logs[0]
-    XCTAssertEqual(logRecord.eventName, AwsViewDidAppear.name)
-    XCTAssertEqual(logRecord.attributes[AwsViewDidAppear.screenName], AttributeValue.string("HomeScreen"))
-    XCTAssertEqual(logRecord.attributes[AwsViewDidAppear.type], AttributeValue.string("swiftui"))
-    XCTAssertEqual(logRecord.attributes[AwsViewDidAppear.interaction], AttributeValue.int(1))
+    XCTAssertEqual(logRecord.eventName, AwsViewDidAppearSemConv.name)
+    XCTAssertEqual(logRecord.attributes[AwsViewDidAppearSemConv.screenName], AttributeValue.string("HomeScreen"))
+    XCTAssertEqual(logRecord.attributes[AwsViewDidAppearSemConv.type], AttributeValue.string("swiftui"))
+    XCTAssertEqual(logRecord.attributes[AwsViewDidAppearSemConv.interaction], AttributeValue.int(1))
   }
 
   func testLogViewDidAppearTwice() {
@@ -142,7 +142,7 @@ final class AwsScreenManagerTests: XCTestCase {
 
     let logs = logExporter.getExportedLogs()
     XCTAssertEqual(logs.count, 2)
-    XCTAssertEqual(logs[0].attributes[AwsViewDidAppear.interaction], AttributeValue.int(1))
-    XCTAssertEqual(logs[1].attributes[AwsViewDidAppear.interaction], AttributeValue.int(2))
+    XCTAssertEqual(logs[0].attributes[AwsViewDidAppearSemConv.interaction], AttributeValue.int(1))
+    XCTAssertEqual(logs[1].attributes[AwsViewDidAppearSemConv.interaction], AttributeValue.int(2))
   }
 }
