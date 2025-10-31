@@ -41,7 +41,6 @@ public class AwsScreenSpanProcessor: SpanProcessor {
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {
     if let screenName = screenManager.currentScreen, span.getAttributes()[AwsView.screenName] == nil {
       span.setAttribute(key: AwsView.screenName, value: screenName)
-      AwsInternalLogger.debug("`screen.name` attribute added to span: \(screenName)")
     }
   }
 

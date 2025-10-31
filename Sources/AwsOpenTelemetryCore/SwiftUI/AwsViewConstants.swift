@@ -19,7 +19,7 @@ enum AwsViewType: String, CaseIterable {
 }
 
 class AwsView {
-  static let screenName = "app.screen.name"
+  static let screenName = "screen.name"
   static let type = "app.screen.type"
 }
 
