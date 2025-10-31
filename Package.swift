@@ -15,8 +15,7 @@ let package = Package(
   products: [
     // Products define the executables and libraries a package produces, making them visible to other packages.
     .library(name: "AwsOpenTelemetryCore", targets: ["AwsOpenTelemetryCore"]),
-    .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"]),
-    .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
+    .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"])
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
@@ -55,23 +54,6 @@ let package = Package(
       ]
     ),
     .target(
-      name: "AwsOpenTelemetryAuth",
-      dependencies: [
-        "AwsOpenTelemetryCore",
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "SmithyIdentity", package: "smithy-swift"),
-        .product(name: "SmithyHTTPAuth", package: "smithy-swift"),
-        .product(name: "SmithyHTTPAuthAPI", package: "smithy-swift"),
-        .product(name: "SmithyHTTPAPI", package: "smithy-swift"),
-        .product(name: "Smithy", package: "smithy-swift"),
-        .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift"),
-        .product(name: "AWSCognitoIdentity", package: "aws-sdk-swift")
-      ],
-      exclude: ["README.md"]
-    ),
-    .target(
       name: "TestUtils",
       dependencies: [
         "AwsOpenTelemetryCore",
@@ -87,10 +69,6 @@ let package = Package(
         "TestUtils",
         .product(name: "Atomics", package: "swift-atomics")
       ]
-    ),
-    .testTarget(
-      name: "AwsOpenTelemetryAuthTests",
-      dependencies: ["AwsOpenTelemetryAuth"]
     )
     // .testTarget(
     //   name: "ContractTests",
