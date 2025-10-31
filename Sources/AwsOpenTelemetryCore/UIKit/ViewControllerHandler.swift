@@ -95,9 +95,9 @@
       state.didAppear = true
     }
   }
-#endif
 
-class ViewInstrumentationState: NSObject {
-  var loadTime: Date?
-  var didAppear = false
-}
+  class ViewInstrumentationState {
+    var loadTime: Date?
+    var didAppear = false
+  }
+#endif

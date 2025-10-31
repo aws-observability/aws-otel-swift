@@ -17,20 +17,17 @@
       super.init()
       if #available(iOS 16.0, *), config.startup {
         AwsMetricKitAppLaunchProcessor.initialize()
+      } else {
+        AwsInternalLogger.debug("ADOT Swift only officially supports iOS 16")
       }
-      AwsInternalLogger.debug("Successfully initialized")
     }
 
     func subscribe() {
-      AwsInternalLogger.debug("Registering with MXMetricManager")
       MXMetricManager.shared.add(self)
-      AwsInternalLogger.debug("Successfully registered with MXMetricManager")
     }
 
     deinit {
-      AwsInternalLogger.debug("Unregistering from MXMetricManager")
       MXMetricManager.shared.remove(self)
-      AwsInternalLogger.debug("Successfully deinitialized")
     }
 
     func didReceive(_ payloads: [MXDiagnosticPayload]) {
@@ -40,26 +37,11 @@
         // if config.crashes {
         //   processCrashDiagnostics(payload.crashDiagnostics)
         // }
-
-        if config.hangs {
-          processHangDiagnostics(payload.hangDiagnostics)
-        }
       }
     }
 
     private func processCrashDiagnostics(_ diagnostics: [MXCrashDiagnostic]?) {
       AwsMetricKitCrashProcessor.processCrashDiagnostics(diagnostics)
     }
-
-    private func processHangDiagnostics(_ diagnostics: [MXHangDiagnostic]?) {
-      AwsMetricKitHangProcessor.processHangDiagnostics(diagnostics)
-    }
-
-    // @available(iOS 16.0, *)
-    // private func processAppLaunchDiagnostics(_ diagnostics: [MXAppLaunchDiagnostic]?) {
-    //   if config.startup {
-    //     AwsMetricKitAppLaunchProcessor.processAppLaunchDiagnostics(diagnostics)
-    //   }
-    // }
   }
 #endif

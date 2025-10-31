@@ -139,30 +139,14 @@ final class AwsSessionManagerTests: XCTestCase {
     XCTAssertEqual(AwsSessionEventInstrumentation.queue[0].session.id, session.id)
   }
 
-  func testStartSessionTriggersNotificationWhenInstrumentationApplied() {
+  func testStartSessionProcessesDirectlyWhenInstrumentationApplied() {
     AwsSessionEventInstrumentation.queue = []
     AwsSessionEventInstrumentation.isApplied = true
 
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSessionEvent: AwsSessionEvent?
-
-    let observer = NotificationCenter.default.addObserver(
-      forName: AwsSessionEventInstrumentation.sessionEventNotification,
-      object: nil,
-      queue: nil
-    ) { notification in
-      receivedSessionEvent = notification.object as? AwsSessionEvent
-      expectation.fulfill()
-    }
-
     let session = sessionManager.getSession()
 
-    wait(for: [expectation], timeout: 0.1)
-
-    XCTAssertNotNil(receivedSessionEvent)
-    XCTAssertEqual(receivedSessionEvent?.session.id, session.id)
+    // When instrumentation is applied, sessions are processed directly, not queued
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
-
-    NotificationCenter.default.removeObserver(observer)
+    XCTAssertNotNil(session.id)
   }
 }

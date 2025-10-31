@@ -41,7 +41,7 @@ let package = Package(
         .product(name: "Installations", package: "KSCrash"),
         .product(name: "CrashReporter", package: "plcrashreporter")
       ],
-      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md"]
+      exclude: ["Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md", "AppLaunch/README.md", "SwiftUI/README.md", "OfflineStorage/OfflineStorage.xcdatamodeld"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",

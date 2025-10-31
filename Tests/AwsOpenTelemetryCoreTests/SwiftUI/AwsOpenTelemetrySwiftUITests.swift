@@ -49,76 +49,6 @@ final class AwsOpenTelemetrySwiftUITests: XCTestCase {
 
   // MARK: - Span Creation Tests
 
-  func testSpanCreation() {
-    let config = AwsOpenTelemetryConfig(
-      aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
-    )
-    AwsOpenTelemetryAgent.shared.configuration = config
-    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")
-
-    // Create spans simulating SwiftUI lifecycle
-    let rootSpan = tracer.spanBuilder(spanName: "TestView").startSpan()
-    rootSpan.setAttribute(key: "view.name", value: "TestView")
-    rootSpan.setAttribute(key: "view.type", value: "swiftui")
-
-    let onAppearSpan = tracer.spanBuilder(spanName: "TestView.onAppear")
-      .setParent(rootSpan)
-      .startSpan()
-    onAppearSpan.setAttribute(key: "view.lifecycle", value: "onAppear")
-    onAppearSpan.end()
-
-    rootSpan.end()
-
-    let spans = mockSpanProcessor.getEndedSpans()
-    XCTAssertEqual(spans.count, 2)
-    XCTAssertEqual(spans.rootSpans.count, 1)
-    XCTAssertEqual(spans.childSpans.count, 1)
-
-    let rootSpanData = spans.rootSpans.first!
-    XCTAssertEqual(rootSpanData.name, "TestView")
-    XCTAssertEqual(rootSpanData.getAttributeString("view.name"), "TestView")
-    XCTAssertEqual(rootSpanData.getAttributeString("view.type"), "swiftui")
-
-    let childSpanData = spans.childSpans.first!
-    XCTAssertEqual(childSpanData.name, "TestView.onAppear")
-    XCTAssertEqual(childSpanData.getAttributeString("view.lifecycle"), "onAppear")
-    XCTAssertEqual(childSpanData.testParentSpanId, rootSpanData.testSpanId)
-  }
-
-  func testViewTraceStateLifecycle() {
-    let state = ViewTraceState()
-    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")
-
-    state.appearCount += 1
-    let rootSpan = tracer.spanBuilder(spanName: "TestView").startSpan()
-    state.rootSpan = rootSpan
-
-    let onAppearSpan = tracer.spanBuilder(spanName: "TestView.onAppear")
-      .setParent(rootSpan)
-      .startSpan()
-    onAppearSpan.end()
-
-    state.disappearCount += 1
-    let onDisappearSpan = tracer.spanBuilder(spanName: "TestView.onDisappear")
-      .setParent(rootSpan)
-      .startSpan()
-    onDisappearSpan.end()
-
-    rootSpan.end()
-    state.rootSpan = nil
-
-    XCTAssertEqual(state.appearCount, 1)
-    XCTAssertEqual(state.disappearCount, 1)
-    XCTAssertNil(state.rootSpan)
-
-    let spans = mockSpanProcessor.getEndedSpans()
-    XCTAssertEqual(spans.count, 3)
-    XCTAssertTrue(spans.contains(spanNamed: "TestView"))
-    XCTAssertTrue(spans.contains(spanNamed: "TestView.onAppear"))
-    XCTAssertTrue(spans.contains(spanNamed: "TestView.onDisappear"))
-  }
-
   func testtimeToFirstAppearSpanCreated() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
@@ -126,12 +56,12 @@ final class AwsOpenTelemetrySwiftUITests: XCTestCase {
     )
     AwsOpenTelemetryAgent.shared.configuration = config
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")
-    let state = ViewTraceState()
 
     let appearTime = Date()
+    let initTime = Date().addingTimeInterval(-1)
     let timeToFirstAppearSpan = tracer.spanBuilder(spanName: "TestView.TimeToFirstAppear")
       .setSpanKind(spanKind: .client)
-      .setStartTime(time: state.initializationTime)
+      .setStartTime(time: initTime)
       .startSpan()
 
     let durationNanos = Double(10 * 1_000_000_000)
@@ -156,24 +86,25 @@ final class AwsOpenTelemetrySwiftUITests: XCTestCase {
     )
     AwsOpenTelemetryAgent.shared.configuration = config
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")
-    let state = ViewTraceState()
+    let initTime = Date().addingTimeInterval(-1)
+    var appearCount = 0
 
     for _ in 0 ..< 3 {
       let appearTime = Date()
 
-      if state.appearCount == 0 {
+      if appearCount == 0 {
         let timeToFirstAppearSpan = tracer.spanBuilder(spanName: "TestView.TimeToFirstAppear")
           .setSpanKind(spanKind: .client)
-          .setStartTime(time: state.initializationTime)
+          .setStartTime(time: initTime)
           .startSpan()
 
-        let durationNanos = Double(appearTime.timeIntervalSince(state.initializationTime) * 1_000_000_000)
+        let durationNanos = Double(appearTime.timeIntervalSince(initTime) * 1_000_000_000)
         timeToFirstAppearSpan.setAttribute(key: "view.lifecycle", value: "TimeToFirstAppear")
         timeToFirstAppearSpan.setAttribute(key: "durationNanos", value: durationNanos)
         timeToFirstAppearSpan.end(time: appearTime)
       }
 
-      state.appearCount += 1
+      appearCount += 1
     }
 
     let spans = mockSpanProcessor.getEndedSpans()

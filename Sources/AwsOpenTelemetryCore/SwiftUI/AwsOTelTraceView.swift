@@ -18,7 +18,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 
 /// SwiftUI wrapper view that instruments view lifecycle tracing.
-/// Creates spans for root view, body evaluations, onAppear/onDisappear events, and timeToFirstAppear.
+/// Creates spans for ViewDidAppear and TimeToFirstAppear.
 @available(iOS 13, macOS 10.15, tvOS 13, watchOS 6.0, *)
 public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
   private static var tracer: Tracer {
@@ -33,7 +33,7 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     )
   }
 
-  @State private var initializationTime = Date()
+  @State private var loadTime = Date()
   @State private var hasAppeared = false
 
   private let content: () -> Content
@@ -80,13 +80,11 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
       }
   }
 
-  func handleViewAppear() {
+  func handleViewAppear(now: Date = Date()) {
     // Check if SwiftUI instrumentation is enabled
     guard isViewInstrumentationEnabled else {
       return
     }
-
-    let now = Date()
 
     // Record TimeToFirstAppear span
     if !hasAppeared {
@@ -94,7 +92,7 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
       let span = Self.tracer.spanBuilder(spanName: AwsTimeToFirstAppear.name)
         .setAttribute(key: AwsTimeToFirstAppear.screenName, value: screenName)
         .setAttribute(key: AwsTimeToFirstAppear.type, value: AwsViewType.swiftui.rawValue)
-        .setStartTime(time: initializationTime)
+        .setStartTime(time: loadTime)
         .startSpan()
 
       for (key, value) in attributes {
