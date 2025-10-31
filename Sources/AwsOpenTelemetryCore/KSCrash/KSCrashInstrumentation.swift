@@ -38,7 +38,7 @@ protocol CrashProtocol {
   static func processStoredCrashes()
 }
 
-class KSCrashInstrumentation: CrashProtocol {
+public class KSCrashInstrumentation: CrashProtocol {
   public static let maxStackTraceBytes = 30 * 1024 // 30 KB
   public private(set) static var isInstalled: Bool = false
   private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.KSCRASH)
