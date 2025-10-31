@@ -11,6 +11,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   override func tearDown() {
+    NotificationCenter.default.removeObserver(self)
     AwsSessionStore.teardown()
     super.tearDown()
   }
@@ -148,5 +149,53 @@ final class AwsSessionManagerTests: XCTestCase {
     // When instrumentation is applied, sessions are processed directly, not queued
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
     XCTAssertNotNil(session.id)
+  }
+
+  func testSessionStartNotificationPosted() {
+    let expectation = XCTestExpectation(description: "Session start notification")
+    var receivedSession: AwsSession?
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: SessionStartNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      receivedSession = notification.object as? AwsSession
+      expectation.fulfill()
+    }
+
+    let session = sessionManager.getSession()
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedSession?.id, session.id)
+
+    NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testMultipleSessionStartNotifications() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
+    var receivedSessions: [String] = []
+    let expectation = XCTestExpectation(description: "Multiple session notifications")
+    expectation.expectedFulfillmentCount = 3
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: SessionStartNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let session = notification.object as? AwsSession {
+        receivedSessions.append(session.id)
+      }
+      expectation.fulfill()
+    }
+
+    let session1 = sessionManager.getSession()
+    let session2 = sessionManager.getSession()
+    let session3 = sessionManager.getSession()
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedSessions, [session1.id, session2.id, session3.id])
+
+    NotificationCenter.default.removeObserver(observer)
   }
 }

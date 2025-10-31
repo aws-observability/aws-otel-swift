@@ -34,7 +34,7 @@ import Foundation
     }
 
     for i in 0 ..< callStacks.count {
-      if var rootFrames = callStacks[i]["callStackRootFrames"] as? [[String: Any]] {
+      if let rootFrames = callStacks[i]["callStackRootFrames"] as? [[String: Any]] {
         callStacks[i]["callStackRootFrames"] = rootFrames.map { frame in
           filterFrameDepth(frame, currentDepth: 0, maxDepth: maxDepth)
         }

@@ -1,4 +1,3 @@
-
 /*
  * Copyright Amazon.com, Inc. or its affiliates.
  *
@@ -44,6 +43,7 @@ class KSCrashInstrumentation: CrashProtocol {
   public private(set) static var isInstalled: Bool = false
   private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.KSCRASH)
   static let reporter = KSCrash.shared
+  static var observers: [NSObjectProtocol] = []
   private static let timestampFormatter: ISO8601DateFormatter = {
     // Example KSCrash timestamp: `2025-10-28T03:30:53.604204Z`
     let formatter = ISO8601DateFormatter()
@@ -80,8 +80,13 @@ class KSCrashInstrumentation: CrashProtocol {
       processStoredCrashes()
     }
 
+    // setup cache context subscribers
+    setupNotificationObservers()
+  }
+
+  static func setupNotificationObservers() {
     // Update crash context on session start
-    NotificationCenter.default.addObserver(
+    let sessionObserver = NotificationCenter.default.addObserver(
       forName: SessionStartNotification,
       object: nil,
       queue: nil
@@ -92,9 +97,10 @@ class KSCrashInstrumentation: CrashProtocol {
         }
       }
     }
+    observers.append(sessionObserver)
 
     // Update crash context on user change
-    NotificationCenter.default.addObserver(
+    let userObserver = NotificationCenter.default.addObserver(
       forName: AwsUserIdChangeNotification,
       object: nil,
       queue: nil
@@ -105,9 +111,10 @@ class KSCrashInstrumentation: CrashProtocol {
         }
       }
     }
+    observers.append(userObserver)
 
     // Update crash context on screen change
-    NotificationCenter.default.addObserver(
+    let screenObserver = NotificationCenter.default.addObserver(
       forName: AwsScreenChangeNotification,
       object: nil,
       queue: nil
@@ -118,6 +125,7 @@ class KSCrashInstrumentation: CrashProtocol {
         }
       }
     }
+    observers.append(screenObserver)
   }
 
   static func cacheCrashContext(session: AwsSession? = nil,
@@ -143,7 +151,6 @@ class KSCrashInstrumentation: CrashProtocol {
     userInfo[AwsViewSemConv.screenName] = screen
 
     reporter.userInfo = userInfo
-    AwsInternalLogger.debug("KSCrashInstrumentation updated user info: \(userInfo)")
   }
 
   /// Report cached crashes from KSCrash store (just a local file)
@@ -156,7 +163,7 @@ class KSCrashInstrumentation: CrashProtocol {
 
     // Pull crash reports
     let reportIDs = reportStore.reportIDs
-    for (index, reportID) in reportIDs.enumerated() {
+    for (_, reportID) in reportIDs.enumerated() {
       guard let id = reportID as? Int64,
             let crashReport = reportStore.report(for: id) else {
         AwsInternalLogger.debug("KSCrashInstrumentation failed to load crash report \(reportID)")

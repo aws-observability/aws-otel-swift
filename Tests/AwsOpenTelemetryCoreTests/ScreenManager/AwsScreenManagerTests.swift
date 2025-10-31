@@ -145,4 +145,51 @@ final class AwsScreenManagerTests: XCTestCase {
     XCTAssertEqual(logs[0].attributes[AwsViewDidAppearSemConv.interaction], AttributeValue.int(1))
     XCTAssertEqual(logs[1].attributes[AwsViewDidAppearSemConv.interaction], AttributeValue.int(2))
   }
+
+  func testSetCurrentPostsNotification() {
+    let expectation = XCTestExpectation(description: "Screen change notification")
+    var receivedScreenName: String?
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsScreenChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      receivedScreenName = notification.object as? String
+      expectation.fulfill()
+    }
+
+    screenManager.setCurrent(screen: "TestScreen")
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedScreenName, "TestScreen")
+
+    NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testMultipleScreenChangesPostMultipleNotifications() {
+    var receivedScreens: [String] = []
+    let expectation = XCTestExpectation(description: "Multiple screen notifications")
+    expectation.expectedFulfillmentCount = 3
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsScreenChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let screen = notification.object as? String {
+        receivedScreens.append(screen)
+      }
+      expectation.fulfill()
+    }
+
+    screenManager.setCurrent(screen: "Screen1")
+    screenManager.setCurrent(screen: "Screen2")
+    screenManager.setCurrent(screen: "Screen3")
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedScreens, ["Screen1", "Screen2", "Screen3"])
+
+    NotificationCenter.default.removeObserver(observer)
+  }
 }

@@ -63,16 +63,6 @@ struct AwsInstrumentationPlan {
     let urlSessionConfig = networkEnabled ? AwsURLSessionConfig(region: config.aws.region, exportOverride: config.exportOverride) : nil
     let metricKitConfig = (crashEnabled || hangEnabled || startupEnabled) ? AwsMetricKitConfig(crashes: crashEnabled, hangs: hangEnabled, startup: startupEnabled) : nil
 
-    if urlSessionConfig != nil {
-      var overrideInfo = ""
-      if let exportOverride = config.exportOverride {
-        let tracesInfo = exportOverride.traces != nil ? "traces=\(exportOverride.traces!)" : ""
-        let logsInfo = exportOverride.logs != nil ? "logs=\(exportOverride.logs!)" : ""
-        let overrides = [tracesInfo, logsInfo].filter { !$0.isEmpty }.joined(separator: ", ")
-        overrideInfo = overrides.isEmpty ? "" : ", overrides: \(overrides)"
-      }
-    }
-
     return AwsInstrumentationPlan(
       sessionEvents: sessionEventsEnabled,
       view: viewEnabled,

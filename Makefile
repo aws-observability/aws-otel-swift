@@ -88,11 +88,11 @@ check-coverage:  ## Run tests with coverage and check thresholds
 
 .PHONY: lint-format
 lint-format:  ## Run SwiftFormat linting
-	find . -name '*.swift' -not -path './.build/*' | xargs swiftformat --lint
+	find ./Sources -name '*.swift' -not -path './.build/*' | xargs swiftformat --lint
 
 .PHONY: lint-swift
 lint-swift:  ## Run SwiftLint
-	find . -name '*.swift' -not -path './.build/*' | xargs swiftlint lint --strict
+	find ./Sources -name '*.swift' -not -path './.build/*' | xargs swiftlint lint --strict
 
 .PHONY: format
 format:  ## Auto-fix formatting issues with SwiftFormat

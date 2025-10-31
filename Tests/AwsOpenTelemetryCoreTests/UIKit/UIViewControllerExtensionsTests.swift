@@ -149,7 +149,7 @@ import XCTest
       expectation.expectedFulfillmentCount = 50
 
       // Simulate concurrent access to instrumentation state
-      for i in 0 ..< 50 {
+      for _ in 0 ..< 50 {
         DispatchQueue.global().async {
           let state = ViewInstrumentationState()
           viewController.instrumentationState = state

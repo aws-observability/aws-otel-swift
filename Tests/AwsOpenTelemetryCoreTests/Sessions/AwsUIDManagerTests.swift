@@ -33,4 +33,54 @@ final class AwsUIDManagerTests: XCTestCase {
 
     XCTAssertEqual(firstCall, secondCall)
   }
+
+  func testSetUIDPostsNotification() {
+    let manager = AwsUIDManager()
+    let expectation = XCTestExpectation(description: "UID change notification")
+    var receivedUID: String?
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsUserIdChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      receivedUID = notification.object as? String
+      expectation.fulfill()
+    }
+
+    let testUID = "test-uid-123"
+    manager.setUID(uid: testUID)
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedUID, testUID)
+
+    NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testMultipleSetUIDCallsPostMultipleNotifications() {
+    let manager = AwsUIDManager()
+    var receivedUIDs: [String] = []
+    let expectation = XCTestExpectation(description: "Multiple UID notifications")
+    expectation.expectedFulfillmentCount = 3
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsUserIdChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let uid = notification.object as? String {
+        receivedUIDs.append(uid)
+      }
+      expectation.fulfill()
+    }
+
+    manager.setUID(uid: "uid1")
+    manager.setUID(uid: "uid2")
+    manager.setUID(uid: "uid3")
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedUIDs, ["uid1", "uid2", "uid3"])
+
+    NotificationCenter.default.removeObserver(observer)
+  }
 }

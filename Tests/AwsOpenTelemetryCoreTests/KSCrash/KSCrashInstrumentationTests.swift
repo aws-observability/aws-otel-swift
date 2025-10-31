@@ -33,6 +33,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
   override func tearDown() {
     inMemoryExporter.reset()
+    NotificationCenter.default.removeObserver(self)
     super.tearDown()
   }
 
@@ -218,6 +219,81 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(result[AwsSessionSemConv.id]?.description, "test-session-id")
     XCTAssertNil(result[AwsSessionSemConv.previousId])
     XCTAssertNil(result["user.id"])
+  }
+
+  func testSessionStartNotificationHandling() {
+    KSCrashInstrumentation.setupNotificationObservers()
+    defer {
+      for observer in KSCrashInstrumentation.observers {
+        NotificationCenter.default.removeObserver(observer)
+      }
+      KSCrashInstrumentation.observers.removeAll()
+    }
+
+    let session = AwsSession(id: "notification-session", expireTime: Date(timeIntervalSinceNow: 1800))
+
+    NotificationCenter.default.post(name: SessionStartNotification, object: session)
+
+    // Allow async processing
+    let expectation = XCTestExpectation(description: "Async crash context update")
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[AwsSessionSemConv.id], "notification-session")
+  }
+
+  func testUserIdChangeNotificationHandling() {
+    KSCrashInstrumentation.setupNotificationObservers()
+    defer {
+      for observer in KSCrashInstrumentation.observers {
+        NotificationCenter.default.removeObserver(observer)
+      }
+      KSCrashInstrumentation.observers.removeAll()
+    }
+
+    let testUserId = "notification-user-123"
+
+    NotificationCenter.default.post(name: AwsUserIdChangeNotification, object: testUserId)
+
+    // Allow async processing
+    let expectation = XCTestExpectation(description: "Async crash context update")
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[AwsUserSemvConv.id], testUserId)
+  }
+
+  func testScreenChangeNotificationHandling() {
+    KSCrashInstrumentation.setupNotificationObservers()
+    defer {
+      for observer in KSCrashInstrumentation.observers {
+        NotificationCenter.default.removeObserver(observer)
+      }
+      KSCrashInstrumentation.observers.removeAll()
+    }
+
+    let testScreen = "NotificationTestScreen"
+
+    NotificationCenter.default.post(name: AwsScreenChangeNotification, object: testScreen)
+
+    // Allow async processing
+    let expectation = XCTestExpectation(description: "Async crash context update")
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
+      expectation.fulfill()
+    }
+
+    wait(for: [expectation], timeout: 1.0)
+
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[AwsViewSemConv.screenName], testScreen)
   }
 }
 

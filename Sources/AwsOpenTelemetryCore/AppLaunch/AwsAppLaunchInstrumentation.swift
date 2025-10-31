@@ -144,9 +144,10 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
 
       // Handle warm launch
       if hasLostFocusBefore, let startTime = lastWarmLaunchStart {
+        // clear to de-dup future warm launches
         lastWarmLaunchStart = nil
-        let duration = endTime.timeIntervalSince(startTime)
 
+        // record warm launch
         tracer.spanBuilder(spanName: "AppStart")
           .setStartTime(time: startTime)
           .setAttribute(key: "start.type", value: "warm")

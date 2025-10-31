@@ -71,6 +71,9 @@ public class AwsSessionManager {
 
     // Queue the new session for a `session.start`` event
     AwsSessionEventInstrumentation.addSession(session: session!, eventType: .start)
+
+    // Post notification for session start
+    NotificationCenter.default.post(name: SessionStartNotification, object: session!)
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one

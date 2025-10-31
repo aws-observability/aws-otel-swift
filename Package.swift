@@ -39,7 +39,7 @@ let package = Package(
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift"),
         .product(name: "Installations", package: "KSCrash"),
-        .product(name: "CrashReporter", package: "plcrashreporter")
+        .product(name: "CrashReporter", package: "plcrashreporter", condition: .when(platforms: [.iOS, .macOS, .tvOS, .visionOS]))
       ],
       exclude: ["Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md", "AppLaunch/README.md", "SwiftUI/README.md"]
     ),
@@ -107,7 +107,6 @@ extension Package {
     #if canImport(Darwin)
       targets[0].dependencies
         .append(.product(name: "ResourceExtension", package: "opentelemetry-swift"))
-
     #endif
     return self
   }

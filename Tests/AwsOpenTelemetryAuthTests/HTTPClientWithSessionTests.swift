@@ -27,7 +27,7 @@ final class HTTPClientWithSessionTests: XCTestCase {
 
   override func setUp() {
     super.setUp()
-    mockSession = MockURLSession()
+    mockSession = MockURLSession(configuration: .default)
     httpClient = HTTPClientWithSession(session: mockSession)
   }
 
@@ -110,11 +110,15 @@ final class HTTPClientWithSessionTests: XCTestCase {
 
 // MARK: - Mock Classes
 
-class MockURLSession: URLSession {
+class MockURLSession: URLSession, @unchecked Sendable {
   var dataTaskCalled = false
   var lastRequest: URLRequest?
   var mockResponse: URLResponse?
   var mockError: Error?
+
+  init(configuration: URLSessionConfiguration) {
+    super.init()
+  }
 
   override func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
     dataTaskCalled = true
@@ -128,11 +132,12 @@ class MockURLSession: URLSession {
   }
 }
 
-class MockURLSessionDataTask: URLSessionDataTask {
+class MockURLSessionDataTask: URLSessionDataTask, @unchecked Sendable {
   private let completion: () -> Void
 
   init(completion: @escaping () -> Void) {
     self.completion = completion
+    super.init()
   }
 
   override func resume() {

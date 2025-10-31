@@ -166,10 +166,6 @@ public class AwsSessionEventInstrumentation {
   static func addSession(session: AwsSession, eventType: SessionEventType) {
     if isApplied {
       createSessionEvent(session: session, eventType: eventType)
-      // post event for subscribers
-      if eventType == .start {
-        NotificationCenter.default.post(name: SessionStartNotification, object: session)
-      }
     } else {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
