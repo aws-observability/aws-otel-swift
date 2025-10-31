@@ -70,7 +70,6 @@
      * view controllers. Only view controllers from the specified bundle
      * will be instrumented by default.
      *
-     * @param tracer The OpenTelemetry tracer to use for span creation
      * @param bundle The bundle to use for filtering view controllers
      */
     init(bundle: Bundle) {
@@ -91,21 +90,9 @@
      *
      * ## What Gets Installed
      *
-     * - Method swizzling for `viewDidLoad`, `viewWillAppear`,
-     *   `viewDidAppear`, and `viewDidDisappear`
+     * - Method swizzling for `viewDidLoad` and `viewDidAppear`
      * - Static handler registration for span management
      * - Bundle-based filtering for automatic view controller detection
-     *
-     * ## Thread Safety
-     *
-     * This method is thread-safe and can be called from any thread. However,
-     * it's recommended to call it during application initialization on the main thread.
-     *
-     * ## Automatic Installation
-     *
-     * When using the AWS OpenTelemetry SDK with default settings, this method
-     * is called automatically during SDK initialization. Manual installation
-     * is only needed for custom integration scenarios.
      */
     public func install() {
       lock.lock()
@@ -121,20 +108,6 @@
 
       isInstalled = true
       AwsInternalLogger.debug("[UIKitViewInstrumentation] Successfully installed view instrumentation")
-    }
-
-    /**
-     * Retrieves the parent span for a given view controller.
-     *
-     * This method is used internally to establish span hierarchies and ensure
-     * proper parent-child relationships between spans created for the same
-     * view controller's lifecycle events.
-     *
-     * @param viewController The view controller to get the parent span for
-     * @return The parent span if one exists, nil otherwise
-     */
-    func parentSpan(for viewController: UIViewController) -> Span? {
-      return handler.parentSpan(for: viewController)
     }
   }
 

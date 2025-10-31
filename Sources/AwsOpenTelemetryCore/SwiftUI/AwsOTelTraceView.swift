@@ -55,6 +55,7 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
     self.screenName = screenName
     self.attributes = attributes
     self.content = content
+    AwsScreenManagerProvider.getInstance().setCurrent(screen: screenName)
   }
 
   /// Convenience initializer with string attributes (auto-converted to AttributeValue).
@@ -108,8 +109,8 @@ public struct AwsOTelTraceView<Content: SwiftUI.View>: SwiftUI.View {
       screen: screenName,
       type: .swiftui,
       timestamp: now,
-      additionalAttributes: attributes,
-      logger: Self.logger
+      logger: Self.logger,
+      additionalAttributes: attributes
     )
   }
 }

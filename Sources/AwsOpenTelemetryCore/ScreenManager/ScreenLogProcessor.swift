@@ -25,7 +25,7 @@ class AwsScreenLogRecordProcessor: LogRecordProcessor {
     var enhancedRecord = logRecord
 
     // Only add session attributes if they don't already exist
-    if let screenName = screenManager.previousView, logRecord.attributes[AwsView.screenName] == nil {
+    if let screenName = screenManager.currentScreen, logRecord.attributes[AwsView.screenName] == nil {
       enhancedRecord.setAttribute(key: AwsView.screenName, value: screenName)
     }
 

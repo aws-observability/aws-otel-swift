@@ -112,9 +112,7 @@
      */
     private static func swizzleLifecycleMethods() {
       swizzleViewDidLoad()
-      swizzleViewWillAppear()
       swizzleViewDidAppear()
-      swizzleViewDidDisappear()
     }
 
     /**
@@ -137,25 +135,6 @@
     }
 
     /**
-     * Swizzles the viewWillAppear method for instrumentation.
-     *
-     * This method exchanges the implementation of viewWillAppear with traceViewWillAppear,
-     * which creates spans before and after the original method execution.
-     */
-    private static func swizzleViewWillAppear() {
-      let originalSelector = #selector(UIViewController.viewWillAppear(_:))
-      let swizzledSelector = #selector(UIViewController.traceViewWillAppear(_:))
-
-      guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
-            let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
-        AwsInternalLogger.error("[UIViewController] Error: Could not find viewWillAppear methods for swizzling")
-        return
-      }
-
-      method_exchangeImplementations(originalMethod, swizzledMethod)
-    }
-
-    /**
      * Swizzles the viewDidAppear method for instrumentation.
      *
      * This method exchanges the implementation of viewDidAppear with traceViewDidAppear,
@@ -168,25 +147,6 @@
       guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
             let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
         AwsInternalLogger.error("[UIViewController] Error: Could not find viewDidAppear methods for swizzling")
-        return
-      }
-
-      method_exchangeImplementations(originalMethod, swizzledMethod)
-    }
-
-    /**
-     * Swizzles the viewDidDisappear method for instrumentation.
-     *
-     * This method exchanges the implementation of viewDidDisappear with traceViewDidDisappear,
-     * which creates spans before and after the original method execution.
-     */
-    private static func swizzleViewDidDisappear() {
-      let originalSelector = #selector(UIViewController.viewDidDisappear(_:))
-      let swizzledSelector = #selector(UIViewController.traceViewDidDisappear(_:))
-
-      guard let originalMethod = class_getInstanceMethod(UIViewController.self, originalSelector),
-            let swizzledMethod = class_getInstanceMethod(UIViewController.self, swizzledSelector) else {
-        AwsInternalLogger.error("[UIViewController] Error: Could not find viewDidDisappear methods for swizzling")
         return
       }
 
@@ -287,25 +247,6 @@
     }
 
     /**
-     * Swizzled implementation of viewWillAppear that creates spans.
-     *
-     * This method is called instead of the original viewWillAppear method when
-     * method swizzling is installed. It creates spans before and after calling
-     * the original implementation to measure the execution time.
-     *
-     * The implementation handles recursive calls and prevents duplicate
-     * span creation by checking the instrumentation state.
-     *
-     * @param animated Whether the appearance is animated
-     */
-    @objc func traceViewWillAppear(_ animated: Bool) {
-      if let handler = UIViewController.instrumentationHandler {
-        handler.onViewWillAppear(self)
-      }
-      traceViewWillAppear(animated) // Call original implementation
-    }
-
-    /**
      * Swizzled implementation of viewDidAppear that creates spans.
      *
      * This method is called instead of the original viewDidAppear method when
@@ -322,25 +263,6 @@
         handler.onViewDidAppear(self)
       }
       traceViewDidAppear(animated) // Call original implementation
-    }
-
-    /**
-     * Swizzled implementation of viewDidDisappear that creates spans.
-     *
-     * This method is called instead of the original viewDidDisappear method when
-     * method swizzling is installed. Unlike the other lifecycle methods, this one
-     * only creates a single notification rather than start/end spans.
-     *
-     * The implementation ensures that visibility spans are properly ended when
-     * the view disappears.
-     *
-     * @param animated Whether the disappearance is animated
-     */
-    @objc func traceViewDidDisappear(_ animated: Bool) {
-      if let handler = UIViewController.instrumentationHandler {
-        handler.onViewDidDisappear(self)
-      }
-      traceViewDidDisappear(animated) // Call original implementation
     }
   }
 
