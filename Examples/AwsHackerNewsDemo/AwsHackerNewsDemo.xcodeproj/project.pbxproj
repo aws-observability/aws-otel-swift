@@ -7,13 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */; };
-		30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C362E047FB0000DFBF5 /* AWSS3 */; };
 		3FEA79882E833B710026E7AB /* PerformanceTests.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 3FEA79872E833B710026E7AB /* PerformanceTests.xctestplan */; };
 		5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */; };
-		5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */; };
-		DBC2D3812E5EAF27002A37D6 /* AWSClientRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */; };
-		DBC2D3822E5EAF27002A37D6 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,12 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DBC2D3822E5EAF27002A37D6 /* AwsOpenTelemetryAuth in Frameworks */,
-				DBC2D3812E5EAF27002A37D6 /* AWSClientRuntime in Frameworks */,
-				30BF3C332E047FB0000DFBF5 /* AWSCognitoIdentity in Frameworks */,
-				5E6803F32E1306FC00D1DBD3 /* AwsOpenTelemetryAuth in Frameworks */,
 				5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */,
-				30BF3C372E047FB0000DFBF5 /* AWSS3 in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,12 +130,7 @@
 			);
 			name = AwsHackerNewsDemo;
 			packageProductDependencies = (
-				30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */,
-				30BF3C362E047FB0000DFBF5 /* AWSS3 */,
-				30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */,
-				5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */,
 				5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */,
-				5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */,
 			);
 			productName = AwsHackerNewsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* AwsHackerNewsDemo.app */;
@@ -230,7 +215,6 @@
 			mainGroup = 306BC68F2E00C6AA00F19E48;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */,
 				5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -647,44 +631,10 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/awslabs/aws-sdk-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.3.39;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
 /* Begin XCSwiftPackageProductDependency section */
-		30BF3C322E047FB0000DFBF5 /* AWSCognitoIdentity */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
-			productName = AWSCognitoIdentity;
-		};
-		30BF3C362E047FB0000DFBF5 /* AWSS3 */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
-			productName = AWSS3;
-		};
-		30BF3C392E0481DF000DFBF5 /* AWSClientRuntime */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 30BF3C312E047FB0000DFBF5 /* XCRemoteSwiftPackageReference "aws-sdk-swift" */;
-			productName = AWSClientRuntime;
-		};
-		5E6803C42E13034100D1DBD3 /* AwsOpenTelemetryAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AwsOpenTelemetryAuth;
-		};
 		5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AwsOpenTelemetryCore;
-		};
-		5E6803F22E1306FC00D1DBD3 /* AwsOpenTelemetryAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AwsOpenTelemetryAuth;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

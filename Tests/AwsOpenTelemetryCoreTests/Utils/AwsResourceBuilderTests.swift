@@ -110,4 +110,24 @@ final class AwsResourceBuilderTests: XCTestCase {
     XCTAssertEqual(logRecord.resource.attributes["cloud.region"]?.description, "us-west-2")
     XCTAssertNotNil(logRecord.resource.attributes["device.model.name"])
   }
+
+  func testBuildResourceWithApplicationAttributes() {
+    let applicationAttributes = [
+      "application.version": "1.2.3",
+      "application.name": "TestApp"
+    ]
+    let config = AwsOpenTelemetryConfig(
+      aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"),
+      applicationAttributes: applicationAttributes
+    )
+    let resource = AwsResourceBuilder.buildResource(config: config)
+
+    // Check that applicationAttributes are included in resource
+    XCTAssertEqual(resource.attributes["application.version"]?.description, "1.2.3")
+    XCTAssertEqual(resource.attributes["application.name"]?.description, "TestApp")
+
+    // Check that other attributes are still present
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "test-id")
+    XCTAssertEqual(resource.attributes["cloud.region"]?.description, "us-east-1")
+  }
 }
