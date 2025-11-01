@@ -20,7 +20,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)",
         "rumAlias": "\(alias)",
-        "cognitoIdentityPool": "test-pool"
+
       },
       "exportOverride": {
         "logs": "\(logsEndpoint)",

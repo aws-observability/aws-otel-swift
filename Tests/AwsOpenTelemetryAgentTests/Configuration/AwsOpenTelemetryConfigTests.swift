@@ -5,14 +5,14 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
   let region = "us-west-2"
   let rumAppMonitorId = "test-monitor-id"
   let rumAlias = "test-alias"
-  let cognitoIdentityPool = "test-identity-pool"
+
   let logsEndpoint = "https://custom-logs.example.com"
   let tracesEndpoint = "https://custom-traces.example.com"
   let sessionTimeout = 100
   let sessionSampleRate = 1.0
 
   func testAwsOpenTelemetryConfigManualInitWithValues() {
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: rumAlias, cognitoIdentityPool: cognitoIdentityPool)
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: rumAlias)
     let exportOverride = ExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
     let applicationAttributes = ["application.version": "1.0.0"]
     let telemetryConfig = TelemetryConfig()
@@ -59,7 +59,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(rumAppMonitorId)",
         "rumAlias": "\(rumAlias)",
-        "cognitoIdentityPool": "\(cognitoIdentityPool)"
+
       },
       "exportOverride": {
         "logs": "\(logsEndpoint)",
