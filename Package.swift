@@ -1,39 +1,30 @@
 // swift-tools-version:5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
 import PackageDescription
 
 let package = Package(
   name: "aws-otel-swift",
   platforms: [
-    .iOS(.v13), // officially only supporting iOS
+    .iOS(.v13), // officially only supporting iOS v16+
     .macOS(.v12),
     .tvOS(.v13),
     .watchOS(.v6),
     .visionOS(.v1)
   ],
   products: [
-    // Products define the executables and libraries a package produces, making them visible to other packages.
     .library(name: "AwsOpenTelemetryCore", targets: ["AwsOpenTelemetryCore"]),
-    .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"]),
-    .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
+    .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"])
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.2.0"),
-    .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
-    .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0"),
     .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
     .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2")
   ],
   targets: [
-    // Targets are the basic building blocks of a package, defining a module or a test suite.
-    // Targets can depend on other targets in this package and products from dependencies.
     .target(
       name: "AwsOpenTelemetryCore",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
@@ -55,27 +46,9 @@ let package = Package(
       ]
     ),
     .target(
-      name: "AwsOpenTelemetryAuth",
-      dependencies: [
-        "AwsOpenTelemetryCore",
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
-        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "SmithyIdentity", package: "smithy-swift"),
-        .product(name: "SmithyHTTPAuth", package: "smithy-swift"),
-        .product(name: "SmithyHTTPAuthAPI", package: "smithy-swift"),
-        .product(name: "SmithyHTTPAPI", package: "smithy-swift"),
-        .product(name: "Smithy", package: "smithy-swift"),
-        .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift"),
-        .product(name: "AWSCognitoIdentity", package: "aws-sdk-swift")
-      ],
-      exclude: ["README.md"]
-    ),
-    .target(
       name: "TestUtils",
       dependencies: [
         "AwsOpenTelemetryCore",
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
       path: "Tests/TestUtils"
@@ -87,10 +60,6 @@ let package = Package(
         "TestUtils",
         .product(name: "Atomics", package: "swift-atomics")
       ]
-    ),
-    .testTarget(
-      name: "AwsOpenTelemetryAuthTests",
-      dependencies: ["AwsOpenTelemetryAuth"]
     )
     // .testTarget(
     //   name: "ContractTests",

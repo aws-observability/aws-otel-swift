@@ -46,12 +46,6 @@ struct ContentView: View {
         // Scrollable buttons section
         ScrollView {
           LazyVStack(spacing: 12) {
-            if viewModel.isNotContractTest() {
-              awsButton(icon: "folder", title: "List S3 Buckets", action: {
-                await viewModel.listS3Buckets()
-              })
-            }
-
             awsButton(icon: "network", title: "200 HTTP Request") {
               await viewModel.make200Request()
             }
@@ -62,12 +56,6 @@ struct ContentView: View {
 
             awsButton(icon: "network", title: "5xx HTTP Request") {
               await viewModel.make5xxRequest()
-            }
-
-            if viewModel.isNotContractTest() {
-              awsButton(icon: "person.badge.key", title: "Get Cognito Identity", action: {
-                await viewModel.getCognitoIdentityId()
-              })
             }
 
             /// UIKit Demo
@@ -163,7 +151,7 @@ struct ContentView: View {
           }
         }
         .frame(height: getResultWindowHeight())
-        .background(.white)
+        .background(Color(.systemBackground))
         .cornerRadius(10)
         .shadow(radius: 2)
         .padding()
@@ -209,15 +197,12 @@ struct ContentView_Previews: PreviewProvider {
   /// A lightweight mock view model for preview/testing
   @MainActor
   final class MockLoaderViewModel: LoaderViewModel {
-    init() {
-      // Provide dummy values to satisfy superclass init
-      super.init(cognitoPoolId: "mock-pool-id", region: "us-west-2")
+    override init() {
+      super.init()
       isLoading = false
-      resultMessage = "AWS API results will appear here"
+      resultMessage = "Demo results will appear here"
     }
 
-    override func listS3Buckets() async {}
-    override func getCognitoIdentityId() async {}
     override func showSessionDetails() {}
     override func renewSession() {}
     override func showUserInfo() {}
