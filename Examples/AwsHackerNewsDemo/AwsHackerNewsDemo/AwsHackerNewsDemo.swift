@@ -84,6 +84,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       aws: awsConfig,
       exportOverride: exportOverride,
       sessionTimeout: 30,
+      applicationAttributes: [
+        "app.version": "1.0.0",
+        "app.name": "AwsHackerNewsDemo"
+      ],
       debug: true
     )
 

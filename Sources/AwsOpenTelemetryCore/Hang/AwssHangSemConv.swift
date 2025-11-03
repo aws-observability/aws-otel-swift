@@ -13,13 +13,6 @@
  * permissions and limitations under the License.
  */
 
-import Foundation
-
-public enum AwsInstrumentationScopes {
-  public static let APP_START = "software.amazon.opentelemetry.AppStart"
-  public static let SESSION = "software.amazon.opentelemetry.Session"
-  public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
-  public static let SWIFTUI_VIEW = "software.amazon.opentelemetry.SwiftUIView"
-  public static let HANG = "software.amazon.opentelemetry.Hang"
-  public static let KSCRASH = "software.amazon.opentelemetry.KSCrash"
+public class AwsHangSemConv: AwsExceptionSemConv {
+  static let name = "device.hang"
 }

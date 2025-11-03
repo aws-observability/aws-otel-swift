@@ -85,7 +85,7 @@ A `session.start` log record is created when `getSession()` is called and the cu
 
 ### Instrumentation Scope
 
-- **Name**: `"software.amazon.opentelemetry.session"`
+- **Name**: `"software.amazon.opentelemetry.Session"`
 
 ### Example Session Start Log Record
 
@@ -97,7 +97,7 @@ A `session.start` log record is created when `getSession()` is called and the cu
     "session.id": { "string": "EA42F160-603A-43A6-8DA9-A86C88C3A275" },
     "session.previous_id": { "string": "9B98FDB4-CCAF-4529-97FC-A0078CF5F4D7" }
   },
-  "instrumentationScopeInfo": { "name": "software.amazon.opentelemetry.session" },
+  "instrumentationScopeInfo": { "name": "software.amazon.opentelemetry.Session" },
   "timestamp": 778124014.610989
 }
 ```
@@ -125,7 +125,7 @@ A `session.end` log record is created when `getSession()` is called and the prev
     "session.end_time": { "double": 1756431127906623700 },
     "session.duration": { "double": 490942001 }
   },
-  "instrumentationScopeInfo": { "name": "software.amazon.opentelemetry.session" },
+  "instrumentationScopeInfo": { "name": "software.amazon.opentelemetry.Session" },
   "timestamp": 778124014.610947
 }
 ```

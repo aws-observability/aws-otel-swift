@@ -117,4 +117,7 @@ node_modules/
 logs.jsonl
 traces.jsonl
 
+logs.txt
+traces.txt
+
 default.profraw

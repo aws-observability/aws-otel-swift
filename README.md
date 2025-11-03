@@ -211,8 +211,8 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 | Instrumentation    | Description                                                 | Documentation                                                                        |
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | **Network**        | Automatic HTTP request tracing for URLSession               | [Network README](Sources/AwsOpenTelemetryCore/Network/README.md)                     |
-| **Crashes**        | Crash reporting using MetricKit MXCrashDiagnostic           | [Crashes README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#crashes)           |
-| **Hangs**          | Application hang detection using MetricKit MXHangDiagnostic | [Hangs README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#hangs)               |
+| **Crashes**        | Crash reporting                                              | [Crashes README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#crashes)           |
+| **Hangs**          | Application hang detection                                   | [Hangs README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#hangs)               |
 | **View Tracking**  | Automatic view instrumentation for UIKit and SwiftUI        | [UIKitView README](Sources/AwsOpenTelemetryCore/AutoInstrumentation/UIKit/README.md) |
 | **Session Events** | Session lifecycle tracking with start/end events            | [Sessions README](Sources/AwsOpenTelemetryCore/Sessions/README.md)                   |
 
@@ -247,11 +247,11 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 | Field         | Type   | Required | Default             | Description                                                                                                                                                                                               |
 | ------------- | ------ | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| startup       | Object | No       | { "enabled": true } | Generate MetricKit `MXAppLaungDiagnostic` as log records.                                                                                                                                                 |
+| startup       | Object | No       | { "enabled": true } | Generate app launch diagnostic as log records.                                                                                                                                                             |
 | sessionEvents | Object | No       | { "enabled": true } | Creates `session.start` and `session.end` as log records according to OpenTelemetry Semantic Convention. As an ADOT-Swift extension, `session.end` also includes `duration` and `end_time`.               |
-| crash         | Object | No       | { "enabled": true } | Generate MetricKit `MXCrashDiagnostic` as log records.                                                                                                                                                    |
+| crash         | Object | No       | { "enabled": true } | Generate crash diagnostic as log records.                                                                                                                                                                  |
 | network       | Object | No       | { "enabled": true } | Generate spans of URLSession HTTP requests directly from OTel Swift's implementation of URLSessionInstrumentation. HTTP requests to the logs and spans endpoints are ignored to avoid infinite recursion. |
-| hang          | Object | No       | { "enabled": true } | Generate MetricKit `MXHangDiagnostic` as log records.                                                                                                                                                     |
+| hang          | Object | No       | { "enabled": true } | Generate hang diagnostic as log records.                                                                                                                                                                   |
 | view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
 
 **Note**: The `telemetry` section is optional in JSON configuration. If not provided, all telemetry features will be enabled by default.

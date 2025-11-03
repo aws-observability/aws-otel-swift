@@ -4,7 +4,7 @@ import XCTest
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
-class MockStackTraceCollector: StackTraceCollector {
+class MockStackTraceCollector: LiveStackTraceReporter {
   var maxStackTraceLength: Int
   var shouldReturnStackTrace: Bool = true
   var mockStackTraceData: Data = "mock stack trace data".data(using: .utf8)!

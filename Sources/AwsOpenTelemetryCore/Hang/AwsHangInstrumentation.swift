@@ -38,20 +38,20 @@ public class AwsHangInstrumentation {
     set { syncQueue.sync { _rawStackTrace = newValue } }
   }
 
-  let stackTraceCollector: StackTraceCollector
+  let stackTraceCollector: LiveStackTraceReporter
   var monitoringTimer: DispatchSourceTimer?
 
   static let shared = AwsHangInstrumentation()
 
-  public init(stackTraceCollector: StackTraceCollector? = nil) {
-    let collector: StackTraceCollector
+  public init(stackTraceCollector: LiveStackTraceReporter? = nil) {
+    let collector: LiveStackTraceReporter
     if let stackTraceCollector {
       collector = stackTraceCollector
     } else {
       #if !os(watchOS)
-        collector = PLStackTraceCollector()
+        collector = PLLiveStackTraceReporter()
       #else
-        collector = NoopStackTraceCollector()
+        collector = NoopLiveStackTraceReporter()
       #endif
     }
     hangPredetectionThreshold = hangThreshold * 2 / 3 // lower threshold to collect stacktrace during ongoing hangs
@@ -125,7 +125,7 @@ public class AwsHangInstrumentation {
     }
 
     // Collect the live stack trace because there is an ongoing hang that is likely to exceed our hang threshold
-    if hangDuration >= hangPredetectionThreshold { // We rely on StackTraceCollector to safely generate live reports
+    if hangDuration >= hangPredetectionThreshold { // We rely on LiveStackTraceReporter to safely generate live reports
       guard let liveReportData = stackTraceCollector.generateLiveStackTrace() else {
         AwsInternalLogger.debug("Failed to generate live stack trace")
         return

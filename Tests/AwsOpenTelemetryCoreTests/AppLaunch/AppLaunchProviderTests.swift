@@ -67,6 +67,13 @@ import XCTest
       let timeDifference = abs(time1!.timeIntervalSince(time2!))
       XCTAssertLessThan(timeDifference, 0.001, "Process start time should be consistent")
     }
+
+    func testSharedInstanceConsistency() {
+      let provider1 = DefaultAppLaunchProvider.shared
+      let provider2 = DefaultAppLaunchProvider.shared
+
+      XCTAssertTrue(provider1 === provider2, "Shared instance should be the same object")
+    }
   }
 
 #else
@@ -99,6 +106,13 @@ import XCTest
 
       XCTAssertNotNil(startTime, "Process start time should not be nil")
       XCTAssertTrue(startTime! <= Date(), "Process start time should be in the past")
+    }
+
+    func testSharedInstanceConsistency() {
+      let provider1 = DefaultAppLaunchProvider.shared
+      let provider2 = DefaultAppLaunchProvider.shared
+
+      XCTAssertTrue(provider1 === provider2, "Shared instance should be the same object")
     }
   }
 

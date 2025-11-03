@@ -157,31 +157,18 @@ final class AwsAppLaunchInstrumentationTests: XCTestCase {
     XCTAssertEqual(span.attributes["active_prewarm"]?.description, "false")
   }
 
-  func testNoColdLaunchWhenStartTimeUnavailable() {
-    // Given
+  func testNoLaunchWhenConditionsNotMet() {
     mockProvider.coldLaunchStartTime = nil
     instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
 
-    // When
+    // Test no cold launch when start time unavailable
     instrumentation.onLaunchEnd()
-
-    // Then
     XCTAssertEqual(spanExporter.exportedSpans.count, 0)
-  }
 
-  func testNoWarmLaunchWithoutPriorHidden() {
-    // Given - No cold launch start time to avoid cold launch
-    mockProvider.coldLaunchStartTime = nil
-    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
-
-    // When - Warm start without having been hidden first
+    // Test no warm launch without prior hidden
     instrumentation.onWarmStart()
     instrumentation.onLaunchEnd()
-
-    // Force flush to ensure spans are exported
     tracerProvider.forceFlush()
-
-    // Then - Should not record warm launch
     XCTAssertEqual(spanExporter.exportedSpans.count, 0)
   }
 
@@ -234,38 +221,96 @@ final class AwsAppLaunchInstrumentationTests: XCTestCase {
     XCTAssertEqual(spanExporter.exportedSpans.count, 1)
   }
 
-  func testStaticMethodsCallInstanceMethods() {
-    // Given
-    AwsAppLaunchInstrumentation.provider = mockProvider
-
-    // When - Call static methods
-    AwsAppLaunchInstrumentation.onLifecycleEvent(name: "static.test")
-
-    // Then
-    XCTAssertEqual(logExporter.exportedLogs.count, 1)
-  }
-
   func testIsPrewarmDetection() {
-    // Given
     mockProvider.preWarmFallbackThreshold = 30.0
     AwsAppLaunchInstrumentation.provider = mockProvider
 
-    // When/Then - Short duration should not be prewarm
     XCTAssertFalse(AwsAppLaunchInstrumentation.isPrewarm(duration: 2.0))
-
-    // When/Then - Long duration should be prewarm
     XCTAssertTrue(AwsAppLaunchInstrumentation.isPrewarm(duration: 35.0))
+
+    // Test edge cases
+    AwsAppLaunchInstrumentation.provider = nil
+    XCTAssertFalse(AwsAppLaunchInstrumentation.isPrewarm(duration: 35.0))
+
+    mockProvider.preWarmFallbackThreshold = 0
+    AwsAppLaunchInstrumentation.provider = mockProvider
+    XCTAssertFalse(AwsAppLaunchInstrumentation.isPrewarm(duration: 35.0))
   }
 
-  func testStaticStateAccess() {
-    // Given/When - Set static state
-    AwsAppLaunchInstrumentation.hasLaunched = true
-    AwsAppLaunchInstrumentation.hasLostFocusBefore = true
-    AwsAppLaunchInstrumentation.lastWarmLaunchStart = Date()
+  func testInstrumentationSetup() {
+    XCTAssertEqual(AwsAppLaunchInstrumentation.instrumentationKey, AwsInstrumentationScopes.APP_START)
 
-    // Then - Verify state is accessible
-    XCTAssertTrue(AwsAppLaunchInstrumentation.hasLaunched)
-    XCTAssertTrue(AwsAppLaunchInstrumentation.hasLostFocusBefore)
-    XCTAssertNotNil(AwsAppLaunchInstrumentation.lastWarmLaunchStart)
+    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
+    XCTAssertNotNil(instrumentation.launchEndObserver)
+    XCTAssertNotNil(instrumentation.warmStartObserver)
+    XCTAssertNotNil(instrumentation.hiddenObserver)
+  }
+
+  func testLifecycleObserverSetup() {
+    mockProvider.additionalLifecycleEvents = [
+      Notification.Name("test.event1"),
+      Notification.Name("test.event2")
+    ]
+
+    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
+
+    XCTAssertEqual(instrumentation.lifecycleObservers.count, 2)
+    XCTAssertNotNil(instrumentation.lifecycleObservers["test.event1"])
+    XCTAssertNotNil(instrumentation.lifecycleObservers["test.event2"])
+  }
+
+  func testDuplicateLifecycleObserverSkipped() {
+    let duplicateEvent = Notification.Name("duplicate.event")
+    mockProvider.additionalLifecycleEvents = [duplicateEvent, duplicateEvent]
+
+    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
+
+    XCTAssertEqual(instrumentation.lifecycleObservers.count, 1)
+  }
+
+  func testHiddenObserverRemovedAfterFirstUse() {
+    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
+
+    XCTAssertNotNil(instrumentation.hiddenObserver)
+
+    // Post the actual notification to trigger the observer removal
+    NotificationCenter.default.post(name: mockProvider.hiddenNotification, object: nil)
+
+    // Give the notification time to process
+    RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+
+    XCTAssertNil(instrumentation.hiddenObserver)
+  }
+
+  func testStaticMethods() {
+    // Test with valid provider
+    AwsAppLaunchInstrumentation.provider = mockProvider
+    AwsAppLaunchInstrumentation.onLifecycleEvent(name: "static.test")
+    XCTAssertEqual(logExporter.exportedLogs.count, 1)
+
+    // Test with nil provider
+    AwsAppLaunchInstrumentation.provider = nil
+    XCTAssertNoThrow(AwsAppLaunchInstrumentation.onLaunchEnd())
+    XCTAssertNoThrow(AwsAppLaunchInstrumentation.onWarmStart())
+    XCTAssertNoThrow(AwsAppLaunchInstrumentation.onHidden())
+  }
+
+  func testLaunchDeduplication() {
+    // Test cold launch only recorded once
+    mockProvider.coldLaunchStartTime = Date().addingTimeInterval(-1.0)
+    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
+
+    instrumentation.onLaunchEnd()
+    instrumentation.onLaunchEnd()
+    tracerProvider.forceFlush()
+    XCTAssertEqual(spanExporter.exportedSpans.count, 1)
+
+    // Test warm launch without warm start
+    mockProvider.coldLaunchStartTime = nil
+    instrumentation = AwsAppLaunchInstrumentation(provider: mockProvider)
+    instrumentation.onHidden()
+    instrumentation.onLaunchEnd()
+    tracerProvider.forceFlush()
+    XCTAssertEqual(spanExporter.exportedSpans.count, 1) // Still only 1 from cold launch
   }
 }

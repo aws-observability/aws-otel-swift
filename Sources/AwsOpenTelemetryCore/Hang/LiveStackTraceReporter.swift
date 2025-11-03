@@ -23,7 +23,7 @@ public struct StackTrace {
   let stacktrace: String
 }
 
-public protocol StackTraceCollector {
+public protocol LiveStackTraceReporter {
   var maxStackTraceLength: Int { get }
   func generateLiveStackTrace() -> Data?
   func formatStackTrace(rawStackTrace: Data) -> StackTrace
@@ -31,7 +31,7 @@ public protocol StackTraceCollector {
 }
 
 #if !os(watchOS)
-  public class PLStackTraceCollector: StackTraceCollector {
+  public class PLLiveStackTraceReporter: LiveStackTraceReporter {
     let reporter: PLCrashReporter
     public let maxStackTraceLength: Int
 
@@ -64,10 +64,10 @@ public protocol StackTraceCollector {
           let firstFrame = getFirstFrameOfMain(stacktrace: stacktrace) ?? "unknown location"
           message = "Hang detected on main thread at \(firstFrame)"
         } else {
-          AwsInternalLogger.error("PLStackTraceCollector: Failed to format crash report to string")
+          AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to format crash report to string")
         }
       } catch {
-        AwsInternalLogger.error("PLStackTraceCollector: Failed to parse crash report: \(error)")
+        AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to parse crash report: \(error)")
         stacktrace = "Failed to parse stack trace: \(error)"
       }
       return StackTrace(message: message, stacktrace: stacktrace)
@@ -80,7 +80,7 @@ public protocol StackTraceCollector {
 #endif
 
 // Noop implementation for platforms where PLCrashReporter is not available
-public class NoopStackTraceCollector: StackTraceCollector {
+public class NoopLiveStackTraceReporter: LiveStackTraceReporter {
   public let maxStackTraceLength: Int
 
   public required init(maxStackTraceLength: Int = 10 * 1000) {

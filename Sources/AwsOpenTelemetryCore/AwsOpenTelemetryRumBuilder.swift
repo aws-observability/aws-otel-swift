@@ -41,10 +41,9 @@ import StdoutExporter
   * This builder is not thread-safe and should be used from a single thread.
   * However, the resulting OpenTelemetry components are thread-safe once built.
   *
-  * Uses a 3-step instrumentation approach:
+  * Uses a 2-step instrumentation approach:
   * 1. User provides immutable TelemetryConfig
-  * 2. Config converted to testable AwsInstrumentationPlan
-  * 3. Plan executed to build requested instrumentations
+  * 2. TelemetryConfig used directly to build requested instrumentations
   */
 public class AwsOpenTelemetryRumBuilder {
   private var tracerProviderCustomizers: [(TracerProviderBuilder) -> TracerProviderBuilder] = []
@@ -151,23 +150,19 @@ public class AwsOpenTelemetryRumBuilder {
     AwsOpenTelemetryAgent.shared.isInitialized = true
     AwsInternalLogger.info("AwsOpenTelemetry initialized successfully")
 
-    buildInstrumentations(plan: instrumentationPlan)
+    buildInstrumentations()
 
     return self
   }
 
-  /// Convert TelemetryConfig to testable AwsInstrumentationPlan
-  var instrumentationPlan: AwsInstrumentationPlan {
-    return AwsInstrumentationPlan.from(config: config)
-  }
-
-  /// Execute AwsInstrumentationPlan to build requested instrumentations
-  private func buildInstrumentations(plan: AwsInstrumentationPlan) {
+  /// Build requested instrumentations based on TelemetryConfig
+  private func buildInstrumentations() {
+    let telemetry = config.telemetry ?? TelemetryConfig.default
     let syncStart = Date()
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "aws-otel-swift.debug")
 
     // App Launch
-    if plan.startup {
+    if telemetry.startup?.enabled == true {
       // Only supported on iOS
       #if canImport(UIKit) && !os(watchOS)
         AwsAppLaunchInstrumentation.shared = AwsAppLaunchInstrumentation()
@@ -176,7 +171,7 @@ public class AwsOpenTelemetryRumBuilder {
 
     // View instrumentation (UIKit/SwiftUI)
     #if canImport(UIKit) && !os(watchOS)
-      if plan.view {
+      if telemetry.view?.enabled == true {
         uiKitViewInstrumentation = UIKitViewInstrumentation()
         uiKitViewInstrumentation!.install()
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
@@ -184,11 +179,13 @@ public class AwsOpenTelemetryRumBuilder {
     #endif
 
     // Network (URLSession)
-    if let urlSessionConfig = plan.urlSessionConfig {
+    if telemetry.network?.enabled == true {
+      let urlSessionConfig = AwsURLSessionConfig(region: config.aws.region, exportOverride: config.exportOverride)
       let urlSessionInstrumentation = AwsURLSessionInstrumentation(config: urlSessionConfig)
       urlSessionInstrumentation.apply()
     }
-    if plan.crash {
+
+    if telemetry.crash?.enabled == true {
       KSCrashInstrumentation.install()
     }
 
@@ -196,27 +193,14 @@ public class AwsOpenTelemetryRumBuilder {
       let asyncStart = Date()
 
       // Hang Detection
-      if plan.hang {
+      if telemetry.hang?.enabled == true {
         _ = AwsHangInstrumentation.shared
       }
 
       // Session Events
-      if plan.sessionEvents {
+      if telemetry.sessionEvents?.enabled == true {
         AwsSessionEventInstrumentation.install()
       }
-
-      // MetricKit (crashes)
-      #if canImport(MetricKit) && !os(tvOS) && !os(macOS)
-        if let metricKitConfig = plan.metricKitConfig {
-          if #available(iOS 15.0, *) {
-            let metricKitSubscriber = AwsMetricKitSubscriber(config: metricKitConfig)
-            metricKitSubscriber.subscribe()
-            AwsOpenTelemetryAgent.shared.metricKitSubscriber = metricKitSubscriber
-          } else {
-            AwsInternalLogger.error("MetricKit subscriber not available - requires iOS 15.0+")
-          }
-        }
-      #endif
 
       let asyncEnd = Date()
       let span = tracer.spanBuilder(spanName: "[DEBUG] aws-otel-swift init (async)")
