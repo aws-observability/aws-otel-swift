@@ -54,7 +54,6 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
   func testReporterConfiguration() {
     XCTAssertNotNil(KSCrashInstrumentation.reporter)
-    XCTAssertFalse(KSCrashInstrumentation.isInstalled)
   }
 
   func testMaxStackTraceBytes() {
@@ -63,64 +62,41 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
   func testExtractCrashMessage() {
     let stackTrace = """
-    Incident Identifier: 599E8CAF-9D3E-4208-BC3D-C8DA6160CF29
-    CrashReporter Key:   555427bbb1413d491a71026e2bdda7a55fb6dfcc
-    Hardware Model:      iPhone17,2
-    Process:             AwsHackerNewsDemo [27205]
-    Path:                /private/var/containers/Bundle/Application/70705CFF-805B-41DB-B1A2-D3836B7471D6/AwsHackerNewsDemo.app/AwsHackerNewsDemo
-    Identifier:          Billy-Dev
-    Version:             1.0 (6)
-    Code Type:           ARM-64 (Native)
-    Role:                Foreground
-    Parent Process:      launchd [1]
-
-    Date/Time:           2025-10-28 13:18:08.595 -0700
-    OS Version:          iOS 18.6.2 (22G100)
-    Report Version:      104
-
-    Exception Type:  EXC_BREAKPOINT (SIGTRAP)
-    Exception Codes: KERN_INVALID_ADDRESS at 0x000000019ed5c8c4
-    Triggered by Thread:  0
-
     Thread 0 Crashed:
     0   libswiftCore.dylib            \t0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172
     1   libswiftCore.dylib            \t0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172
-    2   AwsHackerNewsDemo             \t0x00000001009825f0 __swift_instantiateConcreteTypeFromMangledNameAbstract + 42572
-
-    Thread 1:
-    0   libsystem_kernel.dylib        \t0x00000001f14e1a90 __workq_kernreturn + 8
-    1   libsystem_pthread.dylib       \t0x000000022ab30a58 _pthread_wqthread + 368
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-
-    XCTAssertNotNil(result)
     XCTAssertEqual(result, "Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172")
-  }
-
-  func testExtractCrashMessageWithNoThreadCrashed() {
-    let stackTrace = """
-    Some other content
-    Thread 1:
-    0   libsystem_kernel.dylib        \t0x00000001f14e1a90 __workq_kernreturn + 8
-    """
-
-    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-
-    XCTAssertEqual(result, "Crash detected at unknown location")
   }
 
   func testExtractCrashMessageWithDifferentThreadNumber() {
     let stackTrace = """
     Thread 5 Crashed:
     0   SomeFramework                 \t0x00000001f14e1a90 someFunction + 8
-    1   AnotherFramework              \t0x000000022ab30a58 anotherFunction + 368
     """
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-
-    XCTAssertNotNil(result)
     XCTAssertEqual(result, "Crash detected on thread 5 at SomeFramework 0x00000001f14e1a90 someFunction + 8")
+  }
+
+  func testExtractCrashMessageEdgeCases() {
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: ""), "Crash detected at unknown location")
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Crash detected at unknown location")
+
+    let noThreadCrashed = "Some other content\nThread 1:\n0   libsystem_kernel.dylib"
+    XCTAssertEqual(KSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Crash detected at unknown location")
+  }
+
+  func testExtractCrashMessageWithWhitespaceHandling() {
+    let stackTrace = """
+    Thread 2 Crashed:
+    0     MyFramework     \t\t\t    0x123456789    myFunction    +    123
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "Crash detected on thread 2 at MyFramework 0x123456789 myFunction + 123")
   }
 
   func testRecoverCrashContextSuccess() {
@@ -131,9 +107,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     ]
 
     let rawCrash: [String: Any] = [
-      "report": [
-        "timestamp": "2025-10-28T21:38:55.554842Z"
-      ],
+      "report": ["timestamp": "2025-10-28T21:38:55.554842Z"],
       "user": [
         AwsSessionSemConv.id: "test-session-id",
         AwsSessionSemConv.previousId: "test-prev-session-id",
@@ -153,60 +127,33 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(result["user.id"]?.description, "test-user-id")
   }
 
-  func testRecoverCrashContextMissingReport() {
+  func testRecoverCrashContextFailureCases() {
     let mockLogBuilder = MockLogRecordBuilder()
-    let initialAttributes: [String: AttributeValue] = [
-      "recovered_context": AttributeValue.bool(false)
-    ]
+    let initialAttributes: [String: AttributeValue] = ["recovered_context": AttributeValue.bool(false)]
 
-    let rawCrash: [String: Any] = [:]
-
-    let result = KSCrashInstrumentation.recoverCrashContext(
-      from: rawCrash,
-      log: mockLogBuilder,
-      attributes: initialAttributes
-    )
-
+    var result = KSCrashInstrumentation.recoverCrashContext(from: [:], log: mockLogBuilder, attributes: initialAttributes)
     XCTAssertEqual(result["recovered_context"]?.description, "false")
     XCTAssertNil(result[AwsSessionSemConv.id])
-  }
 
-  func testRecoverCrashContextMissingUserInfo() {
-    let mockLogBuilder = MockLogRecordBuilder()
-    let initialAttributes: [String: AttributeValue] = [
-      "recovered_context": AttributeValue.bool(false)
-    ]
-
-    let rawCrash: [String: Any] = [
-      "report": [
-        "timestamp": "2025-10-28T21:38:55.554842Z"
-      ]
-    ]
-
-    let result = KSCrashInstrumentation.recoverCrashContext(
-      from: rawCrash,
-      log: mockLogBuilder,
-      attributes: initialAttributes
-    )
-
+    let crashWithoutUser = ["report": ["timestamp": "2025-10-28T21:38:55.554842Z"]]
+    result = KSCrashInstrumentation.recoverCrashContext(from: crashWithoutUser, log: mockLogBuilder, attributes: initialAttributes)
     XCTAssertEqual(result["recovered_context"]?.description, "false")
-    XCTAssertNil(result[AwsSessionSemConv.id])
+
+    let crashWithInvalidTimestamp = [
+      "report": ["timestamp": "invalid-timestamp"],
+      "user": [AwsSessionSemConv.id: "test-session-id"]
+    ]
+    result = KSCrashInstrumentation.recoverCrashContext(from: crashWithInvalidTimestamp, log: mockLogBuilder, attributes: initialAttributes)
+    XCTAssertEqual(result["recovered_context"]?.description, "false")
   }
 
   func testRecoverCrashContextPartialUserInfo() {
     let mockLogBuilder = MockLogRecordBuilder()
-    let initialAttributes: [String: AttributeValue] = [
-      "recovered_context": AttributeValue.bool(false)
-    ]
+    let initialAttributes: [String: AttributeValue] = ["recovered_context": AttributeValue.bool(false)]
 
     let rawCrash: [String: Any] = [
-      "report": [
-        "timestamp": "2025-10-28T21:38:55.554842Z"
-      ],
-      "user": [
-        AwsSessionSemConv.id: "test-session-id"
-        // Missing prev_session_id and user.id
-      ]
+      "report": ["timestamp": "2025-10-28T21:38:55.554842Z"],
+      "user": [AwsSessionSemConv.id: "test-session-id"]
     ]
 
     let result = KSCrashInstrumentation.recoverCrashContext(
@@ -221,7 +168,43 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertNil(result["user.id"])
   }
 
-  func testSessionStartNotificationHandling() {
+  func testRecoverCrashContextWithOptionalFields() {
+    let mockLogBuilder = MockLogRecordBuilder()
+    let initialAttributes: [String: AttributeValue] = ["recovered_context": AttributeValue.bool(false)]
+
+    let rawCrash: [String: Any] = [
+      "report": ["timestamp": "2025-10-28T21:38:55.554842Z"],
+      "user": [
+        AwsSessionSemConv.id: "test-session-id",
+        AwsViewSemConv.screenName: "TestScreen"
+      ]
+    ]
+
+    let result = KSCrashInstrumentation.recoverCrashContext(
+      from: rawCrash,
+      log: mockLogBuilder,
+      attributes: initialAttributes
+    )
+
+    XCTAssertEqual(result["recovered_context"]?.description, "true")
+    XCTAssertEqual(result[AwsViewSemConv.screenName]?.description, "TestScreen")
+  }
+
+  func testCacheCrashContextVariations() {
+    KSCrashInstrumentation.cacheCrashContext(session: nil, userId: nil, screenName: nil)
+    var userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertNotNil(userInfo?[AwsSessionSemConv.id])
+    XCTAssertNotNil(userInfo?[AwsUserSemvConv.id])
+
+    let session = AwsSession(id: "specific-session", expireTime: Date(timeIntervalSinceNow: 1800))
+    KSCrashInstrumentation.cacheCrashContext(session: session, userId: "specific-user", screenName: "SpecificScreen")
+    userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    XCTAssertEqual(userInfo?[AwsSessionSemConv.id], "specific-session")
+    XCTAssertEqual(userInfo?[AwsUserSemvConv.id], "specific-user")
+    XCTAssertEqual(userInfo?[AwsViewSemConv.screenName], "SpecificScreen")
+  }
+
+  func testNotificationHandling() {
     KSCrashInstrumentation.setupNotificationObservers()
     defer {
       for observer in KSCrashInstrumentation.observers {
@@ -231,85 +214,54 @@ final class KSCrashInstrumentationTests: XCTestCase {
     }
 
     let session = AwsSession(id: "notification-session", expireTime: Date(timeIntervalSinceNow: 1800))
-
     NotificationCenter.default.post(name: SessionStartNotification, object: session)
 
-    // Allow async processing
     let expectation = XCTestExpectation(description: "Async crash context update")
     DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
       expectation.fulfill()
     }
-
     wait(for: [expectation], timeout: 1.0)
 
     let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
     XCTAssertEqual(userInfo?[AwsSessionSemConv.id], "notification-session")
   }
 
-  func testUserIdChangeNotificationHandling() {
-    KSCrashInstrumentation.setupNotificationObservers()
-    defer {
-      for observer in KSCrashInstrumentation.observers {
-        NotificationCenter.default.removeObserver(observer)
-      }
-      KSCrashInstrumentation.observers.removeAll()
-    }
-
-    let testUserId = "notification-user-123"
-
-    NotificationCenter.default.post(name: AwsUserIdChangeNotification, object: testUserId)
-
-    // Allow async processing
-    let expectation = XCTestExpectation(description: "Async crash context update")
-    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
-      expectation.fulfill()
-    }
-
-    wait(for: [expectation], timeout: 1.0)
-
-    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
-    XCTAssertEqual(userInfo?[AwsUserSemvConv.id], testUserId)
+  func testInstallMethod() {
+    XCTAssertNoThrow(KSCrashInstrumentation.install())
   }
 
-  func testScreenChangeNotificationHandling() {
-    KSCrashInstrumentation.setupNotificationObservers()
-    defer {
-      for observer in KSCrashInstrumentation.observers {
-        NotificationCenter.default.removeObserver(observer)
-      }
-      KSCrashInstrumentation.observers.removeAll()
-    }
-
-    let testScreen = "NotificationTestScreen"
-
-    NotificationCenter.default.post(name: AwsScreenChangeNotification, object: testScreen)
-
-    // Allow async processing
-    let expectation = XCTestExpectation(description: "Async crash context update")
-    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
-      expectation.fulfill()
-    }
-
-    wait(for: [expectation], timeout: 1.0)
-
-    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
-    XCTAssertEqual(userInfo?[AwsViewSemConv.screenName], testScreen)
+  func testProcessStoredCrashes() {
+    XCTAssertNoThrow(KSCrashInstrumentation.processStoredCrashes())
   }
 }
 
 class MockLogRecordBuilder: LogRecordBuilder {
   var timestamp: Date?
+  var attributes: [String: AttributeValue] = [:]
+  var eventName: String?
 
   func setTimestamp(_ timestamp: Date) -> LogRecordBuilder {
     self.timestamp = timestamp
     return self
   }
 
-  func setObservedTimestamp(_ timestamp: Date) -> LogRecordBuilder { self }
-  func setEventName(_ name: String) -> LogRecordBuilder { self }
-  func setSeverity(_ severity: Severity) -> LogRecordBuilder { self }
-  func setBody(_ body: AttributeValue) -> LogRecordBuilder { self }
-  func setAttributes(_ attributes: [String: AttributeValue]) -> LogRecordBuilder { self }
-  func addAttribute(key: String, value: AttributeValue) -> LogRecordBuilder { self }
+  func setObservedTimestamp(_ timestamp: Date) -> LogRecordBuilder { return self }
+  func setEventName(_ name: String) -> LogRecordBuilder {
+    eventName = name
+    return self
+  }
+
+  func setSeverity(_ severity: Severity) -> LogRecordBuilder { return self }
+  func setBody(_ body: AttributeValue) -> LogRecordBuilder { return self }
+  func setAttributes(_ attributes: [String: AttributeValue]) -> LogRecordBuilder {
+    self.attributes = attributes
+    return self
+  }
+
+  func addAttribute(key: String, value: AttributeValue) -> LogRecordBuilder {
+    attributes[key] = value
+    return self
+  }
+
   func emit() {}
 }

@@ -12,6 +12,11 @@ import XCTest
       XCTAssertTrue(provider.coldLaunchStartTime! <= Date(), "Cold launch start time should be in the past")
     }
 
+    func testGetProcessStartTimeErrorHandling() {
+      let startTime = DefaultAppLaunchProvider.getProcessStartTime()
+      XCTAssertNotNil(startTime)
+    }
+
     func testColdStartName() {
       let provider = DefaultAppLaunchProvider.shared
 
