@@ -57,7 +57,7 @@ try AwsOpenTelemetryRumBuilder.create(config: config).build()
 Provide user-friendly names for better observability:
 
 ```swift
-class LoginViewController: UIViewController, ViewControllerCustomization {
+class LoginViewController: UIViewController, AwsViewControllerCustomization {
   var customScreenName: String? { "Login Screen" }
   var shouldCaptureView: Bool { true }
 }
@@ -68,7 +68,7 @@ class LoginViewController: UIViewController, ViewControllerCustomization {
 Disable instrumentation for specific view controllers:
 
 ```swift
-class DebugViewController: UIViewController, ViewControllerCustomization {
+class DebugViewController: UIViewController, AwsViewControllerCustomization {
   var shouldCaptureView: Bool { false } // Skip instrumentation
 }
 ```

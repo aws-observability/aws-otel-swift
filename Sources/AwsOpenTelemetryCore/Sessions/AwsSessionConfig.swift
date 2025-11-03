@@ -35,11 +35,15 @@ import Foundation
 public struct AwsSessionConfig {
   /// Duration in seconds after which a session expires if left inactive
   public let sessionTimeout: Int
+  /// Session sample rate (0.0 to 1.0)
+  public let sessionSampleRate: Double
 
   /// Creates a new session configuration
   /// - Parameter sessionTimeout: Duration in seconds after which a session expires if left inactive (default 30 minutes)
-  public init(sessionTimeout: Int = 30 * 60) {
+  /// - Parameter sessionSampleRate: Session sample rate from 0.0 to 1.0 (default 1.0)
+  public init(sessionTimeout: Int = 30 * 60, sessionSampleRate: Double = 1.0) {
     self.sessionTimeout = sessionTimeout
+    self.sessionSampleRate = sessionSampleRate
   }
 
   /// Default configuration with 30-minute session timeout
@@ -58,6 +62,7 @@ public struct AwsSessionConfig {
 /// ```
 public class AwsSessionConfigBuilder {
   public private(set) var sessionTimeout: Int = 30 * 60
+  public private(set) var sessionSampleRate: Double = 1.0
 
   public init() {}
 
@@ -69,10 +74,18 @@ public class AwsSessionConfigBuilder {
     return self
   }
 
+  /// Sets the session sample rate
+  /// - Parameter sessionSampleRate: Session sample rate from 0.0 to 1.0
+  /// - Returns: The builder instance for method chaining
+  public func with(sessionSampleRate: Double) -> Self {
+    self.sessionSampleRate = sessionSampleRate
+    return self
+  }
+
   /// Builds the AwsSessionConfig with the configured settings
   /// - Returns: A new AwsSessionConfig instance
   public func build() -> AwsSessionConfig {
-    return AwsSessionConfig(sessionTimeout: sessionTimeout)
+    return AwsSessionConfig(sessionTimeout: sessionTimeout, sessionSampleRate: sessionSampleRate)
   }
 }
 

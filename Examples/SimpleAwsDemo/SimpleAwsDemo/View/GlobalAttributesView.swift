@@ -23,7 +23,7 @@ struct GlobalAttributesView: View {
   @State private var newValue: String = ""
   @Environment(\.dismiss) private var dismiss
 
-  private let manager = GlobalAttributesProvider.getInstance()
+  private let manager = AwsGlobalAttributesProvider.getInstance()
 
   var body: some View {
     NavigationView {

@@ -17,13 +17,13 @@ import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryApi
 
-class GlobalAttributesLogRecordProcessor: LogRecordProcessor {
-  private var globalAttributesManager: GlobalAttributesManager
+class AwsGlobalAttributesLogProcessor: LogRecordProcessor {
+  private var globalAttributesManager: AwsGlobalAttributesManager
   private var nextProcessor: LogRecordProcessor
 
-  init(nextProcessor: LogRecordProcessor, globalAttributesManager: GlobalAttributesManager? = nil) {
+  init(nextProcessor: LogRecordProcessor, globalAttributesManager: AwsGlobalAttributesManager? = nil) {
     self.nextProcessor = nextProcessor
-    self.globalAttributesManager = globalAttributesManager ?? GlobalAttributesProvider.getInstance()
+    self.globalAttributesManager = globalAttributesManager ?? AwsGlobalAttributesProvider.getInstance()
   }
 
   func onEmit(logRecord: ReadableLogRecord) {

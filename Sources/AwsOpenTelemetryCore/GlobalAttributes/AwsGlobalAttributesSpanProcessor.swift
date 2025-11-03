@@ -17,13 +17,13 @@ import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryApi
 
-public class GlobalAttributesSpanProcessor: SpanProcessor {
+public class AwsGlobalAttributesSpanProcessor: SpanProcessor {
   public var isStartRequired = true
   public var isEndRequired: Bool = false
-  private var globalAttributesManager: GlobalAttributesManager
+  private var globalAttributesManager: AwsGlobalAttributesManager
 
-  public init(globalAttributesManager: GlobalAttributesManager?) {
-    self.globalAttributesManager = globalAttributesManager ?? GlobalAttributesProvider.getInstance()
+  public init(globalAttributesManager: AwsGlobalAttributesManager?) {
+    self.globalAttributesManager = globalAttributesManager ?? AwsGlobalAttributesProvider.getInstance()
   }
 
   public func onStart(parentContext: SpanContext?, span: ReadableSpan) {

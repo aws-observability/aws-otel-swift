@@ -54,7 +54,7 @@ import OpenTelemetryApi
     /// UIKit view instrumentation for automatic view controller lifecycle tracking
     /// This is created when UIKit instrumentation is enabled in the telemetry configuration
     /// and provides automatic span creation for view controller lifecycle events
-    public internal(set) var uiKitViewInstrumentation: UIKitViewInstrumentation?
+    public internal(set) var uiKitViewInstrumentation: AwsUIKitViewInstrumentation?
   #endif
 
   #if canImport(MetricKit) && !os(tvOS) && !os(macOS)

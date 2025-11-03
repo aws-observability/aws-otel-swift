@@ -18,11 +18,11 @@
   import OpenTelemetryApi
   import OpenTelemetrySdk
 
-  class ViewControllerHandler {
-    /// Weak reference to the parent UIKitViewInstrumentation instance
-    private weak var uiKitViewInstrumentation: UIKitViewInstrumentation?
+  class AwsViewControllerHandler {
+    /// Weak reference to the parent AwsUIKitViewInstrumentation instance
+    private weak var uiKitViewInstrumentation: AwsUIKitViewInstrumentation?
 
-    private static let queueLabel = "software.amazon.opentelemetry.ViewControllerHandler"
+    private static let queueLabel = "software.amazon.opentelemetry.AwsViewControllerHandler"
     private let queue: DispatchQueue
 
     private static var logger: Logger {
@@ -33,11 +33,11 @@
       return OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.UIKIT_VIEW)
     }
 
-    init(queue: DispatchQueue = DispatchQueue(label: ViewControllerHandler.queueLabel, qos: .utility)) {
+    init(queue: DispatchQueue = DispatchQueue(label: AwsViewControllerHandler.queueLabel, qos: .utility)) {
       self.queue = queue
     }
 
-    func setUIKitViewInstrumentation(_ uiKitViewInstrumentation: UIKitViewInstrumentation) {
+    func setUIKitViewInstrumentation(_ uiKitViewInstrumentation: AwsUIKitViewInstrumentation) {
       self.uiKitViewInstrumentation = uiKitViewInstrumentation
     }
 

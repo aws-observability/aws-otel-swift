@@ -145,7 +145,7 @@ The session module automatically adds session attributes to all telemetry data t
 
 ### Log and Span Attribution
 
-`AwsSessionLogRecordProcessor` automatically adds session attributes to all log records:
+`AwsSessionLogProcessor` automatically adds session attributes to all log records:
 
 | Attribute             | Type   | Description                                  | Example                                  |
 | --------------------- | ------ | -------------------------------------------- | ---------------------------------------- |

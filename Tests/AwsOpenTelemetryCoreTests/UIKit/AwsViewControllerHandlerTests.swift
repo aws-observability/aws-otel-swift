@@ -22,9 +22,9 @@ import XCTest
   import OpenTelemetrySdk
 
   /**
-   * Test view controller that conforms to ViewControllerCustomization
+   * Test view controller that conforms to AwsViewControllerCustomization
    */
-  class TestViewController: UIViewController, ViewControllerCustomization {
+  class TestViewController: UIViewController, AwsViewControllerCustomization {
     var customScreenName: String?
 
     // Implement the protocol method directly, don't override
@@ -34,7 +34,7 @@ import XCTest
   /**
    * Test view controller that opts out of instrumentation
    */
-  class OptOutViewController: UIViewController, ViewControllerCustomization {
+  class OptOutViewController: UIViewController, AwsViewControllerCustomization {
     var customScreenName: String?
 
     // Implement the protocol method directly, don't override
@@ -42,16 +42,16 @@ import XCTest
   }
 
   /**
-   * Basic tests for ViewControllerHandler functionality.
+   * Basic tests for AwsViewControllerHandler functionality.
    */
-  final class ViewControllerHandlerTests: XCTestCase {
-    var handler: ViewControllerHandler!
-    var uiKitViewInstrumentation: UIKitViewInstrumentation!
+  final class AwsViewControllerHandlerTests: XCTestCase {
+    var handler: AwsViewControllerHandler!
+    var uiKitViewInstrumentation: AwsUIKitViewInstrumentation!
 
     override func setUp() {
       super.setUp()
       let testBundle = Bundle(for: type(of: self))
-      uiKitViewInstrumentation = UIKitViewInstrumentation(bundle: testBundle)
+      uiKitViewInstrumentation = AwsUIKitViewInstrumentation(bundle: testBundle)
       handler = uiKitViewInstrumentation.handler
     }
 
@@ -70,7 +70,7 @@ import XCTest
     }
 
     func testOptOutViewController() {
-      let uiKitViewInstrumentation = UIKitViewInstrumentation()
+      let uiKitViewInstrumentation = AwsUIKitViewInstrumentation()
 
       let optOutVC = OptOutViewController()
 
@@ -81,7 +81,7 @@ import XCTest
     }
 
     func testAllowedViewController() {
-      let uiKitViewInstrumentation = UIKitViewInstrumentation()
+      let uiKitViewInstrumentation = AwsUIKitViewInstrumentation()
 
       let testVC = TestViewController()
 

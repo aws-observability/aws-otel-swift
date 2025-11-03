@@ -2,12 +2,12 @@ import XCTest
 import OpenTelemetryApi
 @testable import AwsOpenTelemetryCore
 
-final class GlobalAttributesManagerTests: XCTestCase {
-  var manager: GlobalAttributesManager!
+final class AwsGlobalAttributesManagerTests: XCTestCase {
+  var manager: AwsGlobalAttributesManager!
 
   override func setUp() {
     super.setUp()
-    manager = GlobalAttributesManager()
+    manager = AwsGlobalAttributesManager()
   }
 
   func testSetAndGetAttribute() {

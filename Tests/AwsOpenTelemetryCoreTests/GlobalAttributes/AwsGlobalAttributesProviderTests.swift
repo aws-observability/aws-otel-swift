@@ -1,22 +1,22 @@
 import XCTest
 @testable import AwsOpenTelemetryCore
 
-final class GlobalAttributesProviderTests: XCTestCase {
+final class AwsGlobalAttributesProviderTests: XCTestCase {
   func testGetInstance() {
-    let instance1 = GlobalAttributesProvider.getInstance()
-    let instance2 = GlobalAttributesProvider.getInstance()
+    let instance1 = AwsGlobalAttributesProvider.getInstance()
+    let instance2 = AwsGlobalAttributesProvider.getInstance()
     XCTAssertTrue(instance1 === instance2)
   }
 
   func testConcurrentGetInstance() {
     let group = DispatchGroup()
-    var instances: [GlobalAttributesManager] = []
+    var instances: [AwsGlobalAttributesManager] = []
     let syncQueue = DispatchQueue(label: "test.sync")
 
     for _ in 0 ..< 100 {
       group.enter()
       DispatchQueue.global().async {
-        let instance = GlobalAttributesProvider.getInstance()
+        let instance = AwsGlobalAttributesProvider.getInstance()
         syncQueue.async {
           instances.append(instance)
         }

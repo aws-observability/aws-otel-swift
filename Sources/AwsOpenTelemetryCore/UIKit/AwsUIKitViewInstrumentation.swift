@@ -20,7 +20,7 @@
 
   /**
    * Main orchestrator for automatic UIKit view controller lifecycle instrumentation.
-   * UIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
+   * AwsUIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
    * is initialized with UIKit instrumentation enabled (default behavior).
    *
    * This class provides comprehensive instrumentation of UIViewController lifecycle events,
@@ -28,14 +28,14 @@
    * patterns without requiring manual instrumentation code.
    *
    * For advanced use cases, you can create and configure the instrumentation manually.
-   * View controllers can implement `ViewControllerCustomization`
+   * View controllers can implement `AwsViewControllerCustomization`
    * to control instrumentation.
    */
 
-  public final class UIKitViewInstrumentation {
+  public final class AwsUIKitViewInstrumentation {
     /// The handler responsible for processing view controller lifecycle events
     /// This component manages the actual span creation and lifecycle tracking
-    let handler: ViewControllerHandler
+    let handler: AwsViewControllerHandler
 
     /// The bundle path used for filtering view controllers
     /// Only view controllers from this bundle path will be instrumented by default
@@ -75,7 +75,7 @@
     init(bundle: Bundle) {
       bundlePath = bundle.bundlePath
       lock = NSLock()
-      handler = ViewControllerHandler()
+      handler = AwsViewControllerHandler()
 
       // Set the circular reference after initialization to enable parent span lookup
       handler.setUIKitViewInstrumentation(self)
@@ -99,7 +99,7 @@
       defer { lock.unlock() }
 
       guard !isInstalled else {
-        AwsInternalLogger.debug("[UIKitViewInstrumentation] Already installed")
+        AwsInternalLogger.debug("[AwsUIKitViewInstrumentation] Already installed")
         return
       }
 

@@ -25,7 +25,7 @@ import XCTest
    * Tests for UIViewController extensions functionality.
    * Focuses on associated objects, handler management, and bundle filtering.
    */
-  final class UIViewControllerExtensionsTests: XCTestCase {
+  final class AwsUIViewControllerExtensionsTests: XCTestCase {
     var tracer: Tracer!
 
     override func setUp() {
@@ -75,7 +75,7 @@ import XCTest
     // MARK: - Handler Management Tests
 
     func testSetInstrumentationHandler() {
-      let handler = ViewControllerHandler()
+      let handler = AwsViewControllerHandler()
 
       // Set the handler
       UIViewController.setInstrumentationHandler(handler)
@@ -92,7 +92,7 @@ import XCTest
     // MARK: - Bundle Filtering Tests
 
     func testShouldCaptureViewWithCustomization() {
-      class TestViewController: UIViewController, ViewControllerCustomization {
+      class TestViewController: UIViewController, AwsViewControllerCustomization {
         let shouldCapture: Bool
 
         init(shouldCapture: Bool) {
@@ -108,7 +108,7 @@ import XCTest
         var shouldCaptureView: Bool { shouldCapture }
       }
 
-      let uiKitViewInstrumentation = UIKitViewInstrumentation()
+      let uiKitViewInstrumentation = AwsUIKitViewInstrumentation()
 
       let captureVC = TestViewController(shouldCapture: true)
       let noCaptureVC = TestViewController(shouldCapture: false)
@@ -119,7 +119,7 @@ import XCTest
 
     func testBundleFiltering() {
       let testBundle = Bundle(for: type(of: self))
-      let testBundleInstrumentation = UIKitViewInstrumentation(bundle: testBundle)
+      let testBundleInstrumentation = AwsUIKitViewInstrumentation(bundle: testBundle)
 
       let viewController = UIViewController()
 
@@ -130,7 +130,7 @@ import XCTest
       XCTAssertTrue(result == true || result == false, "Bundle filtering should return a valid boolean")
 
       // Test with a view controller that has customization
-      class CustomVC: UIViewController, ViewControllerCustomization {
+      class CustomVC: UIViewController, AwsViewControllerCustomization {
         var shouldCaptureView: Bool { return true }
       }
 
@@ -138,7 +138,7 @@ import XCTest
       let customResult = customVC.shouldCaptureView(using: testBundleInstrumentation)
 
       // Customization should override bundle filtering
-      XCTAssertTrue(customResult, "ViewControllerCustomization should override bundle filtering")
+      XCTAssertTrue(customResult, "AwsViewControllerCustomization should override bundle filtering")
     }
 
     // MARK: - Thread Safety Tests

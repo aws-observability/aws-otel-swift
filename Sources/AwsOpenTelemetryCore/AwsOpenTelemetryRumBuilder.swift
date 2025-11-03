@@ -57,7 +57,7 @@ public class AwsOpenTelemetryRumBuilder {
   private var resource: Resource
 
   #if canImport(UIKit) && !os(watchOS)
-    private var uiKitViewInstrumentation: UIKitViewInstrumentation?
+    private var uiKitViewInstrumentation: AwsUIKitViewInstrumentation?
   #endif
 
   // MARK: - Initialization Methods
@@ -92,7 +92,10 @@ public class AwsOpenTelemetryRumBuilder {
     self.config = config
     resource = AwsResourceBuilder.buildResource(config: config)
     // Configure session manager with timeout from config
-    let sessionConfig = AwsSessionConfig(sessionTimeout: config.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout)
+    let sessionConfig = AwsSessionConfig(
+      sessionTimeout: config.sessionTimeout ?? AwsSessionConfig.default.sessionTimeout,
+      sessionSampleRate: config.sessionSampleRate ?? AwsSessionConfig.default.sessionSampleRate
+    )
     let sessionManager = AwsSessionManager(configuration: sessionConfig)
     AwsSessionManagerProvider.register(sessionManager: sessionManager)
   }
@@ -172,7 +175,7 @@ public class AwsOpenTelemetryRumBuilder {
     // View instrumentation (UIKit/SwiftUI)
     #if canImport(UIKit) && !os(watchOS)
       if telemetry.view?.enabled == true {
-        uiKitViewInstrumentation = UIKitViewInstrumentation()
+        uiKitViewInstrumentation = AwsUIKitViewInstrumentation()
         uiKitViewInstrumentation!.install()
         AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = uiKitViewInstrumentation
       }
@@ -389,10 +392,11 @@ public class AwsOpenTelemetryRumBuilder {
       .add(spanProcessor: MultiSpanProcessor(
         spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
       ))
-      .add(spanProcessor: GlobalAttributesSpanProcessor(globalAttributesManager: GlobalAttributesProvider.getInstance()))
+      .add(spanProcessor: AwsGlobalAttributesSpanProcessor(globalAttributesManager: AwsGlobalAttributesProvider.getInstance()))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
       .add(spanProcessor: AwsUIDSpanProcessor(uidManager: AwsUIDManagerProvider.getInstance()))
       .add(spanProcessor: AwsScreenSpanProcessor(screenManager: AwsScreenManagerProvider.getInstance()))
+      .with(sampler: AwsSessionSpanSampler())
       .with(resource: resource)
 
     // Apply all customizers in order
@@ -414,10 +418,11 @@ public class AwsOpenTelemetryRumBuilder {
   private func buildLoggerProvider(logExporter: LogRecordExporter,
                                    resource: Resource) -> LoggerProvider {
     let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
-    let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
-    let sessionProcessor = AwsSessionLogRecordProcessor(nextProcessor: uidProcessor)
+    let samplerProcessor = AwsSessionLogSampler(nextProcessor: batchProcessor)
+    let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: samplerProcessor)
+    let sessionProcessor = AwsSessionLogProcessor(nextProcessor: uidProcessor)
     let screenProcessor = AwsScreenLogRecordProcessor(nextProcessor: sessionProcessor)
-    let globalAttributesProcessor = GlobalAttributesLogRecordProcessor(nextProcessor: screenProcessor)
+    let globalAttributesProcessor = AwsGlobalAttributesLogProcessor(nextProcessor: screenProcessor)
 
     let builder = LoggerProviderBuilder()
       .with(processors: [globalAttributesProcessor])

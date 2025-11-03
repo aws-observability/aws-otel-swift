@@ -20,24 +20,24 @@ import XCTest
   import UIKit
 
   /**
-   * Tests for ViewControllerCustomization protocol functionality.
+   * Tests for AwsViewControllerCustomization protocol functionality.
    */
-  final class ViewControllerCustomizationTests: XCTestCase {
+  final class AwsViewControllerCustomizationTests: XCTestCase {
     // MARK: - Test View Controllers
 
-    class DefaultViewController: UIViewController, ViewControllerCustomization {
+    class DefaultViewController: UIViewController, AwsViewControllerCustomization {
       // Uses default implementations
     }
 
-    class CustomNameViewController: UIViewController, ViewControllerCustomization {
+    class CustomNameViewController: UIViewController, AwsViewControllerCustomization {
       var customScreenName: String? { return "MyCustomName" }
     }
 
-    class OptOutViewController: UIViewController, ViewControllerCustomization {
+    class OptOutViewController: UIViewController, AwsViewControllerCustomization {
       var shouldCaptureView: Bool { return false }
     }
 
-    class FullyCustomViewController: UIViewController, ViewControllerCustomization {
+    class FullyCustomViewController: UIViewController, AwsViewControllerCustomization {
       var customScreenName: String? { return "FullyCustom" }
       var shouldCaptureView: Bool { return true }
     }
@@ -75,7 +75,7 @@ import XCTest
 
     func testProtocolConformance() {
       // Test that regular UIViewController can conform to the protocol
-      class TestVC: UIViewController, ViewControllerCustomization {}
+      class TestVC: UIViewController, AwsViewControllerCustomization {}
 
       let viewController = TestVC()
 
@@ -85,7 +85,7 @@ import XCTest
     }
 
     func testMultipleViewControllers() {
-      let controllers: [UIViewController & ViewControllerCustomization] = [
+      let controllers: [UIViewController & AwsViewControllerCustomization] = [
         DefaultViewController(),
         CustomNameViewController(),
         OptOutViewController(),

@@ -22,10 +22,10 @@ import XCTest
   import OpenTelemetrySdk
 
   /**
-   * Comprehensive tests for UIKitViewInstrumentation class.
+   * Comprehensive tests for AwsUIKitViewInstrumentation class.
    * Covers initialization, installation, thread safety, integration, and memory management.
    */
-  final class UIKitViewInstrumentationTests: XCTestCase {
+  final class AwsUIKitViewInstrumentationTests: XCTestCase {
     var mockSpanProcessor: MockSpanProcessor!
     var tracerProvider: TracerProviderSdk!
     var tracer: Tracer!
@@ -48,7 +48,7 @@ import XCTest
     // MARK: - Initialization Tests
 
     func testConvenienceInitialization() {
-      let instrumentation = UIKitViewInstrumentation()
+      let instrumentation = AwsUIKitViewInstrumentation()
 
       XCTAssertEqual(instrumentation.bundlePath, Bundle.main.bundlePath)
       XCTAssertNotNil(instrumentation.handler)
@@ -56,7 +56,7 @@ import XCTest
 
     func testCustomBundleInitialization() {
       let testBundle = Bundle(for: type(of: self))
-      let instrumentation = UIKitViewInstrumentation(bundle: testBundle)
+      let instrumentation = AwsUIKitViewInstrumentation(bundle: testBundle)
 
       XCTAssertEqual(instrumentation.bundlePath, testBundle.bundlePath)
       XCTAssertNotNil(instrumentation.handler)
@@ -64,7 +64,7 @@ import XCTest
 
     func testBundlePathStorage() {
       let testBundle = Bundle(for: type(of: self))
-      let instrumentation = UIKitViewInstrumentation(bundle: testBundle)
+      let instrumentation = AwsUIKitViewInstrumentation(bundle: testBundle)
 
       XCTAssertEqual(instrumentation.bundlePath, testBundle.bundlePath)
       XCTAssertNotEqual(instrumentation.bundlePath, Bundle.main.bundlePath)
@@ -73,7 +73,7 @@ import XCTest
     // MARK: - Installation Tests
 
     func testSingleInstallation() {
-      let instrumentation = UIKitViewInstrumentation()
+      let instrumentation = AwsUIKitViewInstrumentation()
 
       // First installation should succeed
       instrumentation.install()
@@ -87,13 +87,13 @@ import XCTest
     }
 
     /**
-     * Tests that the UIKitViewInstrumentation correctly handles concurrent installation attempts.
+     * Tests that the AwsUIKitViewInstrumentation correctly handles concurrent installation attempts.
      *
      * This test simulates multiple threads attempting to install the instrumentation simultaneously
      * and verifies that the class correctly handles this concurrency through its internal locking mechanism.
      */
     func testQueueBasedThreadSafety() {
-      let instrumentation = UIKitViewInstrumentation()
+      let instrumentation = AwsUIKitViewInstrumentation()
       let expectation = XCTestExpectation(description: "Concurrent installation")
       expectation.expectedFulfillmentCount = 10
 
@@ -112,14 +112,14 @@ import XCTest
       wait(for: [expectation], timeout: 5.0)
 
       // The test passes if it completes without crashing
-      // The internal lock in UIKitViewInstrumentation should prevent race conditions
+      // The internal lock in AwsUIKitViewInstrumentation should prevent race conditions
       XCTAssertTrue(true, "Concurrent installation should be thread-safe")
     }
 
     // MARK: - Integration Tests
 
     func testCreationAndBasicFunctionality() {
-      let instrumentation = UIKitViewInstrumentation()
+      let instrumentation = AwsUIKitViewInstrumentation()
 
       XCTAssertNotNil(instrumentation)
       XCTAssertNotNil(instrumentation.handler)
@@ -129,7 +129,7 @@ import XCTest
     }
 
     func testParentSpanDelegation() {
-      let instrumentation = UIKitViewInstrumentation()
+      let instrumentation = AwsUIKitViewInstrumentation()
       let _ = UIViewController()
 
       // Test that instrumentation works with view controllers
@@ -137,7 +137,7 @@ import XCTest
     }
 
     func testHandlerIntegration() {
-      let instrumentation = UIKitViewInstrumentation()
+      let instrumentation = AwsUIKitViewInstrumentation()
 
       // Handler should be properly initialized and connected
       XCTAssertNotNil(instrumentation.handler)
@@ -153,10 +153,10 @@ import XCTest
     // MARK: - Memory Management Tests
 
     func testMemoryManagement() {
-      weak var weakInstrumentation: UIKitViewInstrumentation?
+      weak var weakInstrumentation: AwsUIKitViewInstrumentation?
 
       autoreleasepool {
-        let instrumentation = UIKitViewInstrumentation()
+        let instrumentation = AwsUIKitViewInstrumentation()
         weakInstrumentation = instrumentation
 
         // Use the instrumentation
@@ -174,8 +174,8 @@ import XCTest
     // MARK: - Configuration Tests
 
     func testMultipleInstances() {
-      let instrumentation1 = UIKitViewInstrumentation()
-      let instrumentation2 = UIKitViewInstrumentation()
+      let instrumentation1 = AwsUIKitViewInstrumentation()
+      let instrumentation2 = AwsUIKitViewInstrumentation()
 
       // Should be able to create multiple instances
       XCTAssertNotNil(instrumentation1)
@@ -191,8 +191,8 @@ import XCTest
     }
 
     func testDifferentBundles() {
-      let mainInstrumentation = UIKitViewInstrumentation(bundle: .main)
-      let testInstrumentation = UIKitViewInstrumentation(bundle: Bundle(for: type(of: self)))
+      let mainInstrumentation = AwsUIKitViewInstrumentation(bundle: .main)
+      let testInstrumentation = AwsUIKitViewInstrumentation(bundle: Bundle(for: type(of: self)))
 
       XCTAssertNotEqual(mainInstrumentation.bundlePath, testInstrumentation.bundlePath)
 

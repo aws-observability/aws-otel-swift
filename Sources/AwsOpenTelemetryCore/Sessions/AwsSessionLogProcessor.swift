@@ -18,7 +18,7 @@ import OpenTelemetrySdk
 import OpenTelemetryApi
 
 /// AWS OTel log record processor that adds session attributes to all log records
-class AwsSessionLogRecordProcessor: LogRecordProcessor {
+class AwsSessionLogProcessor: LogRecordProcessor {
   /// Reference to the session manager for retrieving current session
   private var sessionManager: AwsSessionManager
   /// The next processor in the chain

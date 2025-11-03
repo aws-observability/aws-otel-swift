@@ -184,17 +184,17 @@ public class KSCrashInstrumentation: CrashProtocol {
   private static func reportCrash(crashReport: CrashReportDictionary) {
     let rawCrash: [String: Any] = crashReport.value
     let log: any LogRecordBuilder = logger.logRecordBuilder()
-      .setEventName("device.crash")
+      .setEventName(AwsCrashSemConv.name)
 
     var attributes: [String: AttributeValue] = [
-      AwsExceptionSemConv.type: AttributeValue.string("crash"),
+      AwsCrashSemConv.type: AttributeValue.string("crash"),
       // When `recovered_context` is true, then the following original attributes will be recovered,
       // and the crash event will be backfilled to the original session.
       // 1. `session.id`
       // 2. `session.previous_id` (if any existed)
       // 3. `user.id`
       // 4. original `timestamp`
-      AwsExceptionSemConv.recoveredContext: AttributeValue.bool(false)
+      AwsCrashSemConv.recoveredContext: AttributeValue.bool(false)
     ]
 
     // Attempt to recovert the original crash context
@@ -208,11 +208,11 @@ public class KSCrashInstrumentation: CrashProtocol {
       if appleFormatReport.utf8.count > maxStackTraceBytes {
         appleFormatReport = String(appleFormatReport.utf8.prefix(maxStackTraceBytes)) ?? appleFormatReport
       }
-      attributes[AwsExceptionSemConv.stacktrace] = AttributeValue.string(appleFormatReport)
+      attributes[AwsCrashSemConv.stacktrace] = AttributeValue.string(appleFormatReport)
 
       // Prints the location of the first frame for the thread that crashed. For example,
       // `Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172`
-      attributes[AwsExceptionSemConv.message] = AttributeValue.string(extractCrashMessage(from: appleFormatReport))
+      attributes[AwsCrashSemConv.message] = AttributeValue.string(extractCrashMessage(from: appleFormatReport))
 
       _ = log.setAttributes(attributes)
       log.emit()
@@ -274,7 +274,7 @@ public class KSCrashInstrumentation: CrashProtocol {
     }
 
     // Confirms that original context was recovered, since this may not be obvious
-    mutatedAttributes[AwsExceptionSemConv.recoveredContext] = AttributeValue.bool(true)
+    mutatedAttributes[AwsCrashSemConv.recoveredContext] = AttributeValue.bool(true)
     return mutatedAttributes
   }
 }

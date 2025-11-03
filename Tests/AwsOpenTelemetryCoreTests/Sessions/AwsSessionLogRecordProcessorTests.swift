@@ -7,14 +7,14 @@ import OpenTelemetryApi
 final class AwsSessionLogRecordProcessorTests: XCTestCase {
   var mockSessionManager: MockSessionManager!
   var mockNextProcessor: MockLogRecordProcessor!
-  var logRecordProcessor: AwsSessionLogRecordProcessor!
+  var logRecordProcessor: AwsSessionLogProcessor!
   var testLogRecord: ReadableLogRecord!
 
   override func setUp() {
     super.setUp()
     mockSessionManager = MockSessionManager()
     mockNextProcessor = MockLogRecordProcessor()
-    logRecordProcessor = AwsSessionLogRecordProcessor(nextProcessor: mockNextProcessor, sessionManager: mockSessionManager)
+    logRecordProcessor = AwsSessionLogProcessor(nextProcessor: mockNextProcessor, sessionManager: mockSessionManager)
 
     testLogRecord = ReadableLogRecord(
       resource: Resource(attributes: [:]),

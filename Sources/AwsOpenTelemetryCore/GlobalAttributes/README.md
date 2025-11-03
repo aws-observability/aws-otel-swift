@@ -8,7 +8,7 @@ Global attributes are key-value pairs that are automatically added to all teleme
 import AwsOpenTelemetryCore
 
 // Get the global attributes manager
-let manager = GlobalAttributesProvider.getInstance()
+let manager = AwsGlobalAttributesProvider.getInstance()
 
 // Set global attributes
 manager.setAttribute(key: "application.version", value: AttributeValue.string("1.0.0"))

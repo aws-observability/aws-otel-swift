@@ -16,7 +16,7 @@
 import Foundation
 import OpenTelemetryApi
 
-public class GlobalAttributesManager {
+public class AwsGlobalAttributesManager {
   private var attributes: [String: AttributeValue] = [:]
   private let lock = NSLock()
 

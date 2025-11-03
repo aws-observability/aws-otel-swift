@@ -15,14 +15,14 @@
 
 import Foundation
 
-public class GlobalAttributesProvider {
-  private static var _instance: GlobalAttributesManager?
+public class AwsGlobalAttributesProvider {
+  private static var _instance: AwsGlobalAttributesManager?
   private static let lock = NSLock()
 
-  public static func getInstance() -> GlobalAttributesManager {
+  public static func getInstance() -> AwsGlobalAttributesManager {
     return lock.withLock {
       if _instance == nil {
-        _instance = GlobalAttributesManager()
+        _instance = AwsGlobalAttributesManager()
       }
       return _instance!
     }

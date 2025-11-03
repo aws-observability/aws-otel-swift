@@ -64,7 +64,7 @@
      * Shared handler for processing view controller lifecycle events.
      * Stored as a static property to avoid creating multiple handlers.
      */
-    private static var currentHandler: ViewControllerHandler?
+    private static var currentHandler: AwsViewControllerHandler?
 
     /**
      * Sets the instrumentation handler for all view controllers.
@@ -73,9 +73,9 @@
      * process lifecycle events and create spans. The handler is shared across all
      * view controller instances to maintain consistent span hierarchies.
      *
-     * @param handler The ViewControllerHandler to use for span creation
+     * @param handler The AwsViewControllerHandler to use for span creation
      */
-    static func setInstrumentationHandler(_ handler: ViewControllerHandler) {
+    static func setInstrumentationHandler(_ handler: AwsViewControllerHandler) {
       currentHandler = handler
     }
 
@@ -83,7 +83,7 @@
      * Retrieves the current instrumentation handler.
      * Used internally by swizzled methods to access the handler.
      */
-    private static var instrumentationHandler: ViewControllerHandler? {
+    private static var instrumentationHandler: AwsViewControllerHandler? {
       return currentHandler
     }
 
@@ -96,9 +96,9 @@
      * of UIViewController lifecycle methods. It configures the handler and performs
      * method swizzling to intercept lifecycle events.
      *
-     * @param handler The ViewControllerHandler to use for span creation
+     * @param handler The AwsViewControllerHandler to use for span creation
      */
-    static func installViewInstrumentation(handler: ViewControllerHandler) {
+    static func installViewInstrumentation(handler: AwsViewControllerHandler) {
       setInstrumentationHandler(handler)
       swizzleLifecycleMethods()
     }
@@ -156,7 +156,7 @@
     /**
      * Returns the name to use for this view controller in telemetry spans.
      *
-     * This property returns either a custom name provided by the ViewControllerCustomization
+     * This property returns either a custom name provided by the AwsViewControllerCustomization
      * protocol or falls back to the class name if no custom name is provided.
      *
      * Custom names are useful for:
@@ -167,7 +167,7 @@
      * @return The name to use for this view controller in telemetry spans
      */
     var screenName: String {
-      if let customized = self as? ViewControllerCustomization,
+      if let customized = self as? AwsViewControllerCustomization,
          let customName = customized.customScreenName {
         return customName
       }
@@ -179,15 +179,15 @@
      * Determines if this view controller should be included in telemetry.
      *
      * This method checks if the view controller should be instrumented based on:
-     * 1. Whether it implements ViewControllerCustomization and opts out
+     * 1. Whether it implements AwsViewControllerCustomization and opts out
      * 2. Whether it belongs to the application bundle (vs. system frameworks)
      *
      * @param uiKitViewInstrumentation The instrumentation instance for bundle path comparison
      * @return true if the view controller should be instrumented, false otherwise
      */
-    func shouldCaptureView(using uiKitViewInstrumentation: UIKitViewInstrumentation) -> Bool {
+    func shouldCaptureView(using uiKitViewInstrumentation: AwsUIKitViewInstrumentation) -> Bool {
       // First check if the view controller explicitly opts out via customization
-      if let customized = self as? ViewControllerCustomization {
+      if let customized = self as? AwsViewControllerCustomization {
         return customized.shouldCaptureView
       }
 
@@ -205,7 +205,7 @@
      * @param uiKitViewInstrumentation The instrumentation instance for bundle path comparison
      * @return true if the view controller belongs to the application bundle, false otherwise
      */
-    func shouldCaptureViewBasedOnBundle(using uiKitViewInstrumentation: UIKitViewInstrumentation) -> Bool {
+    func shouldCaptureViewBasedOnBundle(using uiKitViewInstrumentation: AwsUIKitViewInstrumentation) -> Bool {
       let viewControllerClass = type(of: self)
       let viewControllerBundlePath = Bundle(for: viewControllerClass).bundlePath
 

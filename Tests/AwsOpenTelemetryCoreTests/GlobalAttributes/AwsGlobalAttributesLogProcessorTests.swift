@@ -3,17 +3,17 @@ import OpenTelemetryApi
 @testable import AwsOpenTelemetryCore
 @testable import OpenTelemetrySdk
 
-final class GlobalAttributesLogRecordProcessorTests: XCTestCase {
+final class AwsGlobalAttributesLogProcessorTests: XCTestCase {
   var mockGlobalAttributesManager: LogProcessorMockGlobalAttributesManager!
   var mockNextProcessor: GlobalAttributesMockLogRecordProcessor!
-  var logRecordProcessor: GlobalAttributesLogRecordProcessor!
+  var logRecordProcessor: AwsGlobalAttributesLogProcessor!
   var testLogRecord: ReadableLogRecord!
 
   override func setUp() {
     super.setUp()
     mockGlobalAttributesManager = LogProcessorMockGlobalAttributesManager()
     mockNextProcessor = GlobalAttributesMockLogRecordProcessor()
-    logRecordProcessor = GlobalAttributesLogRecordProcessor(nextProcessor: mockNextProcessor, globalAttributesManager: mockGlobalAttributesManager)
+    logRecordProcessor = AwsGlobalAttributesLogProcessor(nextProcessor: mockNextProcessor, globalAttributesManager: mockGlobalAttributesManager)
 
     testLogRecord = ReadableLogRecord(
       resource: Resource(attributes: [:]),
@@ -74,13 +74,13 @@ final class GlobalAttributesLogRecordProcessorTests: XCTestCase {
   }
 
   func testInitializationWithNilGlobalAttributesManager() {
-    let processor = GlobalAttributesLogRecordProcessor(nextProcessor: mockNextProcessor, globalAttributesManager: nil)
+    let processor = AwsGlobalAttributesLogProcessor(nextProcessor: mockNextProcessor, globalAttributesManager: nil)
     processor.onEmit(logRecord: testLogRecord)
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
   }
 }
 
-class LogProcessorMockGlobalAttributesManager: GlobalAttributesManager {
+class LogProcessorMockGlobalAttributesManager: AwsGlobalAttributesManager {
   var attributes: [String: AttributeValue] = [:]
 
   override func getAttributes() -> [String: AttributeValue] {

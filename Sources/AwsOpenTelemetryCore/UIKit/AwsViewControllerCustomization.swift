@@ -33,7 +33,7 @@
    * - Automatically instrument all view controllers from your app bundle
    * - Apply standard filtering rules (system VCs are excluded)
    */
-  public protocol ViewControllerCustomization {
+  public protocol AwsViewControllerCustomization {
     /**
      * Optional custom name for the view controller in telemetry spans.
      *
@@ -68,9 +68,9 @@
    * Default implementation providing sensible defaults for optional protocol methods.
    *
    * These defaults ensure that view controllers work correctly even if they
-   * only partially implement the ViewControllerCustomization protocol.
+   * only partially implement the AwsViewControllerCustomization protocol.
    */
-  public extension ViewControllerCustomization where Self: UIViewController {
+  public extension AwsViewControllerCustomization where Self: UIViewController {
     /// Default: Use the class name for telemetry
     var customScreenName: String? { nil }
 

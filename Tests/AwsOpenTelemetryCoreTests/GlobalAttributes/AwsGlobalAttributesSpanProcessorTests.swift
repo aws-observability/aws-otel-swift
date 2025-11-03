@@ -3,15 +3,15 @@ import OpenTelemetryApi
 @testable import AwsOpenTelemetryCore
 @testable import OpenTelemetrySdk
 
-final class GlobalAttributesSpanProcessorTests: XCTestCase {
+final class AwsGlobalAttributesSpanProcessorTests: XCTestCase {
   var mockGlobalAttributesManager: SpanProcessorMockGlobalAttributesManager!
-  var spanProcessor: GlobalAttributesSpanProcessor!
+  var spanProcessor: AwsGlobalAttributesSpanProcessor!
   var mockSpan: GlobalAttributesMockReadableSpan!
 
   override func setUp() {
     super.setUp()
     mockGlobalAttributesManager = SpanProcessorMockGlobalAttributesManager()
-    spanProcessor = GlobalAttributesSpanProcessor(globalAttributesManager: mockGlobalAttributesManager)
+    spanProcessor = AwsGlobalAttributesSpanProcessor(globalAttributesManager: mockGlobalAttributesManager)
     mockSpan = GlobalAttributesMockReadableSpan()
   }
 
@@ -53,13 +53,13 @@ final class GlobalAttributesSpanProcessorTests: XCTestCase {
   }
 
   func testInitializationWithNilGlobalAttributesManager() {
-    let processor = GlobalAttributesSpanProcessor(globalAttributesManager: nil)
+    let processor = AwsGlobalAttributesSpanProcessor(globalAttributesManager: nil)
     XCTAssertTrue(processor.isStartRequired)
     XCTAssertFalse(processor.isEndRequired)
   }
 }
 
-class SpanProcessorMockGlobalAttributesManager: GlobalAttributesManager {
+class SpanProcessorMockGlobalAttributesManager: AwsGlobalAttributesManager {
   var attributes: [String: AttributeValue] = [:]
 
   override func getAttributes() -> [String: AttributeValue] {

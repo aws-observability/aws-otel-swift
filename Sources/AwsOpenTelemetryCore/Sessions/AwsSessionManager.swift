@@ -22,6 +22,7 @@ public class AwsSessionManager {
   private var configuration: AwsSessionConfig
   private var session: AwsSession?
   private var lock = NSLock()
+  private var _isSessionSampled: Bool = false
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -48,20 +49,42 @@ public class AwsSessionManager {
     return session
   }
 
+  /// Gets whether the current session is sampled
+  public var isSessionSampled: Bool {
+    return lock.withLock {
+      return _isSessionSampled
+    }
+  }
+
+  /// Determines if a session should be sampled based on the sample rate
+  /// - Parameter sampleRate: Sample rate from 0.0 to 1.0
+  /// - Returns: True if session should be sampled, false otherwise
+  private func shouldSampleSession(sampleRate: Double) -> Bool {
+    return Double.random(in: 0 ... 1) < sampleRate
+  }
+
   /// Creates a new session with a unique identifier
   private func startSession() {
     let now = Date()
     let previousId = session?.id
     let newId = UUID().uuidString
 
+    // Update session sampling based on RNG
+    _isSessionSampled = shouldSampleSession(sampleRate: configuration.sessionSampleRate)
+
     AwsInternalLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
 
-    /// Queue the previous session for a `session.end` event
-    if let previousSession = session {
-      AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+    if !_isSessionSampled {
+      AwsInternalLogger.debug("Session \(newId) will NOT be sampled")
+    } else {
+      AwsInternalLogger.debug("Session \(newId) will be sampled")
     }
 
-    session = AwsSession(
+    // Store previous session for cleanup outside the lock
+    let previousSession = session
+
+    // Create new session
+    let newSession = AwsSession(
       id: newId,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
       previousId: previousId,
@@ -69,11 +92,21 @@ public class AwsSessionManager {
       sessionTimeout: configuration.sessionTimeout
     )
 
-    // Queue the new session for a `session.start`` event
-    AwsSessionEventInstrumentation.addSession(session: session!, eventType: .start)
+    session = newSession
 
-    // Post notification for session start
-    NotificationCenter.default.post(name: SessionStartNotification, object: session!)
+    /// Queue the previous session for a `session.end` event
+    if let previousSession {
+      AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+    }
+
+    // Queue the new session for a `session.start`` event
+    AwsSessionEventInstrumentation.addSession(session: newSession, eventType: .start)
+
+    // Queue outisde logic to avoid deadlock
+    DispatchQueue.global(qos: .utility).async {
+      // Post notification for session start
+      NotificationCenter.default.post(name: SessionStartNotification, object: newSession)
+    }
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one
