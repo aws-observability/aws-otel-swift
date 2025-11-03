@@ -3,7 +3,7 @@ import XCTest
 
 final class TelemetryConfigTests: XCTestCase {
   func testTelemetryConfigDefaultInit() {
-    let config = TelemetryConfig()
+    let config = AwsTelemetryConfig()
     XCTAssertEqual(config.startup?.enabled, true)
     XCTAssertEqual(config.view?.enabled, true)
     XCTAssertEqual(config.crash?.enabled, true)
@@ -21,7 +21,7 @@ final class TelemetryConfigTests: XCTestCase {
   }
 
   func testTelemetryConfigDefault() {
-    let config = TelemetryConfig.default
+    let config = AwsTelemetryConfig.default
 
     XCTAssertEqual(config.startup?.enabled, true)
     XCTAssertEqual(config.view?.enabled, true)
@@ -30,7 +30,7 @@ final class TelemetryConfigTests: XCTestCase {
   }
 
   func testTelemetryConfigBuilder() {
-    let config = TelemetryConfig.builder()
+    let config = AwsTelemetryConfig.builder()
       .with(startup: TelemetryFeature(enabled: false))
       .with(view: TelemetryFeature(enabled: true))
       .with(crash: TelemetryFeature(enabled: false))

@@ -37,7 +37,7 @@ import Foundation
  * observability out of the box. You can selectively disable features if needed.
  *
  */
-@objc public class TelemetryConfig: NSObject, Codable {
+@objc public class AwsTelemetryConfig: NSObject, Codable {
   public var startup: TelemetryFeature?
   public var sessionEvents: TelemetryFeature?
   public var crash: TelemetryFeature?
@@ -45,7 +45,7 @@ import Foundation
   public var hang: TelemetryFeature?
   public var view: TelemetryFeature?
 
-  static let `default` = TelemetryConfig()
+  static let `default` = AwsTelemetryConfig()
 
   /**
    * Initializes telemetry configuration with all features enabled by default.
@@ -71,14 +71,14 @@ import Foundation
     super.init()
   }
 
-  /// Creates a new TelemetryConfigBuilder instance
-  static func builder() -> TelemetryConfigBuilder {
-    return TelemetryConfigBuilder()
+  /// Creates a new AwsTelemetryConfigBuilder instance
+  static func builder() -> AwsTelemetryConfigBuilder {
+    return AwsTelemetryConfigBuilder()
   }
 }
 
-/// Builder for creating TelemetryConfig instances with a fluent API
-public class TelemetryConfigBuilder {
+/// Builder for creating AwsTelemetryConfig instances with a fluent API
+public class AwsTelemetryConfigBuilder {
   public private(set) var startup: TelemetryFeature? = TelemetryFeature(enabled: true)
   public private(set) var sessionEvents: TelemetryFeature? = TelemetryFeature(enabled: true)
   public private(set) var crash: TelemetryFeature? = TelemetryFeature(enabled: true)
@@ -124,9 +124,9 @@ public class TelemetryConfigBuilder {
     return self
   }
 
-  /// Builds the TelemetryConfig with the configured settings
-  public func build() -> TelemetryConfig {
-    let config = TelemetryConfig()
+  /// Builds the AwsTelemetryConfig with the configured settings
+  public func build() -> AwsTelemetryConfig {
+    let config = AwsTelemetryConfig()
     config.startup = startup
     config.sessionEvents = sessionEvents
     config.crash = crash

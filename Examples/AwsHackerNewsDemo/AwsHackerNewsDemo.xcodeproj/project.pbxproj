@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3FEA79882E833B710026E7AB /* PerformanceTests.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 3FEA79872E833B710026E7AB /* PerformanceTests.xctestplan */; };
 		5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */; };
+		DBFE96A52EB846BA0005268D /* AwsOpenTelemetryAgent in Frameworks */ = {isa = PBXBuildFile; productRef = DBFE96A42EB846BA0005268D /* AwsOpenTelemetryAgent */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DBFE96A52EB846BA0005268D /* AwsOpenTelemetryAgent in Frameworks */,
 				5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -131,6 +133,7 @@
 			name = AwsHackerNewsDemo;
 			packageProductDependencies = (
 				5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */,
+				DBFE96A42EB846BA0005268D /* AwsOpenTelemetryAgent */,
 			);
 			productName = AwsHackerNewsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* AwsHackerNewsDemo.app */;
@@ -635,6 +638,11 @@
 		5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AwsOpenTelemetryCore;
+		};
+		DBFE96A42EB846BA0005268D /* AwsOpenTelemetryAgent */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
+			productName = AwsOpenTelemetryAgent;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

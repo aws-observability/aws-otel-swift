@@ -39,7 +39,7 @@ struct SimpleAwsDemoApp: App {
 
   private func setupOpenTelemetry() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let exportOverride = ExportOverride(
+    let exportOverride = AwsExportOverride(
       logs: "http://localhost:3000/v1/logs",
       traces: "http://localhost:3000/v1/traces"
     )

@@ -28,7 +28,7 @@ import Foundation
 /// // Using builder pattern
 /// let config = AwsURLSessionConfig.builder()
 ///   .with(region: "us-west-2")
-///   .with(exportOverride: ExportOverride(traces: "https://custom-traces.example.com"))
+///   .with(exportOverride: AwsExportOverride(traces: "https://custom-traces.example.com"))
 ///   .build()
 ///
 /// let instrumentation = AwsURLSessionInstrumentation(config: config)
@@ -38,13 +38,13 @@ public struct AwsURLSessionConfig {
   public let region: String
 
   /// Optional export overrides for custom telemetry endpoints
-  public let exportOverride: ExportOverride?
+  public let exportOverride: AwsExportOverride?
 
   /// Creates a new URLSession instrumentation configuration
   /// - Parameters:
   ///   - region: AWS region for building default RUM endpoints
   ///   - exportOverride: Optional export overrides for custom telemetry endpoints
-  public init(region: String, exportOverride: ExportOverride? = nil) {
+  public init(region: String, exportOverride: AwsExportOverride? = nil) {
     self.region = region
     self.exportOverride = exportOverride
   }
@@ -58,12 +58,12 @@ public struct AwsURLSessionConfig {
 /// ```swift
 /// let config = AwsURLSessionConfig.builder()
 ///   .with(region: "us-west-2")
-///   .with(exportOverride: ExportOverride(traces: "https://custom-traces.example.com"))
+///   .with(exportOverride: AwsExportOverride(traces: "https://custom-traces.example.com"))
 ///   .build()
 /// ```
 public class AwsURLSessionConfigBuilder {
   public private(set) var region: String?
-  public private(set) var exportOverride: ExportOverride?
+  public private(set) var exportOverride: AwsExportOverride?
 
   public init() {}
 
@@ -78,7 +78,7 @@ public class AwsURLSessionConfigBuilder {
   /// Sets the export override configuration
   /// - Parameter exportOverride: Optional export overrides for custom telemetry endpoints
   /// - Returns: The builder instance for method chaining
-  public func with(exportOverride: ExportOverride?) -> Self {
+  public func with(exportOverride: AwsExportOverride?) -> Self {
     self.exportOverride = exportOverride
     return self
   }

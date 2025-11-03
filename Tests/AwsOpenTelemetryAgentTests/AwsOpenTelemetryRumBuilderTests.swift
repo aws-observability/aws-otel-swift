@@ -38,7 +38,7 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testEndpointConfiguration() {
     // Test both default endpoints and custom overrides
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let exportOverride = ExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
+    let exportOverride = AwsExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
     let applicationAttributes = ["application.version": appVersion]
     let configWithOverrides = AwsOpenTelemetryConfig(
       aws: awsConfig,
@@ -53,7 +53,7 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testInvalidEndpointHandling() {
     // Test handling of invalid endpoint URLs
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let exportOverride = ExportOverride(logs: invalidLogsUrl, traces: nil)
+    let exportOverride = AwsExportOverride(logs: invalidLogsUrl, traces: nil)
     let applicationAttributes = ["application.version": appVersion]
     let configWithInvalidEndpoint = AwsOpenTelemetryConfig(
       aws: awsConfig,
@@ -170,7 +170,7 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       // Test enabled
       let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
       let applicationAttributes = ["application.version": appVersion]
-      let telemetryConfig = TelemetryConfig()
+      let telemetryConfig = AwsTelemetryConfig()
       telemetryConfig.view = TelemetryFeature(enabled: true)
       let enabledConfig = AwsOpenTelemetryConfig(
         aws: awsConfig,
@@ -186,7 +186,7 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation = nil
 
       // Test disabled
-      let disabledTelemetryConfig = TelemetryConfig()
+      let disabledTelemetryConfig = AwsTelemetryConfig()
       disabledTelemetryConfig.view = TelemetryFeature(enabled: false)
       let disabledConfig = AwsOpenTelemetryConfig(
         aws: awsConfig,

@@ -37,7 +37,7 @@ let awsConfig = AwsConfig(region: "us-west-2", rumAppMonitorId: "your-app-monito
 let config = AwsOpenTelemetryConfig(
     aws: awsConfig,
     applicationAttributes: ["application.version": "1.0.0"],
-    telemetry: TelemetryConfig.builder()
+    telemetry: AwsTelemetryConfig.builder()
         .with(view: TelemetryFeature(enabled: true))
         .build()
 )

@@ -57,7 +57,7 @@ final class AwsURLSessionInstrumentationTests: XCTestCase {
   }
 
   func testCustomEndpointFiltering() {
-    let exportOverride = ExportOverride(
+    let exportOverride = AwsExportOverride(
       logs: "https://custom-logs.example.com",
       traces: "https://custom-traces.example.com"
     )

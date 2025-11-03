@@ -21,7 +21,7 @@ import Foundation
  * Allows customization of the endpoints used for logs and traces,
  * which is useful for testing or custom deployments.
  */
-@objc public class ExportOverride: NSObject, Codable {
+@objc public class AwsExportOverride: NSObject, Codable {
   /// Custom endpoint URL for logs
   public var logs: String?
 
@@ -40,14 +40,14 @@ import Foundation
     super.init()
   }
 
-  /// Creates a new ExportOverrideBuilder instance
-  static func builder() -> ExportOverrideBuilder {
-    return ExportOverrideBuilder()
+  /// Creates a new AwsExportOverrideBuilder instance
+  static func builder() -> AwsExportOverrideBuilder {
+    return AwsExportOverrideBuilder()
   }
 }
 
-/// Builder for creating ExportOverride instances with a fluent API
-public class ExportOverrideBuilder {
+/// Builder for creating AwsExportOverride instances with a fluent API
+public class AwsExportOverrideBuilder {
   public private(set) var logs: String?
   public private(set) var traces: String?
 
@@ -65,8 +65,8 @@ public class ExportOverrideBuilder {
     return self
   }
 
-  /// Builds the ExportOverride with the configured settings
-  public func build() -> ExportOverride {
-    return ExportOverride(logs: logs, traces: traces)
+  /// Builds the AwsExportOverride with the configured settings
+  public func build() -> AwsExportOverride {
+    return AwsExportOverride(logs: logs, traces: traces)
   }
 }

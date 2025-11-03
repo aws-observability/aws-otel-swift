@@ -42,8 +42,8 @@ import StdoutExporter
   * However, the resulting OpenTelemetry components are thread-safe once built.
   *
   * Uses a 2-step instrumentation approach:
-  * 1. User provides immutable TelemetryConfig
-  * 2. TelemetryConfig used directly to build requested instrumentations
+  * 1. User provides immutable AwsTelemetryConfig
+  * 2. AwsTelemetryConfig used directly to build requested instrumentations
   */
 public class AwsOpenTelemetryRumBuilder {
   private var tracerProviderCustomizers: [(TracerProviderBuilder) -> TracerProviderBuilder] = []
@@ -155,9 +155,9 @@ public class AwsOpenTelemetryRumBuilder {
     return self
   }
 
-  /// Build requested instrumentations based on TelemetryConfig
+  /// Build requested instrumentations based on AwsTelemetryConfig
   private func buildInstrumentations() {
-    let telemetry = config.telemetry ?? TelemetryConfig.default
+    let telemetry = config.telemetry ?? AwsTelemetryConfig.default
     let syncStart = Date()
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "aws-otel-swift.debug")
 

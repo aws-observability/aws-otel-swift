@@ -16,6 +16,7 @@
 import UIKit
 import SwiftUI
 import Foundation
+import AwsOpenTelemetryAgent
 import AwsOpenTelemetryCore
 import OpenTelemetryApi
 
@@ -69,38 +70,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window?.makeKeyAndVisible()
     print("AppDelegate: Window setup complete")
 
-    setupOpenTelemetry()
     return true
-  }
-
-  private func setupOpenTelemetry() {
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let exportOverride = ExportOverride(
-      logs: logsEndpoint,
-      traces: tracesEndpoint
-    )
-
-    let config = AwsOpenTelemetryConfig(
-      aws: awsConfig,
-      exportOverride: exportOverride,
-      sessionTimeout: 30,
-      applicationAttributes: [
-        "app.version": "1.0.0",
-        "app.name": "AwsHackerNewsDemo"
-      ],
-      debug: true
-    )
-
-    do {
-      try AwsOpenTelemetryRumBuilder.create(config: config)
-        .build()
-    } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      print("SDK is already initialized")
-    } catch {
-      print("Error initializing SDK: \(error)")
-    }
-    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
-    tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
   }
 }
 

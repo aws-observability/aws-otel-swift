@@ -90,7 +90,7 @@ The instrumentation is automatically enabled when the `startup` telemetry featur
 Or programmatically:
 
 ```swift
-let config = TelemetryConfig()
+let config = AwsTelemetryConfig()
   .withStartup(enabled: true)
 ```
 

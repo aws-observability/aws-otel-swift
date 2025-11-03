@@ -36,7 +36,7 @@ public func buildRumEndpoint(region: String) -> String {
  * @param exportOverride Optional export overrides
  * @return The traces endpoint URL
  */
-public func buildTracesEndpoint(region: String, exportOverride: ExportOverride?) -> String {
+public func buildTracesEndpoint(region: String, exportOverride: AwsExportOverride?) -> String {
   return exportOverride?.traces ?? buildRumEndpoint(region: region)
 }
 
@@ -47,7 +47,7 @@ public func buildTracesEndpoint(region: String, exportOverride: ExportOverride?)
  * @param exportOverride Optional export overrides
  * @return The logs endpoint URL
  */
-public func buildLogsEndpoint(region: String, exportOverride: ExportOverride?) -> String {
+public func buildLogsEndpoint(region: String, exportOverride: AwsExportOverride?) -> String {
   return exportOverride?.logs ?? buildRumEndpoint(region: region)
 }
 
@@ -58,7 +58,7 @@ public func buildLogsEndpoint(region: String, exportOverride: ExportOverride?) -
  * @param exportOverride Optional export overrides
  * @return Set of OTLP endpoint URLs
  */
-public func buildOtlpEndpoints(region: String, exportOverride: ExportOverride?) -> Set<String> {
+public func buildOtlpEndpoints(region: String, exportOverride: AwsExportOverride?) -> Set<String> {
   let tracesEndpoint = buildTracesEndpoint(region: region, exportOverride: exportOverride)
   let logsEndpoint = buildLogsEndpoint(region: region, exportOverride: exportOverride)
 

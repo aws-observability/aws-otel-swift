@@ -32,7 +32,7 @@ import AwsOpenTelemetryCore
 let awsConfig = AwsConfig(region: "us-west-2", rumAppMonitorId: "your-app-monitor-id")
 let config = AwsOpenTelemetryConfig.builder()
     .with(aws: awsConfig)
-    .with(telemetry: TelemetryConfig.builder()
+    .with(telemetry: AwsTelemetryConfig.builder()
         .with(network: TelemetryFeature(enabled: true))
         .build())
     .build()

@@ -52,7 +52,7 @@ final class AwsOpenTelemetrySwiftUITests: XCTestCase {
   func testtimeToFirstAppearSpanCreated() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+      telemetry: AwsTelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
     )
     AwsOpenTelemetryAgent.shared.configuration = config
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")
@@ -82,7 +82,7 @@ final class AwsOpenTelemetrySwiftUITests: XCTestCase {
   func testtimeToFirstAppearOnlyCreatedOnFirstAppear() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+      telemetry: AwsTelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
     )
     AwsOpenTelemetryAgent.shared.configuration = config
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")
@@ -115,7 +115,7 @@ final class AwsOpenTelemetrySwiftUITests: XCTestCase {
   func testCustomAttributesHandling() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+      telemetry: AwsTelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
     )
     AwsOpenTelemetryAgent.shared.configuration = config
     let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "test", instrumentationVersion: "1.0.0")

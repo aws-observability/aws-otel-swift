@@ -51,7 +51,7 @@ final class ViewAwsOTelTraceTests: XCTestCase {
   func testHandleViewAppear() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+      telemetry: AwsTelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
     )
     AwsOpenTelemetryAgent.shared.configuration = config
 
@@ -78,7 +78,7 @@ final class ViewAwsOTelTraceTests: XCTestCase {
   func testTraceViewAttributesAppliedToSpans() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "test-id"),
-      telemetry: TelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
+      telemetry: AwsTelemetryConfig.builder().with(view: TelemetryFeature(enabled: true)).build()
     )
     AwsOpenTelemetryAgent.shared.configuration = config
 
