@@ -344,7 +344,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @param tracesEndpointURL The traces endpoint URL
    * @return A configured span exporter
    */
-  private func buildSpanExporter(tracesEndpointURL: URL) -> SpanExporter {
+  func buildSpanExporter(tracesEndpointURL: URL) -> SpanExporter {
     let traceExporter = OtlpHttpTraceExporter(endpoint: tracesEndpointURL, config: OtlpConfiguration(compression: .none))
     let defaultExporter: SpanExporter = if config.debug ?? false {
       MultiSpanExporter(spanExporters: [
@@ -364,7 +364,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @param logsEndpointURL The logs endpoint URL
    * @return A configured log record exporter
    */
-  private func buildLogsExporter(logsEndpointURL: URL) -> LogRecordExporter {
+  func buildLogsExporter(logsEndpointURL: URL) -> LogRecordExporter {
     let logsExporter = OtlpHttpLogExporter(endpoint: logsEndpointURL, config: OtlpConfiguration(compression: .none))
     let defaultExporter: LogRecordExporter = if config.debug ?? false {
       MultiLogRecordExporter(logRecordExporters: [
@@ -385,8 +385,8 @@ public class AwsOpenTelemetryRumBuilder {
    * @param resource The resource to associate with the tracer provider
    * @return A configured tracer provider
    */
-  private func buildTracerProvider(spanExporter: SpanExporter,
-                                   resource: Resource) -> TracerProvider {
+  func buildTracerProvider(spanExporter: SpanExporter,
+                           resource: Resource) -> TracerProvider {
     // Create initial builder
     let builder = TracerProviderBuilder()
       .add(spanProcessor: MultiSpanProcessor(
@@ -415,8 +415,8 @@ public class AwsOpenTelemetryRumBuilder {
    * @param resource The resource to associate with the logger provider
    * @return A configured logger provider
    */
-  private func buildLoggerProvider(logExporter: LogRecordExporter,
-                                   resource: Resource) -> LoggerProvider {
+  func buildLoggerProvider(logExporter: LogRecordExporter,
+                           resource: Resource) -> LoggerProvider {
     let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
     let samplerProcessor = AwsSessionLogSampler(nextProcessor: batchProcessor)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: samplerProcessor)

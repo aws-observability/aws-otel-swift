@@ -148,10 +148,10 @@ final class AwsSessionManagerTests: XCTestCase {
 
     // Wait for async session event processing
     let expectation = XCTestExpectation(description: "Session event queued")
-    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.1) {
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now()) {
       expectation.fulfill()
     }
-    wait(for: [expectation], timeout: 1.0)
+    wait(for: [expectation], timeout: 2.0)
 
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 1)
     XCTAssertEqual(AwsSessionEventInstrumentation.queue[0].session.id, session.id)
