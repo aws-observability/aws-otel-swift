@@ -37,7 +37,7 @@ let package = Package(
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
       ],
-      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md"]
+      exclude: ["UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -87,14 +87,9 @@ let package = Package(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
     ),
-    // Disabling due to flakiness caused by attempting to start the AWS Otel Swift agent
-    // .testTarget(
-    //   name: "AwsOpenTelemetryAgentTests",
-    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
-    // ),
     .testTarget(
       name: "ContractTests",
-      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
+      dependencies: ["AwsOpenTelemetryCore"],
       path: "Tests/ContractTests",
       exclude: ["MockCollector"],
       sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
