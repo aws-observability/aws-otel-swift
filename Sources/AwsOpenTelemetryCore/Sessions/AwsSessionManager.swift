@@ -21,7 +21,7 @@ import Foundation
 public class AwsSessionManager {
   private var configuration: AwsSessionConfig
   private var session: AwsSession?
-  private var lock = NSLock()
+  private let sessionQueue = DispatchQueue(label: "software.amazon.opentelemetry.SessionManager", qos: .utility)
   private var _isSessionSampled: Bool = false
 
   /// Initializes the session manager and restores any previous session from disk
@@ -36,8 +36,7 @@ public class AwsSessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> AwsSession {
-    // We only lock once when fetching the current session to expire with thread safety
-    return lock.withLock {
+    return sessionQueue.sync {
       refreshSession()
       return session!
     }
@@ -51,7 +50,7 @@ public class AwsSessionManager {
 
   /// Gets whether the current session is sampled
   public var isSessionSampled: Bool {
-    return lock.withLock {
+    return sessionQueue.sync {
       return _isSessionSampled
     }
   }
@@ -84,7 +83,7 @@ public class AwsSessionManager {
     let previousSession = session
 
     // Create new session
-    let newSession = AwsSession(
+    session = AwsSession(
       id: newId,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
       previousId: previousId,
@@ -92,21 +91,16 @@ public class AwsSessionManager {
       sessionTimeout: configuration.sessionTimeout
     )
 
-    session = newSession
-
     /// Queue the previous session for a `session.end` event
     if let previousSession {
       AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
     }
 
     // Queue the new session for a `session.start`` event
-    AwsSessionEventInstrumentation.addSession(session: newSession, eventType: .start)
+    AwsSessionEventInstrumentation.addSession(session: session!, eventType: .start)
 
-    // Queue outisde logic to avoid deadlock
-    DispatchQueue.global(qos: .utility).async {
-      // Post notification for session start
-      NotificationCenter.default.post(name: SessionStartNotification, object: newSession)
-    }
+    // Post notification for session start
+    NotificationCenter.default.post(name: SessionStartNotification, object: session!)
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one

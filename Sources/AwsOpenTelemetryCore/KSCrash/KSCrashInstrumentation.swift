@@ -67,6 +67,7 @@ public class KSCrashInstrumentation: CrashProtocol {
 
       try reporter.install(with: config)
       isInstalled = true
+      AwsInternalLogger.debug("installed")
     } catch {
       AwsInternalLogger.error("KSCrashInstrumentation failed to install: \(error)")
       return
@@ -139,8 +140,7 @@ public class KSCrashInstrumentation: CrashProtocol {
 
     // session
     let sessionManager = AwsSessionManagerProvider.getInstance()
-    let session = session ?? sessionManager.peekSession() ?? sessionManager.getSession()
-
+    let session = session ?? sessionManager.getSession()
     userInfo[AwsSessionSemConv.id] = session.id
     if let prevSessionId = session.previousId {
       userInfo[AwsSessionSemConv.previousId] = prevSessionId

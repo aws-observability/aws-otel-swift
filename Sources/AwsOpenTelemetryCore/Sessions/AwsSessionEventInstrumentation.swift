@@ -60,7 +60,6 @@ public class AwsSessionEventInstrumentation {
   /// Flag to track if the instrumentation has been applied.
   /// Controls whether new sessions are queued or immediately processed via notifications.
   static var isApplied = false
-
   static func install() {
     guard !isApplied else {
       return
