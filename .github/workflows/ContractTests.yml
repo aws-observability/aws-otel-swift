@@ -1,14 +1,14 @@
 name: Contract tests
 on:
-  push:
-    branches:
-      - main
-      - release/**/*
+  # push:
+  #   branches:
+  #     - main
+  #     - release/**/*
 
-  pull_request:
-    branches:
-      - main
-      - release/**/*
+  # pull_request:
+  #   branches:
+  #     - main
+  #     - release/**/*
   workflow_dispatch:
 
 jobs:
@@ -49,7 +49,7 @@ jobs:
   #       with:
   #         api-level: 18
   #         destination: tvos
-  
+
   # watchos:
   #   runs-on: macos-15
 
@@ -68,13 +68,13 @@ jobs:
   #       with:
   #         api-level: 11
   #         destination: watchos
-  
+
   # visionos:
   #   runs-on: macos-15
 
   #   # This job will be cancelled after 60 minutes
   #   timeout-minutes: 60
-    
+
   #   steps:
   #     - name: Checkout repository
   #       uses: actions/checkout@v5
