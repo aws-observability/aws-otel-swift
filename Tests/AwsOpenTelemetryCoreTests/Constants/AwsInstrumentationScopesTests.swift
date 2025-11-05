@@ -18,26 +18,26 @@ import XCTest
 
 final class AwsInstrumentationScopesTests: XCTestCase {
   func testAppStart() {
-    XCTAssertEqual(AwsInstrumentationScopes.APP_START, "software.amazon.opentelemetry.AppStart")
+    XCTAssertEqual(AwsInstrumentationScopes.APP_START, "software.amazon.opentelemetry.appstart")
   }
 
   func testSession() {
-    XCTAssertEqual(AwsInstrumentationScopes.SESSION, "software.amazon.opentelemetry.Session")
+    XCTAssertEqual(AwsInstrumentationScopes.SESSION, "software.amazon.opentelemetry.session")
   }
 
   func testUIKitView() {
-    XCTAssertEqual(AwsInstrumentationScopes.UIKIT_VIEW, "software.amazon.opentelemetry.UIKitView")
+    XCTAssertEqual(AwsInstrumentationScopes.UIKIT_VIEW, "software.amazon.opentelemetry.uikit")
   }
 
   func testSwiftUIView() {
-    XCTAssertEqual(AwsInstrumentationScopes.SWIFTUI_VIEW, "software.amazon.opentelemetry.SwiftUIView")
+    XCTAssertEqual(AwsInstrumentationScopes.SWIFTUI_VIEW, "software.amazon.opentelemetry.swiftui")
   }
 
   func testHang() {
-    XCTAssertEqual(AwsInstrumentationScopes.HANG, "software.amazon.opentelemetry.Hang")
+    XCTAssertEqual(AwsInstrumentationScopes.HANG, "software.amazon.opentelemetry.hang")
   }
 
   func testKSCrash() {
-    XCTAssertEqual(AwsInstrumentationScopes.KSCRASH, "software.amazon.opentelemetry.KSCrash")
+    XCTAssertEqual(AwsInstrumentationScopes.KSCRASH, "software.amazon.opentelemetry.kscrash")
   }
 }

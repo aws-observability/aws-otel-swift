@@ -210,8 +210,8 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     AwsSessionEventInstrumentation.install()
 
     let logRecords = logExporter.getFinishedLogRecords()
-    XCTAssertEqual(AwsSessionEventInstrumentation.instrumentationKey, "software.amazon.opentelemetry.Session")
-    XCTAssertEqual(logRecords.first?.instrumentationScopeInfo.name, "software.amazon.opentelemetry.Session")
+    XCTAssertEqual(AwsSessionEventInstrumentation.instrumentationKey, "software.amazon.opentelemetry.session")
+    XCTAssertEqual(logRecords.first?.instrumentationScopeInfo.name, "software.amazon.opentelemetry.session")
   }
 
   func testMultipleSessionsProcessedInOrderAfterinstrumentation() {
