@@ -140,10 +140,11 @@ public class KSCrashInstrumentation: CrashProtocol {
 
     // session
     let sessionManager = AwsSessionManagerProvider.getInstance()
-    let session = session ?? sessionManager.getSession()
-    userInfo[AwsSessionSemConv.id] = session.id
-    if let prevSessionId = session.previousId {
-      userInfo[AwsSessionSemConv.previousId] = prevSessionId
+    if let session = session ?? sessionManager.peekSession() {
+      userInfo[AwsSessionSemConv.id] = session.id
+      if let prevSessionId = session.previousId {
+        userInfo[AwsSessionSemConv.previousId] = prevSessionId
+      }
     }
 
     // screen

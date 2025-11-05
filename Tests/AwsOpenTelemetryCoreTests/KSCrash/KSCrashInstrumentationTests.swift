@@ -192,13 +192,12 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
   func testCacheCrashContextVariations() {
     KSCrashInstrumentation.cacheCrashContext(session: nil, userId: nil, screenName: nil)
-    var userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
-    XCTAssertNotNil(userInfo?[AwsSessionSemConv.id])
-    XCTAssertNotNil(userInfo?[AwsUserSemvConv.id])
 
     let session = AwsSession(id: "specific-session", expireTime: Date(timeIntervalSinceNow: 1800))
     KSCrashInstrumentation.cacheCrashContext(session: session, userId: "specific-user", screenName: "SpecificScreen")
-    userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+    let userInfo = KSCrashInstrumentation.reporter.userInfo as? [String: String]
+
+    // assert
     XCTAssertEqual(userInfo?[AwsSessionSemConv.id], "specific-session")
     XCTAssertEqual(userInfo?[AwsUserSemvConv.id], "specific-user")
     XCTAssertEqual(userInfo?[AwsViewSemConv.screenName], "SpecificScreen")

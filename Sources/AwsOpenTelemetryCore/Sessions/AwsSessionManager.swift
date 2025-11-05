@@ -20,7 +20,17 @@ import Foundation
 /// Sessions are automatically extended on access and persisted to UserDefaults.
 public class AwsSessionManager {
   private var configuration: AwsSessionConfig
-  private var session: AwsSession?
+  private var _session: AwsSession?
+
+  private var session: AwsSession? {
+    get {
+      return sessionQueue.sync { _session }
+    }
+    set {
+      sessionQueue.sync { _session = newValue }
+    }
+  }
+
   private let sessionQueue = DispatchQueue(label: "software.amazon.opentelemetry.SessionManager", qos: .utility)
   private var _isSessionSampled: Bool = false
 
@@ -36,10 +46,8 @@ public class AwsSessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> AwsSession {
-    return sessionQueue.sync {
-      refreshSession()
-      return session!
-    }
+    refreshSession()
+    return session!
   }
 
   /// Gets the current session without extending its expireTime time
@@ -50,9 +58,7 @@ public class AwsSessionManager {
 
   /// Gets whether the current session is sampled
   public var isSessionSampled: Bool {
-    return sessionQueue.sync {
-      return _isSessionSampled
-    }
+    return _isSessionSampled
   }
 
   /// Determines if a session should be sampled based on the sample rate

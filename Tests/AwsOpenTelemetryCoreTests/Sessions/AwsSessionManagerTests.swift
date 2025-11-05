@@ -143,7 +143,7 @@ final class AwsSessionManagerTests: XCTestCase {
   func testStartSessionAddsToQueueWhenInstrumentationNotApplied() {
     AwsSessionEventInstrumentation.queue = []
     AwsSessionEventInstrumentation.isApplied = false
-
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
     let session = sessionManager.getSession()
 
     // Wait for async session event processing
