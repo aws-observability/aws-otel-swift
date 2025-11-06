@@ -16,7 +16,6 @@
 import UIKit
 import SwiftUI
 import Foundation
-import AwsOpenTelemetryAgent
 import AwsOpenTelemetryCore
 import OpenTelemetryApi
 
@@ -32,16 +31,22 @@ func timeAgo(from timestamp: Int) -> String {
 
 let debugScope = "AwsHackerNewsDemo.Debug"
 
-let appMonitorId = "927baf95-96e9-412b-8126-3c3875669c66"
-let region = "us-east-1"
+// Get configuration from AwsOpenTelemetryAgent
+var appMonitorId: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.aws.rumAppMonitorId ?? "nil"
+}
 
-// gamma iad
-// let logsEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
-// let tracesEndpoint = "https://dataplane.rum-gamma.us-east-1.amazonaws.com/v1/rum"
+var region: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.aws.region ?? "nil"
+}
 
-// local dev
-let logsEndpoint = "http://localhost:3000/v1/logs"
-let tracesEndpoint = "http://localhost:3000/v1/traces"
+var logsEndpoint: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.exportOverride?.logs ?? "nil"
+}
+
+var tracesEndpoint: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.exportOverride?.traces ?? "nil"
+}
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {

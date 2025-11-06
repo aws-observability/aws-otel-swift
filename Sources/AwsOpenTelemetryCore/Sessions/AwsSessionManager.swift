@@ -32,7 +32,7 @@ public class AwsSessionManager {
   }
 
   private let sessionQueue = DispatchQueue(label: "software.amazon.opentelemetry.SessionManager", qos: .utility)
-  private var _isSessionSampled: Bool = false
+  private var _isSessionSampled: Bool = true
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
@@ -65,7 +65,7 @@ public class AwsSessionManager {
   /// - Parameter sampleRate: Sample rate from 0.0 to 1.0
   /// - Returns: True if session should be sampled, false otherwise
   private func shouldSampleSession(sampleRate: Double) -> Bool {
-    return Double.random(in: 0 ... 1) < sampleRate
+    return Double.random(in: 0.01 ... 1) <= sampleRate
   }
 
   /// Creates a new session with a unique identifier

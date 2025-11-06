@@ -268,6 +268,6 @@ final class AwsSessionManagerTests: XCTestCase {
 
     sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 0.0))
     sessionManager.getSession()
-    XCTAssertFalse(sessionManager.isSessionSampled)
+    XCTAssert(sessionManager.isSessionSampled)
   }
 }

@@ -69,7 +69,7 @@ public class AwsScreenManager {
 
   func setCurrent(screen: String) {
     guard screen != currentScreen else {
-      AwsInternalLogger.debug("Screen is already set to \(screen)")
+      // AwsInternalLogger.debug("Screen is already set to \(screen)")
       return
     }
 

@@ -46,6 +46,14 @@ app.use((req, res, next) => {
 
 // OTEL API endpoints
 app.post('/v1/traces', (req, res) => {
+  // Enable this to verify the batch and retry logic is
+  // Inject retryable faults 20% of the time
+  // if (Math.random() < 0.2) {
+  //   const errorCode = Math.random() < 0.5 ? 500 : 503;
+  //   console.log(`Injecting fault: ${errorCode} for traces`);
+  //   return res.status(errorCode).send('Server Error');
+  // }
+
   const outDir = path.join(__dirname, 'out');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });
@@ -77,6 +85,14 @@ app.post('/v1/traces', (req, res) => {
 });
 
 app.post('/v1/logs', (req, res) => {
+  // Enable this to verify the batch and retry logic is
+  // Inject retryable faults 20% of the time
+  // if (Math.random() < 0.2) {
+  //   const errorCode = Math.random() < 0.5 ? 500 : 503;
+  //   console.log(`Injecting fault: ${errorCode} for logs`);
+  //   return res.status(errorCode).send('Server Error');
+  // }
+
   const outDir = path.join(__dirname, 'out');
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir, { recursive: true });

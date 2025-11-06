@@ -50,6 +50,7 @@ public class AwsOpenTelemetryRumBuilder {
   private var loggerProviderCustomizers: [(LoggerProviderBuilder) -> LoggerProviderBuilder] = []
 
   private var config: AwsOpenTelemetryConfig
+  private var exporterConfig: AwsExporterConfig
 
   private var spanExporterCustomizer: (SpanExporter) -> SpanExporter = { $0 }
   private var logRecordExporterCustomizer: (LogRecordExporter) -> LogRecordExporter = { $0 }
@@ -90,6 +91,7 @@ public class AwsOpenTelemetryRumBuilder {
    */
   private init(config: AwsOpenTelemetryConfig) {
     self.config = config
+    exporterConfig = AwsExporterConfig.default
     resource = AwsResourceBuilder.buildResource(config: config)
     // Configure session manager with timeout from config
     let sessionConfig = AwsSessionConfig(
@@ -232,6 +234,20 @@ public class AwsOpenTelemetryRumBuilder {
     return self
   }
 
+  // MARK: - Exporter Configuration Methods
+
+  /**
+   * Sets the exporter configuration for retry and batching behavior.
+   *
+   * @param exporterConfig The exporter configuration
+   * @return This builder instance for method chaining
+   */
+  @discardableResult
+  public func withExporterConfig(_ exporterConfig: AwsExporterConfig) -> Self {
+    self.exporterConfig = exporterConfig
+    return self
+  }
+
   // MARK: - Exporter Customizer Methods
 
   /**
@@ -336,6 +352,30 @@ public class AwsOpenTelemetryRumBuilder {
     return self
   }
 
+  // MARK: - Helper methods
+
+  /**
+   * Builds the traces endpoint URL.
+   *
+   * @param region AWS region
+   * @param exportOverride Optional export override configuration
+   * @return The traces endpoint URL string
+   */
+  private func buildTracesEndpoint(region: String, exportOverride: AwsExportOverride?) -> String {
+    return exportOverride?.traces ?? "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
+  }
+
+  /**
+   * Builds the logs endpoint URL.
+   *
+   * @param region AWS region
+   * @param exportOverride Optional export override configuration
+   * @return The logs endpoint URL string
+   */
+  private func buildLogsEndpoint(region: String, exportOverride: AwsExportOverride?) -> String {
+    return exportOverride?.logs ?? "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
+  }
+
   // MARK: - Builder methods
 
   /**
@@ -345,14 +385,15 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A configured span exporter
    */
   func buildSpanExporter(tracesEndpointURL: URL) -> SpanExporter {
-    let traceExporter = OtlpHttpTraceExporter(endpoint: tracesEndpointURL, config: OtlpConfiguration(compression: .none))
+    let retryableExporter = AwsRetryableSpanExporter(endpoint: tracesEndpointURL, config: exporterConfig)
+
     let defaultExporter: SpanExporter = if config.debug ?? false {
       MultiSpanExporter(spanExporters: [
-        traceExporter,
+        retryableExporter,
         StdoutSpanExporter()
       ])
     } else {
-      traceExporter
+      retryableExporter
     }
 
     return spanExporterCustomizer(defaultExporter)
@@ -365,14 +406,15 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A configured log record exporter
    */
   func buildLogsExporter(logsEndpointURL: URL) -> LogRecordExporter {
-    let logsExporter = OtlpHttpLogExporter(endpoint: logsEndpointURL, config: OtlpConfiguration(compression: .none))
+    let retryableExporter = AwsRetryableLogExporter(endpoint: logsEndpointURL, config: exporterConfig)
+
     let defaultExporter: LogRecordExporter = if config.debug ?? false {
       MultiLogRecordExporter(logRecordExporters: [
-        logsExporter,
+        retryableExporter,
         StdoutLogExporter()
       ])
     } else {
-      logsExporter
+      retryableExporter
     }
 
     return logRecordExporterCustomizer(defaultExporter)
@@ -387,10 +429,18 @@ public class AwsOpenTelemetryRumBuilder {
    */
   func buildTracerProvider(spanExporter: SpanExporter,
                            resource: Resource) -> TracerProvider {
-    // Create initial builder
+    // Create initial builder with AWS-optimized batch processor settings
+    let batchProcessor = BatchSpanProcessor(
+      spanExporter: spanExporter,
+      scheduleDelay: exporterConfig.batchInterval,
+      exportTimeout: exporterConfig.exportTimeout,
+      maxQueueSize: exporterConfig.maxQueueSize,
+      maxExportBatchSize: exporterConfig.maxBatchSize
+    )
+
     let builder = TracerProviderBuilder()
       .add(spanProcessor: MultiSpanProcessor(
-        spanProcessors: [BatchSpanProcessor(spanExporter: spanExporter)]
+        spanProcessors: [batchProcessor]
       ))
       .add(spanProcessor: AwsGlobalAttributesSpanProcessor(globalAttributesManager: AwsGlobalAttributesProvider.getInstance()))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
@@ -417,7 +467,13 @@ public class AwsOpenTelemetryRumBuilder {
    */
   func buildLoggerProvider(logExporter: LogRecordExporter,
                            resource: Resource) -> LoggerProvider {
-    let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
+    let batchProcessor = BatchLogRecordProcessor(
+      logRecordExporter: logExporter,
+      scheduleDelay: exporterConfig.batchInterval,
+      exportTimeout: exporterConfig.exportTimeout,
+      maxQueueSize: exporterConfig.maxQueueSize,
+      maxExportBatchSize: exporterConfig.maxBatchSize
+    )
     let samplerProcessor = AwsSessionLogSampler(nextProcessor: batchProcessor)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: samplerProcessor)
     let sessionProcessor = AwsSessionLogProcessor(nextProcessor: uidProcessor)

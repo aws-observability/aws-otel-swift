@@ -25,6 +25,7 @@ struct SettingsView: View {
   @State private var showingHangPicker = false
   @State private var showingCrashPicker = false
   @State private var showingUserIdEditor = false
+  @State private var showingTelemetryGenerator = false
   @State private var timer: Timer?
 
   var body: some View {
@@ -86,6 +87,8 @@ struct SettingsView: View {
               showingHangPicker = true
             } else if item.0 == "Trigger App Crash" {
               showingCrashPicker = true
+            } else if item.0 == "Load Test" {
+              showingTelemetryGenerator = true
             }
           }) {
             HStack {
@@ -104,7 +107,7 @@ struct SettingsView: View {
                 .font(.caption)
             }
           }
-          .help(item.0 == "Trigger App Hang" ? "Tap to configure app hang testing" : "Tap to configure app crash testing")
+          .help(item.0 == "Trigger App Hang" ? "Tap to configure app hang testing" : item.0 == "Trigger App Crash" ? "Tap to configure app crash testing" : "Tap to run load test with custom logs and spans")
         }
       }
     }
@@ -126,6 +129,9 @@ struct SettingsView: View {
     .sheet(isPresented: $showingUserIdEditor) {
       UserIdEditorView()
     }
+    .sheet(isPresented: $showingTelemetryGenerator) {
+      TelemetryGeneratorView()
+    }
     .onChange(of: showingUserIdEditor) { isShowing in
       if !isShowing {
         loadSessionData()
@@ -146,7 +152,8 @@ struct SettingsView: View {
 
     troubleshootingData = [
       ("Trigger App Hang", "Tap to configure"),
-      ("Trigger App Crash", "Tap to configure")
+      ("Trigger App Crash", "Tap to configure"),
+      ("Load Test", "Tap to configure")
     ]
 
     guard let currentSession = AwsSessionManagerProvider.getInstance().peekSession() else {
@@ -317,6 +324,33 @@ struct ToastView: View {
           .padding(.horizontal, 16)
           .padding(.vertical, 8)
           .background(Color.black.opacity(0.8))
+          .cornerRadius(8)
+          .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+              isShowing = false
+            }
+          }
+          .padding(.bottom, 20)
+      }
+      .transition(.opacity)
+      .animation(.easeInOut(duration: 0.3), value: isShowing)
+    }
+  }
+}
+
+struct TelemetryToastView: View {
+  @Binding var isShowing: Bool
+
+  var body: some View {
+    if isShowing {
+      VStack {
+        Spacer()
+        Text("Telemetry Generated")
+          .font(.system(size: 14, weight: .medium))
+          .foregroundColor(.white)
+          .padding(.horizontal, 16)
+          .padding(.vertical, 8)
+          .background(Color.green.opacity(0.8))
           .cornerRadius(8)
           .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
@@ -661,6 +695,334 @@ struct CrashPickerView: View {
   }
 }
 
-#Preview {
-  SettingsView()
+struct TelemetryGeneratorView: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var logCount: Int = 500
+  @State private var spanCount: Int = 500
+  @State private var eventSizeKB: Int = 1
+  @State private var isGenerating = false
+  @State private var showingToast = false
+  @State private var totalLogsSent: Int = 0
+  @State private var totalSpansSent: Int = 0
+  @State private var sessionId: String = "nil"
+  @State private var sessionExpiry: String = "nil"
+  @State private var timer: Timer?
+  @State private var currentSessionId: String = "nil"
+  @State private var batchHistory: [(id: String, fullId: String, type: String, count: Int, sessionId: String, fullSessionId: String, eventSizeKB: Int)] = []
+  @State private var showingCopyToast = false
+
+  var body: some View {
+    AwsOTelTraceView("TelemetryGeneratorView") {
+      NavigationView {
+        VStack(spacing: 20) {
+          // Session Info
+          VStack(spacing: 8) {
+            Text("SESSION INFO")
+              .font(.system(.caption, design: .monospaced, weight: .bold))
+              .foregroundColor(.secondary)
+
+            VStack(spacing: 4) {
+              HStack {
+                Text("ID:")
+                  .font(.system(.caption2, design: .monospaced, weight: .medium))
+                  .foregroundColor(.secondary)
+                Spacer()
+                Text(sessionId)
+                  .font(.system(.caption2, design: .monospaced))
+                  .foregroundColor(.primary)
+                  .lineLimit(1)
+                  .truncationMode(.middle)
+              }
+
+              HStack {
+                Text("EXPIRES:")
+                  .font(.system(.caption2, design: .monospaced, weight: .medium))
+                  .foregroundColor(.secondary)
+                Spacer()
+                Text(sessionExpiry)
+                  .font(.system(.caption2, design: .monospaced, weight: .bold))
+                  .foregroundColor(sessionExpiry.contains("Expired") ? .red : .orange)
+              }
+            }
+          }
+          .padding()
+          .background(Color(.systemGray6))
+          .cornerRadius(8)
+          .padding(.horizontal)
+
+          // Batch History Section
+          VStack(spacing: 8) {
+            Text("BATCH HISTORY")
+              .font(.system(.caption, design: .monospaced, weight: .bold))
+              .foregroundColor(.secondary)
+              .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(spacing: 0) {
+              // Column Headers
+              HStack {
+                Text("SESSION")
+                  .font(.system(.caption2, design: .monospaced, weight: .bold))
+                  .foregroundColor(.secondary)
+                  .frame(width: 60, alignment: .leading)
+                Text("BATCH ID")
+                  .font(.system(.caption2, design: .monospaced, weight: .bold))
+                  .foregroundColor(.secondary)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+                Text("TYPE")
+                  .font(.system(.caption2, design: .monospaced, weight: .bold))
+                  .foregroundColor(.secondary)
+                  .frame(width: 40, alignment: .center)
+                Text("SIZE")
+                  .font(.system(.caption2, design: .monospaced, weight: .bold))
+                  .foregroundColor(.secondary)
+                  .frame(width: 35, alignment: .center)
+                Text("COUNT")
+                  .font(.system(.caption2, design: .monospaced, weight: .bold))
+                  .foregroundColor(.secondary)
+                  .frame(width: 40, alignment: .trailing)
+              }
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(Color(.systemGray5))
+
+              ScrollView {
+                if batchHistory.isEmpty {
+                  VStack(spacing: 8) {
+                    Text("No batches sent yet")
+                      .font(.system(.caption, design: .monospaced))
+                      .foregroundColor(.secondary)
+                    Text("Batches will appear here after sending telemetry")
+                      .font(.system(.caption2, design: .monospaced))
+                      .foregroundColor(.secondary)
+                      .multilineTextAlignment(.center)
+                  }
+                  .padding(.vertical, 20)
+                } else {
+                  LazyVStack(spacing: 4) {
+                    ForEach(batchHistory.reversed(), id: \.id) { batch in
+                      HStack {
+                        Button(batch.sessionId) {
+                          UIPasteboard.general.string = batch.fullSessionId
+                          showingCopyToast = true
+                        }
+                        .font(.system(.caption2, design: .monospaced, weight: .medium))
+                        .foregroundColor(.blue)
+                        .frame(width: 60, alignment: .leading)
+
+                        Button(batch.id) {
+                          UIPasteboard.general.string = batch.fullId
+                          showingCopyToast = true
+                        }
+                        .font(.system(.caption2, design: .monospaced, weight: .medium))
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text(batch.type.uppercased())
+                          .font(.system(.caption2, design: .monospaced, weight: .bold))
+                          .foregroundColor(batch.type == "logs" ? .blue : .green)
+                          .frame(width: 40, alignment: .center)
+                        Text("\(batch.eventSizeKB)KB")
+                          .font(.system(.caption2, design: .monospaced, weight: .medium))
+                          .foregroundColor(.secondary)
+                          .frame(width: 35, alignment: .center)
+                        Text("\(batch.count)")
+                          .font(.system(.caption2, design: .monospaced, weight: .bold))
+                          .foregroundColor(batch.type == "logs" ? .blue : .green)
+                          .frame(width: 40, alignment: .trailing)
+                      }
+                      .padding(.horizontal, 8)
+                      .padding(.vertical, 2)
+                    }
+                  }
+                }
+              }
+              .frame(maxHeight: 96)
+            }
+            .background(Color(.systemGray6))
+            .cornerRadius(6)
+          }
+          .padding(.horizontal)
+
+          // Generator Section
+          VStack(spacing: 12) {
+            Text("GENERATOR")
+              .font(.system(.caption, design: .monospaced, weight: .bold))
+              .foregroundColor(.secondary)
+              .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack {
+              Text("Logs:")
+                .font(.system(.body, design: .monospaced, weight: .medium))
+              Spacer()
+              Stepper(value: $logCount, in: 100 ... 10000, step: 100) {
+                Text("\(logCount)")
+                  .font(.system(.body, design: .monospaced))
+              }
+            }
+
+            HStack {
+              Text("Spans:")
+                .font(.system(.body, design: .monospaced, weight: .medium))
+              Spacer()
+              Stepper(value: $spanCount, in: 100 ... 10000, step: 100) {
+                Text("\(spanCount)")
+                  .font(.system(.body, design: .monospaced))
+              }
+            }
+
+            HStack {
+              Text("Event Size:")
+                .font(.system(.body, design: .monospaced, weight: .medium))
+              Spacer()
+              Stepper(value: $eventSizeKB, in: 1 ... 30, step: 1) {
+                Text("\(eventSizeKB) KB")
+                  .font(.system(.body, design: .monospaced))
+              }
+            }
+          }
+          .padding(.horizontal)
+
+          Button("Send telemetry") {
+            sendBoth()
+          }
+          .foregroundColor(.white)
+          .padding(.horizontal, 24)
+          .padding(.vertical, 12)
+          .background(isGenerating ? Color.gray : Color.blue)
+          .cornerRadius(8)
+          .disabled(isGenerating)
+
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .navigationTitle("Load Test")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") {
+              dismiss()
+            }
+          }
+        }
+        .onAppear {
+          loadSessionData()
+          startTimer()
+        }
+        .onDisappear {
+          timer?.invalidate()
+          timer = nil
+        }
+      }
+    }
+    .overlay(
+      TelemetryToastView(isShowing: $showingToast)
+    )
+    .overlay(
+      ToastView(isShowing: $showingCopyToast)
+    )
+  }
+
+  private func sendLogs() {
+    isGenerating = true
+    let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+    let fullLogsBatchId = UUID().uuidString
+    let logsBatchId = String(fullLogsBatchId.prefix(8))
+    let paddingData = String(repeating: "x", count: eventSizeKB * 1024)
+
+    for i in 1 ... logCount {
+      logger.logRecordBuilder()
+        .setEventName("Generated Log \(i) of \(logCount)")
+        .setTimestamp(Date())
+        .setAttributes([
+          "batch.id": AttributeValue.string(fullLogsBatchId),
+          "batch.intended_size": AttributeValue.int(logCount),
+          "batch.type": AttributeValue.string("logs"),
+          "event.size_kb": AttributeValue.int(eventSizeKB),
+          "padding_data": AttributeValue.string(paddingData)
+        ])
+        .emit()
+    }
+    totalLogsSent += logCount
+
+    let truncatedSessionId = String(sessionId.prefix(8))
+    batchHistory.append((id: logsBatchId, fullId: fullLogsBatchId, type: "logs", count: logCount, sessionId: truncatedSessionId, fullSessionId: sessionId, eventSizeKB: eventSizeKB))
+
+    isGenerating = false
+    showingToast = true
+  }
+
+  private func sendSpans() {
+    isGenerating = true
+    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
+    let fullSpansBatchId = UUID().uuidString
+    let spansBatchId = String(fullSpansBatchId.prefix(8))
+    let paddingData = String(repeating: "x", count: eventSizeKB * 1024)
+
+    for i in 1 ... spanCount {
+      let span = tracer.spanBuilder(spanName: "Generated Span \(i) of \(spanCount)")
+        .startSpan()
+      span.setAttribute(key: "batch.id", value: fullSpansBatchId)
+      span.setAttribute(key: "batch.intended_size", value: spanCount)
+      span.setAttribute(key: "batch.type", value: "spans")
+      span.setAttribute(key: "event.size_kb", value: eventSizeKB)
+      span.setAttribute(key: "padding_data", value: paddingData)
+      span.end()
+    }
+    totalSpansSent += spanCount
+
+    let truncatedSessionId = String(sessionId.prefix(8))
+    batchHistory.append((id: spansBatchId, fullId: fullSpansBatchId, type: "spans", count: spanCount, sessionId: truncatedSessionId, fullSessionId: sessionId, eventSizeKB: eventSizeKB))
+
+    isGenerating = false
+    showingToast = true
+  }
+
+  private func sendBoth() {
+    sendLogs()
+    sendSpans()
+  }
+
+  private func loadSessionData() {
+    guard let currentSession = AwsSessionManagerProvider.getInstance().peekSession() else {
+      sessionId = "nil"
+      sessionExpiry = "nil"
+      return
+    }
+
+    // Reset counters if session changed
+    if currentSessionId != currentSession.id {
+      totalLogsSent = 0
+      totalSpansSent = 0
+      currentSessionId = currentSession.id
+    }
+
+    sessionId = currentSession.id
+    updateExpiryTime()
+  }
+
+  private func startTimer() {
+    timer?.invalidate()
+    timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+      updateExpiryTime()
+    }
+  }
+
+  private func updateExpiryTime() {
+    guard let currentSession = AwsSessionManagerProvider.getInstance().peekSession() else {
+      sessionExpiry = "nil"
+      return
+    }
+
+    // Reset counters if session changed
+    if currentSessionId != currentSession.id {
+      totalLogsSent = 0
+      totalSpansSent = 0
+      currentSessionId = currentSession.id
+      sessionId = currentSession.id
+    }
+
+    let expireTime = currentSession.expireTime
+    let timeToExpiry = expireTime.timeIntervalSinceNow
+    sessionExpiry = timeToExpiry <= 0 ? "Expired" : "\(Int(timeToExpiry))s"
+  }
 }
