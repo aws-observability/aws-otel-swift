@@ -22,7 +22,7 @@ let package = Package(
     .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0"),
     .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
-    .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2") // only used for live stack trace collecting, not crash reporting
+    .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2") // only used for live stack trace collection, not crash reporting
   ],
   targets: [
     .target(
