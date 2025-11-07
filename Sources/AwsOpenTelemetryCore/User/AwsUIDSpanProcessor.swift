@@ -1,3 +1,18 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryApi
@@ -10,7 +25,7 @@ class AwsUIDSpanProcessor: SpanProcessor {
   /// Indicates that this processor doesn't need to be called when spans end
   var isEndRequired: Bool = false
   /// The attribute key used to store UID in spans
-  var userIdKey = "user.id"
+  var userIdKey = AwsUserSemvConv.id
   /// Reference to the UID manager for retrieving current UID
   private var uidManager: AwsUIDManager
 

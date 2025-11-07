@@ -2,18 +2,19 @@ import XCTest
 import OpenTelemetryApi
 @testable import AwsOpenTelemetryCore
 @testable import OpenTelemetrySdk
+@testable import TestUtils
 
 final class AwsSessionLogRecordProcessorTests: XCTestCase {
   var mockSessionManager: MockSessionManager!
   var mockNextProcessor: MockLogRecordProcessor!
-  var logRecordProcessor: AwsSessionLogRecordProcessor!
+  var logRecordProcessor: AwsSessionLogProcessor!
   var testLogRecord: ReadableLogRecord!
 
   override func setUp() {
     super.setUp()
     mockSessionManager = MockSessionManager()
     mockNextProcessor = MockLogRecordProcessor()
-    logRecordProcessor = AwsSessionLogRecordProcessor(nextProcessor: mockNextProcessor, sessionManager: mockSessionManager)
+    logRecordProcessor = AwsSessionLogProcessor(nextProcessor: mockNextProcessor, sessionManager: mockSessionManager)
 
     testLogRecord = ReadableLogRecord(
       resource: Resource(attributes: [:]),
@@ -36,7 +37,7 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 1)
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
@@ -75,13 +76,13 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
     }
 
-    if case let .string(previousSessionId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
+    if case let .string(previousSessionId) = enhancedRecord.attributes[AwsSessionSemConv.previousId] {
       XCTAssertEqual(previousSessionId, expectedPreviousSessionId)
     } else {
       XCTFail("Expected session.previous_id attribute to be a string value")
@@ -97,13 +98,13 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId, expectedSessionId)
     } else {
       XCTFail("Expected session.id attribute to be a string value")
     }
 
-    XCTAssertNil(enhancedRecord.attributes[AwsSessionConstants.previousId], "Previous session ID should not be set when nil")
+    XCTAssertNil(enhancedRecord.attributes[AwsSessionSemConv.previousId], "Previous session ID should not be set when nil")
   }
 
   func testOnEmitWithDifferentSessionIds() {
@@ -115,13 +116,13 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
 
     XCTAssertEqual(mockNextProcessor.receivedLogRecords.count, 2)
 
-    if case let .string(sessionId1) = mockNextProcessor.receivedLogRecords[0].attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId1) = mockNextProcessor.receivedLogRecords[0].attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId1, "session-1")
     } else {
       XCTFail("Expected first log record to have session-1")
     }
 
-    if case let .string(sessionId2) = mockNextProcessor.receivedLogRecords[1].attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId2) = mockNextProcessor.receivedLogRecords[1].attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId2, "session-2")
     } else {
       XCTFail("Expected second log record to have session-2")
@@ -148,7 +149,7 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
       severity: .info,
       body: AttributeValue.string("Test log message"),
       attributes: [
-        AwsSessionConstants.id: AttributeValue.string("existing-session-123"),
+        AwsSessionSemConv.id: AttributeValue.string("existing-session-123"),
         "other.key": AttributeValue.string("other.value")
       ]
     )
@@ -159,14 +160,14 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId, "existing-session-123", "Should preserve existing session ID")
     } else {
       XCTFail("Expected existing session.id to be preserved")
     }
 
     // Should still add previous session ID if not present
-    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
+    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionSemConv.previousId] {
       XCTAssertEqual(previousId, "previous-session-888", "Should add previous session ID when not present")
     } else {
       XCTFail("Expected session.previous_id to be added")
@@ -183,7 +184,7 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
       severity: .info,
       body: AttributeValue.string("Test log message"),
       attributes: [
-        AwsSessionConstants.previousId: AttributeValue.string("existing-previous-456")
+        AwsSessionSemConv.previousId: AttributeValue.string("existing-previous-456")
       ]
     )
 
@@ -194,13 +195,13 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
     // Should add session ID when not present
-    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId, "current-session-999", "Should add current session ID when not present")
     } else {
       XCTFail("Expected session.id to be added")
     }
 
-    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
+    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionSemConv.previousId] {
       XCTAssertEqual(previousId, "existing-previous-456", "Should preserve existing previous session ID")
     } else {
       XCTFail("Expected existing session.previous_id to be preserved")
@@ -217,8 +218,8 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
       severity: .info,
       body: AttributeValue.string("Test log message"),
       attributes: [
-        AwsSessionConstants.id: AttributeValue.string("existing-session-123"),
-        AwsSessionConstants.previousId: AttributeValue.string("existing-previous-456")
+        AwsSessionSemConv.id: AttributeValue.string("existing-session-123"),
+        AwsSessionSemConv.previousId: AttributeValue.string("existing-previous-456")
       ]
     )
 
@@ -228,13 +229,13 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
 
     let enhancedRecord = mockNextProcessor.receivedLogRecords[0]
 
-    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionConstants.id] {
+    if case let .string(sessionId) = enhancedRecord.attributes[AwsSessionSemConv.id] {
       XCTAssertEqual(sessionId, "existing-session-123", "Should preserve existing session ID")
     } else {
       XCTFail("Expected existing session.id to be preserved")
     }
 
-    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionConstants.previousId] {
+    if case let .string(previousId) = enhancedRecord.attributes[AwsSessionSemConv.previousId] {
       XCTAssertEqual(previousId, "existing-previous-456", "Should preserve existing previous session ID")
     } else {
       XCTFail("Expected existing session.previous_id to be preserved")
@@ -259,7 +260,7 @@ final class AwsSessionLogRecordProcessorTests: XCTestCase {
     syncQueue.sync {
       XCTAssertEqual(self.mockNextProcessor.receivedLogRecords.count, 100)
       for record in self.mockNextProcessor.receivedLogRecords {
-        XCTAssertTrue(record.attributes.keys.contains(AwsSessionConstants.id))
+        XCTAssertTrue(record.attributes.keys.contains(AwsSessionSemConv.id))
       }
     }
   }

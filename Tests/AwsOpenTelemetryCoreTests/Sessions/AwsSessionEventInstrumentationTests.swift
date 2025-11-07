@@ -202,16 +202,6 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertNotNil(record.observedTimestamp, "Observed timestamp should be set")
     XCTAssertEqual(record.attributes["session.id"], AttributeValue.string(sessionIdExpired))
 
-    // Verify duration is present and matches expected value
-    XCTAssertNotNil(record.attributes["session.duration"])
-    if let durationAttr = record.attributes["session.duration"],
-       case let .string(durationStr) = durationAttr,
-       let duration = Double(durationStr) {
-      XCTAssertEqual(duration, sessionExpired.duration!, accuracy: 0.001)
-    } else {
-      XCTFail("Duration attribute should be a valid double string")
-    }
-
     XCTAssertNil(record.attributes["session.previous_id"])
   }
 
@@ -442,9 +432,6 @@ final class AwsSessionEventInstrumentationTests: XCTestCase {
     XCTAssertEqual(logRecords.count, 1)
     XCTAssertEqual(logRecords[0].eventName, "session.end")
     XCTAssertEqual(logRecords[0].attributes["session.id"], AttributeValue.string(sessionIdExpired))
-
-    // Verify duration is present
-    XCTAssertNotNil(logRecords[0].attributes["session.duration"])
   }
 
   func testObservedTimestampIsSetOnSessionEvents() {

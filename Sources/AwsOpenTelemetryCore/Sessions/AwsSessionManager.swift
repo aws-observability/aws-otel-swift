@@ -20,13 +20,23 @@ import Foundation
 /// Sessions are automatically extended on access and persisted to UserDefaults.
 public class AwsSessionManager {
   private var configuration: AwsSessionConfig
-  private var session: AwsSession?
-  private var lock = NSLock()
+  private var _session: AwsSession?
+
+  private var session: AwsSession? {
+    get {
+      return sessionQueue.sync { _session }
+    }
+    set {
+      sessionQueue.sync { _session = newValue }
+    }
+  }
+
+  private let sessionQueue = DispatchQueue(label: "software.amazon.opentelemetry.SessionManager", qos: .utility)
+  private var _isSessionSampled: Bool = true
 
   /// Initializes the session manager and restores any previous session from disk
   /// - Parameter configuration: Session configuration settings
   public init(configuration: AwsSessionConfig = .default) {
-    AwsOpenTelemetryLogger.debug("Initializing AwsSessionManager with timeout: \(configuration.sessionTimeout)s")
     self.configuration = configuration
     restoreSessionFromDisk()
   }
@@ -36,12 +46,8 @@ public class AwsSessionManager {
   /// - Returns: The current active session
   @discardableResult
   public func getSession() -> AwsSession {
-    AwsOpenTelemetryLogger.debug("Getting current session: id=$\(session?.id ?? "nil")")
-    // We only lock once when fetching the current session to expire with thread safety
-    return lock.withLock {
-      refreshSession()
-      return session!
-    }
+    refreshSession()
+    return session!
   }
 
   /// Gets the current session without extending its expireTime time
@@ -50,19 +56,39 @@ public class AwsSessionManager {
     return session
   }
 
+  /// Gets whether the current session is sampled
+  public var isSessionSampled: Bool {
+    return _isSessionSampled
+  }
+
+  /// Determines if a session should be sampled based on the sample rate
+  /// - Parameter sampleRate: Sample rate from 0.0 to 1.0
+  /// - Returns: True if session should be sampled, false otherwise
+  private func shouldSampleSession(sampleRate: Double) -> Bool {
+    return Double.random(in: 0.01 ... 1) <= sampleRate
+  }
+
   /// Creates a new session with a unique identifier
   private func startSession() {
     let now = Date()
     let previousId = session?.id
     let newId = UUID().uuidString
 
+    // Update session sampling based on RNG
+    _isSessionSampled = shouldSampleSession(sampleRate: configuration.sessionSampleRate)
+
     AwsOpenTelemetryLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
 
-    /// Queue the previous session for a `session.end` event
-    if let previousSession = session {
-      AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+    if !_isSessionSampled {
+      AwsOpenTelemetryLogger.debug("Session \(newId) will NOT be sampled")
+    } else {
+      AwsOpenTelemetryLogger.debug("Session \(newId) will be sampled")
     }
 
+    // Store previous session for cleanup outside the lock
+    let previousSession = session
+
+    // Create new session
     session = AwsSession(
       id: newId,
       expireTime: now.addingTimeInterval(Double(configuration.sessionTimeout)),
@@ -71,23 +97,24 @@ public class AwsSessionManager {
       sessionTimeout: configuration.sessionTimeout
     )
 
+    /// Queue the previous session for a `session.end` event
+    if let previousSession {
+      AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
+    }
+
     // Queue the new session for a `session.start`` event
     AwsSessionEventInstrumentation.addSession(session: session!, eventType: .start)
+
+    // Post notification for session start
+    NotificationCenter.default.post(name: SessionStartNotification, object: session!)
   }
 
   /// Refreshes the current session, creating new one if expired or extending existing one
   private func refreshSession() {
     if session == nil || session!.isExpired() {
-      // Start new session if none exists or expired
-      if session == nil {
-        AwsOpenTelemetryLogger.debug("No session exists, creating new one")
-      } else {
-        AwsOpenTelemetryLogger.debug("Session expired, creating new one")
-      }
       startSession()
     } else {
       // Otherwise, extend the existing session but preserve the startTime
-      AwsOpenTelemetryLogger.debug("Extending existing session: \(session!.id)")
       session = AwsSession(
         id: session!.id,
         expireTime: Date(timeIntervalSinceNow: Double(configuration.sessionTimeout)),
@@ -109,6 +136,5 @@ public class AwsSessionManager {
   /// Restores a previously saved session from UserDefaults
   private func restoreSessionFromDisk() {
     session = AwsSessionStore.load()
-    AwsOpenTelemetryLogger.info("Attempted to restore session from disk id=\(session?.id ?? "none")")
   }
 }

@@ -2,6 +2,7 @@ import XCTest
 import OpenTelemetryApi
 @testable import AwsOpenTelemetryCore
 @testable import OpenTelemetrySdk
+@testable import TestUtils
 
 final class AwsUIDLogRecordProcessorTests: XCTestCase {
   var uidManager: AwsUIDManager!
@@ -118,30 +119,5 @@ final class AwsUIDLogRecordProcessorTests: XCTestCase {
     for record in mockNextProcessor.receivedLogRecords {
       XCTAssertTrue(record.attributes.keys.contains("user.id"))
     }
-  }
-}
-
-// MARK: - Mock Classes
-
-class MockLogRecordProcessor: LogRecordProcessor {
-  private let lock = NSLock()
-  private var _receivedLogRecords: [ReadableLogRecord] = []
-
-  var receivedLogRecords: [ReadableLogRecord] {
-    return lock.withLock { _receivedLogRecords }
-  }
-
-  func onEmit(logRecord: ReadableLogRecord) {
-    lock.withLock {
-      _receivedLogRecords.append(logRecord)
-    }
-  }
-
-  func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
-    return .success
-  }
-
-  func shutdown(explicitTimeout: TimeInterval?) -> ExportResult {
-    return .success
   }
 }

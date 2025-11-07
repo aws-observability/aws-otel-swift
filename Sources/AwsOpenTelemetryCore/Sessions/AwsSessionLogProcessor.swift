@@ -1,9 +1,24 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryApi
 
 /// AWS OTel log record processor that adds session attributes to all log records
-class AwsSessionLogRecordProcessor: LogRecordProcessor {
+class AwsSessionLogProcessor: LogRecordProcessor {
   /// Reference to the session manager for retrieving current session
   private var sessionManager: AwsSessionManager
   /// The next processor in the chain
@@ -16,7 +31,6 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, sessionManager: AwsSessionManager? = nil) {
     self.nextProcessor = nextProcessor
     self.sessionManager = sessionManager ?? AwsSessionManagerProvider.getInstance()
-    AwsOpenTelemetryLogger.debug("Initializing AwsSessionLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds session attributes and forwards to next processor
@@ -25,17 +39,17 @@ class AwsSessionLogRecordProcessor: LogRecordProcessor {
     var enhancedRecord = logRecord
 
     // Only add session attributes if they don't already exist
-    if logRecord.attributes[AwsSessionConstants.id] == nil || logRecord.attributes[AwsSessionConstants.previousId] == nil {
+    if logRecord.attributes[AwsSessionSemConv.id] == nil || logRecord.attributes[AwsSessionSemConv.previousId] == nil {
       let session = sessionManager.getSession()
 
       // Add session.id if not already present
-      if logRecord.attributes[AwsSessionConstants.id] == nil {
-        enhancedRecord.setAttribute(key: AwsSessionConstants.id, value: session.id)
+      if logRecord.attributes[AwsSessionSemConv.id] == nil {
+        enhancedRecord.setAttribute(key: AwsSessionSemConv.id, value: session.id)
       }
 
       // Add session.previous_id if not already present and session has a previous ID
-      if logRecord.attributes[AwsSessionConstants.previousId] == nil, let previousId = session.previousId {
-        enhancedRecord.setAttribute(key: AwsSessionConstants.previousId, value: previousId)
+      if logRecord.attributes[AwsSessionSemConv.previousId] == nil, let previousId = session.previousId {
+        enhancedRecord.setAttribute(key: AwsSessionSemConv.previousId, value: previousId)
       }
     }
 
