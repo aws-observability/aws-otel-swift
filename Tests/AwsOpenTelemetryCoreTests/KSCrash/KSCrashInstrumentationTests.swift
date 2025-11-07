@@ -60,7 +60,43 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(KSCrashInstrumentation.maxStackTraceBytes, 30 * 1024)
   }
 
-  func testExtractCrashMessage() {
+  func testExtractCrashMessageWithExceptionCodes() {
+    let stackTrace = """
+    Incident Identifier: 3F2AFC2A-DA05-465B-BD41-436FC333127A
+    CrashReporter Key:   2d7a9903541465dabf265effbee827cd9e6da6e1
+    Hardware Model:      iPhone15,4
+    Process:             AwsHackerNewsDemo [680]
+    Path:                /private/var/containers/Bundle/Application/83BD3EA1-BE39-4D4A-A88E-06ADA0466843/AwsHackerNewsDemo.app/AwsHackerNewsDemo
+    Identifier:          AwsHackerNewsDemo
+    Version:             1.0 (19)
+    Code Type:           ARM-64 (Native)
+    Role:                Foreground
+    Parent Process:      launchd [1]
+
+    Date/Time:           2025-11-06 15:12:20.759 -0800
+    OS Version:          iOS 18.6 (22G86)
+    Report Version:      104
+
+    Exception Type:  EXC_BREAKPOINT (SIGTRAP)
+    Exception Codes: KERN_INVALID_ADDRESS at 0x000000019bd6c8c4
+    Triggered by Thread:  0
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP): KERN_INVALID_ADDRESS at 0x000000019bd6c8c4")
+  }
+
+  func testExtractCrashMessageWithBadAccess() {
+    let stackTrace = """
+    Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
+    Exception Codes: KERN_INVALID_ADDRESS at 0xffffffff
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV): KERN_INVALID_ADDRESS at 0xffffffff")
+  }
+
+  func testExtractCrashMessageFallbackToThread() {
     let stackTrace = """
     Thread 0 Crashed:
     0   libswiftCore.dylib            \t0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172
@@ -71,7 +107,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(result, "Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172")
   }
 
-  func testExtractCrashMessageWithDifferentThreadNumber() {
+  func testExtractCrashMessageFallbackWithDifferentThread() {
     let stackTrace = """
     Thread 5 Crashed:
     0   SomeFramework                 \t0x00000001f14e1a90 someFunction + 8
@@ -97,6 +133,28 @@ final class KSCrashInstrumentationTests: XCTestCase {
 
     let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
     XCTAssertEqual(result, "Crash detected on thread 2 at MyFramework 0x123456789 myFunction + 123")
+  }
+
+  func testExtractCrashMessageWithExceptionCodesOnly() {
+    let stackTrace = """
+    Exception Type:  EXC_CRASH (SIGABRT)
+    Exception Codes: 0x0000000000000000
+    """
+
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT): 0x0000000000000000")
+  }
+
+  func testExtractCrashMessageWithPartialExceptionInfo() {
+    let stackTrace = """
+    Exception Type:  EXC_BREAKPOINT (SIGTRAP)
+    Thread 0 Crashed:
+    0   SomeFramework                 0x123456789 someFunction + 8
+    """
+
+    // Should fallback to thread info when exception codes are missing
+    let result = KSCrashInstrumentation.extractCrashMessage(from: stackTrace)
+    XCTAssertEqual(result, "Crash detected on thread 0 at SomeFramework 0x123456789 someFunction + 8")
   }
 
   func testRecoverCrashContextSuccess() {

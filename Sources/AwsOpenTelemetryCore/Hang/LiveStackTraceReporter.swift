@@ -56,13 +56,13 @@ public protocol LiveStackTraceReporter {
 
     public func formatStackTrace(rawStackTrace: Data) -> StackTrace {
       var stacktrace = "Failed to collect stack trace"
-      var message = "Hang detected on main thread at unknown location"
+      var message = "Hang detected at unknown location"
       do {
         let crashReport = try PLCrashReport(data: rawStackTrace)
         if let fullStacktrace = PLCrashReportTextFormatter.stringValue(for: crashReport, with: PLCrashReportTextFormatiOS) {
           stacktrace = String(fullStacktrace.prefix(maxStackTraceLength))
           let firstFrame = getFirstFrameOfMain(stacktrace: stacktrace) ?? "unknown location"
-          message = "Hang detected on main thread at \(firstFrame)"
+          message = "Hang detected at \(firstFrame)"
         } else {
           AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to format crash report to string")
         }
@@ -73,8 +73,23 @@ public protocol LiveStackTraceReporter {
       return StackTrace(message: message, stacktrace: stacktrace)
     }
 
+    // For simplicity, we only do library name + offset to help with grouping. If we include the full first frame, then
+    // unfortunately every exception message becomes unique.
     func getFirstFrameOfMain(stacktrace: String) -> String? {
-      return stacktrace.components(separatedBy: "Thread 0:\n0").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+      guard let firstFrameLine = stacktrace.components(separatedBy: "Thread 0:\n0").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces) else {
+        return nil
+      }
+
+      // Extract library name and offset from frame like:
+      // "   libsystem_kernel.dylib              0x00000001dccb1658 0x1dccab000 + 26200"
+      let components = firstFrameLine.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+      guard components.count >= 4,
+            let libraryName = components.first,
+            let offsetString = components.last else {
+        return "unknown location"
+      }
+
+      return "\(libraryName) + \(offsetString)"
     }
   }
 #endif

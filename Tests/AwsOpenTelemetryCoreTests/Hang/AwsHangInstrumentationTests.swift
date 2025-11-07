@@ -9,7 +9,7 @@ class MockStackTraceCollector: LiveStackTraceReporter {
   var shouldReturnStackTrace: Bool = true
   var mockStackTraceData: Data = "mock stack trace data".data(using: .utf8)!
   var mockStackTrace: StackTrace = .init(
-    message: "Hang detected on main thread at MockFunction",
+    message: "Hang detected at MockFunction",
     stacktrace: "Thread 0:\n0 MockFunction + 123\n1 AnotherFunction + 456"
   )
 

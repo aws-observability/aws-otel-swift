@@ -220,9 +220,22 @@ public class KSCrashInstrumentation: CrashProtocol {
     }
   }
 
-  /// Get first frame of crashed thread for the crash message. This is useful for grouping
+  /// Get exception code information for the crash message. This is useful for grouping
   static func extractCrashMessage(from stackTrace: String) -> String {
     let lines = stackTrace.components(separatedBy: "\n")
+
+    // Look for exception type and codes
+    if let exceptionTypeLine = lines.first(where: { $0.hasPrefix("Exception Type:") }),
+       let exceptionCodesLine = lines.first(where: { $0.hasPrefix("Exception Codes:") }) {
+      let exceptionType = exceptionTypeLine.replacingOccurrences(of: "Exception Type:", with: "")
+        .trimmingCharacters(in: .whitespaces)
+      let exceptionCodes = exceptionCodesLine.replacingOccurrences(of: "Exception Codes:", with: "")
+        .trimmingCharacters(in: .whitespaces)
+
+      return "\(exceptionType): \(exceptionCodes)"
+    }
+
+    // Fallback to thread and first frame if exception codes not found
     guard let crashedLine = lines.first(where: { $0.range(of: #"Thread \d+ Crashed:"#, options: .regularExpression) != nil }),
           let threadMatch = crashedLine.range(of: #"Thread (\d+) Crashed:"#, options: .regularExpression),
           let crashedIndex = lines.firstIndex(of: crashedLine),

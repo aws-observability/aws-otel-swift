@@ -78,7 +78,7 @@ final class NoopLiveStackTraceReporterTests: XCTestCase {
       let invalidData = "invalid crash report data".data(using: .utf8)!
       let result = collector.formatStackTrace(rawStackTrace: invalidData)
 
-      XCTAssertEqual(result.message, "Hang detected on main thread at unknown location")
+      XCTAssertEqual(result.message, "Hang detected at unknown location")
       XCTAssertTrue(result.stacktrace.contains("Failed to parse stack trace"))
     }
 
@@ -86,7 +86,7 @@ final class NoopLiveStackTraceReporterTests: XCTestCase {
       let emptyData = Data()
       let result = collector.formatStackTrace(rawStackTrace: emptyData)
 
-      XCTAssertEqual(result.message, "Hang detected on main thread at unknown location")
+      XCTAssertEqual(result.message, "Hang detected at unknown location")
       XCTAssertTrue(result.stacktrace.contains("Failed to parse stack trace"))
     }
 
@@ -98,36 +98,48 @@ final class NoopLiveStackTraceReporterTests: XCTestCase {
       XCTAssertTrue(result.stacktrace.count <= 1000)
     }
 
-    func testGetFirstFrameOfMainWithValidStacktrace() {
+    func testGetFirstFrameOfMainWithLibraryAndOffset() {
       let stacktrace = """
       Thread 0:
-      0   MyApp                           0x0000000100001234 main + 52
-      1   libdyld.dylib                   0x00007fff12345678 start + 1
+      0   libsystem_kernel.dylib              0x00000001dccb1658 0x1dccab000 + 26200
+      1   Foundation                          0x000000018a9b4c2c 0x18a707000 + 2808876
       """
 
       let result = collector.getFirstFrameOfMain(stacktrace: stacktrace)
-      XCTAssertEqual(result, "MyApp 0x0000000100001234 main + 52")
+      XCTAssertEqual(result, "libsystem_kernel.dylib + 26200")
     }
 
-    func testGetFirstFrameOfMainWithComplexStacktrace() {
+    func testGetFirstFrameOfMainWithAppHang() {
       let stacktrace = """
       Thread 0:
-      0   MyApp                           0x0000000100001234 -[ViewController viewDidLoad] + 52 (ViewController.m:25)
-      1   UIKitCore                       0x00007fff12345678 -[UIViewController loadViewIfRequired] + 1234
+      0   libsystem_kernel.dylib              0x00000001dccb1658 0x1dccab000 + 26200
+      1   Foundation                          0x000000018a9b4c2c 0x18a707000 + 2808876
+      2   AwsHackerNewsDemo                   0x0000000100714984 0x1006dc000 + 231812
       """
 
       let result = collector.getFirstFrameOfMain(stacktrace: stacktrace)
-      XCTAssertEqual(result, "MyApp 0x0000000100001234 -[ViewController viewDidLoad] + 52 (ViewController.m:25)")
+      XCTAssertEqual(result, "libsystem_kernel.dylib + 26200")
     }
 
-    func testGetFirstFrameOfMainWithWhitespaceHandling() {
+    func testGetFirstFrameOfMainWithDifferentLibrary() {
       let stacktrace = """
       Thread 0:
-      0    MyApp     0x0000000100001234    main    +    52   
+      0   CoreFoundation                      0x000000018baf9d90 0x18ba8d000 + 445840
+      1   libdispatch.dylib                   0x0000000193a27c6c 0x193a17000 + 68716
       """
 
       let result = collector.getFirstFrameOfMain(stacktrace: stacktrace)
-      XCTAssertEqual(result, "MyApp 0x0000000100001234 main + 52")
+      XCTAssertEqual(result, "CoreFoundation + 445840")
+    }
+
+    func testGetFirstFrameOfMainWithInsufficientComponents() {
+      let stacktrace = """
+      Thread 0:
+      0   MyApp
+      """
+
+      let result = collector.getFirstFrameOfMain(stacktrace: stacktrace)
+      XCTAssertEqual(result, "unknown location")
     }
 
     func testGetFirstFrameOfMainWithNoMainThread() {
@@ -145,14 +157,14 @@ final class NoopLiveStackTraceReporterTests: XCTestCase {
     func testGetFirstFrameOfMainWithMalformedStacktrace() {
       let stacktrace = "Thread 0:\n0"
       let result = collector.getFirstFrameOfMain(stacktrace: stacktrace)
-      XCTAssertEqual(result, "")
+      XCTAssertEqual(result, "unknown location")
     }
 
     func testFormatStackTraceWithNilReportString() {
       let malformedData = Data([0x00, 0x01, 0x02, 0x03])
       let result = collector.formatStackTrace(rawStackTrace: malformedData)
 
-      XCTAssertEqual(result.message, "Hang detected on main thread at unknown location")
+      XCTAssertEqual(result.message, "Hang detected at unknown location")
       XCTAssertTrue(result.stacktrace.contains("Failed to"))
     }
   }
