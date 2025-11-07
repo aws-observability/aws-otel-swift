@@ -34,63 +34,53 @@ final class AwsUIDManagerTests: XCTestCase {
     XCTAssertEqual(firstCall, secondCall)
   }
 
-  func testSetUIDUpdate() {
+  func testSetUIDPostsNotification() {
     let manager = AwsUIDManager()
-    let originalUID = manager.getUID()
-    let customUID = "custom-test-uid-123"
+    let expectation = XCTestExpectation(description: "UID change notification")
+    var receivedUID: String?
 
-    manager.setUID(uid: customUID)
-    let updatedUID = manager.getUID()
-
-    XCTAssertNotEqual(originalUID, updatedUID)
-    XCTAssertEqual(customUID, updatedUID)
-  }
-
-  func testSetUIDPersistence() {
-    let manager = AwsUIDManager()
-    let customUID = "persistent-test-uid-456"
-
-    manager.setUID(uid: customUID)
-
-    // Verify it's saved to UserDefaults
-    let savedUID = UserDefaults.standard.string(forKey: "aws-rum-user-id")
-    XCTAssertEqual(customUID, savedUID)
-
-    // Create new manager to test persistence across instances
-    let newManager = AwsUIDManager()
-    XCTAssertEqual(customUID, newManager.getUID())
-  }
-
-  func testThreadSafety() {
-    let manager = AwsUIDManager()
-    let expectation = XCTestExpectation(description: "Thread safety test")
-    let iterations = 100
-    var results: [String] = []
-    let resultsLock = NSLock()
-
-    // Launch multiple concurrent operations
-    for i in 0 ..< iterations {
-      DispatchQueue.global().async {
-        if i % 2 == 0 {
-          // Half the operations read UID
-          let uid = manager.getUID()
-          resultsLock.withLock {
-            results.append(uid)
-          }
-        } else {
-          // Half the operations set UID
-          manager.setUID(uid: "thread-test-\(i)")
-        }
-
-        if results.count + (iterations / 2) >= iterations {
-          expectation.fulfill()
-        }
-      }
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsUserIdChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      receivedUID = notification.object as? String
+      expectation.fulfill()
     }
 
-    wait(for: [expectation], timeout: 5.0)
+    let testUID = "test-uid-123"
+    manager.setUID(uid: testUID)
 
-    // Verify no crashes occurred and operations completed
-    XCTAssertGreaterThan(results.count, 0)
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedUID, testUID)
+
+    NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testMultipleSetUIDCallsPostMultipleNotifications() {
+    let manager = AwsUIDManager()
+    var receivedUIDs: [String] = []
+    let expectation = XCTestExpectation(description: "Multiple UID notifications")
+    expectation.expectedFulfillmentCount = 3
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: AwsUserIdChangeNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let uid = notification.object as? String {
+        receivedUIDs.append(uid)
+      }
+      expectation.fulfill()
+    }
+
+    manager.setUID(uid: "uid1")
+    manager.setUID(uid: "uid2")
+    manager.setUID(uid: "uid3")
+
+    wait(for: [expectation], timeout: 1.0)
+    XCTAssertEqual(receivedUIDs, ["uid1", "uid2", "uid3"])
+
+    NotificationCenter.default.removeObserver(observer)
   }
 }

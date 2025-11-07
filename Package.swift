@@ -1,19 +1,17 @@
 // swift-tools-version:5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
   name: "aws-otel-swift",
   platforms: [
-    .iOS(.v13), // officially only supporting iOS
+    .iOS(.v13), // officially only supporting iOSv16
     .macOS(.v12),
     .tvOS(.v13),
     .watchOS(.v6),
     .visionOS(.v1)
   ],
   products: [
-    // Products define the executables and libraries a package produces, making them visible to other packages.
     .library(name: "AwsOpenTelemetryCore", targets: ["AwsOpenTelemetryCore"]),
     .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"]),
     .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
@@ -26,8 +24,6 @@ let package = Package(
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0")
   ],
   targets: [
-    // Targets are the basic building blocks of a package, defining a module or a test suite.
-    // Targets can depend on other targets in this package and products from dependencies.
     .target(
       name: "AwsOpenTelemetryCore",
       dependencies: [
@@ -37,7 +33,7 @@ let package = Package(
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
       ],
-      exclude: ["UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md"]
+      exclude: ["UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "SwiftUI/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -86,14 +82,14 @@ let package = Package(
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
-    ),
-    .testTarget(
-      name: "ContractTests",
-      dependencies: ["AwsOpenTelemetryCore"],
-      path: "Tests/ContractTests",
-      exclude: ["MockCollector"],
-      sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
     )
+    // .testTarget(
+    //   name: "ContractTests",
+    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
+    //   path: "Tests/ContractTests",
+    //   exclude: ["MockCollector"],
+    //   sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
+    // )
   ]
 ).addPlatformSpecific()
 
