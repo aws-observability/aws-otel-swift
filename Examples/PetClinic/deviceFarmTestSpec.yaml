@@ -1,0 +1,55 @@
+version: 0.1
+
+ios_test_host: macos_sequoia
+
+phases:
+  install:
+    commands:
+
+  pre_test:
+    commands:
+      - export MODIFIED_XCUITESTRUN_FILE=/tmp/Parameterized_PetClinic.xctestrun
+      - |
+        # Use the PetClinic-specific xctestrun file
+        export ORIGINAL_XCTESTRUN=$(find $DEVICEFARM_XCTEST_BUILD_DIRECTORY -name "*PetClinic*.xctestrun" -type f | head -1)
+        echo "Found PetClinic xctestrun file: $ORIGINAL_XCTESTRUN"
+        cp "$ORIGINAL_XCTESTRUN" $MODIFIED_XCUITESTRUN_FILE
+
+      - |
+        # Create the expected directory structure
+        mkdir -p /tmp/root/Debug-iphoneos
+        
+        # Copy app files to expected locations
+        find $DEVICEFARM_XCTEST_BUILD_DIRECTORY -name "PetClinic.app" -type d -exec cp -R {} /tmp/root/Debug-iphoneos/ \;
+        find $DEVICEFARM_XCTEST_BUILD_DIRECTORY -name "PetClinicUITests-Runner.app" -type d -exec cp -R {} /tmp/root/Debug-iphoneos/ \;
+        
+        # Verify the structure
+        ls -la /tmp/root/Debug-iphoneos/
+
+      - |
+        # Add arguments and fix paths
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:0 string '-appMonitorId'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:1 string '6a3cc818-40fa-4266-9561-9ccf2de54567'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:2 string '-appMonitorRegion'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:3 string 'us-west-2'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:4 string '-deviceFarmJobId'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:5 string '<PASTE_JOB_ID>'" $MODIFIED_XCUITESTRUN_FILE
+        
+        # Fix paths to use absolute paths
+        /usr/libexec/PlistBuddy -c "Set :TestConfigurations:0:TestTargets:0:UITargetAppPath /tmp/root/Debug-iphoneos/PetClinic.app" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Set :TestConfigurations:0:TestTargets:0:TestHostPath /tmp/root/Debug-iphoneos/PetClinicUITests-Runner.app" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Set :TestConfigurations:0:TestTargets:0:TestBundlePath /tmp/root/Debug-iphoneos/PetClinicUITests-Runner.app/PlugIns/PetClinicUITests.xctest" $MODIFIED_XCUITESTRUN_FILE
+
+  test:
+    commands:
+      - |-
+        xcodebuild test-without-building \
+          -destination id=$DEVICEFARM_DEVICE_UDID \
+          -xctestrun $MODIFIED_XCUITESTRUN_FILE
+
+  post_test:
+    commands:
+
+artifacts:
+  - $DEVICEFARM_DERIVED_DATA_PATH
+

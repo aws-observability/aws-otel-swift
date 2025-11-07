@@ -1,4 +1,5 @@
 import XCTest
+import Foundation
 
 /**
  * Comprehensive instrumented test that generates telemetry by interacting with all UI elements.
@@ -26,6 +27,8 @@ final class PetClinicUITests: XCTestCase {
   @MainActor
   func testGenerateComprehensiveTelemetry() throws {
     let app = XCUIApplication()
+    // Launch arguments are now injected via .xctestrun modification
+    // They will automatically be available in UserDefaults
     app.launch()
 
     let numberOfIntervals = 4 // 4 times in 120 mins => once every 30 mins
@@ -34,15 +37,18 @@ final class PetClinicUITests: XCTestCase {
     for i in 0 ..< numberOfIntervals {
       print("Generating telemetry for interval \(i + 1)...")
       generateAllTelemetry(app: app)
+      sleep(15 * 60)
 
-      print("Idling for 28 minutes...")
-      idleFor28Minutes(app: app)
+//      print("Idling for 28 minutes...")
+//      idleFor28Minutes(app: app)
     }
   }
 
   @MainActor
   func testGenerateCrashTelemetry() throws {
     let app = XCUIApplication()
+    // Fetch parameters from local server
+
     app.launch()
 
     sleep(2)
@@ -57,6 +63,7 @@ final class PetClinicUITests: XCTestCase {
 
     // Launch app again to capture telemetry
     app.launch()
+    sleep(2)
   }
 
   private func idleFor28Minutes(app: XCUIApplication) {
@@ -66,7 +73,9 @@ final class PetClinicUITests: XCTestCase {
     // Perform periodic navigation while waiting
     while Date().timeIntervalSince(startTime) < duration {
       navigateToOwnersScreen(app: app)
+      sleep(2)
       navigateToVetsScreen(app: app)
+      sleep(2)
       sleep(30) // Wait 30 seconds between navigation cycles
     }
   }
@@ -138,21 +147,16 @@ final class PetClinicUITests: XCTestCase {
 
     // Test network error 404
     app.buttons["🚫 Simulate Network Error 404"].tap()
-    sleep(2)
+    sleep(3)
 
     // Test network error 500
     app.buttons["🚫 Simulate Network Error 500"].tap()
+    sleep(3)
+
     sleep(2)
 
     // Test ANR (blocks for 10s)
     app.buttons["⏰ Trigger ANR (10s block)"].tap()
     sleep(15) // Wait longer than ANR timeout
-  }
-
-  @MainActor
-  func testLaunchPerformance() throws {
-    measure(metrics: [XCTApplicationLaunchMetric()]) {
-      XCUIApplication().launch()
-    }
   }
 }

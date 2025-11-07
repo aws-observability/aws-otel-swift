@@ -8,8 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0F8D1B7B2E7CBC6A0071E428 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 0F8D1B7A2E7CBC6A0071E428 /* AwsOpenTelemetryAuth */; };
+		3F39B4BF2EBDF4F60084C407 /* deviceFarmTestSpec.yaml in Resources */ = {isa = PBXBuildFile; fileRef = 3F39B4BE2EBDF4EA0084C407 /* deviceFarmTestSpec.yaml */; };
 		3F48C1902E8B0ADB00C0D29B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F48C18F2E8B0ADB00C0D29B /* Assets.xcassets */; };
-		3F48C1F32E8B40FB00C0D29B /* AwsOpenTelemetryAgent in Frameworks */ = {isa = PBXBuildFile; productRef = 3F48C1F22E8B40FB00C0D29B /* AwsOpenTelemetryAgent */; };
 		3F48C1F72E8B40FB00C0D29B /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3F48C1F62E8B40FB00C0D29B /* AwsOpenTelemetryCore */; };
 		A1000001 /* PetClinicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* PetClinicApp.swift */; };
 		A1000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004 /* ContentView.swift */; };
@@ -29,6 +29,7 @@
 
 /* Begin PBXFileReference section */
 		0F147AE32E7CCCE100FAE8B6 /* PetClinicUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PetClinicUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F39B4BE2EBDF4EA0084C407 /* deviceFarmTestSpec.yaml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = deviceFarmTestSpec.yaml; sourceTree = "<group>"; };
 		3F48C18F2E8B0ADB00C0D29B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000000 /* PetClinic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PetClinic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000002 /* PetClinicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetClinicApp.swift; sourceTree = "<group>"; };
@@ -54,7 +55,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3F48C1F32E8B40FB00C0D29B /* AwsOpenTelemetryAgent in Frameworks */,
 				0F8D1B7B2E7CBC6A0071E428 /* AwsOpenTelemetryAuth in Frameworks */,
 				3F48C1F72E8B40FB00C0D29B /* AwsOpenTelemetryCore in Frameworks */,
 			);
@@ -73,6 +73,7 @@
 		A1000011 = {
 			isa = PBXGroup;
 			children = (
+				3F39B4BE2EBDF4EA0084C407 /* deviceFarmTestSpec.yaml */,
 				A1000012 /* PetClinic */,
 				0F147AE42E7CCCE200FAE8B6 /* PetClinicUITests */,
 				3F48C1F12E8B40FB00C0D29B /* Frameworks */,
@@ -191,6 +192,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3F39B4BF2EBDF4F60084C407 /* deviceFarmTestSpec.yaml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -496,11 +498,6 @@
 		0F8D1B7A2E7CBC6A0071E428 /* AwsOpenTelemetryAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AwsOpenTelemetryAuth;
-		};
-		3F48C1F22E8B40FB00C0D29B /* AwsOpenTelemetryAgent */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */;
-			productName = AwsOpenTelemetryAgent;
 		};
 		3F48C1F62E8B40FB00C0D29B /* AwsOpenTelemetryCore */ = {
 			isa = XCSwiftPackageProductDependency;

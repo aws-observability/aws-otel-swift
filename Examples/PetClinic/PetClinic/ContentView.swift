@@ -48,8 +48,14 @@ struct ContentView: View {
 
             Text("Application Signals Demo App")
               .font(.title2)
-              .foregroundColor(.secondary)
-              .multilineTextAlignment(.center)
+
+//            // Debug: Show command line arguments
+//            Text("Args: \(ProcessInfo.processInfo.arguments.joined(separator: ", "))")
+//              .font(.caption)
+//              .foregroundColor(.gray)
+//              .accessibilityIdentifier("commandLineArgs")
+//              .foregroundColor(.secondary)
+//              .multilineTextAlignment(.center)
 
             Spacer(minLength: 32)
 
