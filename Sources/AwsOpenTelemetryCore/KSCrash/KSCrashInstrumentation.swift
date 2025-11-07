@@ -39,7 +39,7 @@ protocol CrashProtocol {
 }
 
 public class KSCrashInstrumentation: CrashProtocol {
-  public static let maxStackTraceBytes = 30 * 1024 // 30 KB
+  public static let maxStackTraceBytes = 25 * 1024 // 25 KB
   public private(set) static var isInstalled: Bool = false
   private static let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.KSCRASH)
   static let reporter = KSCrash.shared

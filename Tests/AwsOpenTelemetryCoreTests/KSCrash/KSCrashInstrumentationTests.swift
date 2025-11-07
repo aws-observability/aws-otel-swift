@@ -57,7 +57,7 @@ final class KSCrashInstrumentationTests: XCTestCase {
   }
 
   func testMaxStackTraceBytes() {
-    XCTAssertEqual(KSCrashInstrumentation.maxStackTraceBytes, 30 * 1024)
+    XCTAssertEqual(KSCrashInstrumentation.maxStackTraceBytes, 25 * 1024)
   }
 
   func testExtractCrashMessageWithExceptionCodes() {
