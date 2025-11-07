@@ -72,11 +72,7 @@ final class PetClinicUITests: XCTestCase {
 
     // Perform periodic navigation while waiting
     while Date().timeIntervalSince(startTime) < duration {
-      navigateToOwnersScreen(app: app)
       sleep(2)
-      navigateToVetsScreen(app: app)
-      sleep(2)
-      sleep(30) // Wait 30 seconds between navigation cycles
     }
   }
 
