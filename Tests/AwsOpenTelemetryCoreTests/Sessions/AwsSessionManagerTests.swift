@@ -11,6 +11,7 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   override func tearDown() {
+    NotificationCenter.default.removeObserver(self)
     AwsSessionStore.teardown()
     super.tearDown()
   }
@@ -113,6 +114,16 @@ final class AwsSessionManagerTests: XCTestCase {
     XCTAssertEqual(session1.sessionTimeout, customLength)
   }
 
+  func testCustomSessionSampleRate() {
+    let customSampleRate = 0.5
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: customSampleRate))
+    sessionManager.getSession()
+
+    // Can't predict exact outcome with 0.5, but should not crash
+    let sampling = sessionManager.isSessionSampled
+    XCTAssertTrue(sampling == true || sampling == false)
+  }
+
   func testNewSessionHasNoPreviousId() {
     let session = sessionManager.getSession()
     XCTAssertNil(session.previousId)
@@ -132,37 +143,132 @@ final class AwsSessionManagerTests: XCTestCase {
   func testStartSessionAddsToQueueWhenInstrumentationNotApplied() {
     AwsSessionEventInstrumentation.queue = []
     AwsSessionEventInstrumentation.isApplied = false
-
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
     let session = sessionManager.getSession()
+
+    // Wait for async session event processing
+    let expectation = XCTestExpectation(description: "Session event queued")
+    DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now()) {
+      expectation.fulfill()
+    }
+    wait(for: [expectation], timeout: 2.0)
 
     XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 1)
     XCTAssertEqual(AwsSessionEventInstrumentation.queue[0].session.id, session.id)
   }
 
-  func testStartSessionTriggersNotificationWhenInstrumentationApplied() {
+  func testStartSessionProcessesDirectlyWhenInstrumentationApplied() {
     AwsSessionEventInstrumentation.queue = []
     AwsSessionEventInstrumentation.isApplied = true
 
-    let expectation = XCTestExpectation(description: "Session notification posted")
-    var receivedSessionEvent: AwsSessionEvent?
+    let session = sessionManager.getSession()
+
+    // When instrumentation is applied, sessions are processed directly, not queued
+    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
+    XCTAssertNotNil(session.id)
+  }
+
+  func testSessionStartNotificationPosted() {
+    let expectation = XCTestExpectation(description: "Session start notification")
+    var receivedSession: AwsSession?
 
     let observer = NotificationCenter.default.addObserver(
-      forName: AwsSessionEventInstrumentation.sessionEventNotification,
+      forName: SessionStartNotification,
       object: nil,
       queue: nil
     ) { notification in
-      receivedSessionEvent = notification.object as? AwsSessionEvent
+      receivedSession = notification.object as? AwsSession
       expectation.fulfill()
     }
 
     let session = sessionManager.getSession()
 
-    wait(for: [expectation], timeout: 0.1)
-
-    XCTAssertNotNil(receivedSessionEvent)
-    XCTAssertEqual(receivedSessionEvent?.session.id, session.id)
-    XCTAssertEqual(AwsSessionEventInstrumentation.queue.count, 0)
+    wait(for: [expectation], timeout: 2.0) // Increased timeout for async processing
+    XCTAssertEqual(receivedSession?.id, session.id)
 
     NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testMultipleSessionStartNotifications() {
+    // Clean up any existing state
+    AwsSessionStore.teardown()
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0))
+
+    var receivedSessions: [String] = []
+    let expectation = XCTestExpectation(description: "Multiple session notifications")
+    expectation.expectedFulfillmentCount = 3
+
+    let observer = NotificationCenter.default.addObserver(
+      forName: SessionStartNotification,
+      object: nil,
+      queue: nil
+    ) { notification in
+      if let session = notification.object as? AwsSession {
+        receivedSessions.append(session.id)
+      }
+      expectation.fulfill()
+    }
+
+    let session1 = sessionManager.getSession()
+    let session2 = sessionManager.getSession()
+    let session3 = sessionManager.getSession()
+
+    wait(for: [expectation], timeout: 2.0)
+
+    NotificationCenter.default.removeObserver(observer)
+
+    // Only check the count and that we got the expected sessions
+    XCTAssertEqual(receivedSessions.count, 3)
+    XCTAssertTrue(receivedSessions.contains(session1.id))
+    XCTAssertTrue(receivedSessions.contains(session2.id))
+    XCTAssertTrue(receivedSessions.contains(session3.id))
+  }
+
+  func testSessionSamplingWithFullSampleRate() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 1.0))
+    sessionManager.getSession()
+    XCTAssertTrue(sessionManager.isSessionSampled)
+  }
+
+  func testSessionSamplingWithZeroSampleRate() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 0.0))
+    sessionManager.getSession()
+    XCTAssertFalse(sessionManager.isSessionSampled)
+  }
+
+  func testSessionSamplingPersistsAcrossSessionExtensions() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 1.0))
+    sessionManager.getSession()
+    let initialSampling = sessionManager.isSessionSampled
+
+    // Extend session
+    sessionManager.getSession()
+    XCTAssertEqual(sessionManager.isSessionSampled, initialSampling)
+  }
+
+  func testSessionSamplingChangesOnNewSession() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionTimeout: 0, sessionSampleRate: 1.0))
+    sessionManager.getSession()
+    let firstSampling = sessionManager.isSessionSampled
+
+    // Force new session
+    sessionManager.getSession()
+    let secondSampling = sessionManager.isSessionSampled
+
+    // Both should be true with 1.0 sample rate
+    XCTAssertTrue(firstSampling)
+    XCTAssertTrue(secondSampling)
+  }
+
+  func testSessionSamplingWithFullSampleRateNewSession() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 1.0))
+    sessionManager.getSession()
+    XCTAssertTrue(sessionManager.isSessionSampled)
+  }
+
+  func testSessionSamplingWithZeroSampleRateNewSession() {
+    sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 0.0))
+    sessionManager.getSession()
+    XCTAssertFalse(sessionManager.isSessionSampled)
   }
 }

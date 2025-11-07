@@ -174,7 +174,7 @@ public class AwsOpenTelemetryRumBuilder {
   private func buildInstrumentations(plan: AwsInstrumentationPlan) {
     // Session Events
     if plan.sessionEvents {
-      _ = AwsSessionEventInstrumentation()
+      AwsSessionEventInstrumentation.install()
     }
 
     // View instrumentation (UIKit/SwiftUI)
@@ -408,7 +408,7 @@ public class AwsOpenTelemetryRumBuilder {
                                    resource: Resource) -> LoggerProvider {
     let batchProcessor = BatchLogRecordProcessor(logRecordExporter: logExporter)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: batchProcessor)
-    let sessionProcessor = AwsSessionLogRecordProcessor(nextProcessor: uidProcessor)
+    let sessionProcessor = AwsSessionLogProcessor(nextProcessor: uidProcessor)
     let globalAttributesProcessor = GlobalAttributesLogRecordProcessor(nextProcessor: sessionProcessor)
 
     let builder = LoggerProviderBuilder()
