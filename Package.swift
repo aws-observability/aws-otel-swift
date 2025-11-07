@@ -35,7 +35,7 @@ let package = Package(
         .product(name: "Installations", package: "KSCrash"),
         .product(name: "CrashReporter", package: "plcrashreporter", condition: .when(platforms: [.iOS, .macOS, .tvOS, .visionOS]))
       ],
-      exclude: ["README.md"]
+      exclude: ["Sessions/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md", "AppLaunch/README.md", "SwiftUI/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
