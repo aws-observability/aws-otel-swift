@@ -12,11 +12,14 @@ let package = Package(
   ],
   products: [
     .library(name: "AwsOpenTelemetryCore", targets: ["AwsOpenTelemetryCore"]),
-    .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"])
+    .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"]),
+    .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
   ],
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.2.0"),
+    .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
+    .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
     .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0"),
     .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
     .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2")
@@ -32,7 +35,7 @@ let package = Package(
         .product(name: "Installations", package: "KSCrash"),
         .product(name: "CrashReporter", package: "plcrashreporter", condition: .when(platforms: [.iOS, .macOS, .tvOS, .visionOS]))
       ],
-      exclude: ["Sessions/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md", "AppLaunch/README.md", "SwiftUI/README.md"]
+      exclude: ["README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -46,9 +49,25 @@ let package = Package(
       ]
     ),
     .target(
-      name: "TestUtils",
+      name: "AwsOpenTelemetryAuth",
       dependencies: [
         "AwsOpenTelemetryCore",
+        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
+        .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
+        .product(name: "SmithyIdentity", package: "smithy-swift"),
+        .product(name: "SmithyHTTPAuth", package: "smithy-swift"),
+        .product(name: "SmithyHTTPAuthAPI", package: "smithy-swift"),
+        .product(name: "SmithyHTTPAPI", package: "smithy-swift"),
+        .product(name: "Smithy", package: "smithy-swift"),
+        .product(name: "AWSSDKHTTPAuth", package: "aws-sdk-swift"),
+        .product(name: "AWSCognitoIdentity", package: "aws-sdk-swift")
+      ],
+      exclude: ["README.md"]
+    ),
+    .target(
+      name: "TestUtils",
+      dependencies: [
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
       path: "Tests/TestUtils"
@@ -60,10 +79,14 @@ let package = Package(
         "TestUtils",
         .product(name: "Atomics", package: "swift-atomics")
       ]
+    ),
+    .testTarget(
+      name: "AwsOpenTelemetryAuthTests",
+      dependencies: ["AwsOpenTelemetryAuth"]
     )
     // .testTarget(
     //   name: "ContractTests",
-    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
+    //   dependencies: ["AwsOpenTelemetryCore"],
     //   path: "Tests/ContractTests",
     //   exclude: ["MockCollector"],
     //   sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
