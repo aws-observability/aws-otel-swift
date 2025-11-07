@@ -260,14 +260,15 @@ final class AwsSessionManagerTests: XCTestCase {
     XCTAssertTrue(secondSampling)
   }
 
-  func testShouldSampleSessionFunction() {
-    // Test through reflection since shouldSampleSession is private
+  func testSessionSamplingWithFullSampleRateNewSession() {
     sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 1.0))
     sessionManager.getSession()
     XCTAssertTrue(sessionManager.isSessionSampled)
+  }
 
+  func testSessionSamplingWithZeroSampleRateNewSession() {
     sessionManager = AwsSessionManager(configuration: AwsSessionConfig(sessionSampleRate: 0.0))
     sessionManager.getSession()
-    XCTAssert(sessionManager.isSessionSampled)
+    XCTAssertFalse(sessionManager.isSessionSampled)
   }
 }
