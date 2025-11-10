@@ -36,4 +36,8 @@ final class AwsInstrumentationScopesTests: XCTestCase {
   func testHangs() {
     XCTAssertEqual(AwsInstrumentationScopes.HANG, "software.amazon.opentelemetry.Hang")
   }
+
+  func testKSCrash() {
+    XCTAssertEqual(AwsInstrumentationScopes.KSCRASH, "software.amazon.opentelemetry.kscrash")
+  }
 }
