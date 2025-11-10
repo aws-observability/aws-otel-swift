@@ -376,6 +376,50 @@ This will set up Git hooks and needed tools in one step.
 
 For more details about the individual scripts and how to set them up separately, see the [scripts README](./scripts/README.md).
 
+## Version Management
+
+### Version Bumping
+
+The repository includes a script to manage version bumping across all relevant files. The script updates versions in:
+- `Sources/AwsOpenTelemetryCore/AwsOpenTelemetryAgent.swift` (SDK version)
+- `README.md` (package dependency version)
+- `Info.plist` (bundle version)
+
+#### Automatic Version Bumping (Minor Versions)
+
+The regular `PostRelease.yml` workflow automatically bumps minor versions after releases.
+
+#### Manual Version Bumping
+
+For manual version control, use the `scripts/bump-version.sh` script:
+
+**Patch Version** (x.y.z → x.y.z+1):
+```bash
+./scripts/bump-version.sh patch
+```
+
+**Minor Version** (x.y.z → x.y+1.0):
+```bash
+./scripts/bump-version.sh minor
+```
+
+**Major Version** (x.y.z → x+1.0.0):
+```bash
+./scripts/bump-version.sh major
+```
+
+**Specific Version**:
+```bash
+./scripts/bump-version.sh 2.1.3
+```
+
+**With Automatic Commit and Tag**:
+```bash
+./scripts/bump-version.sh patch --commit-tag
+```
+
+The script will prompt for confirmation before making changes and creates backups of modified files.
+
 ## License
 
 This project is licensed under the Apache-2.0 License.
