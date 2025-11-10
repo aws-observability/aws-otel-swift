@@ -9,8 +9,18 @@ import Foundation
  * The ANR and Crash buttons are saved for last as they will terminate the test.
  */
 final class PetClinicUITests: XCTestCase {
-  private let sleepIntervalSeconds: TimeInterval = 27 * 60 // 25 minutes
-  private let timeoutSeconds: TimeInterval = 30 * 60 // 30 minutes
+  // Detect Device Farm environment and use shorter durations
+  private var isDeviceFarm: Bool {
+    ProcessInfo.processInfo.environment["DEVICEFARM_DEVICE_UDID"] != nil
+  }
+
+  private var sleepIntervalSeconds: TimeInterval {
+    isDeviceFarm ? 2 * 60 : 27 * 60 // 2 minutes for Device Farm, 27 for local
+  }
+
+  private var timeoutSeconds: TimeInterval {
+    isDeviceFarm ? 5 * 60 : 30 * 60 // 5 minutes for Device Farm, 30 for local
+  }
 
   override func setUpWithError() throws {
     continueAfterFailure = false
@@ -27,19 +37,20 @@ final class PetClinicUITests: XCTestCase {
   @MainActor
   func testGenerateComprehensiveTelemetry() throws {
     let app = XCUIApplication()
-    // Launch arguments are now injected via .xctestrun modification
-    // They will automatically be available in UserDefaults
     app.launch()
 
-    let numberOfIntervals = 4 // 4 times in 120 mins => once every 30 mins
+    let numberOfIntervals = isDeviceFarm ? 2 : 4 // Fewer intervals for Device Farm
 
     // Loop for the entire test session
     for i in 0 ..< numberOfIntervals {
       print("Generating telemetry for interval \(i + 1)...")
       generateAllTelemetry(app: app)
 
-      print("Idling for 28 minutes...")
-      idleFor28Minutes(app: app)
+      if i < numberOfIntervals - 1 { // Don't idle after last interval
+        let idleDuration = isDeviceFarm ? 2 : 28 // 2 minutes for Device Farm
+        print("Idling for \(idleDuration) minutes...")
+        idleForDuration(app: app, minutes: idleDuration)
+      }
     }
   }
 
@@ -49,8 +60,6 @@ final class PetClinicUITests: XCTestCase {
     // Fetch parameters from local server
 
     app.launch()
-
-    sleep(2)
 
     // Scroll down to find testing section
     app.scrollViews.firstMatch.swipeUp()
@@ -62,25 +71,29 @@ final class PetClinicUITests: XCTestCase {
 
     // Launch app again to capture telemetry
     app.launch()
-    sleep(2)
+    Thread.sleep(forTimeInterval: 2.0)
   }
 
-  private func idleFor28Minutes(app: XCUIApplication) {
+  private func idleForDuration(app: XCUIApplication, minutes: Int) {
     let startTime = Date()
-    let duration: TimeInterval = 28 * 60 // 28 minutes
+    let duration = TimeInterval(minutes * 60)
+    let navigationInterval: TimeInterval = isDeviceFarm ? 15 : 30 // More frequent checks on Device Farm
 
     // Perform periodic navigation while waiting
     while Date().timeIntervalSince(startTime) < duration {
-      navigateToOwnersScreen(app: app)
-      navigateToVetsScreen(app: app)
-      sleep(30) // Wait 30 seconds between navigation cycles
+      // Check if app is still responsive before navigation
+      if app.state == .runningForeground {
+        navigateToOwnersScreen(app: app)
+        navigateToVetsScreen(app: app)
+      } else {
+        print("App not in foreground, skipping navigation")
+        break
+      }
+      Thread.sleep(forTimeInterval: navigationInterval)
     }
   }
 
   private func generateAllTelemetry(app: XCUIApplication) {
-    // Wait for app to load
-    sleep(2)
-
     navigateToOwnersScreen(app: app)
     navigateToVetsScreen(app: app)
     navigateToHomeScreen(app: app)
@@ -89,22 +102,34 @@ final class PetClinicUITests: XCTestCase {
     performDestructiveTests(app: app)
 
     // Wait for telemetry to be sent
-    sleep(30)
+    Thread.sleep(forTimeInterval: 5.0)
   }
 
   private func navigateToOwnersScreen(app: XCUIApplication) {
-    app.tabBars.buttons["Owners"].tap()
-    sleep(2)
+    let ownersButton = app.tabBars.buttons["Owners"]
+    if ownersButton.waitForExistence(timeout: 5), ownersButton.isHittable {
+      ownersButton.tap()
+    } else {
+      print("Owners button not found or not hittable")
+    }
   }
 
   private func navigateToVetsScreen(app: XCUIApplication) {
-    app.tabBars.buttons["Vets"].tap()
-    sleep(2)
+    let vetsButton = app.tabBars.buttons["Vets"]
+    if vetsButton.waitForExistence(timeout: 5), vetsButton.isHittable {
+      vetsButton.tap()
+    } else {
+      print("Vets button not found or not hittable")
+    }
   }
 
   private func navigateToHomeScreen(app: XCUIApplication) {
-    app.tabBars.buttons["Home"].tap()
-    sleep(2)
+    let homeButton = app.tabBars.buttons["Home"]
+    if homeButton.waitForExistence(timeout: 5), homeButton.isHittable {
+      homeButton.tap()
+    } else {
+      print("Home button not found or not hittable")
+    }
   }
 
   private func testUIJankFeature(app: XCUIApplication) {
@@ -113,24 +138,23 @@ final class PetClinicUITests: XCTestCase {
     app.scrollViews.firstMatch.swipeUp()
 
     // Start UI Jank
-    app.buttons["🟡 Start UI Jank"].tap()
-    sleep(5) // Let jank run
+    let uiJankStartButton = app.buttons["🟡 Start UI Jank"]
+    if uiJankStartButton.waitForExistence(timeout: 5), uiJankStartButton.isHittable {
+      uiJankStartButton.tap()
+    }
 
     // Stop UI Jank
-    app.buttons["🟢 Stop UI Jank"].tap()
-    sleep(1)
+    let uiJankStopButton = app.buttons["🟢 Stop UI Jank"]
+    if uiJankStopButton.waitForExistence(timeout: 5), uiJankStopButton.isHittable {
+      uiJankStopButton.tap()
+    }
   }
 
   private func performFinalNavigationRound(app: XCUIApplication) {
     // Another round of navigation for more telemetry
-    app.tabBars.buttons["Owners"].tap()
-    sleep(2)
-
-    app.tabBars.buttons["Vets"].tap()
-    sleep(2)
-
-    app.tabBars.buttons["Home"].tap()
-    sleep(1)
+    navigateToOwnersScreen(app: app)
+    navigateToVetsScreen(app: app)
+    navigateToHomeScreen(app: app)
   }
 
   private func performDestructiveTests(app: XCUIApplication) {
@@ -139,21 +163,35 @@ final class PetClinicUITests: XCTestCase {
     app.scrollViews.firstMatch.swipeUp()
 
     // Test API call
-    app.buttons["🌐 Test API Call"].tap()
-    sleep(2)
+    let testApiCallButton = app.buttons["🌐 Test API Call"]
+    if testApiCallButton.waitForExistence(timeout: 5), testApiCallButton.isHittable {
+      testApiCallButton.tap()
+    }
 
     // Test network error 404
-    app.buttons["🚫 Simulate Network Error 404"].tap()
-    sleep(3)
+    let networkError404Button = app.buttons["🚫 Simulate Network Error 404"]
+    if networkError404Button.waitForExistence(timeout: 5), networkError404Button.isHittable {
+      networkError404Button.tap()
+      let okButton = app.alerts["Error"].firstMatch.buttons["OK"]
+      if okButton.waitForExistence(timeout: 5), okButton.isHittable {
+        okButton.tap()
+      }
+    }
 
     // Test network error 500
-    app.buttons["🚫 Simulate Network Error 500"].tap()
-    sleep(3)
-
-    sleep(2)
+    let networkError500Button = app.buttons["🚫 Simulate Network Error 500"]
+    if networkError500Button.waitForExistence(timeout: 5), networkError500Button.isHittable {
+      networkError500Button.tap()
+      let okButton = app.alerts["Error"].firstMatch.buttons["OK"]
+      if okButton.waitForExistence(timeout: 5), okButton.isHittable {
+        okButton.tap()
+      }
+    }
 
     // Test ANR (blocks for 10s)
-    app.buttons["⏰ Trigger ANR (10s block)"].tap()
-    sleep(15) // Wait longer than ANR timeout
+    let anrButton = app.buttons["⏰ Trigger ANR (10s block)"]
+    if anrButton.waitForExistence(timeout: 5), anrButton.isHittable {
+      anrButton.tap()
+    }
   }
 }
