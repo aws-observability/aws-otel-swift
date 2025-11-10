@@ -25,4 +25,5 @@ public enum AwsInstrumentationScopes {
   public static let UIKIT_VIEW = "software.amazon.opentelemetry.UIKitView"
   public static let SWIFTUI_VIEW = "software.amazon.opentelemetry.SwiftUIView"
   public static let HANG = "software.amazon.opentelemetry.Hang"
+  public static let KSCRASH = "software.amazon.opentelemetry.kscrash"
 }
