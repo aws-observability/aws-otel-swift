@@ -37,10 +37,9 @@ final class PetClinicUITests: XCTestCase {
     for i in 0 ..< numberOfIntervals {
       print("Generating telemetry for interval \(i + 1)...")
       generateAllTelemetry(app: app)
-      sleep(15 * 60)
 
-//      print("Idling for 28 minutes...")
-//      idleFor28Minutes(app: app)
+      print("Idling for 28 minutes...")
+      idleFor28Minutes(app: app)
     }
   }
 
@@ -72,7 +71,9 @@ final class PetClinicUITests: XCTestCase {
 
     // Perform periodic navigation while waiting
     while Date().timeIntervalSince(startTime) < duration {
-      sleep(2)
+      navigateToOwnersScreen(app: app)
+      navigateToVetsScreen(app: app)
+      sleep(30) // Wait 30 seconds between navigation cycles
     }
   }
 
