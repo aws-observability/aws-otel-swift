@@ -135,22 +135,26 @@ public class AwsHangInstrumentation {
   }
 
   func reportHang(startTime: CFAbsoluteTime, endTime: CFAbsoluteTime) {
-    let span = tracer.spanBuilder(spanName: AwsHangSemConv.name)
-      .setStartTime(time: Date(timeIntervalSinceReferenceDate: startTime))
-      .setAttribute(key: AwsHangSemConv.type, value: "hang")
-      .startSpan()
-
-    if let rawStackTrace {
-      // Offload formatting work in case thread is still experiencing jitter
+    if let stackTrace = rawStackTrace {
       DispatchQueue.main.async {
-        let liveStackTrace = self.stackTraceCollector.formatStackTrace(rawStackTrace: rawStackTrace)
+        let span = self.tracer.spanBuilder(spanName: AwsHangSemConv.name)
+          .setStartTime(time: Date(timeIntervalSinceReferenceDate: startTime))
+          .setAttribute(key: AwsHangSemConv.type, value: "hang")
+          .startSpan()
+
+        // Offload formatting work in case thread is still experiencing jitter
+        let liveStackTrace = self.stackTraceCollector.formatStackTrace(rawStackTrace: stackTrace)
         span.setAttribute(key: AwsHangSemConv.message, value: liveStackTrace.message)
         span.setAttribute(key: AwsHangSemConv.stacktrace, value: liveStackTrace.stacktrace)
         span.end(time: Date(timeIntervalSinceReferenceDate: endTime))
       }
     } else {
-      span.setAttribute(key: AwsHangSemConv.message, value: "Hang detected at unknown location")
-      span.setAttribute(key: AwsHangSemConv.stacktrace, value: "No stack trace captured")
+      let span = tracer.spanBuilder(spanName: AwsHangSemConv.name)
+        .setStartTime(time: Date(timeIntervalSinceReferenceDate: startTime))
+        .setAttribute(key: AwsHangSemConv.type, value: "hang")
+        .setAttribute(key: AwsHangSemConv.message, value: "Hang detected at unknown location")
+        .setAttribute(key: AwsHangSemConv.stacktrace, value: "No stack trace captured")
+        .startSpan()
       span.end(time: Date(timeIntervalSinceReferenceDate: endTime))
     }
   }
