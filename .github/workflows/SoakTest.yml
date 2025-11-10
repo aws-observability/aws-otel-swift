@@ -3,7 +3,7 @@ name: Soak Test
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, test/e2e ]
 
 jobs:
   build-ios:
