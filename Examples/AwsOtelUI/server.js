@@ -3,6 +3,8 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const open = require('open');
+const compression = require('compression');
+const zlib = require('zlib');
 // Use the official OpenTelemetry protobuf root
 const root = require('@opentelemetry/otlp-transformer/build/src/generated/root');
 
@@ -31,10 +33,37 @@ function extractReadableData(buffer, service) {
 const app = express();
 const port = 3000;
 
+// Enable gzip compression
+app.use(compression());
+
 // Parse JSON payloads with increased size limit
 app.use(express.json({ limit: '50mb' }));
 app.use(express.raw({ type: 'application/x-protobuf', limit: '50mb' }));
 app.use(express.text({ type: 'text/*', limit: '50mb' }));
+
+// Middleware to handle gzip decompression
+app.use((req, res, next) => {
+  if (req.get('Content-Encoding') === 'gzip' && Buffer.isBuffer(req.body)) {
+    // Check if data is actually gzipped (starts with gzip magic number)
+    // Currently, otel-swift upstream will still set gzip header even if the environment
+    // does not support the gzip library (for example, on iPhone simulator).
+    if (req.body.length >= 2 && req.body[0] === 0x1f && req.body[1] === 0x8b) {
+      zlib.gunzip(req.body, (err, decompressed) => {
+        if (err) {
+          console.error('Gzip decompression error:', err);
+          return res.status(400).send('Invalid gzip data');
+        }
+        req.body = decompressed;
+        next();
+      });
+    } else {
+      // Data claims to be gzipped but isn't - process as-is
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
 // Enable CORS
 app.use((req, res, next) => {
