@@ -65,15 +65,27 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "Next version will be: $NEW_VERSION"
 
-      - name: Create branch and update version
+      - name: Update version to next development version in main
         run: |
-          git checkout -b "prepare-main-for-next-dev-cycle-${NEW_VERSION}" main
+          DEV_VERSION="${NEW_VERSION}.dev0"
           
-          # Use the bump-version script to update version
-          echo "y" | ./scripts/bump-version.sh "$NEW_VERSION"
+          # Use bump-version script to update version
+          echo "y" | ./scripts/bump-version.sh "$DEV_VERSION"
+          
+          # For patch releases, handle CHANGELOG merge conflicts
+          if [[ "${{ github.event.inputs.is_patch }}" == "true" ]]; then
+            # Copy the patch release entries
+            sed -n "/^## v${NEW_VERSION}/,/^## v[0-9]/p" CHANGELOG.md | sed '$d' > /tmp/patch_release_section.txt
+
+            git fetch origin main
+            git show origin/main:CHANGELOG.md > CHANGELOG.md
+
+            # Insert the patch release entries after Unreleased
+            awk -i inplace '/^## v[0-9]/ && !inserted { system("cat /tmp/patch_release_section.txt"); inserted=1 } {print}' CHANGELOG.md
+          fi
           
           git add .
-          git commit -m "Prepare main for next development cycle: Update version to $NEW_VERSION"
+          git commit -m "Prepare main for next development cycle: Update version to $DEV_VERSION"
           git push --set-upstream origin "prepare-main-for-next-dev-cycle-${NEW_VERSION}"
 
       - name: Create Pull Request to main
