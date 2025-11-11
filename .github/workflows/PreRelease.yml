@@ -62,7 +62,7 @@ jobs:
 
       - name: Create branches
         run: |
-          IS_PATCH=${{ github.event.inputs.is_patch }}
+          IS_PATCH=${{ github.event.inputs.is_patch || 'false' }}
           if [[ "$IS_PATCH" != "true" && "$IS_PATCH" != "false" ]]; then
             echo "Invalid input for IS_PATCH. Must be 'true' or 'false'."
             exit 1
