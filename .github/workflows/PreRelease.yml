@@ -22,8 +22,6 @@ permissions:
 jobs:
   update-version-and-create-pr:
     runs-on: ubuntu-latest
-    env:
-      IS_PATCH: ${{ github.event.inputs.is_patch || 'false' }}
     steps:
       - name: Configure AWS credentials for BOT secrets
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 #v5.0.0
@@ -63,7 +61,7 @@ jobs:
 
       - name: Create branches
         run: |
-          IS_PATCH=${{ github.event.inputs.is_patch }}
+          IS_PATCH=${{ github.event.inputs.is_patch || 'false' }}
           if [[ "$IS_PATCH" != "true" && "$IS_PATCH" != "false" ]]; then
             echo "Invalid input for IS_PATCH. Must be 'true' or 'false'."
             exit 1
