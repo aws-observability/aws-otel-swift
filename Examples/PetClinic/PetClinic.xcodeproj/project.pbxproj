@@ -488,9 +488,9 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../aws-otel-swift";
 		};
-		3F829CE22E9F8F31001DFDE8 /* XCLocalSwiftPackageReference "../../../../aws-otel-swift" */ = {
+		3F829CE22E9F8F31001DFDE8 /* XCLocalSwiftPackageReference "../../" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../../../aws-otel-swift";
+			relativePath = "../../";
 		};
 /* End XCLocalSwiftPackageReference section */
 
