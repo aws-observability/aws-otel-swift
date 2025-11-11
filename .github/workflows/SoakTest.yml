@@ -38,8 +38,15 @@ jobs:
           -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
+          -allowProvisioningUpdates \
+          CODE_SIGN_STYLE=Automatic \
+          DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           clean archive
     
+    - name: Update ExportOptions with Team ID
+      run: |
+        sed -i '' 's/YOUR_TEAM_ID/${{ secrets.DEVELOPMENT_TEAM_ID }}/g' Examples/PetClinic/ExportOptions.plist
+
     - name: Export IPA
       run: |
         xcodebuild -exportArchive \
@@ -52,7 +59,11 @@ jobs:
         xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
           -scheme PetClinic \
           -destination 'platform=iOS' \
-          -derivedDataPath Examples/PetClinic/build 
+          -derivedDataPath Examples/PetClinic/build \
+          -allowProvisioningUpdates \
+          CODE_SIGN_STYLE=Automatic \
+          DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
+          build-for-testing 
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
