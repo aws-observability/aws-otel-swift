@@ -39,19 +39,19 @@ final class PetClinicUITests: XCTestCase {
     let app = XCUIApplication()
     app.launch()
 
-    let numberOfIntervals = isDeviceFarm ? 2 : 4 // Fewer intervals for Device Farm
+//    let numberOfIntervals = isDeviceFarm ? 2 : 4 // Fewer intervals for Device Farm
+//
+//    // Loop for the entire test session
+//    for i in 0 ..< numberOfIntervals {
+//      print("Generating telemetry for interval \(i + 1)...")
+    generateAllTelemetry(app: app)
 
-    // Loop for the entire test session
-    for i in 0 ..< numberOfIntervals {
-      print("Generating telemetry for interval \(i + 1)...")
-      generateAllTelemetry(app: app)
-
-      if i < numberOfIntervals - 1 { // Don't idle after last interval
-        let idleDuration = isDeviceFarm ? 2 : 28 // 2 minutes for Device Farm
-        print("Idling for \(idleDuration) minutes...")
-        idleForDuration(app: app, minutes: idleDuration)
-      }
-    }
+//      if i < numberOfIntervals - 1 { // Don't idle after last interval
+//        let idleDuration = isDeviceFarm ? 2 : 28 // 2 minutes for Device Farm
+//        print("Idling for \(idleDuration) minutes...")
+//        idleForDuration(app: app, minutes: idleDuration)
+//      }
+//    }
   }
 
   @MainActor
