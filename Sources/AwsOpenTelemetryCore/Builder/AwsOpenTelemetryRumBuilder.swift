@@ -163,15 +163,10 @@ public class AwsOpenTelemetryRumBuilder {
   /// Build requested instrumentations based on AwsTelemetryConfig
   private func buildInstrumentations() {
     let telemetry = config.telemetry ?? AwsTelemetryConfig.default
-    let syncStart = Date()
-    let tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: "aws-otel-swift.debug")
 
     // App Launch
     if telemetry.startup?.enabled == true {
-      // Only supported on iOS
-      #if canImport(UIKit) && !os(watchOS)
-        AwsAppLaunchInstrumentation.shared = AwsAppLaunchInstrumentation()
-      #endif
+      AwsAppLaunchInstrumentation.shared = AwsAppLaunchInstrumentation()
     }
 
     // View instrumentation (UIKit/SwiftUI)
@@ -190,35 +185,20 @@ public class AwsOpenTelemetryRumBuilder {
       urlSessionInstrumentation.apply()
     }
 
+    // Crashes
     if telemetry.crash?.enabled == true {
       AwsKSCrashInstrumentation.install()
     }
 
-    DispatchQueue.main.async {
-      let asyncStart = Date()
-
-      // Hang Detection
-      if telemetry.hang?.enabled == true {
-        _ = AwsHangInstrumentation.shared
-      }
-
-      // Session Events
-      if telemetry.sessionEvents?.enabled == true {
-        AwsSessionEventInstrumentation.install()
-      }
-
-      let asyncEnd = Date()
-      let span = tracer.spanBuilder(spanName: "[DEBUG] aws-otel-swift init (async)")
-        .setStartTime(time: asyncStart)
-        .startSpan()
-      span.end(time: asyncEnd)
+    // Hangs
+    if telemetry.hang?.enabled == true {
+      _ = AwsHangInstrumentation.shared
     }
 
-    let syncEnd = Date()
-    let span = tracer.spanBuilder(spanName: "[DEBUG] aws-otel-swift init (blocking)")
-      .setStartTime(time: syncStart)
-      .startSpan()
-    span.end(time: syncEnd)
+    // Session Events
+    if telemetry.sessionEvents?.enabled == true {
+      AwsSessionEventInstrumentation.install()
+    }
   }
 
   // MARK: - Resource methods

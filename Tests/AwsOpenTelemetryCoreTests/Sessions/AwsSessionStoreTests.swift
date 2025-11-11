@@ -38,6 +38,7 @@ final class AwsSessionStoreTests: XCTestCase {
   }
 
   func testLoadSessionMissingExpiry() {
+    UserDefaults.standard.removeObject(forKey: AwsSessionStore.expireTimeKey)
     UserDefaults.standard.set("test-id", forKey: AwsSessionStore.idKey)
     UserDefaults.standard.set(Date(), forKey: AwsSessionStore.startTimeKey)
     UserDefaults.standard.set(1800, forKey: AwsSessionStore.sessionTimeoutKey)
