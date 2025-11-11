@@ -6,7 +6,7 @@ on:
     branches: [ main, test/e2e ]
 
 jobs:
-  build-ios:
+  run-soak-test:
     runs-on: macos-15
     
     steps:
@@ -33,20 +33,20 @@ jobs:
     
     - name: Build iOS App
       run: |
-        cd Examples/PetClinic
-        xcodebuild -scheme PetClinic \
+        xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
+          -scheme PetClinic \
           -destination 'platform=iOS,name=Any iOS Device' \
-          -derivedDataPath build \
-          -archivePath PetClinic.xcarchive \
-          -exportPath .
+          -derivedDataPath Examples/PetClinic/build \
+          -archivePath Examples/PetClinic/PetClinic.xcarchive \
+          -exportPath Examples/PetClinic \
           clean archive
 
     - name: Build for Testing to Generate XCTestRun File
       run: |
-        cd Examples/PetClinic
-        xcodebuild -scheme PetClinic \
+        xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
+          -scheme PetClinic \
           -destination 'platform=iOS' \
-          -derivedDataPath build 
+          -derivedDataPath Examples/PetClinic/build 
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
