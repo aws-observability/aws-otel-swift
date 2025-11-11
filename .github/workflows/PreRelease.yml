@@ -94,6 +94,27 @@ jobs:
           git checkout -b "v${VERSION}_release"
           git push origin "v${VERSION}_release"
 
+      - name: Update CHANGELOG for release
+        run: |
+          echo "VERSION is: $VERSION"
+          echo "Date is: $(date +%Y-%m-%d)"
+          echo "Before sed:"
+          head -10 CHANGELOG.md
+          
+          sed -i "s/## Unreleased/## Unreleased\n\n## v${VERSION} - $(date +%Y-%m-%d)/" CHANGELOG.md
+          
+          echo "After sed:"
+          head -10 CHANGELOG.md
+          
+          if git diff --quiet CHANGELOG.md; then
+            echo "ERROR: No changes made to CHANGELOG.md"
+            exit 1
+          fi
+          
+          git add CHANGELOG.md
+          git commit -m "Update CHANGELOG for version ${VERSION}"
+          git push origin "v${VERSION}_release"
+
       - name: Create pull request against the release branch
         env:
           GITHUB_TOKEN: ${{ env.BOT_TOKEN_GITHUB_RW_PATOKEN }}
