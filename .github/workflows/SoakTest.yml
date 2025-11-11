@@ -26,6 +26,9 @@ jobs:
         code-signing-identity: 'iPhone Developer'
         team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
         scheme: PetClinic
+      env:
+        FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 300
+        FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 2
         output-path: Examples/PetClinic
         
     - name: Build for Testing to Generate XCTestRun File
