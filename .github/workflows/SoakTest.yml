@@ -35,11 +35,17 @@ jobs:
       run: |
         xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
           -scheme PetClinic \
-          -destination 'platform=iOS,name=Any iOS Device' \
+          -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
-          -exportPath Examples/PetClinic \
           clean archive
+    
+    - name: Export IPA
+      run: |
+        xcodebuild -exportArchive \
+          -archivePath Examples/PetClinic/PetClinic.xcarchive \
+          -exportPath Examples/PetClinic \
+          -exportOptionsPlist Examples/PetClinic/ExportOptions.plist
 
     - name: Build for Testing to Generate XCTestRun File
       run: |
