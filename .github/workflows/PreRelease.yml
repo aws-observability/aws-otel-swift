@@ -3,6 +3,11 @@ name: Pre Release Prepare - Update Version and Create PR
 on:
   push:
     branches: [ chore/release-workflows-v2 ]
+    inputs:
+      is_patch:
+        description: 'Is this a patch? (true or false)'
+        required: true
+        default: 'false'
   workflow_dispatch:
     inputs:
       is_patch:
