@@ -19,7 +19,7 @@ import Foundation
  * Configuration for AWS service integration.
  *
  * This class contains all settings required to connect your application to AWS services,
- * including CloudWatch RUM and Cognito Identity.
+ * including CloudWatch RUM.
  *
  */
 @objc public class AwsConfig: NSObject, Codable {
@@ -32,25 +32,19 @@ import Foundation
   /// RUM alias
   public private(set) var rumAlias: String?
 
-  /// Cognito Identity Pool ID
-  public private(set) var cognitoIdentityPool: String?
-
   /**
    * Initializes AWS configuration.
    *
    * @param region AWS region
    * @param rumAppMonitorId RUM App Monitor ID
    * @param rumAlias Optional RUM alias
-   * @param cognitoIdentityPool Optional Cognito Identity Pool ID
    */
   public init(region: String,
               rumAppMonitorId: String,
-              rumAlias: String? = nil,
-              cognitoIdentityPool: String? = nil) {
+              rumAlias: String? = nil) {
     self.region = region
     self.rumAppMonitorId = rumAppMonitorId
     self.rumAlias = rumAlias
-    self.cognitoIdentityPool = cognitoIdentityPool
     super.init()
   }
 
@@ -64,7 +58,6 @@ import Foundation
     region = try container.decode(String.self, forKey: .region)
     rumAppMonitorId = try container.decode(String.self, forKey: .rumAppMonitorId)
     rumAlias = try container.decodeIfPresent(String.self, forKey: .rumAlias)
-    cognitoIdentityPool = try container.decodeIfPresent(String.self, forKey: .cognitoIdentityPool)
     super.init()
   }
 }
@@ -74,7 +67,6 @@ public class AwsConfigBuilder {
   public private(set) var region: String?
   public private(set) var rumAppMonitorId: String?
   public private(set) var rumAlias: String?
-  public private(set) var cognitoIdentityPool: String?
 
   public init() {}
 
@@ -96,12 +88,6 @@ public class AwsConfigBuilder {
     return self
   }
 
-  /// Sets the Cognito Identity Pool
-  public func with(cognitoIdentityPool: String?) -> Self {
-    self.cognitoIdentityPool = cognitoIdentityPool
-    return self
-  }
-
   /// Builds the AwsConfig with the configured settings
   public func build() -> AwsConfig {
     guard let region, let rumAppMonitorId else {
@@ -110,8 +96,7 @@ public class AwsConfigBuilder {
     return AwsConfig(
       region: region,
       rumAppMonitorId: rumAppMonitorId,
-      rumAlias: rumAlias,
-      cognitoIdentityPool: cognitoIdentityPool
+      rumAlias: rumAlias
     )
   }
 }

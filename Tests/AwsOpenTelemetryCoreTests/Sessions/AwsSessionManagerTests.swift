@@ -67,12 +67,12 @@ final class AwsSessionManagerTests: XCTestCase {
   }
 
   func testLoadSessionMissingExpiry() {
-    let id1 = "session-1"
-    UserDefaults.standard.set(id1, forKey: AwsSessionStore.idKey)
-    XCTAssertNil(AwsSessionStore.load())
+    UserDefaults.standard.set("test-id", forKey: AwsSessionStore.idKey)
+    UserDefaults.standard.set(Date(), forKey: AwsSessionStore.startTimeKey)
+    UserDefaults.standard.set(1800, forKey: AwsSessionStore.sessionTimeoutKey)
 
-    let id2 = sessionManager.getSession().id
-    XCTAssertNotEqual(id1, id2)
+    let loadedSession = AwsSessionStore.load()
+    XCTAssertNil(loadedSession)
   }
 
   func testLoadSessionMissingID() {

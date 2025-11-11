@@ -16,11 +16,10 @@ let package = Package(
     .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.1.1"),
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.1.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.2.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
     .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
-    .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0"),
     .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
     .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2") // only used for live stack trace collection, not crash reporting
   ],
@@ -76,8 +75,7 @@ let package = Package(
       name: "AwsOpenTelemetryCoreTests",
       dependencies: [
         "AwsOpenTelemetryCore",
-        "TestUtils",
-        .product(name: "Atomics", package: "swift-atomics")
+        "TestUtils"
       ]
     ),
     .testTarget(

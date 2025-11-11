@@ -38,7 +38,7 @@ public class AwsSessionManagerProvider {
   /// Call this early in your app lifecycle to ensure consistent session management.
   /// - Parameter sessionManager: The SessionManager instance to register
   public static func register(sessionManager: AwsSessionManager) {
-    AwsOpenTelemetryLogger.info("Registering custom AwsSessionManager instance")
+    AwsInternalLogger.info("Registering custom AwsSessionManager instance")
     lock.withLock {
       _instance = sessionManager
     }
@@ -52,7 +52,7 @@ public class AwsSessionManagerProvider {
   public static func getInstance() -> AwsSessionManager {
     return lock.withLock {
       if _instance == nil {
-        AwsOpenTelemetryLogger.debug("Creating default AwsSessionManager instance")
+        AwsInternalLogger.debug("Creating default AwsSessionManager instance")
         _instance = AwsSessionManager()
       }
       return _instance!

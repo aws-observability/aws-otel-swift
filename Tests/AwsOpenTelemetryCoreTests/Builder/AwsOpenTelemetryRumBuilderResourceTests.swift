@@ -34,7 +34,7 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
   func testBuildResourceFullyCustomized() {
     let config = AwsOpenTelemetryConfig(
       aws: AwsConfig(region: "us-west-2", rumAppMonitorId: "custom-id", rumAlias: "prod-alias"),
-      exportOverride: ExportOverride(logs: "http://localhost:4318/v1/logs", traces: "http://localhost:4318/v1/traces"),
+      exportOverride: AwsExportOverride(logs: "http://localhost:4318/v1/logs", traces: "http://localhost:4318/v1/traces"),
       sessionTimeout: 3600,
       debug: true
     )
@@ -109,5 +109,25 @@ final class AwsOpenTelemetryRumBuilderResourceTests: XCTestCase {
     XCTAssertEqual(logRecord.resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "log-test-id")
     XCTAssertEqual(logRecord.resource.attributes["cloud.region"]?.description, "us-west-2")
     XCTAssertNotNil(logRecord.resource.attributes["device.model.name"])
+  }
+
+  func testResourceWithApplicationAttributes() {
+    let applicationAttributes = [
+      "application.version": "2.1.0",
+      "application.environment": "production"
+    ]
+    let config = AwsOpenTelemetryConfig(
+      aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"),
+      applicationAttributes: applicationAttributes
+    )
+    let resource = AwsResourceBuilder.buildResource(config: config)
+
+    // Verify applicationAttributes are in resource
+    XCTAssertEqual(resource.attributes["application.version"]?.description, "2.1.0")
+    XCTAssertEqual(resource.attributes["application.environment"]?.description, "production")
+
+    // Verify other attributes are still present
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "test-id")
+    XCTAssertEqual(resource.attributes["cloud.region"]?.description, "us-east-1")
   }
 }

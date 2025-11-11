@@ -31,12 +31,22 @@ func timeAgo(from timestamp: Int) -> String {
 
 let debugScope = "AwsHackerNewsDemo.Debug"
 
-let appMonitorId = "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-let region = "us-east-1"
+// Get configuration from AwsOpenTelemetryAgent
+var appMonitorId: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.aws.rumAppMonitorId ?? "nil"
+}
 
-// local dev
-let logsEndpoint = "http://localhost:3000/v1/logs"
-let tracesEndpoint = "http://localhost:3000/v1/traces"
+var region: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.aws.region ?? "nil"
+}
+
+var logsEndpoint: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.exportOverride?.logs ?? "nil"
+}
+
+var tracesEndpoint: String {
+  return AwsOpenTelemetryAgent.shared.configuration?.exportOverride?.traces ?? "nil"
+}
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -65,34 +75,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window?.makeKeyAndVisible()
     print("AppDelegate: Window setup complete")
 
-    setupOpenTelemetry()
     return true
-  }
-
-  private func setupOpenTelemetry() {
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let exportOverride = ExportOverride(
-      logs: logsEndpoint,
-      traces: tracesEndpoint
-    )
-
-    let config = AwsOpenTelemetryConfig(
-      aws: awsConfig,
-      exportOverride: exportOverride,
-      sessionTimeout: 30,
-      debug: true
-    )
-
-    do {
-      try AwsOpenTelemetryRumBuilder.create(config: config)
-        .build()
-    } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      print("SDK is already initialized")
-    } catch {
-      print("Error initializing SDK: \(error)")
-    }
-    logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
-    tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: debugScope)
   }
 }
 
@@ -216,7 +199,6 @@ class HackerNewsViewController: UIViewController {
     guard startIndex < allStoryIds.count else { return }
 
     isLoadingMore = true
-    print("DEBUG: isLoadingMore set to true, reloading table")
     tableView.reloadData() // Immediately show loading cell
     let pageIds = Array(allStoryIds[startIndex ..< endIndex])
     loadStoryDetails(ids: pageIds, isLoadingMore: currentPage > 0)
@@ -750,7 +732,7 @@ class CommentsViewController: UIViewController {
 
     for id in ids {
       group.enter()
-      loadCommentWithDepth(id: id, depth: 0, maxDepth: 1) { node in
+      loadCommentWithDepth(id: id, depth: 0, maxDepth: 1) { [weak self] node in
         if let node {
           nodes.append(node)
         }
@@ -764,7 +746,7 @@ class CommentsViewController: UIViewController {
   }
 
   private func loadCommentWithDepth(id: Int, depth: Int, maxDepth: Int, completion: @escaping (CommentNode?) -> Void) {
-    loadComment(id: id) { comment in
+    loadComment(id: id) { [weak self] comment in
       guard let comment, !comment.deleted, !comment.dead else {
         completion(nil)
         return
@@ -785,7 +767,7 @@ class CommentsViewController: UIViewController {
 
       for kidId in kidsToLoad {
         group.enter()
-        self.loadCommentWithDepth(id: kidId, depth: depth + 1, maxDepth: maxDepth) { childNode in
+        self?.loadCommentWithDepth(id: kidId, depth: depth + 1, maxDepth: maxDepth) { childNode in
           if let childNode {
             children.append(childNode)
           }
@@ -806,14 +788,14 @@ class CommentsViewController: UIViewController {
 
     for id in ids {
       group.enter()
-      loadComment(id: id) { comment in
+      loadComment(id: id) { [weak self] comment in
         guard let comment, !comment.deleted, !comment.dead else {
           group.leave()
           return
         }
 
         if let kids = comment.kids, !kids.isEmpty {
-          self.loadCommentsRecursively(ids: kids, depth: depth + 1) { children in
+          self?.loadCommentsRecursively(ids: kids, depth: depth + 1) { children in
             let node = CommentNode(comment: comment, children: children, depth: depth)
             nodes.append(node)
             group.leave()
@@ -921,7 +903,7 @@ class CommentsViewController: UIViewController {
 
     for id in unloadedIds {
       group.enter()
-      loadCommentWithDepth(id: id, depth: comment.depth + 1, maxDepth: comment.depth + 3) { childNode in
+      loadCommentWithDepth(id: id, depth: comment.depth + 1, maxDepth: comment.depth + 3) { [weak self] childNode in
         if let childNode {
           newChildren.append(childNode)
         }
@@ -929,12 +911,12 @@ class CommentsViewController: UIViewController {
       }
     }
 
-    group.notify(queue: .main) {
+    group.notify(queue: .main) { [weak self] in
       DispatchQueue.main.asyncAfter(deadline: .now() + artificialDelay) {
         comment.children.append(contentsOf: newChildren)
         comment.loadedToMaxDepth = true
-        self.sortComments()
-        self.tableView.reloadData()
+        self?.sortComments()
+        self?.tableView.reloadData()
       }
     }
   }

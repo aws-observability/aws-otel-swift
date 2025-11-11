@@ -42,28 +42,6 @@ targets: [
 ]
 ```
 
-### CocoaPods (TODO: Update once Pod specs are created and tested)
-
-## Initialization
-
-### Automatic Initialization
-
-The SDK will automatically initialize when the "AwsOpenTelemetryAgent" module is imported into your app. It will look for a file named `aws_config.json` in your app bundle.
-
-Example `aws_config.json`:
-
-```json
-{
-  "aws": {
-    "region": "us-west-2",
-    "rumAppMonitorId": "your-app-monitor-id"
-  },
-  "applicationAttributes": {
-    "application.version": "1.0.0"
-  }
-}
-```
-
 ### Manual Initialization
 
 You can also initialize the SDK manually. The SDK provides a builder pattern:
@@ -153,8 +131,8 @@ The configuration follows this JSON schema:
   "aws": {
     "region": "us-east-1",
     "rumAppMonitorId": "YOUR-RUM-APP-MONITOR-ID",
-    "rumAlias": "YOUR-RUM-ALIAS",
-    "cognitoIdentityPool": "YOUR-COGNITO-IDENTITY-POOL-ID"
+    "rumAlias": "YOUR-RUM-ALIAS"
+  },
   "exportOverride": {
     "logs": "http://10.0.2.2:4318/v1/logs",
     "traces": "http://10.0.2.2:4318/v1/traces"
@@ -188,17 +166,16 @@ let awsConfig = AwsConfig(
     region: "us-east-1",
     rumAppMonitorId: "YOUR-RUM-APP-MONITOR-ID",
     rumAlias: "YOUR-RUM-ALIAS",
-    cognitoIdentityPool: "YOUR-COGNITO-IDENTITY-POOL-ID"
 )
 
 // Create export override configuration
-let exportOverride = ExportOverride(
+let exportOverride = AwsExportOverride(
     logs: "http://10.0.2.2:4318/v1/logs",
     traces: "http://10.0.2.2:4318/v1/traces"
 )
 
 // Create telemetry configuration
-let telemetryConfig = TelemetryConfig()
+let telemetryConfig = AwsTelemetryConfig()
     .withStartup(enabled: true)
     .withSessionEvents(enabled: true)
     .withCrash(enabled: true)
@@ -231,13 +208,13 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 ### Available Instrumentations
 
-| Instrumentation    | Description                                                 | Documentation                                                                        |
-| ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| **Network**        | Automatic HTTP request tracing for URLSession               | [Network README](Sources/AwsOpenTelemetryCore/Network/README.md)                     |
-| **Crashes**        | Crash reporting using MetricKit MXCrashDiagnostic           | [Crashes README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#crashes)           |
-| **Hangs**          | Application hang detection using MetricKit MXHangDiagnostic | [Hangs README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#hangs)               |
-| **View Tracking**  | Automatic view instrumentation for UIKit and SwiftUI        | [UIKitView README](Sources/AwsOpenTelemetryCore/AutoInstrumentation/UIKit/README.md) |
-| **Session Events** | Session lifecycle tracking with start/end events            | [Sessions README](Sources/AwsOpenTelemetryCore/Sessions/README.md)                   |
+| Instrumentation    | Description                                          | Documentation                                                                        |
+| ------------------ | ---------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Network**        | Automatic HTTP request tracing for URLSession        | [Network README](Sources/AwsOpenTelemetryCore/Network/README.md)                     |
+| **Crashes**        | Crash reporting                                      | [Crashes README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#crashes)           |
+| **Hangs**          | Application hang detection                           | [Hangs README](Sources/AwsOpenTelemetryCore/MetricKit/README.md#hangs)               |
+| **View Tracking**  | Automatic view instrumentation for UIKit and SwiftUI | [UIKitView README](Sources/AwsOpenTelemetryCore/AutoInstrumentation/UIKit/README.md) |
+| **Session Events** | Session lifecycle tracking with start/end events     | [Sessions README](Sources/AwsOpenTelemetryCore/Sessions/README.md)                   |
 
 ### Configuration Options
 
@@ -250,7 +227,7 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 | rumAlias            | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor. See public docs for using an alias with a [RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html). |
 | cognitoIdentityPool | String | No       | nil     | Cognito Identity Pool ID for authentication                                                                                                                                                                                                                                                                                      |
 
-#### ExportOverride
+#### AwsExportOverride
 
 | Field  | Type   | Required | Default | Description                                                                                                                               |
 | ------ | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -259,22 +236,22 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 #### Root Configuration
 
-| Field                 | Type    | Required | Default | Description                                                                                                                       |
-| --------------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires                                                                 |
-| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                                                                                               |
+| Field                 | Type    | Required | Default | Description                                                                                                                                                                                  |
+| --------------------- | ------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires                                                                                                                            |
+| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                                                                                                                                                          |
 | applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata. These are added to all logs and spans as regular attributes (via [global attributes API](Sources/AwsOpenTelemetryCore/GlobalAttributes/README.md)) |
-| debug                 | Boolean | No       | false   | Flag to enable debug logging                                                                                                      |
+| debug                 | Boolean | No       | false   | Flag to enable debug logging                                                                                                                                                                 |
 
-#### TelemetryConfig
+#### AwsTelemetryConfig
 
 | Field         | Type   | Required | Default             | Description                                                                                                                                                                                               |
 | ------------- | ------ | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| startup       | Object | No       | { "enabled": true } | Generate MetricKit `MXAppLaungDiagnostic` as log records.                                                                                                                                                 |
+| startup       | Object | No       | { "enabled": true } | Generate app launch diagnostic as log records.                                                                                                                                                            |
 | sessionEvents | Object | No       | { "enabled": true } | Creates `session.start` and `session.end` as log records according to OpenTelemetry Semantic Convention. As an ADOT-Swift extension, `session.end` also includes `duration` and `end_time`.               |
-| crash         | Object | No       | { "enabled": true } | Generate MetricKit `MXCrashDiagnostic` as log records.                                                                                                                                                    |
+| crash         | Object | No       | { "enabled": true } | Generate crash diagnostic as log records.                                                                                                                                                                 |
 | network       | Object | No       | { "enabled": true } | Generate spans of URLSession HTTP requests directly from OTel Swift's implementation of URLSessionInstrumentation. HTTP requests to the logs and spans endpoints are ignored to avoid infinite recursion. |
-| hang          | Object | No       | { "enabled": true } | Generate MetricKit `MXHangDiagnostic` as log records.                                                                                                                                                     |
+| hang          | Object | No       | { "enabled": true } | Generate hang diagnostic as log records.                                                                                                                                                                  |
 | view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
 
 **Note**: The `telemetry` section is optional in JSON configuration. If not provided, all telemetry features will be enabled by default.
@@ -351,7 +328,7 @@ make contract-test-run-ios
 
 ### Performance Tests
 
-Performance tests measure app launch duration programmatically using `XCUIApplication` and the [UITests](https://developer.apple.com/documentation/Xcode/adding-tests-to-your-xcode-project#Write-a-UI-test) framework. The goal of performance tests run on PR is to identify a regression in performance. Please note that when run on PR, these tests are hosted on a Github macos runner and run on a simulator. Consequently, the duration reported by the test on PR is not an accurate representation of time take on a real device. Instead, we use use the duration to understand the relative difference with and without calling `setupOpenTelemetry()`, and ensure it doesn't exceed the threshold set in [scripts/check-performance.sh](./scripts/check-performance.sh). 
+Performance tests measure app launch duration programmatically using `XCUIApplication` and the [UITests](https://developer.apple.com/documentation/Xcode/adding-tests-to-your-xcode-project#Write-a-UI-test) framework. The goal of performance tests run on PR is to identify a regression in performance. Please note that when run on PR, these tests are hosted on a Github macos runner and run on a simulator. Consequently, the duration reported by the test on PR is not an accurate representation of time take on a real device. Instead, we use use the duration to understand the relative difference with and without calling `setupOpenTelemetry()`, and ensure it doesn't exceed the threshold set in [scripts/check-performance.sh](./scripts/check-performance.sh).
 
 To run programmatic performance tests (using the UITests framework), run the following commands:
 
