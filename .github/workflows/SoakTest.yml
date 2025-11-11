@@ -16,45 +16,19 @@ jobs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: 16.4
-    
-    - name: Setup iOS Signing
-      run: |
-        echo "${{ secrets.IOS_CERTIFICATE }}" | base64 --decode > certificate.p12
-        echo "${{ secrets.IOS_PROVISIONING_PROFILE }}" | base64 --decode > profile.mobileprovision
-        
-        security create-keychain -p "" build.keychain
-        security import certificate.p12 -k build.keychain -P "${{ secrets.IOS_CERTIFICATE_PASSWORD }}" -A
-        security list-keychains -s build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p "" build.keychain
-        security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
-        
-        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-        cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
-    
+
     - name: Build iOS App
-      run: |
-        xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
-          -scheme PetClinic \
-          -destination 'generic/platform=iOS' \
-          -derivedDataPath Examples/PetClinic/build \
-          -archivePath Examples/PetClinic/PetClinic.xcarchive \
-          CODE_SIGN_STYLE=Manual \
-          DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
-          PROVISIONING_PROFILE_SPECIFIER="${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}" \
-          clean archive
-    
-    - name: Update ExportOptions with Team ID
-      run: |
-        sed -i '' 's/YOUR_TEAM_ID/${{ secrets.DEVELOPMENT_TEAM_ID }}/g' Examples/PetClinic/ExportOptions.plist
-
-    - name: Export IPA
-      run: |
-        xcodebuild -exportArchive \
-          -archivePath Examples/PetClinic/PetClinic.xcarchive \
-          -exportPath Examples/PetClinic \
-          -exportOptionsPlist Examples/PetClinic/ExportOptions.plist
-
+      uses: yukiarrr/ios-build-action@v1
+      with:
+        project-path: Examples/PetClinic/PetClinic.xcodeproj
+        p12-base64: ${{ secrets.IOS_CERTIFICATE }}
+        mobileprovision-base64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        code-signing-identity: 'iPhone Developer'
+        team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
+        workspace-path: Examples/PetClinic/PetClinic.xcodeproj
+        scheme: PetClinic
+        output-path: Examples/PetClinic
+        
     - name: Build for Testing to Generate XCTestRun File
       run: |
         xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
@@ -63,7 +37,6 @@ jobs:
           -derivedDataPath Examples/PetClinic/build \
           CODE_SIGN_STYLE=Manual \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
-          PROVISIONING_PROFILE_SPECIFIER="${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}" \
           build-for-testing 
     
     - name: Configure AWS credentials
