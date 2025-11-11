@@ -18,7 +18,7 @@ jobs:
         xcode-version: 16.4
 
     - name: Build iOS App
-      uses: yukiarrr/ios-build-action@v1
+      uses: yukiarrr/ios-build-action@v1.4.0
       with:
         project-path: Examples/PetClinic/PetClinic.xcodeproj
         p12-base64: ${{ secrets.IOS_CERTIFICATE }}
