@@ -72,7 +72,7 @@ jobs:
               echo "Branch release/v${MAJOR_MINOR}.x already exists, checking out."
               git checkout "release/v${MAJOR_MINOR}.x"
             else 
-              echo "Error, release series branch release/v${MAJOR_MINOR}.x exist for non-patch release"
+              echo "Error, release series branch release/v${MAJOR_MINOR}.x exists for non-patch release"
               echo "Check your input or branch"
               exit 1
             fi
