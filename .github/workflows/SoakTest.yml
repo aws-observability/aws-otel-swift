@@ -25,7 +25,6 @@ jobs:
         mobileprovision-base64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
         code-signing-identity: 'iPhone Developer'
         team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
-        workspace-path: Examples/PetClinic/PetClinic.xcodeproj
         scheme: PetClinic
         output-path: Examples/PetClinic
         
