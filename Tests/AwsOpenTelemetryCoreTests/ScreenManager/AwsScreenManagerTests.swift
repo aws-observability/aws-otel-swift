@@ -23,6 +23,7 @@ final class AwsScreenManagerTests: XCTestCase {
 
   func testInitialState() {
     XCTAssertNil(screenManager.currentScreen)
+    XCTAssertNil(screenManager.previousScreen)
     XCTAssertEqual(screenManager.interaction, 0)
     XCTAssertFalse(screenManager.viewDidAppear)
   }
@@ -47,6 +48,7 @@ final class AwsScreenManagerTests: XCTestCase {
     XCTAssertEqual(screenManager.interaction, 1)
     screenManager.setCurrent(screen: "ProfileScreen")
     XCTAssertEqual(screenManager.currentScreen, "ProfileScreen")
+    XCTAssertEqual(screenManager.previousScreen, "HomeScreen")
     XCTAssertEqual(screenManager.interaction, 2)
     XCTAssertFalse(screenManager.viewDidAppear)
   }
@@ -191,5 +193,51 @@ final class AwsScreenManagerTests: XCTestCase {
     XCTAssertEqual(receivedScreens, ["Screen1", "Screen2", "Screen3"])
 
     NotificationCenter.default.removeObserver(observer)
+  }
+
+  func testPreviousScreenTracking() {
+    XCTAssertNil(screenManager.previousScreen)
+
+    screenManager.setCurrent(screen: "Screen1")
+    XCTAssertNil(screenManager.previousScreen)
+
+    screenManager.setCurrent(screen: "Screen2")
+    XCTAssertEqual(screenManager.previousScreen, "Screen1")
+
+    screenManager.setCurrent(screen: "Screen3")
+    XCTAssertEqual(screenManager.previousScreen, "Screen2")
+  }
+
+  func testLogViewDidAppearWithParentName() {
+    screenManager.setCurrent(screen: "HomeScreen")
+    screenManager.setCurrent(screen: "ProfileScreen")
+
+    screenManager.logViewDidAppear(
+      screen: "ProfileScreen",
+      type: .swiftui,
+      timestamp: Date(),
+      logger: logger
+    )
+
+    let logs = logExporter.getExportedLogs()
+    XCTAssertEqual(logs.count, 1)
+    let logRecord = logs[0]
+    XCTAssertEqual(logRecord.attributes[AwsViewDidAppearSemConv.parentName], AttributeValue.string("HomeScreen"))
+  }
+
+  func testLogViewDidAppearWithoutParentName() {
+    screenManager.setCurrent(screen: "HomeScreen")
+
+    screenManager.logViewDidAppear(
+      screen: "HomeScreen",
+      type: .swiftui,
+      timestamp: Date(),
+      logger: logger
+    )
+
+    let logs = logExporter.getExportedLogs()
+    XCTAssertEqual(logs.count, 1)
+    let logRecord = logs[0]
+    XCTAssertNil(logRecord.attributes[AwsViewDidAppearSemConv.parentName])
   }
 }

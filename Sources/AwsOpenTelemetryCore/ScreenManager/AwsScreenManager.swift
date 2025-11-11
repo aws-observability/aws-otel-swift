@@ -26,6 +26,7 @@ public class AwsScreenManager {
   private var _interaction = 0
   private var _viewDidAppear = false
   private var _currentScreen: String?
+  private var _previousScreen: String?
 
   // thread-safe getters and setters
 
@@ -35,9 +36,14 @@ public class AwsScreenManager {
     }
     set {
       queue.sync {
+        _previousScreen = _currentScreen
         _currentScreen = newValue
       }
     }
+  }
+
+  public var previousScreen: String? {
+    return queue.sync { _previousScreen }
   }
 
   private(set) var viewDidAppear: Bool {
@@ -102,6 +108,10 @@ public class AwsScreenManager {
       AwsViewDidAppearSemConv.type: AttributeValue.string(type.rawValue),
       AwsViewDidAppearSemConv.interaction: AttributeValue.int(interaction)
     ]
+
+    if let previousScreen {
+      attributes[AwsViewDidAppearSemConv.parentName] = AttributeValue.string(previousScreen)
+    }
 
     if let additionalAttributes {
       attributes.merge(additionalAttributes) { _, new in new }
