@@ -1,9 +1,6 @@
 name: Pre Release Prepare - Update Version and Create PR
 
 on:
-  push:
-    branches:
-      - chore/release-workflows-v4
   workflow_dispatch:
     inputs:
       is_patch:
@@ -46,7 +43,7 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
         with:
-          ref: chore/release-workflows-v4
+          ref: main
           token: ${{ env.BOT_TOKEN_GITHUB_RW_PATOKEN }}
 
       - name: Setup Git
