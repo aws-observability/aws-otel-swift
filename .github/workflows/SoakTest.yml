@@ -26,8 +26,8 @@ jobs:
         team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
         scheme: PetClinic
         output-path: Examples/PetClinic
-        export-method: debugging
-        archive-flags: DEVELOPMENT_TEAM=${{ secrets.DEVELOPMENT_TEAM_ID }}
+        export-method: development
+        archive-flags: -archivePath Examples/PetClinic/PetClinic.xcarchive DEVELOPMENT_TEAM=${{ secrets.DEVELOPMENT_TEAM_ID }}
       env:
         FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 300
         FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 2
