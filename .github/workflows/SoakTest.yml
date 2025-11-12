@@ -23,13 +23,13 @@ jobs:
         project-path: Examples/PetClinic/PetClinic.xcodeproj
         p12-base64: ${{ secrets.IOS_CERTIFICATE }}
         mobileprovision-base64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-        code-signing-identity: 'iPhone Developer'
+        code-signing-identity: 'iOS Development'
         team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
         scheme: PetClinic
+        output-path: Examples/PetClinic
       env:
         FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 300
         FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 2
-        output-path: Examples/PetClinic
         
     - name: Build for Testing to Generate XCTestRun File
       run: |
@@ -37,7 +37,7 @@ jobs:
           -scheme PetClinic \
           -destination 'platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
-          CODE_SIGN_STYLE=Manual \
+          CODE_SIGN_IDENTITY="iOS Development" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           build-for-testing 
     
