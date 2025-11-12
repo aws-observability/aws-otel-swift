@@ -67,6 +67,7 @@ jobs:
 
       - name: Update version to next development version in main
         run: |
+          git checkout -b "prepare-main-for-next-dev-cycle-${NEW_VERSION}" main
           DEV_VERSION="${NEW_VERSION}.dev0"
           
           # Use bump-version script to update version
