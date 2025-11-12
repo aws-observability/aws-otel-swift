@@ -23,7 +23,6 @@ jobs:
         project-path: Examples/PetClinic/PetClinic.xcodeproj
         p12-base64: ${{ secrets.IOS_CERTIFICATE }}
         mobileprovision-base64: ${{ secrets.IOS_PROVISIONING_PROFILE }}
-        code-signing-identity: 'iOS Development'
         team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
         scheme: PetClinic
         output-path: Examples/PetClinic
@@ -37,7 +36,6 @@ jobs:
           -scheme PetClinic \
           -destination 'platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
-          CODE_SIGN_IDENTITY="iOS Development" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           build-for-testing 
     
