@@ -16,8 +16,8 @@ Session instrumentation is automatically enabled when session events telemetry i
     "region": "us-west-2",
     "rumAppMonitorId": "your-app-monitor-id"
   },
-  "applicationAttributes": {
-    "application.version": "1.0.0"
+  "otelResourceAttributes": {
+    "service.version": "1.0.0"
   },
   "telemetry": {
     "sessionEvents": { "enabled": true } // enabled by default

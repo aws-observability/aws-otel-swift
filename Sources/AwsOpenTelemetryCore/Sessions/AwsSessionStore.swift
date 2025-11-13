@@ -63,7 +63,7 @@ class AwsSessionStore {
   /// Immediately saves a session to UserDefaults
   /// - Parameter session: The session to save
   static func saveImmediately(session: AwsSession) {
-    AwsOpenTelemetryLogger.debug("Saving session to UserDefaults: \(session.id)")
+    AwsInternalLogger.debug("Saving session to UserDefaults: \(session.id)")
 
     // Persist session
     UserDefaults.standard.set(session.id, forKey: idKey)
@@ -86,12 +86,12 @@ class AwsSessionStore {
           let expireTime = UserDefaults.standard.object(forKey: expireTimeKey) as? Date,
           let sessionTimeout = UserDefaults.standard.object(forKey: sessionTimeoutKey) as? Int
     else {
-      AwsOpenTelemetryLogger.debug("No valid session found in UserDefaults")
+      AwsInternalLogger.debug("No valid session found in UserDefaults")
       return nil
     }
 
     let previousId = UserDefaults.standard.string(forKey: previousIdKey)
-    AwsOpenTelemetryLogger.debug("Found session in UserDefaults: \(id), previous: \(previousId ?? "none")")
+    AwsInternalLogger.debug("Found session in UserDefaults: \(id), previous: \(previousId ?? "none")")
 
     // reset sessions so it does not get overridden in the next scheduled save
     pendingSession = nil
@@ -107,7 +107,7 @@ class AwsSessionStore {
 
   /// Cleans up timer and UserDefaults
   static func teardown() {
-    AwsOpenTelemetryLogger.info("Tearing down AwsSessionStore")
+    AwsInternalLogger.info("Tearing down AwsSessionStore")
     saveTimer?.invalidate()
     saveTimer = nil
     pendingSession = nil
@@ -117,6 +117,6 @@ class AwsSessionStore {
     UserDefaults.standard.removeObject(forKey: expireTimeKey)
     UserDefaults.standard.removeObject(forKey: previousIdKey)
     UserDefaults.standard.removeObject(forKey: sessionTimeoutKey)
-    AwsOpenTelemetryLogger.debug("AwsSessionStore teardown complete")
+    AwsInternalLogger.debug("AwsSessionStore teardown complete")
   }
 }

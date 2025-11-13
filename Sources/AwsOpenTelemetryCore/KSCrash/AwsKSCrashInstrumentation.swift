@@ -57,7 +57,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
 
   static func install() {
     guard !isInstalled else {
-      AwsOpenTelemetryLogger.debug("AwsKSCrashInstrumentation already installed")
+      AwsInternalLogger.debug("AwsKSCrashInstrumentation already installed")
       return
     }
 
@@ -68,9 +68,9 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
 
       try reporter.install(with: config)
       isInstalled = true
-      AwsOpenTelemetryLogger.debug("installed")
+      AwsInternalLogger.debug("installed")
     } catch {
-      AwsOpenTelemetryLogger.error("AwsKSCrashInstrumentation failed to install: \(error)")
+      AwsInternalLogger.error("AwsKSCrashInstrumentation failed to install: \(error)")
       return
     }
 
@@ -149,7 +149,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
     }
 
     // screen
-    if let screen = screenName {
+    if let screen = screenName ?? AwsScreenManagerProvider.getInstance().currentScreen {
       userInfo[AwsViewSemConv.screenName] = screen
     }
 
@@ -160,7 +160,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
   static func processStoredCrashes() {
     // Init
     guard let reportStore = reporter.reportStore else {
-      AwsOpenTelemetryLogger.debug("AwsKSCrashInstrumentation no report store available")
+      AwsInternalLogger.debug("AwsKSCrashInstrumentation no report store available")
       return
     }
 
@@ -169,7 +169,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
     for reportID in reportIDs {
       guard let id = reportID as? Int64,
             let crashReport = reportStore.report(for: id) else {
-        AwsOpenTelemetryLogger.debug("AwsKSCrashInstrumentation failed to load crash report \(reportID)")
+        AwsInternalLogger.debug("AwsKSCrashInstrumentation failed to load crash report \(reportID)")
         continue
       }
 
@@ -180,7 +180,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
       reportStore.deleteReport(with: id)
     }
 
-    AwsOpenTelemetryLogger.debug("AwsKSCrashInstrumentation processed \(reportIDs.count) stored crashes")
+    AwsInternalLogger.debug("AwsKSCrashInstrumentation processed \(reportIDs.count) stored crashes")
   }
 
   // Report a KSCrash report in Apple format
@@ -265,7 +265,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
           let userInfo = rawCrash["user"] as? [String: Any],
           let sessionId = userInfo[AwsSessionSemConv.id] as? String else {
       _ = log.setTimestamp(Date()) // just for clarity (upstream already does this)
-      AwsOpenTelemetryLogger.debug("AwsKSCrashInstrumentation failed to recover crash context")
+      AwsInternalLogger.debug("AwsKSCrashInstrumentation failed to recover crash context")
       return attributes
     }
     var mutatedAttributes = attributes

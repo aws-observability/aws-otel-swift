@@ -33,7 +33,7 @@ import Foundation
   public var aws: AwsConfig
 
   /// Export endpoint overrides
-  public var exportOverride: ExportOverride?
+  public var exportOverride: AwsExportOverride?
 
   /// Session timeout in seconds
   public var sessionTimeout: Int?
@@ -42,13 +42,13 @@ import Foundation
   public var sessionSampleRate: Double?
 
   /// Application attributes
-  public var applicationAttributes: [String: String]?
+  public var otelResourceAttributes: [String: String]?
 
   /// Debug flag
   public var debug: Bool?
 
   /// Telemetry feature configuration settings
-  public var telemetry: TelemetryConfig?
+  public var telemetry: AwsTelemetryConfig?
 
   /**
    * Initializes a new configuration instance.
@@ -57,22 +57,22 @@ import Foundation
    * @param exportOverride Optional export endpoint overrides
    * @param sessionTimeout Session timeout in seconds
    * @param sessionSampleRate Session sample rate (0.0 to 1.0)
-   * @param applicationAttributes Application metadata attributes
+   * @param otelResourceAttributes Application metadata attributes
    * @param debug Debug logging flag
    * @param telemetry Telemetry configuration (defaults to all enabled)
    */
   public init(aws: AwsConfig,
-              exportOverride: ExportOverride? = nil,
+              exportOverride: AwsExportOverride? = nil,
               sessionTimeout: Int? = nil,
               sessionSampleRate: Double? = nil,
-              applicationAttributes: [String: String]? = nil,
+              otelResourceAttributes: [String: String]? = nil,
               debug: Bool? = nil,
-              telemetry: TelemetryConfig? = TelemetryConfig()) {
+              telemetry: AwsTelemetryConfig? = AwsTelemetryConfig()) {
     self.aws = aws
     self.exportOverride = exportOverride
     self.sessionTimeout = sessionTimeout
     self.sessionSampleRate = sessionSampleRate
-    self.applicationAttributes = applicationAttributes
+    self.otelResourceAttributes = otelResourceAttributes
     self.debug = debug
     self.telemetry = telemetry
     super.init()
@@ -87,12 +87,12 @@ import Foundation
   public required init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     aws = try container.decode(AwsConfig.self, forKey: .aws)
-    exportOverride = try container.decodeIfPresent(ExportOverride.self, forKey: .exportOverride)
+    exportOverride = try container.decodeIfPresent(AwsExportOverride.self, forKey: .exportOverride)
     sessionTimeout = try container.decodeIfPresent(Int.self, forKey: .sessionTimeout)
     sessionSampleRate = try container.decodeIfPresent(Double.self, forKey: .sessionSampleRate)
-    applicationAttributes = try container.decodeIfPresent([String: String].self, forKey: .applicationAttributes)
+    otelResourceAttributes = try container.decodeIfPresent([String: String].self, forKey: .otelResourceAttributes)
     debug = try container.decodeIfPresent(Bool.self, forKey: .debug)
-    telemetry = try container.decodeIfPresent(TelemetryConfig.self, forKey: .telemetry) ?? TelemetryConfig()
+    telemetry = try container.decodeIfPresent(AwsTelemetryConfig.self, forKey: .telemetry) ?? AwsTelemetryConfig()
     super.init()
   }
 }
@@ -100,12 +100,12 @@ import Foundation
 /// Builder for creating AwsOpenTelemetryConfig instances with a fluent API
 public class AwsOpenTelemetryConfigBuilder {
   public private(set) var aws: AwsConfig?
-  public private(set) var exportOverride: ExportOverride?
+  public private(set) var exportOverride: AwsExportOverride?
   public private(set) var sessionTimeout: Int?
   public private(set) var sessionSampleRate: Double?
-  public private(set) var applicationAttributes: [String: String]?
+  public private(set) var otelResourceAttributes: [String: String]?
   public private(set) var debug: Bool?
-  public private(set) var telemetry: TelemetryConfig? = TelemetryConfig()
+  public private(set) var telemetry: AwsTelemetryConfig? = AwsTelemetryConfig()
 
   public init() {}
 
@@ -116,7 +116,7 @@ public class AwsOpenTelemetryConfigBuilder {
   }
 
   /// Sets the export override configuration
-  public func with(exportOverride: ExportOverride?) -> Self {
+  public func with(exportOverride: AwsExportOverride?) -> Self {
     self.exportOverride = exportOverride
     return self
   }
@@ -134,8 +134,8 @@ public class AwsOpenTelemetryConfigBuilder {
   }
 
   /// Sets the application attributes
-  public func with(applicationAttributes: [String: String]?) -> Self {
-    self.applicationAttributes = applicationAttributes
+  public func with(otelResourceAttributes: [String: String]?) -> Self {
+    self.otelResourceAttributes = otelResourceAttributes
     return self
   }
 
@@ -146,7 +146,7 @@ public class AwsOpenTelemetryConfigBuilder {
   }
 
   /// Sets the telemetry configuration
-  public func with(telemetry: TelemetryConfig?) -> Self {
+  public func with(telemetry: AwsTelemetryConfig?) -> Self {
     self.telemetry = telemetry
     return self
   }
@@ -161,7 +161,7 @@ public class AwsOpenTelemetryConfigBuilder {
       exportOverride: exportOverride,
       sessionTimeout: sessionTimeout,
       sessionSampleRate: sessionSampleRate,
-      applicationAttributes: applicationAttributes,
+      otelResourceAttributes: otelResourceAttributes,
       debug: debug,
       telemetry: telemetry
     )

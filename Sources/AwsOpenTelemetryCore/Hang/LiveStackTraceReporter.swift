@@ -64,10 +64,10 @@ public protocol LiveStackTraceReporter {
           let firstFrame = getFirstFrameOfMain(stacktrace: stacktrace) ?? "unknown location"
           message = "Hang detected at \(firstFrame)"
         } else {
-          AwsOpenTelemetryLogger.error("PLLiveStackTraceReporter: Failed to format crash report to string")
+          AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to format crash report to string")
         }
       } catch {
-        AwsOpenTelemetryLogger.error("PLLiveStackTraceReporter: Failed to parse crash report: \(error)")
+        AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to parse crash report: \(error)")
         stacktrace = "Failed to parse stack trace: \(error)"
       }
       return StackTrace(message: message, stacktrace: stacktrace)
