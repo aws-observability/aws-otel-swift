@@ -1618,6 +1618,12 @@
           ?.stringValue;
         const isHttpRequest = httpMethod || httpStatusCode || httpTarget || httpUrl;
 
+        // Device metrics
+        const cpuUtil = span.attributes?.find((attr) => attr.key === 'process.cpu.utilization')?.value?.doubleValue;
+        const memUsage = span.attributes?.find((attr) => attr.key === 'process.memory.usage')?.value?.intValue;
+        const battery = span.attributes?.find((attr) => attr.key === 'hw.battery.charge')?.value?.doubleValue;
+        const hasDeviceMetrics = cpuUtil !== undefined || memUsage !== undefined || battery !== undefined;
+
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
           span,
@@ -1722,6 +1728,11 @@
                             ? `<div style="font-size: 0.8em; color: #e91e63;">⚡ active_prewarm: ${activePrewarm}</div>`
                             : ''
                         }
+                        ${
+                          hasDeviceMetrics
+                            ? `<div style="font-size: 0.8em; color: #607d8b;">📊 ${cpuUtil !== undefined ? 'CPU: ' + (cpuUtil * 100).toFixed(1) + '%' : ''}${cpuUtil !== undefined && (memUsage !== undefined || battery !== undefined) ? ' | ' : ''}${memUsage !== undefined ? 'Mem: ' + (memUsage / 1024 / 1024).toFixed(0) + 'MB' : ''}${memUsage !== undefined && battery !== undefined ? ' | ' : ''}${battery !== undefined ? 'Bat: ' + (battery * 100).toFixed(0) + '%' : ''}</div>`
+                            : ''
+                        }
                             <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(
                               0,
                               8,
@@ -1748,6 +1759,12 @@
         const appScreenParentName = log.attributes?.find(
           (attr) => attr.key === 'app.screen.parent_screen.name',
         )?.value?.stringValue;
+
+        // Device metrics
+        const cpuUtil = log.attributes?.find((attr) => attr.key === 'process.cpu.utilization')?.value?.doubleValue;
+        const memUsage = log.attributes?.find((attr) => attr.key === 'process.memory.usage')?.value?.intValue;
+        const battery = log.attributes?.find((attr) => attr.key === 'hw.battery.charge')?.value?.doubleValue;
+        const hasDeviceMetrics = cpuUtil !== undefined || memUsage !== undefined || battery !== undefined;
 
         return `
                 <div class="timeline-item" data-session-id="${sessionId}" onclick="showDetails(${JSON.stringify(
@@ -1790,6 +1807,11 @@
                         ${
                           appScreenParentName
                             ? `<div style="font-size: 0.8em; color: #607d8b;">⬆️ Parent: ${appScreenParentName}</div>`
+                            : ''
+                        }
+                        ${
+                          hasDeviceMetrics
+                            ? `<div style="font-size: 0.8em; color: #607d8b;">📊 ${cpuUtil !== undefined ? 'CPU: ' + (cpuUtil * 100).toFixed(1) + '%' : ''}${cpuUtil !== undefined && (memUsage !== undefined || battery !== undefined) ? ' | ' : ''}${memUsage !== undefined ? 'Mem: ' + (memUsage / 1024 / 1024).toFixed(0) + 'MB' : ''}${memUsage !== undefined && battery !== undefined ? ' | ' : ''}${battery !== undefined ? 'Bat: ' + (battery * 100).toFixed(0) + '%' : ''}</div>`
                             : ''
                         }
                             <div style="font-size: 0.8em; color: #666;">Session: ${sessionId.substring(

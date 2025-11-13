@@ -21,12 +21,26 @@
  */
 
 import Foundation
+#if canImport(UIKit) && !os(watchOS)
+  import UIKit
+#endif
+
+public protocol DeviceKitPolyfillProtocol {
+  static func getBatteryLevel() -> Double?
+  static func getCPUUsage() -> Double?
+  static func getMemoryUsage() -> Double?
+  static func getDeviceName() -> String
+}
 
 /**
  * Minimal polyfill for DeviceKit functionality to get device names.
  * Based on DeviceKit by Dennis Weissmann.
  */
-public class DeviceKitPolyfill {
+public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
+  private static func roundValue(_ value: Double, precision: Double = 1000) -> Double {
+    return (value * precision).rounded() / precision
+  }
+
   /// Gets the device identifier from the system, such as "iPhone17,2"
   private static var identifier: String = {
     var systemInfo = utsname()
@@ -210,5 +224,102 @@ public class DeviceKitPolyfill {
   /// Returns the human-readable device name (e.g., "iPhone 16 Pro Max")
   public static func getDeviceName() -> String {
     return mapToDevice(identifier: identifier)
+  }
+
+  /// Gets the battery level as a percentage (0.0 to 1.0)
+  /// - Returns: Battery level where 0.0 = 0%, 1.0 = 100%, or nil if unavailable
+  public static func getBatteryLevel() -> Double? {
+    #if canImport(UIKit) && !os(watchOS)
+      UIDevice.current.isBatteryMonitoringEnabled = true
+      let level = UIDevice.current.batteryLevel
+      return level >= 0 ? roundValue(Double(level)) : nil
+    #else
+      return nil
+    #endif
+  }
+
+  /// Gets CPU utilization as a ratio (0.0 to ~8.0+ on multi-core devices)
+  ///
+  /// Units: Ratio where 1.0 = 100% of one CPU core
+  /// - Single core at 50% = 0.5
+  /// - Dual core at 100% each = 2.0
+  /// - Quad core at 75% each = 3.0
+  ///
+  /// Calculates CPU usage by:
+  /// 1. Getting all threads for the current task via `task_threads`
+  /// 2. Querying each thread's basic info via `thread_info` with `THREAD_BASIC_INFO`
+  /// 3. Summing `cpu_usage` for non-idle threads (where `TH_FLAGS_IDLE` is not set)
+  /// 4. Normalizing by `TH_USAGE_SCALE` to get a 0.0-1.0 range per thread
+  /// 5. Returning the total usage across all threads
+  ///
+  /// - Returns: CPU utilization ratio (rounded to 3 decimal places), or nil if calculation fails
+  public static func getCPUUsage() -> Double? {
+    #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+      var totalUsage = 0.0
+      var threadsList: thread_act_array_t?
+      var threadsCount = mach_msg_type_number_t(0)
+
+      guard task_threads(mach_task_self_, &threadsList, &threadsCount) == KERN_SUCCESS else {
+        return nil
+      }
+
+      defer {
+        if let threadsList {
+          vm_deallocate(mach_task_self_, vm_address_t(UInt(bitPattern: threadsList)), vm_size_t(Int(threadsCount) * MemoryLayout<thread_t>.stride))
+        }
+      }
+
+      for index in 0 ..< threadsCount {
+        var threadInfo = thread_basic_info()
+        var threadInfoCount = mach_msg_type_number_t(THREAD_INFO_MAX)
+
+        let result = withUnsafeMutablePointer(to: &threadInfo) {
+          $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+            thread_info(threadsList![Int(index)], thread_flavor_t(THREAD_BASIC_INFO), $0, &threadInfoCount)
+          }
+        }
+
+        if result == KERN_SUCCESS {
+          if threadInfo.flags & TH_FLAGS_IDLE == 0 {
+            totalUsage += Double(threadInfo.cpu_usage) / Double(TH_USAGE_SCALE)
+          }
+        }
+      }
+      return roundValue(totalUsage)
+    #else
+      return nil
+    #endif
+  }
+
+  /// Gets memory usage in megabytes (RSS - Resident Set Size)
+  ///
+  /// Units: Megabytes of physical memory currently used by the process
+  /// - Example: 100.0 = 100 MB
+  /// - Example: 1024.0 = 1 GB
+  ///
+  /// Calculates memory usage by:
+  /// 1. Calling `task_info` with `MACH_TASK_BASIC_INFO` flavor
+  /// 2. Extracting `resident_size` from `mach_task_basic_info` struct
+  /// 3. Converting bytes to megabytes and rounding to 3 decimal places
+  ///
+  /// - Returns: Memory usage in megabytes as Double, or nil if calculation fails
+  public static func getMemoryUsage() -> Double? {
+    #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+      var info = mach_task_basic_info()
+      var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
+
+      let result = withUnsafeMutablePointer(to: &info) {
+        $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+          task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+        }
+      }
+
+      guard result == KERN_SUCCESS else { return nil }
+
+      let memoryMB = Double(info.resident_size) / (1024 * 1024)
+      return roundValue(memoryMB)
+    #else
+      return nil
+    #endif
   }
 }
