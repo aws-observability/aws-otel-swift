@@ -35,7 +35,11 @@ public class AwsHttpClient: HTTPClient {
 
   private func executeWithRetry(request: URLRequest, attempt: Int, completion: @escaping (Result<HTTPURLResponse, Error>) -> Void) {
     let task = session.dataTask(with: request) { [weak self] _, response, error in
-      guard let self else { return }
+      guard let self else {
+        let error = NSError(domain: "AwsHttpClient", code: -1, userInfo: [NSLocalizedDescriptionKey: "HTTP client was deallocated"])
+        completion(.failure(error))
+        return
+      }
 
       if let error {
         if attempt < config.maxRetries {
