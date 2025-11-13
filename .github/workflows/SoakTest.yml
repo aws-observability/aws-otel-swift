@@ -41,7 +41,7 @@ jobs:
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
           CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
-          PROVISIONING_PROFILE_SPECIFIER="aws-github-bot-profile-DO-NOT-DELETE"
+          PROVISIONING_PROFILE_SPECIFIER="aws-github-bot-profile-DO-NOT-DELETE" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           archive
     
@@ -62,6 +62,7 @@ jobs:
           -scheme PetClinic \
           -destination 'platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
+          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           build-for-testing 
     
