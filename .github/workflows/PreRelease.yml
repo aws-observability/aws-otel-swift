@@ -43,7 +43,7 @@ jobs:
       - name: Checkout main branch
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
         with:
-          ref: 'main'
+          ref: main
           token: ${{ env.BOT_TOKEN_GITHUB_RW_PATOKEN }}
 
       - name: Setup Git
@@ -59,7 +59,7 @@ jobs:
 
       - name: Create branches
         run: |
-          IS_PATCH=${{ github.event.inputs.is_patch }}
+          IS_PATCH=${{ github.event.inputs.is_patch || 'false' }}
           if [[ "$IS_PATCH" != "true" && "$IS_PATCH" != "false" ]]; then
             echo "Invalid input for IS_PATCH. Must be 'true' or 'false'."
             exit 1
@@ -93,7 +93,21 @@ jobs:
 
       - name: Update CHANGELOG for release
         run: |
+          echo "VERSION is: $VERSION"
+          echo "Date is: $(date +%Y-%m-%d)"
+          echo "Before sed:"
+          head -10 CHANGELOG.md
+          
           sed -i "s/## Unreleased/## Unreleased\n\n## v${VERSION} - $(date +%Y-%m-%d)/" CHANGELOG.md
+          
+          echo "After sed:"
+          head -10 CHANGELOG.md
+          
+          if git diff --quiet CHANGELOG.md; then
+            echo "ERROR: No changes made to CHANGELOG.md"
+            exit 1
+          fi
+          
           git add CHANGELOG.md
           git commit -m "Update CHANGELOG for version ${VERSION}"
           git push origin "v${VERSION}_release"

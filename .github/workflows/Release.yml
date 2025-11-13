@@ -15,7 +15,7 @@ jobs:
         run: |
           VERSION=$(grep -o '"[0-9]\+\.[0-9]\+\.[0-9]\+"' Info.plist | tr -d '"')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-
+          
       - name: Create GH release
         id: create_release
         env:
@@ -23,8 +23,29 @@ jobs:
         # GITHUB_REF_NAME is a GitHub Actions environment variable that contains the short ref name of the branch or tag that triggered the workflow run.
         # SPM officially recognizes tags both with and without this prefix. 1.0.0 is the recommended and standard way to tag a release for Swift packages.
         run: |
+          # Extract CHANGELOG entries for this version
+          CHANGELOG_ENTRIES=$(python3 -c "
+          import re, os
+          version = os.environ['VERSION']
+          with open('CHANGELOG.md', 'r') as f:
+              content = f.read()
+          version_pattern = rf'## v{re.escape(version)}.*?\n(.*?)(?=\n## |\Z)'
+          version_match = re.search(version_pattern, content, re.DOTALL)
+          if version_match:
+              entries = version_match.group(1).strip()
+              if entries:
+                  print(entries)
+          ")
+
+          # Create release notes
+          cat > release_notes.md << EOF
+          $(if [ -n "$CHANGELOG_ENTRIES" ]; then echo "## What's Changed"; echo "$CHANGELOG_ENTRIES"; echo ""; fi)
+          EOF
+
+          # Tag a GitHUb release
           gh release create --target "$GITHUB_REF_NAME" \ 
              --title "Release ${VERSION}" \
+             --notes-file release_notes.md \
              --draft \
              "${VERSION}" \
              .
