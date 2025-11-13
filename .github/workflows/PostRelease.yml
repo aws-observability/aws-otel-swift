@@ -70,7 +70,7 @@ jobs:
           PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
           
           # Calculate next version based on input
-          case "${{ github.event.inputs.version_type }}" in
+          case "${{ github.event.inputs.version_type || 'minor' }}" in
             major)
               NEW_VERSION="$((MAJOR + 1)).0.0"
               ;;
@@ -91,10 +91,10 @@ jobs:
           git checkout -b "prepare-main-for-next-dev-cycle-${NEW_VERSION}" main
           
           # Use bump-version script with version type
-          echo "y" | ./scripts/bump-version.sh "${{ github.event.inputs.version_type }}"
+          echo "y" | ./scripts/bump-version.sh "${{ github.event.inputs.version_type || 'minor' }}"
           
           # For patch releases, handle CHANGELOG merge conflicts
-          if [[ "${{ github.event.inputs.version_type }}" == "patch" ]]; then
+          if [[ "${{ github.event.inputs.version_type || 'minor' }}" == "patch" ]]; then
             # Copy the patch release entries
             sed -n "/^## v${NEW_VERSION}/,/^## v[0-9]/p" CHANGELOG.md | sed '$d' > /tmp/patch_release_section.txt
 
