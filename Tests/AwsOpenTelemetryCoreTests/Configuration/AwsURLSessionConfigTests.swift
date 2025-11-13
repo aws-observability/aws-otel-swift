@@ -14,7 +14,7 @@ final class AwsURLSessionConfigTests: XCTestCase {
   }
 
   func testAwsURLSessionConfigInitWithExportOverride() {
-    let exportOverride = ExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
+    let exportOverride = AwsExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
     let config = AwsURLSessionConfig(region: region, exportOverride: exportOverride)
 
     XCTAssertEqual(config.region, region)
@@ -23,7 +23,7 @@ final class AwsURLSessionConfigTests: XCTestCase {
   }
 
   func testAwsURLSessionConfigBuilder() {
-    let exportOverride = ExportOverride(logs: logsEndpoint)
+    let exportOverride = AwsExportOverride(logs: logsEndpoint)
     let config = AwsURLSessionConfig.builder()
       .with(region: region)
       .with(exportOverride: exportOverride)

@@ -1,24 +1,6 @@
 {
-  "originHash" : "21055fae8eb926ddcdf490d86e5c83cd0579788e046a03c655fce9a1bb580a41",
+  "originHash" : "e102db757186f38b04dc357d377e47a98e74cd9b77f06e2e48f1f7d41e0d00d6",
   "pins" : [
-    {
-      "identity" : "aws-crt-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/awslabs/aws-crt-swift.git",
-      "state" : {
-        "revision" : "5be6550f81c760cceb0a43c30d4149ac55c5640c",
-        "version" : "0.52.1"
-      }
-    },
-    {
-      "identity" : "aws-sdk-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/awslabs/aws-sdk-swift",
-      "state" : {
-        "revision" : "224c85b9843ad3b760387c607b1993ac313a6104",
-        "version" : "1.3.43"
-      }
-    },
     {
       "identity" : "grpc-swift",
       "kind" : "remoteSourceControl",
@@ -29,12 +11,21 @@
       }
     },
     {
+      "identity" : "kscrash",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kstenerud/KSCrash.git",
+      "state" : {
+        "revision" : "f7675440853aa7a6dc4e1606fdb2e3423e6f1757",
+        "version" : "2.4.0"
+      }
+    },
+    {
       "identity" : "opentelemetry-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/open-telemetry/opentelemetry-swift.git",
       "state" : {
-        "revision" : "7a68865d9cc571cbe62c4d4902ccc0d902881eab",
-        "version" : "2.1.0"
+        "revision" : "0b77b8e2b2121261562b1d304c638a004e1d2f19",
+        "version" : "2.2.0"
       }
     },
     {
@@ -42,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/open-telemetry/opentelemetry-swift-core.git",
       "state" : {
-        "revision" : "6aebc7734e154cd221ea9fb76bd4f611262be962",
-        "version" : "2.1.1"
+        "revision" : "240c8d5e36c3c7b774ed961325369f0b1f2c965f",
+        "version" : "2.3.0"
       }
     },
     {
@@ -56,12 +47,12 @@
       }
     },
     {
-      "identity" : "smithy-swift",
+      "identity" : "plcrashreporter",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/smithy-lang/smithy-swift",
+      "location" : "https://github.com/microsoft/plcrashreporter.git",
       "state" : {
-        "revision" : "4fd1f783164723094974c7590820874866a67ac2",
-        "version" : "0.141.0"
+        "revision" : "8c61e5e38e9f737dd68512ed1ea5ab081244ad65",
+        "version" : "1.12.0"
       }
     },
     {
@@ -71,15 +62,6 @@
       "state" : {
         "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
         "version" : "1.2.1"
-      }
-    },
-    {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser.git",
-      "state" : {
-        "revision" : "309a47b2b1d9b5e991f36961c983ecec72275be3",
-        "version" : "1.6.1"
       }
     },
     {

@@ -93,8 +93,8 @@ SwiftUI view instrumentation is automatically enabled when view telemetry is ena
     "region": "us-west-2",
     "rumAppMonitorId": "your-app-monitor-id"
   },
-  "applicationAttributes": {
-    "application.version": "1.0.0"
+  "otelResourceAttributes": {
+    "service.version": "1.0.0"
   },
   "telemetry": {
     "view": { "enabled": true } // enabled by default
@@ -113,8 +113,8 @@ import AwsOpenTelemetryCore
 let awsConfig = AwsConfig(region: "us-west-2", rumAppMonitorId: "your-app-monitor-id")
 let config = AwsOpenTelemetryConfig(
     aws: awsConfig,
-    applicationAttributes: ["application.version": "1.0.0"],
-    telemetry: TelemetryConfig.builder()
+    otelResourceAttributes: ["service.version": "1.0.0"],
+    telemetry: AwsTelemetryConfig.builder()
         .with(view: TelemetryFeature(enabled: true))
         .build()
 )

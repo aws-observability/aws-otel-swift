@@ -101,7 +101,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
     // Setup observers
     for event in provider.additionalLifecycleEvents {
       guard lifecycleObservers[event.rawValue] == nil else {
-        AwsOpenTelemetryLogger.debug("Skipping duplicate observer for: \(event.rawValue)")
+        AwsInternalLogger.debug("Skipping duplicate observer for: \(event.rawValue)")
         continue
       }
 

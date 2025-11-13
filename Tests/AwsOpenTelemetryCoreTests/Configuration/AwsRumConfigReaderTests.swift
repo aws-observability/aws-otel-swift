@@ -20,7 +20,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)",
         "rumAlias": "\(alias)",
-        "cognitoIdentityPool": "test-pool"
+
       },
       "exportOverride": {
         "logs": "\(logsEndpoint)",
@@ -28,8 +28,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
       },
       "sessionTimeout": \(sessionTimeout),
       "sessionSampleRate": 1.0,
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       },
       "debug": true,
       "telemetry": {
@@ -52,7 +52,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
     XCTAssertEqual(config.exportOverride?.logs, logsEndpoint)
     XCTAssertEqual(config.sessionTimeout, sessionTimeout)
     XCTAssertEqual(config.debug, true)
-    XCTAssertEqual(config.applicationAttributes?["application.version"], appVersion)
+    XCTAssertEqual(config.otelResourceAttributes?["service.version"], appVersion)
     XCTAssertFalse(config.telemetry!.startup?.enabled ?? true)
     XCTAssertFalse(config.telemetry!.sessionEvents?.enabled ?? true)
     XCTAssertFalse(config.telemetry!.crash?.enabled ?? true)
@@ -69,8 +69,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       }
     }
     """
@@ -105,8 +105,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
       "aws": {
         "region": "\(region)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       }
     }
     """
@@ -122,8 +122,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
       "aws": {
         "rumAppMonitorId": "\(appMonitorId)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       }
     }
     """
@@ -136,8 +136,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
   func testParseConfigMissingAws() {
     let incompleteJson = """
     {
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       }
     }
     """
@@ -164,8 +164,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "logs": "\(logsEndpoint)"
       },
       "debug": true,
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       },
       "telemetry": {
         "startup": { "enabled": false },
@@ -188,7 +188,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
     XCTAssertEqual(config?.debug, true)
     XCTAssertEqual(config?.aws.rumAlias, alias)
     XCTAssertEqual(config?.exportOverride?.logs, logsEndpoint)
-    XCTAssertEqual(config?.applicationAttributes?["application.version"], appVersion)
+    XCTAssertEqual(config?.otelResourceAttributes?["service.version"], appVersion)
     XCTAssertFalse(config?.telemetry?.startup?.enabled ?? true)
     XCTAssertFalse(config?.telemetry?.sessionEvents?.enabled ?? true)
     XCTAssertFalse(config?.telemetry?.crash?.enabled ?? true)
@@ -210,8 +210,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       }
     }
     """
@@ -225,7 +225,7 @@ final class AwsRumConfigReaderTests: XCTestCase {
     XCTAssertNil(config?.debug)
     XCTAssertNil(config?.aws.rumAlias)
     XCTAssertNil(config?.exportOverride)
-    XCTAssertEqual(config?.applicationAttributes?["application.version"], appVersion)
+    XCTAssertEqual(config?.otelResourceAttributes?["service.version"], appVersion)
     XCTAssertTrue(config?.telemetry?.startup?.enabled ?? false)
     XCTAssertTrue(config?.telemetry?.sessionEvents?.enabled ?? false)
     XCTAssertTrue(config?.telemetry?.crash?.enabled ?? false)
@@ -247,8 +247,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       },
       "telemetry": {
         "startup": { "enabled": true },
@@ -295,8 +295,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       },
       "telemetry": {
         "view": { "enabled": false },
@@ -328,8 +328,8 @@ final class AwsRumConfigReaderTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(appMonitorId)"
       },
-      "applicationAttributes": {
-        "application.version": "\(appVersion)"
+      "otelResourceAttributes": {
+        "service.version": "\(appVersion)"
       },
       "telemetry": {
         "network": { "enabled": false },

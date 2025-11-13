@@ -77,12 +77,12 @@ public class AwsSessionManager {
     // Update session sampling based on RNG
     _isSessionSampled = shouldSampleSession(sampleRate: configuration.sessionSampleRate)
 
-    AwsOpenTelemetryLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
+    AwsInternalLogger.info("Creating new session: \(newId), previous: \(previousId ?? "none")")
 
     if !_isSessionSampled {
-      AwsOpenTelemetryLogger.debug("Session \(newId) will NOT be sampled")
+      AwsInternalLogger.debug("Session \(newId) will NOT be sampled")
     } else {
-      AwsOpenTelemetryLogger.debug("Session \(newId) will be sampled")
+      AwsInternalLogger.debug("Session \(newId) will be sampled")
     }
 
     // Store previous session for cleanup outside the lock

@@ -83,7 +83,7 @@ public class AwsHangInstrumentation {
         hangStart = now
       } else if activity == CFRunLoopActivity.beforeWaiting {
         guard let hangStart else {
-          AwsOpenTelemetryLogger.debug("Activity is BeforeWaiting without hangStart")
+          AwsInternalLogger.debug("Activity is BeforeWaiting without hangStart")
           return
         }
         let hangDuration = now - hangStart
@@ -127,7 +127,7 @@ public class AwsHangInstrumentation {
     // Collect the live stack trace because there is an ongoing hang that is likely to exceed our hang threshold
     if hangDuration >= hangPredetectionThreshold { // We rely on LiveStackTraceReporter to safely generate live reports
       guard let liveReportData = stackTraceCollector.generateLiveStackTrace() else {
-        AwsOpenTelemetryLogger.debug("Failed to generate live stack trace")
+        AwsInternalLogger.debug("Failed to generate live stack trace")
         return
       }
       rawStackTrace = liveReportData

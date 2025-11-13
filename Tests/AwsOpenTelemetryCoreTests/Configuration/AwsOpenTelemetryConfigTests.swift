@@ -5,24 +5,24 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
   let region = "us-west-2"
   let rumAppMonitorId = "test-monitor-id"
   let rumAlias = "test-alias"
-  let cognitoIdentityPool = "test-identity-pool"
+
   let logsEndpoint = "https://custom-logs.example.com"
   let tracesEndpoint = "https://custom-traces.example.com"
   let sessionTimeout = 100
   let sessionSampleRate = 1.0
 
   func testAwsOpenTelemetryConfigManualInitWithValues() {
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: rumAlias, cognitoIdentityPool: cognitoIdentityPool)
-    let exportOverride = ExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
-    let applicationAttributes = ["application.version": "1.0.0"]
-    let telemetryConfig = TelemetryConfig()
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: rumAlias)
+    let exportOverride = AwsExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
+    let otelResourceAttributes = ["service.version": "1.0.0"]
+    let telemetryConfig = AwsTelemetryConfig()
 
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
       sessionTimeout: sessionTimeout,
       sessionSampleRate: sessionSampleRate,
-      applicationAttributes: applicationAttributes,
+      otelResourceAttributes: otelResourceAttributes,
       debug: true,
       telemetry: telemetryConfig
     )
@@ -59,7 +59,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
         "region": "\(region)",
         "rumAppMonitorId": "\(rumAppMonitorId)",
         "rumAlias": "\(rumAlias)",
-        "cognitoIdentityPool": "\(cognitoIdentityPool)"
+
       },
       "exportOverride": {
         "logs": "\(logsEndpoint)",
@@ -67,8 +67,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
       },
       "sessionTimeout": \(sessionTimeout),
       "sessionSampleRate": \(sessionSampleRate),
-      "applicationAttributes": {
-        "application.version": "1.0.0"
+      "otelResourceAttributes": {
+        "service.version": "1.0.0"
       },
       "debug": true,
       "telemetry": {
@@ -118,7 +118,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
 
   func testAwsOpenTelemetryConfigBuilder() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId)
-    let exportOverride = ExportOverride(logs: logsEndpoint)
+    let exportOverride = AwsExportOverride(logs: logsEndpoint)
     let attributes = ["key": "value"]
 
     let config = AwsOpenTelemetryConfig.builder()
@@ -126,14 +126,14 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
       .with(exportOverride: exportOverride)
       .with(sessionTimeout: sessionTimeout)
       .with(debug: true)
-      .with(applicationAttributes: attributes)
+      .with(otelResourceAttributes: attributes)
       .build()
 
     XCTAssertEqual(config.aws.region, region)
     XCTAssertEqual(config.exportOverride?.logs, logsEndpoint)
     XCTAssertEqual(config.sessionTimeout, sessionTimeout)
     XCTAssertEqual(config.debug, true)
-    XCTAssertEqual(config.applicationAttributes?["key"], "value")
+    XCTAssertEqual(config.otelResourceAttributes?["key"], "value")
     XCTAssertEqual(config.telemetry?.startup?.enabled, true)
     XCTAssertEqual(config.telemetry?.sessionEvents?.enabled, true)
     XCTAssertEqual(config.telemetry?.crash?.enabled, true)

@@ -77,7 +77,7 @@ public class AwsSessionEventInstrumentation {
   /// for all queued sessions and then clears the queue.
   private static func processQueuedSessions() {
     let sessionEvents = AwsSessionEventInstrumentation.queue
-    AwsOpenTelemetryLogger.debug("Processing \(sessionEvents.count) queued session events")
+    AwsInternalLogger.debug("Processing \(sessionEvents.count) queued session events")
 
     if sessionEvents.isEmpty {
       return
@@ -134,7 +134,7 @@ public class AwsSessionEventInstrumentation {
   /// - Parameter session: The expired session
   private static func createSessionEndEvent(session: AwsSession) {
     guard let endTime = session.endTime else {
-      AwsOpenTelemetryLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
+      AwsInternalLogger.debug("Skipping session.end event for session without end time/duration: \(session.id)")
       return
     }
 
@@ -169,7 +169,7 @@ public class AwsSessionEventInstrumentation {
       /// SessionManager creates sessions before SessionEventInstrumentation is applied,
       /// which the notification observer cannot see. So we need to keep the sessions in a queue.
       if queue.count >= maxQueueSize {
-        AwsOpenTelemetryLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping latest session event: \(session.id)")
+        AwsInternalLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping latest session event: \(session.id)")
         return
       }
       queue.append(AwsSessionEvent(session: session, eventType: eventType))

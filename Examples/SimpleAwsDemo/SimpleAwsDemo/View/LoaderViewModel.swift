@@ -15,28 +15,26 @@
 
 import Foundation
 import SwiftUI
-import AwsOpenTelemetryAuth
-import AWSCognitoIdentity
 import AwsOpenTelemetryCore
 import Combine
 import OpenTelemetryApi
 
 /**
- * View model responsible for initializing AWS services and handling API calls.
+ * View model responsible for handling demo operations and telemetry.
  *
  * This class owns all observable UI state such as loading indicators, errors,
- * and result messages. It acts as the bridge between the UI and AWS service logic.
+ * and result messages.
  */
 @MainActor
 class LoaderViewModel: ObservableObject {
-  /// Indicates whether an AWS operation is in progress
+  /// Indicates whether an operation is in progress
   @Published var isLoading = true
 
-  /// Stores any error encountered during AWS setup or operations
+  /// Stores any error encountered during operations
   @Published var error: Error?
 
-  /// Message displayed to the user representing the result of AWS operations
-  @Published var resultMessage: String = "AWS API results will appear here"
+  /// Message displayed to the user representing the result of operations
+  @Published var resultMessage: String = "Demo results will appear here"
 
   @Published var showingCustomLogForm = false
   @Published var showingCustomSpanForm = false
@@ -44,12 +42,6 @@ class LoaderViewModel: ObservableObject {
 
   /// Timer for updating the digital clock
   private var clockTimer: AnyCancellable?
-
-  /// Instance of the AWS service handler (non-observable)
-  private(set) var awsServiceHandler: AwsServiceHandler?
-
-  private let cognitoPoolId: String
-  private let region: String
 
   /// Date formatter for the digital clock
   private let timeFormatter: DateFormatter = {
@@ -60,75 +52,10 @@ class LoaderViewModel: ObservableObject {
   }()
 
   /**
-   * Initializes the view model with required AWS configuration
-   *
-   * - Parameters:
-   *   - cognitoPoolId: The Cognito Identity Pool ID
-   *   - region: AWS region string (e.g., "us-west-2")
+   * Initializes the view model
    */
-  init(cognitoPoolId: String, region: String) {
-    self.cognitoPoolId = cognitoPoolId
-    self.region = region
-  }
-
-  /// Initializes the `AwsServiceHandler` instance and prepares AWS SDK for use
-  func initialize() async {
-    do {
-      // Configure and initialize the Cognito Identity client
-      let cognitoConfig = try await CognitoIdentityClient.CognitoIdentityClientConfiguration(region: region)
-      let cognitoIdentityClient = CognitoIdentityClient(config: cognitoConfig)
-
-      let credentialsProvider = CognitoCachedCredentialsProvider(
-        cognitoPoolId: cognitoPoolId, cognitoClient: cognitoIdentityClient
-      )
-
-      awsServiceHandler = try await AwsServiceHandler(
-        region: region,
-        awsCredentialsProvider: credentialsProvider,
-        cognitoIdentityClient: cognitoIdentityClient,
-        cognitoPoolId: cognitoPoolId
-      )
-
-      isLoading = false
-    } catch {
-      isLoading = false
-    }
-  }
-
-  /// Performs the "List S3 Buckets" operation and updates UI state
-  func listS3Buckets() async {
-    stopClock()
-    isLoading = true
-    resultMessage = "Loading S3 buckets..."
-
-    guard let awsServiceHandler else { return }
-    defer { isLoading = false }
-    // Call list buckets
-    do {
-      let buckets = try await awsServiceHandler.listS3Buckets()
-      resultMessage = buckets.isEmpty
-        ? "No buckets found"
-        : "S3 Buckets:\n\n" + buckets.map { "- \($0.name) (Created: \($0.creationDate))" }.joined(separator: "\n")
-    } catch {
-      resultMessage = "Error listing S3 buckets: \(error.localizedDescription)"
-    }
-  }
-
-  /// Performs the "Get Cognito Identity" operation and updates UI state
-  func getCognitoIdentityId() async {
-    stopClock()
-    guard let awsServiceHandler else { return }
-
-    isLoading = true
-    resultMessage = "Fetching Cognito identity..."
-    defer { isLoading = false }
-
-    do {
-      let identityId = try await awsServiceHandler.getCognitoIdentityId()
-      resultMessage = "Cognito Identity ID: \(identityId)"
-    } catch {
-      resultMessage = "Error getting Cognito identity: \(error.localizedDescription)"
-    }
+  init() {
+    isLoading = false
   }
 
   func showSessionDetails() {

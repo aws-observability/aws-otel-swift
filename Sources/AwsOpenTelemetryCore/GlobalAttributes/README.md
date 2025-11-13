@@ -8,10 +8,10 @@ Global attributes are key-value pairs that are automatically added to all teleme
 import AwsOpenTelemetryCore
 
 // Get the global attributes manager
-let manager = GlobalAttributesProvider.getInstance()
+let manager = AwsGlobalAttributesProvider.getInstance()
 
 // Set global attributes
-manager.setAttribute(key: "application.version", value: AttributeValue.string("1.0.0"))
+manager.setAttribute(key: "service.version", value: AttributeValue.string("1.0.0"))
 manager.setAttribute(key: "Foo", value: AttributeValue.string("bar"))
 
 // All subsequent spans and logs will include these attributes
@@ -31,7 +31,7 @@ When global attributes are set, they appear in all telemetry data. For example, 
 
     // global attributes
     { "key": "Foo", "value": { "stringValue": "bar" } },
-    { "key": "application.version", "value": { "stringValue": "1.0.0" } }
+    { "key": "service.version", "value": { "stringValue": "1.0.0" } }
   ]
 }
 ```

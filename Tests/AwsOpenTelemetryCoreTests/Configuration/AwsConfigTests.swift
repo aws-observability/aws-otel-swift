@@ -5,20 +5,17 @@ final class AwsConfigTests: XCTestCase {
   let region = "us-west-2"
   let rumAppMonitorId = "test-monitor-id"
   let rumAlias = "test-alias"
-  let cognitoIdentityPool = "test-identity-pool"
 
   func testAwsConfigInitWithValues() {
     let config = AwsConfig(
       region: region,
       rumAppMonitorId: rumAppMonitorId,
-      rumAlias: rumAlias,
-      cognitoIdentityPool: cognitoIdentityPool
+      rumAlias: rumAlias
     )
 
     XCTAssertEqual(config.region, region)
     XCTAssertEqual(config.rumAppMonitorId, rumAppMonitorId)
     XCTAssertEqual(config.rumAlias, rumAlias)
-    XCTAssertEqual(config.cognitoIdentityPool, cognitoIdentityPool)
   }
 
   func testAwsConfigInitWithDefaults() {
@@ -27,7 +24,6 @@ final class AwsConfigTests: XCTestCase {
     XCTAssertEqual(config.region, region)
     XCTAssertEqual(config.rumAppMonitorId, rumAppMonitorId)
     XCTAssertNil(config.rumAlias)
-    XCTAssertNil(config.cognitoIdentityPool)
   }
 
   func testAwsConfigJSONDecoderWithValues() throws {
@@ -35,8 +31,7 @@ final class AwsConfigTests: XCTestCase {
     {
       "region": "\(region)",
       "rumAppMonitorId": "\(rumAppMonitorId)",
-      "rumAlias": "\(rumAlias)",
-      "cognitoIdentityPool": "\(cognitoIdentityPool)"
+      "rumAlias": "\(rumAlias)"
     }
     """
 
@@ -45,7 +40,6 @@ final class AwsConfigTests: XCTestCase {
     XCTAssertEqual(config.region, region)
     XCTAssertEqual(config.rumAppMonitorId, rumAppMonitorId)
     XCTAssertEqual(config.rumAlias, rumAlias)
-    XCTAssertEqual(config.cognitoIdentityPool, cognitoIdentityPool)
   }
 
   func testAwsConfigJSONDecoderWithDefaults() throws {
@@ -61,7 +55,6 @@ final class AwsConfigTests: XCTestCase {
     XCTAssertEqual(config.region, region)
     XCTAssertEqual(config.rumAppMonitorId, rumAppMonitorId)
     XCTAssertNil(config.rumAlias)
-    XCTAssertNil(config.cognitoIdentityPool)
   }
 
   func testAwsConfigBuilder() {
@@ -69,12 +62,10 @@ final class AwsConfigTests: XCTestCase {
       .with(region: region)
       .with(rumAppMonitorId: rumAppMonitorId)
       .with(rumAlias: rumAlias)
-      .with(cognitoIdentityPool: cognitoIdentityPool)
       .build()
 
     XCTAssertEqual(config.region, region)
     XCTAssertEqual(config.rumAppMonitorId, rumAppMonitorId)
     XCTAssertEqual(config.rumAlias, rumAlias)
-    XCTAssertEqual(config.cognitoIdentityPool, cognitoIdentityPool)
   }
 }

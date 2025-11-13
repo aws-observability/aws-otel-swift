@@ -107,7 +107,7 @@ public class DefaultAppLaunchProvider: AppLaunchProvider {
 
     // Check if the system call succeeded (0 = success, anything else = error)
     guard result == 0 else {
-      AwsOpenTelemetryLogger.error("Failed to get process start time")
+      AwsInternalLogger.error("Failed to get process start time")
       return nil
     }
 
