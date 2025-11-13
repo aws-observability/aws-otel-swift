@@ -39,10 +39,8 @@ jobs:
           -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
-          -allowProvisioningUpdates \
-          CODE_SIGN_IDENTITY="Apple Development" \
+          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
-          CODE_SIGN_STYLE=Automatic \
           archive
     
     - name: Update ExportOptions with Team ID
@@ -62,10 +60,8 @@ jobs:
           -scheme PetClinic \
           -destination 'platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
-          -allowProvisioningUpdates \
-          CODE_SIGN_IDENTITY="Apple Development" \
+          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
-          CODE_SIGN_STYLE=Automatic \
           build-for-testing 
     
     - name: Configure AWS credentials
