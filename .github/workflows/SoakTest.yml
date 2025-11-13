@@ -39,6 +39,7 @@ jobs:
           -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
+          -allowProvisioningUpdates \
           archive
     
     - name: Update ExportOptions with Team ID
@@ -58,6 +59,7 @@ jobs:
           -scheme PetClinic \
           -destination 'platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
+          -allowProvisioningUpdates \
           build-for-testing 
     
     - name: Configure AWS credentials
