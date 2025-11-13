@@ -21,6 +21,10 @@ jobs:
       run: |
         sed -i '' "s/YOUR_TEAM_ID/${{ secrets.DEVELOPMENT_TEAM_ID }}/g" Examples/PetClinic/ExportOptions.plist
     
+    - name: List Available Certificates
+      run: |
+        security find-identity -v -p codesigning
+    
     - name: Build iOS App
       uses: yukiarrr/ios-build-action@v1.4.0
       with:
@@ -32,6 +36,7 @@ jobs:
         output-path: Examples/PetClinic
         export-method: development
         export-options: Examples/PetClinic/ExportOptions.plist
+        disable-automatic-code-signing: false
       env:
         FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 300
         FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 2
