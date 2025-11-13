@@ -1,6 +1,9 @@
 name: Post Release - Prepare Main for Next Development Cycle
 
 on:
+  push: 
+    branches:
+      - chore/release-workflows-v8
   workflow_dispatch:
     inputs:
       version_type:
