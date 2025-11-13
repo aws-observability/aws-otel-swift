@@ -40,10 +40,10 @@ jobs:
           -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
-          CODE_SIGN_STYLE=Manual \
+          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
+          PROVISIONING_PROFILE_SPECIFIER="aws-github-bot-profile-DO-NOT-DELETE"
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
-          PROVISIONING_PROFILE_SPECIFIER="${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}" \
-          clean archive
+          archive
     
     - name: Update ExportOptions with Team ID
       run: |
