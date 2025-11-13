@@ -1,9 +1,6 @@
 name: Post Release - Prepare Main for Next Development Cycle
 
 on:
-  push: 
-    branches:
-      - chore/release-workflows-v8
   workflow_dispatch:
     inputs:
       version_type:
@@ -107,7 +104,7 @@ jobs:
           
           git add .
           git commit -m "Prepare main for next development cycle: Update version to $NEW_VERSION"
-          git push --set-upstream origin "prepare-main-for-next-dev-cycle-${NEW_VERSION}" --force-with-lease
+          git push --set-upstream origin "prepare-main-for-next-dev-cycle-${NEW_VERSION}"
 
       - name: Create Pull Request to main
         env:
