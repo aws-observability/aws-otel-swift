@@ -42,15 +42,9 @@ jobs:
           $(if [ -n "$CHANGELOG_ENTRIES" ]; then echo "## What's Changed"; echo "$CHANGELOG_ENTRIES"; echo ""; fi)
           EOF
 
-          # Create archives
-          zip -r "aws-otel-swift-${VERSION}.zip" . -x "*.git*" "*.DS_Store*"
-          tar --exclude='.git*' --exclude='.DS_Store*' -czf "aws-otel-swift-${VERSION}.tar.gz" .
-
           # Tag a GitHub release
           gh release create "${VERSION}" \
              --target "$GITHUB_REF_NAME" \ 
              --title "Release ${VERSION}" \
              --notes-file release_notes.md \
-             --draft \
-             "aws-otel-swift-${VERSION}.zip" \
-             "aws-otel-swift-${VERSION}.tar.gz"
+             --draft 
