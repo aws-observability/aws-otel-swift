@@ -14,7 +14,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
   func testAwsOpenTelemetryConfigManualInitWithValues() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: rumAlias)
     let exportOverride = AwsExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
-    let applicationAttributes = ["application.version": "1.0.0"]
+    let otelResourceAttributes = ["service.version": "1.0.0"]
     let telemetryConfig = AwsTelemetryConfig()
 
     let config = AwsOpenTelemetryConfig(
@@ -22,7 +22,7 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
       exportOverride: exportOverride,
       sessionTimeout: sessionTimeout,
       sessionSampleRate: sessionSampleRate,
-      applicationAttributes: applicationAttributes,
+      otelResourceAttributes: otelResourceAttributes,
       debug: true,
       telemetry: telemetryConfig
     )
@@ -67,8 +67,8 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
       },
       "sessionTimeout": \(sessionTimeout),
       "sessionSampleRate": \(sessionSampleRate),
-      "applicationAttributes": {
-        "application.version": "1.0.0"
+      "otelResourceAttributes": {
+        "service.version": "1.0.0"
       },
       "debug": true,
       "telemetry": {
@@ -126,14 +126,14 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
       .with(exportOverride: exportOverride)
       .with(sessionTimeout: sessionTimeout)
       .with(debug: true)
-      .with(applicationAttributes: attributes)
+      .with(otelResourceAttributes: attributes)
       .build()
 
     XCTAssertEqual(config.aws.region, region)
     XCTAssertEqual(config.exportOverride?.logs, logsEndpoint)
     XCTAssertEqual(config.sessionTimeout, sessionTimeout)
     XCTAssertEqual(config.debug, true)
-    XCTAssertEqual(config.applicationAttributes?["key"], "value")
+    XCTAssertEqual(config.otelResourceAttributes?["key"], "value")
     XCTAssertEqual(config.telemetry?.startup?.enabled, true)
     XCTAssertEqual(config.telemetry?.sessionEvents?.enabled, true)
     XCTAssertEqual(config.telemetry?.crash?.enabled, true)

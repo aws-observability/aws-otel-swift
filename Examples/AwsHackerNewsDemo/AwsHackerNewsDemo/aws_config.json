@@ -9,9 +9,9 @@
   },
   "sessionTimeout": 300,
   "sessionSampleRate": 1.0,
-  "applicationAttributes": {
-    "app.version": "1.0.0",
-    "app.name": "AwsHackerNewsDemo"
+  "otelResourceAttributes": {
+    "service.version": "1.0.0",
+    "service.name": "AwsHackerNewsDemo"
   },
   "debug": true,
   "telemetry": {

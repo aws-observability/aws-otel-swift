@@ -26,10 +26,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testBasicBuilderCreationAndBuild() {
     // Test basic builder creation and build process
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let applicationAttributes = ["application.version": appVersion]
+    let otelResourceAttributes = ["service.version": appVersion]
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     // Should create builder and build successfully
@@ -40,11 +40,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     // Test both default endpoints and custom overrides
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = AwsExportOverride(logs: logsEndpoint, traces: tracesEndpoint)
-    let applicationAttributes = ["application.version": appVersion]
+    let otelResourceAttributes = ["service.version": appVersion]
     let configWithOverrides = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     // Should build successfully with endpoint overrides
@@ -55,11 +55,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     // Test handling of invalid endpoint URLs
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let exportOverride = AwsExportOverride(logs: invalidLogsUrl, traces: nil)
-    let applicationAttributes = ["application.version": appVersion]
+    let otelResourceAttributes = ["service.version": appVersion]
     let configWithInvalidEndpoint = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     // Should throw an error for invalid URL
@@ -71,10 +71,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testAlreadyInitializedError() {
     // Test that attempting to initialize twice throws an error
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let applicationAttributes = ["application.version": appVersion]
+    let otelResourceAttributes = ["service.version": appVersion]
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     // First initialization should succeed
@@ -92,10 +92,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testExporterCustomization() {
     // Test span and log exporter customization
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let applicationAttributes = ["application.version": appVersion]
+    let otelResourceAttributes = ["service.version": appVersion]
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     var spanCustomizerCalled = false
@@ -119,10 +119,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testProviderCustomization() {
     // Test tracer and logger provider customization
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let applicationAttributes = ["application.version": appVersion]
+    let otelResourceAttributes = ["service.version": appVersion]
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     var tracerCustomizerCalled = false
@@ -144,15 +144,15 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   }
 
   func testApplicationAttributesAddedToResource() {
-    // Test that applicationAttributes are added to resource during initialization
+    // Test that otelResourceAttributes are added to resource during initialization
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let applicationAttributes = [
-      "application.version": "1.2.3",
+    let otelResourceAttributes = [
+      "service.version": "1.2.3",
       "application.name": "TestApp"
     ]
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
-      applicationAttributes: applicationAttributes
+      otelResourceAttributes: otelResourceAttributes
     )
 
     XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
@@ -168,12 +168,12 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
 
       // Test enabled
       let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-      let applicationAttributes = ["application.version": appVersion]
+      let otelResourceAttributes = ["service.version": appVersion]
       let telemetryConfig = AwsTelemetryConfig()
       telemetryConfig.view = TelemetryFeature(enabled: true)
       let enabledConfig = AwsOpenTelemetryConfig(
         aws: awsConfig,
-        applicationAttributes: applicationAttributes,
+        otelResourceAttributes: otelResourceAttributes,
         telemetry: telemetryConfig
       )
 
@@ -189,7 +189,7 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       disabledTelemetryConfig.view = TelemetryFeature(enabled: false)
       let disabledConfig = AwsOpenTelemetryConfig(
         aws: awsConfig,
-        applicationAttributes: applicationAttributes,
+        otelResourceAttributes: otelResourceAttributes,
         telemetry: disabledTelemetryConfig
       )
 
@@ -203,7 +203,7 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       // Test default (should be enabled)
       let defaultConfig = AwsOpenTelemetryConfig(
         aws: awsConfig,
-        applicationAttributes: applicationAttributes
+        otelResourceAttributes: otelResourceAttributes
       )
 
       XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: defaultConfig).build())

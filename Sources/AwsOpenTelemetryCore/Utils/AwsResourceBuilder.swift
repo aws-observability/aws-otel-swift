@@ -52,9 +52,9 @@ public class AwsResourceBuilder {
       .merging(other: Resource(attributes: buildAttributeMap(cloudResourceAttributes)))
       .merging(other: Resource(attributes: buildAttributeMap(deviceResourceAttributes)))
 
-    // Add applicationAttributes to resource
-    if let applicationAttributes = config.applicationAttributes {
-      resource = resource.merging(other: Resource(attributes: buildAttributeMap(applicationAttributes)))
+    // Add otelResourceAttributes to resource
+    if let otelResourceAttributes = config.otelResourceAttributes {
+      resource = resource.merging(other: Resource(attributes: buildAttributeMap(otelResourceAttributes)))
     }
 
     return resource

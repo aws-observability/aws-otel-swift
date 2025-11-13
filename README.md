@@ -53,7 +53,7 @@ import AwsOpenTelemetryCore
 let awsConfig = AwsConfig(region: "your-region", rumAppMonitorId: "your-app-monitor-id")
 let config = AwsOpenTelemetryConfig(
     aws: awsConfig,
-    applicationAttributes: ["application.version": "1.0.0"]
+    otelResourceAttributes: ["service.version": "1.0.0"]
 )
 
 // Create a builder, customize it, and build in one go
@@ -139,8 +139,8 @@ The configuration follows this JSON schema:
   },
   "sessionTimeout": 1800,
   "sessionSampleRate": 1.0,
-  "applicationAttributes": {
-    "application.version": "1.0.0"
+  "otelResourceAttributes": {
+    "service.version": "1.0.0"
   },
   "debug": false,
   "telemetry": {
@@ -189,7 +189,7 @@ let config = AwsOpenTelemetryConfig(
     exportOverride: exportOverride,
     sessionTimeout: 1800,
     sessionSampleRate: 1.0,
-    applicationAttributes: ["application.version": "1.0.0"],
+    otelResourceAttributes: ["service.version": "1.0.0"],
     debug: false,
     telemetry: telemetryConfig
 )
@@ -236,12 +236,12 @@ The AWS OpenTelemetry Swift SDK provides automatic instrumentation for various i
 
 #### Root Configuration
 
-| Field                 | Type    | Required | Default | Description                                                                                                                                                                                  |
-| --------------------- | ------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| sessionTimeout        | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires                                                                                                                            |
-| sessionSampleRate     | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                                                                                                                                                          |
-| applicationAttributes | Object  | No       | nil     | Key-value pairs for application metadata. These are added to all logs and spans as regular attributes (via [global attributes API](Sources/AwsOpenTelemetryCore/GlobalAttributes/README.md)) |
-| debug                 | Boolean | No       | false   | Flag to enable debug logging                                                                                                                                                                 |
+| Field                  | Type    | Required | Default | Description                                                                                                                                                                                  |
+| ---------------------- | ------- | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| sessionTimeout         | Number  | No       | 1800    | The duration (in seconds) after which an inactive session expires                                                                                                                            |
+| sessionSampleRate      | Number  | No       | 1.0     | Session sample rate from 0.0 to 1.0                                                                                                                                                          |
+| otelResourceAttributes | Object  | No       | nil     | Key-value pairs for application metadata. These are added to all logs and spans as regular attributes (via [global attributes API](Sources/AwsOpenTelemetryCore/GlobalAttributes/README.md)) |
+| debug                  | Boolean | No       | false   | Flag to enable debug logging                                                                                                                                                                 |
 
 #### AwsTelemetryConfig
 
@@ -358,6 +358,7 @@ For more details about the individual scripts and how to set them up separately,
 ### Version Bumping
 
 The repository includes a script to manage version bumping across all relevant files. The script updates versions in:
+
 - `Sources/AwsOpenTelemetryCore/AwsOpenTelemetryAgent.swift` (SDK version)
 - `README.md` (package dependency version)
 - `Info.plist` (bundle version)
@@ -371,26 +372,31 @@ The regular `PostRelease.yml` workflow automatically bumps minor versions after 
 For manual version control, use the `scripts/bump-version.sh` script:
 
 **Patch Version** (x.y.z → x.y.z+1):
+
 ```bash
 ./scripts/bump-version.sh patch
 ```
 
 **Minor Version** (x.y.z → x.y+1.0):
+
 ```bash
 ./scripts/bump-version.sh minor
 ```
 
 **Major Version** (x.y.z → x+1.0.0):
+
 ```bash
 ./scripts/bump-version.sh major
 ```
 
 **Specific Version**:
+
 ```bash
 ./scripts/bump-version.sh 2.1.3
 ```
 
 **With Automatic Commit and Tag**:
+
 ```bash
 ./scripts/bump-version.sh patch --commit-tag
 ```

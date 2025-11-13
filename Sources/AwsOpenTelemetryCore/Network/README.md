@@ -12,8 +12,8 @@ URLSession instrumentation is automatically enabled when network telemetry is en
     "region": "us-west-2",
     "rumAppMonitorId": "your-app-monitor-id"
   },
-  "applicationAttributes": {
-    "application.version": "1.0.0"
+  "otelResourceAttributes": {
+    "service.version": "1.0.0"
   },
   "telemetry": {
     "network": { "enabled": true } // enabled by default

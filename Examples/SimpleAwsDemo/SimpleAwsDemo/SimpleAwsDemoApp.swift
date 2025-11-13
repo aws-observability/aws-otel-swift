@@ -47,8 +47,8 @@ struct SimpleAwsDemoApp: App {
       aws: awsConfig,
       exportOverride: exportOverride,
       // sessionTimeout: 30, // just 30 seconds for demo purposes
-      applicationAttributes: [
-        "application.version": "1.0.0"
+      otelResourceAttributes: [
+        "service.version": "1.0.0"
       ],
       debug: true
     )
