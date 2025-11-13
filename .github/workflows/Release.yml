@@ -44,7 +44,7 @@ jobs:
 
           # Tag a GitHub release
           gh release create "${VERSION}" \
-             --target "$GITHUB_REF_NAME" \ 
+             --target "$GITHUB_REF_NAME" \
              --title "Release ${VERSION}" \
              --notes-file release_notes.md \
              --draft 
