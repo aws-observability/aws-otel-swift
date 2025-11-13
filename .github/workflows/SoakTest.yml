@@ -40,7 +40,7 @@ jobs:
           -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -archivePath Examples/PetClinic/PetClinic.xcarchive \
-          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
+          CODE_SIGN_IDENTITY="Apple Development" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           CODE_SIGN_STYLE=Automatic \
           archive
@@ -62,7 +62,7 @@ jobs:
           -scheme PetClinic \
           -destination 'platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
-          CODE_SIGN_IDENTITY="${{ secrets.IOS_CODE_SIGN_IDENTITY }}" \
+          CODE_SIGN_IDENTITY="Apple Development" \
           DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM_ID }}" \
           CODE_SIGN_STYLE=Automatic \
           build-for-testing 
