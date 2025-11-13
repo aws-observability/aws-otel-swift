@@ -47,8 +47,6 @@ jobs:
           tar --exclude='.git*' --exclude='.DS_Store*' -czf "aws-otel-swift-${VERSION}.tar.gz" .
 
           # Tag a GitHub release
-          git tag ${VERSION}
-          git push origin ${VERSION}
           gh release create "${VERSION}" \
              --target "$GITHUB_REF_NAME" \ 
              --title "Release ${VERSION}" \
