@@ -36,7 +36,7 @@ jobs:
         output-path: Examples/PetClinic
         export-method: development
         export-options: Examples/PetClinic/ExportOptions.plist
-        disable-automatic-code-signing: false
+        code-signing-identity: iOS Distribution
       env:
         FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 300
         FASTLANE_XCODEBUILD_SETTINGS_RETRIES: 2
