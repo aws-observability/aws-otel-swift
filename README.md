@@ -23,7 +23,7 @@ Add the following to your `Package.swift` file:
 ```swift
 // In your package dependencies:
 dependencies: [
-    .package(url: "https://github.com/aws-observability/aws-otel-swift.git", from: "0.0.0")
+    .package(url: "https://github.com/aws-observability/aws-otel-swift.git", from: "0.1.0")
 ]
 
 // In your target dependencies:

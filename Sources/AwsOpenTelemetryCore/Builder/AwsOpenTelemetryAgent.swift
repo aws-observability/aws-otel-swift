@@ -37,7 +37,7 @@ import OpenTelemetryApi
 
   /// The version of the AWS OpenTelemetry Swift SDK instrumentation
   /// This is automatically managed by scripts/bump-version.sh
-  static let version = "0.0.0"
+  static let version = "0.1.0"
 
   /// Shared singleton instance for global access to the AWS OpenTelemetry agent
   @objc public static let shared = AwsOpenTelemetryAgent()
