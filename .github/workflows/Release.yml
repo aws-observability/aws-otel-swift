@@ -21,7 +21,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         # GITHUB_REF_NAME is a GitHub Actions environment variable that contains the short ref name of the branch or tag that triggered the workflow run.
-        # SPM officially recognizes tags both with and without this prefix. 1.0.0 is the recommended and standard way to tag a release for Swift packages.
+        # SPM officially recognizes tags both with and without v in `v0.0.0`
         run: |
           # Extract CHANGELOG entries for this version
           CHANGELOG_ENTRIES=$(python3 -c "
@@ -44,8 +44,8 @@ jobs:
 
           # Tag a GitHUb release
           gh release create --target "$GITHUB_REF_NAME" \ 
-             --title "Release ${VERSION}" \
+             --title "Release v${VERSION}" \
              --notes-file release_notes.md \
              --draft \
-             "${VERSION}" \
+             "v${VERSION}" \
              .
