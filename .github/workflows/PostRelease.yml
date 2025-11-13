@@ -88,7 +88,7 @@ jobs:
 
       - name: Update version to next development version in main
         run: |
-          git checkout -b "prepare-main-for-next-dev-cycle-${NEW_VERSION}" main
+          git checkout -b "prepare-main-for-next-dev-cycle-${NEW_VERSION}"
           
           # Use bump-version script with version type
           echo "y" | ./scripts/bump-version.sh "${{ github.event.inputs.version_type || 'minor' }}"
