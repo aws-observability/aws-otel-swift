@@ -34,7 +34,7 @@ jobs:
         team-id: ${{ secrets.DEVELOPMENT_TEAM_ID }}
         scheme: PetClinic
         output-path: Examples/PetClinic
-        export-method: development
+        export-method: debugging
         export-options: Examples/PetClinic/ExportOptions.plist
       env:
         FASTLANE_XCODEBUILD_SETTINGS_TIMEOUT: 300
