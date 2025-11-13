@@ -111,7 +111,7 @@ jobs:
 
       - name: Create Pull Request to main
         env:
-          GITHUB_TOKEN: ${{ env.BOT_TOKEN_GITHUB_RW_PATOKEN }}
+          GH_TOKEN: ${{ env.BOT_TOKEN }}
         run: |
           gh pr create --title "Post release: Update version to $NEW_VERSION" \
                        --body "This PR prepares the main branch for the next development cycle by updating the version to $NEW_VERSION in Info.plist.
