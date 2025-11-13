@@ -21,7 +21,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         # GITHUB_REF_NAME is a GitHub Actions environment variable that contains the short ref name of the branch or tag that triggered the workflow run.
-        # SPM officially recognizes tags both with and without v in `v0.0.0`
+        # SPM officially recognizes tags both with and without v in `v0.0.0` but recommends without v.
         run: |
           # Extract CHANGELOG entries for this version
           CHANGELOG_ENTRIES=$(python3 -c "
@@ -42,10 +42,9 @@ jobs:
           $(if [ -n "$CHANGELOG_ENTRIES" ]; then echo "## What's Changed"; echo "$CHANGELOG_ENTRIES"; echo ""; fi)
           EOF
 
-          # Tag a GitHUb release
-          gh release create --target "$GITHUB_REF_NAME" \ 
-             --title "Release v${VERSION}" \
+          # Tag a GitHub release
+          gh release create "${VERSION}" \
+             --target "$GITHUB_REF_NAME" \ 
+             --title "Release ${VERSION}" \
              --notes-file release_notes.md \
-             --draft \
-             "v${VERSION}" \
-             .
+             --draft 
