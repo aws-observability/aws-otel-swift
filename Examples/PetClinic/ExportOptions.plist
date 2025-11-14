@@ -7,7 +7,12 @@
     <key>teamID</key>
     <string>YOUR_TEAM_ID</string>
     <key>signingStyle</key>
-    <string>automatic</string>
+    <string>manual</string>
+    <key>provisioningProfiles</key>
+    <dict>
+        <key>com.rum.PetClinic</key>
+        <string>YOUR_PROVISIONING_PROFILE_NAME</string>
+    </dict>
     <key>compileBitcode</key>
     <false/>
     <key>uploadBitcode</key>

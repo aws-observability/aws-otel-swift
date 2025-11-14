@@ -48,9 +48,10 @@ jobs:
           -allowProvisioningUpdates \
           archive
     
-    - name: Update ExportOptions with Team ID
+    - name: Update ExportOptions with Team ID and Provisioning Profile
       run: |
         sed -i '' 's/YOUR_TEAM_ID/${{ secrets.DEVELOPMENT_TEAM_ID }}/g' Examples/PetClinic/ExportOptions.plist
+        sed -i '' 's/YOUR_PROVISIONING_PROFILE_NAME/aws-github-bot-profile-DO-NOT-DELETE/g' Examples/PetClinic/ExportOptions.plist
 
     - name: Export IPA
       run: |
