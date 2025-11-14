@@ -239,21 +239,15 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
     #endif
   }
 
+  /// Blocks getCPUUsage() if memory deallocation failure occurs at least once.
   static var deallocationFailure = false
 
-  /// Gets CPU utilization as a ratio (0.0 to ~8.0+ on multi-core devices)
+  /// Gets CPU utilization as a ratio (0.0 to ~8.0+ on multi-core devices) via `thread_info` and `threadsList` APIs
   ///
   /// Units: Ratio where 1.0 = 100% of one CPU core
   /// - Single core at 50% = 0.5
   /// - Dual core at 100% each = 2.0
   /// - Quad core at 75% each = 3.0
-  ///
-  /// Calculates CPU usage by:
-  /// 1. Getting all threads for the current task via `task_threads`
-  /// 2. Querying each thread's basic info via `thread_info` with `THREAD_BASIC_INFO`
-  /// 3. Summing `cpu_usage` for non-idle threads (where `TH_FLAGS_IDLE` is not set)
-  /// 4. Normalizing by `TH_USAGE_SCALE` to get a 0.0-1.0 range per thread
-  /// 5. Returning the total usage across all threads
   ///
   /// - Returns: CPU utilization ratio (rounded to 3 decimal places), or nil if calculation fails
   public static func getCPUUsage() -> Double? {
@@ -267,7 +261,7 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
     #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
       var totalUsage = 0.0
 
-      // 1. Fetch list of threads within task via task_threads API
+      // 1. Fetch list of threads within task via `task_threads` API
       // https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_threads.html
       var threadsList: thread_act_array_t? // dynamic list of thread ids
       var threadsCount = mach_msg_type_number_t(0) // number of threads in current task
@@ -336,7 +330,9 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
             totalUsage += Double(threadInfo.cpu_usage) / Double(TH_USAGE_SCALE)
           }
         } else {
-          AwsInternalLogger.debug("Failed to retrieve thread info for thread \(index): \(result)")
+          // This can fail due to invalid address, which would result in KERN_INVALID_ARGUMENT, KERN_FAILURE, or KERN_INVALID_ADDRESS.
+          // However, this is unlikely and the kernel guards against these issues if they occur. Failure is silently skipped and locally logged
+          AwsInternalLogger.debug("Failed to retrieve `thread_info` for thread \(index): \(result)")
         }
       }
       return roundValue(totalUsage)
@@ -346,7 +342,7 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
     #endif
   }
 
-  /// Gets memory usage in megabytes (RSS - Resident Set Size)
+  /// Gets memory usage in megabytes (RSS - Resident Set Size) via `task_info` API
   ///
   /// Units: Megabytes of physical memory currently used by the process
   /// - Example: 100.0 = 100 MB
@@ -361,18 +357,36 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
   public static func getMemoryUsage() -> Double? {
     #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
       var info = mach_task_basic_info()
+      // Kernel API counts size in integer_t units (not bytes)
+      // integer_t = 4 bytes, so divide struct size by 4 to get count
       var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
-      let result = withUnsafeMutablePointer(to: &info) {
-        $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-          task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+      // Get RSS memory via `task_info` API
+      /// https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_info.html
+      let result = withUnsafeMutablePointer(to: &info) { structPointer in
+        // See https://developer.apple.com/documentation/swift/unsafemutablepointer/withmemoryrebound(to:capacity:_:)
+        structPointer.withMemoryRebound(
+          to: integer_t.self,
+          capacity: 1 // for working with a single value,
+        ) { reboundPointer in
+          task_info(
+            mach_task_self_,
+            task_flavor_t(MACH_TASK_BASIC_INFO),
+            reboundPointer,
+            &count
+          )
         }
       }
 
-      guard result == KERN_SUCCESS else { return nil }
+      guard result == KERN_SUCCESS else {
+        // This can fail due to invalid memory lookup, which would result in KERN_INVALID_ARGUMENT, KERN_FAILURE, or KERN_INVALID_ADDRESS.
+        // However, this is unlikely and the kernel guards against these issues if they occur.
+        AwsInternalLogger.debug("Failed to fetch task_info: \(result)")
+        return nil
+      }
 
-      let memoryMB = Double(info.resident_size) / (1024 * 1024)
-      return roundValue(memoryMB)
+      // Round and convert to MB
+      return roundValue(Double(info.resident_size) / (1024 * 1024))
     #else
       return nil
     #endif
