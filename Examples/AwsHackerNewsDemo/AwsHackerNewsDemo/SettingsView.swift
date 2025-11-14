@@ -26,6 +26,8 @@ struct SettingsView: View {
   @State private var showingCrashPicker = false
   @State private var showingUserIdEditor = false
   @State private var showingTelemetryGenerator = false
+  @State private var showingCpuTest = false
+  @State private var showingMemoryTest = false
   @State private var timer: Timer?
 
   var body: some View {
@@ -89,6 +91,10 @@ struct SettingsView: View {
               showingCrashPicker = true
             } else if item.0 == "Load Test" {
               showingTelemetryGenerator = true
+            } else if item.0 == "CPU Test" {
+              showingCpuTest = true
+            } else if item.0 == "Memory Test" {
+              showingMemoryTest = true
             }
           }) {
             HStack {
@@ -107,7 +113,7 @@ struct SettingsView: View {
                 .font(.caption)
             }
           }
-          .help(item.0 == "Trigger App Hang" ? "Tap to configure app hang testing" : item.0 == "Trigger App Crash" ? "Tap to configure app crash testing" : "Tap to run load test with custom logs and spans")
+          .help(item.0 == "Trigger App Hang" ? "Tap to configure app hang testing" : item.0 == "Trigger App Crash" ? "Tap to configure app crash testing" : item.0 == "Load Test" ? "Tap to run load test with custom logs and spans" : item.0 == "CPU Test" ? "Tap to run CPU intensive test with logging" : "Tap to run memory allocation test with logging")
         }
       }
     }
@@ -132,6 +138,12 @@ struct SettingsView: View {
     .sheet(isPresented: $showingTelemetryGenerator) {
       TelemetryGeneratorView()
     }
+    .sheet(isPresented: $showingCpuTest) {
+      CpuTestView()
+    }
+    .sheet(isPresented: $showingMemoryTest) {
+      MemoryTestView()
+    }
     .onChange(of: showingUserIdEditor) { isShowing in
       if !isShowing {
         loadSessionData()
@@ -153,7 +165,9 @@ struct SettingsView: View {
     troubleshootingData = [
       ("Trigger App Hang", "Tap to configure"),
       ("Trigger App Crash", "Tap to configure"),
-      ("Load Test", "Tap to configure")
+      ("Load Test", "Tap to configure"),
+      ("CPU Test", "Tap to configure"),
+      ("Memory Test", "Tap to configure")
     ]
 
     guard let currentSession = AwsSessionManagerProvider.getInstance().peekSession() else {
@@ -1024,5 +1038,335 @@ struct TelemetryGeneratorView: View {
     let expireTime = currentSession.expireTime
     let timeToExpiry = expireTime.timeIntervalSinceNow
     sessionExpiry = timeToExpiry <= 0 ? "Expired" : "\(Int(timeToExpiry))s"
+  }
+}
+
+struct CpuTestView: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var isRunning = false
+  @State private var duration: Int = 30
+  @State private var cpuTimer: Timer?
+  @State private var logTimer: Timer?
+  @State private var startTime: Date?
+  @State private var cpuIntensity: Double = 0.0
+
+  var body: some View {
+    AwsOTelTraceView("CpuTestView") {
+      NavigationView {
+        VStack(spacing: 20) {
+          Text("CPU Load Test")
+            .font(.system(.headline, design: .monospaced, weight: .medium))
+            .padding()
+
+          Text("Gradually increases CPU utilization over time")
+            .font(.system(.caption, design: .monospaced))
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
+
+          VStack(spacing: 12) {
+            HStack {
+              Text("Duration:")
+                .font(.system(.body, design: .monospaced, weight: .medium))
+              Spacer()
+              Stepper(value: $duration, in: 10 ... 300, step: 10) {
+                Text("\(duration)s")
+                  .font(.system(.body, design: .monospaced))
+              }
+            }
+
+            if isRunning {
+              VStack(spacing: 8) {
+                Text("CPU Usage: \(Int(cpuIntensity * 100))%")
+                  .font(.system(.body, design: .monospaced, weight: .medium))
+                  .foregroundColor(.orange)
+
+                ProgressView(value: cpuIntensity)
+                  .progressViewStyle(LinearProgressViewStyle(tint: .orange))
+              }
+            }
+          }
+          .padding(.horizontal)
+
+          Button(isRunning ? "Stop Test" : "Start CPU Test") {
+            if isRunning {
+              stopCpuTest()
+            } else {
+              startCpuTest()
+            }
+          }
+          .foregroundColor(.white)
+          .padding(.horizontal, 24)
+          .padding(.vertical, 12)
+          .background(isRunning ? Color.red : Color.orange)
+          .cornerRadius(8)
+
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .navigationTitle("CPU Test")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") {
+              stopCpuTest()
+              dismiss()
+            }
+          }
+        }
+        .onDisappear {
+          stopCpuTest()
+        }
+      }
+    }
+  }
+
+  private func startCpuTest() {
+    isRunning = true
+    startTime = Date()
+    cpuIntensity = 0.0
+
+    let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+
+    // Log once per second
+    logTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+      guard let start = startTime else { return }
+      let elapsed = Date().timeIntervalSince(start)
+
+      logger.logRecordBuilder()
+        .setEventName("CPU Test Progress \(String(format: "%.1f", elapsed))/\(duration)s")
+        .setTimestamp(Date())
+        .setAttributes([
+          "test.type": AttributeValue.string("cpu_load"),
+          "test.elapsed_seconds": AttributeValue.double(elapsed),
+          "test.duration_seconds": AttributeValue.int(duration),
+          "test.cpu_intensity": AttributeValue.double((cpuIntensity * 100).rounded() / 100),
+          "test.progress_percent": AttributeValue.double((elapsed / Double(duration)) * 100)
+        ])
+        .emit()
+    }
+
+    // CPU intensive work with increasing intensity
+    cpuTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+      guard let start = startTime else { return }
+      let elapsed = Date().timeIntervalSince(start)
+
+      if elapsed >= Double(duration) {
+        stopCpuTest()
+        return
+      }
+
+      // Gradually increase CPU intensity over time (targeting 100% max)
+      cpuIntensity = min(elapsed / Double(duration), 1.0)
+
+      // Create sustained CPU load on multiple threads
+      let threadCount = max(1, min(Int(cpuIntensity * 8), 8))
+      for _ in 0 ..< threadCount {
+        DispatchQueue.global(qos: .userInitiated).async {
+          // Continuous work without pauses for higher CPU usage
+          let endTime = Date().addingTimeInterval(0.09)
+          var counter = 0
+          while Date() < endTime {
+            // More intensive mathematical operations
+            for i in 0 ..< 5000 {
+              counter += i * i * i + i * i + i
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private func stopCpuTest() {
+    isRunning = false
+    cpuTimer?.invalidate()
+    logTimer?.invalidate()
+    cpuTimer = nil
+    logTimer = nil
+
+    if let start = startTime {
+      let elapsed = Date().timeIntervalSince(start)
+      let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+
+      logger.logRecordBuilder()
+        .setEventName("CPU Test Completed")
+        .setTimestamp(Date())
+        .setAttributes([
+          "test.type": AttributeValue.string("cpu_load"),
+          "test.total_duration": AttributeValue.double(elapsed),
+          "test.max_intensity": AttributeValue.double((cpuIntensity * 100).rounded() / 100)
+        ])
+        .emit()
+    }
+
+    startTime = nil
+    cpuIntensity = 0.0
+  }
+}
+
+struct MemoryTestView: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var isRunning = false
+  @State private var duration: Int = 30
+  @State private var memoryTimer: Timer?
+  @State private var logTimer: Timer?
+  @State private var startTime: Date?
+  @State private var memoryIntensity: Double = 0.0
+  @State private var allocatedMemory: [Data] = []
+
+  var body: some View {
+    AwsOTelTraceView("MemoryTestView") {
+      NavigationView {
+        VStack(spacing: 20) {
+          Text("Memory Load Test")
+            .font(.system(.headline, design: .monospaced, weight: .medium))
+            .padding()
+
+          Text("Gradually increases memory allocation over time")
+            .font(.system(.caption, design: .monospaced))
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
+
+          VStack(spacing: 12) {
+            HStack {
+              Text("Duration:")
+                .font(.system(.body, design: .monospaced, weight: .medium))
+              Spacer()
+              Stepper(value: $duration, in: 10 ... 300, step: 10) {
+                Text("\(duration)s")
+                  .font(.system(.body, design: .monospaced))
+              }
+            }
+
+            if isRunning {
+              VStack(spacing: 8) {
+                Text("Memory Allocated: \(Int(memoryIntensity * 50))MB")
+                  .font(.system(.body, design: .monospaced, weight: .medium))
+                  .foregroundColor(.blue)
+
+                ProgressView(value: memoryIntensity)
+                  .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+              }
+            }
+          }
+          .padding(.horizontal)
+
+          Button(isRunning ? "Stop Test" : "Start Memory Test") {
+            if isRunning {
+              stopMemoryTest()
+            } else {
+              startMemoryTest()
+            }
+          }
+          .foregroundColor(.white)
+          .padding(.horizontal, 24)
+          .padding(.vertical, 12)
+          .background(isRunning ? Color.red : Color.blue)
+          .cornerRadius(8)
+
+          Spacer()
+        }
+        .padding(.horizontal, 16)
+        .navigationTitle("Memory Test")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") {
+              stopMemoryTest()
+              dismiss()
+            }
+          }
+        }
+        .onDisappear {
+          stopMemoryTest()
+        }
+      }
+    }
+  }
+
+  private func startMemoryTest() {
+    isRunning = true
+    startTime = Date()
+    memoryIntensity = 0.0
+    allocatedMemory = []
+
+    let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+
+    // Log once per second
+    logTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+      guard let start = startTime else { return }
+      let elapsed = Date().timeIntervalSince(start)
+
+      logger.logRecordBuilder()
+        .setEventName("Memory Test Progress \(String(format: "%.1f", elapsed))/\(duration)s")
+        .setTimestamp(Date())
+        .setAttributes([
+          "test.type": AttributeValue.string("memory_load"),
+          "test.elapsed_seconds": AttributeValue.double(elapsed),
+          "test.duration_seconds": AttributeValue.int(duration),
+          "test.memory_allocated_mb": AttributeValue.double(memoryIntensity * 50),
+          "test.progress_percent": AttributeValue.double((elapsed / Double(duration)) * 100)
+        ])
+        .emit()
+    }
+
+    // Memory allocation with increasing intensity
+    memoryTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+      guard let start = startTime else { return }
+      let elapsed = Date().timeIntervalSince(start)
+
+      if elapsed >= Double(duration) {
+        stopMemoryTest()
+        return
+      }
+
+      // Gradually increase memory allocation over time (up to 50MB for safety)
+      memoryIntensity = min(elapsed / Double(duration), 1.0)
+
+      // Allocate memory in 1MB chunks and actually use it to force RSS allocation
+      let chunkSize = 1024 * 1024 // 1MB
+      let targetChunks = Int(memoryIntensity * 50) // Up to 50 chunks (50MB)
+
+      while allocatedMemory.count < targetChunks {
+        var chunk = Data(count: chunkSize)
+        // Actually write to the memory to force physical allocation
+        chunk.withUnsafeMutableBytes { bytes in
+          let buffer = bytes.bindMemory(to: UInt8.self)
+          for i in stride(from: 0, to: chunkSize, by: 4096) { // Write every 4KB page
+            buffer[i] = UInt8(i % 256)
+          }
+        }
+        allocatedMemory.append(chunk)
+      }
+    }
+  }
+
+  private func stopMemoryTest() {
+    isRunning = false
+    memoryTimer?.invalidate()
+    logTimer?.invalidate()
+    memoryTimer = nil
+    logTimer = nil
+
+    if let start = startTime {
+      let elapsed = Date().timeIntervalSince(start)
+      let logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: debugScope)
+
+      logger.logRecordBuilder()
+        .setEventName("Memory Test Completed")
+        .setTimestamp(Date())
+        .setAttributes([
+          "test.type": AttributeValue.string("memory_load"),
+          "test.total_duration": AttributeValue.double(elapsed),
+          "test.max_memory_allocated_mb": AttributeValue.double(memoryIntensity * 50)
+        ])
+        .emit()
+    }
+
+    // Release allocated memory
+    allocatedMemory.removeAll()
+    startTime = nil
+    memoryIntensity = 0.0
   }
 }
