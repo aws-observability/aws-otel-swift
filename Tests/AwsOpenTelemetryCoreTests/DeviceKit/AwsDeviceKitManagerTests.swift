@@ -119,7 +119,7 @@ class AwsDeviceKitManagerTests: XCTestCase {
 
         XCTAssertEqual(battery, 0.75)
         XCTAssertEqual(cpu, 0.5)
-        XCTAssertEqual(memory, 1024 * 1024 * 100)
+        XCTAssertEqual(memory, 100.0)
 
         expectation.fulfill()
       }
