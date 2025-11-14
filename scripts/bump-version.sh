@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # File paths
-AGENT_FILE="Sources/AwsOpenTelemetryCore/AwsOpenTelemetryAgent.swift"
+AGENT_FILE="Sources/AwsOpenTelemetryCore/Builder/AwsOpenTelemetryAgent.swift"
 README_FILE="README.md"
 INFO_PLIST_FILE="Info.plist"
 
