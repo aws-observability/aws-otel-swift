@@ -239,6 +239,8 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
     #endif
   }
 
+  static var deallocationFailure = false
+
   /// Gets CPU utilization as a ratio (0.0 to ~8.0+ on multi-core devices)
   ///
   /// Units: Ratio where 1.0 = 100% of one CPU core
@@ -255,39 +257,91 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
   ///
   /// - Returns: CPU utilization ratio (rounded to 3 decimal places), or nil if calculation fails
   public static func getCPUUsage() -> Double? {
+    // This method involves manual memory allocation to capture CPU utilization. If we fail ever fail to deallocate the memory,
+    // then we will block this method to mitigate possibility of memory leak. If we want to relax while still enforcing safeguards,
+    // then we can migrate to exponential backoff or circuit breaker pattern.
+    guard !deallocationFailure else {
+      return nil
+    }
+
     #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
       var totalUsage = 0.0
-      var threadsList: thread_act_array_t?
-      var threadsCount = mach_msg_type_number_t(0)
 
-      guard task_threads(mach_task_self_, &threadsList, &threadsCount) == KERN_SUCCESS else {
-        return nil
+      // 1. Fetch list of threads within task via task_threads API
+      // https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_threads.html
+      var threadsList: thread_act_array_t? // dynamic list of thread ids
+      var threadsCount = mach_msg_type_number_t(0) // number of threads in current task
+
+      // Populate vars
+      let threadsResult = task_threads(
+        mach_task_self_, // The current process handle
+        &threadsList, // Popualte `threadsList` with list of thread ids
+        &threadsCount // Populate `threadsCount` with thread count
+      )
+      guard threadsResult == KERN_SUCCESS,
+            let _ = threadsList,
+            threadsCount > 0,
+            threadsCount < 1000 else { // Sanity check for reasonable thread count
+        return nil // Failed to get thread info
       }
 
+      // 2. Manually de-allocate memory for `threadsList` via vm_deallocate API on function exit.
+      // Swift runtime is unaware that we have allocated this memory, so it will not be garbage collected.
+      // https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/vm_deallocate.html
       defer {
         if let threadsList {
-          vm_deallocate(mach_task_self_, vm_address_t(UInt(bitPattern: threadsList)), vm_size_t(Int(threadsCount) * MemoryLayout<thread_t>.stride))
+          let deallocResult = vm_deallocate(
+            mach_task_self_, // Current process
+            vm_address_t(UInt(bitPattern: threadsList)), // Memory address to free
+            vm_size_t(Int(threadsCount) * MemoryLayout<thread_t>.stride) // Size to deallocate
+          )
+          if deallocResult != KERN_SUCCESS {
+            // Memory deallocation is very unlikely, but in that event we will shut down this method.
+            deallocationFailure = true
+            AwsInternalLogger.debug("Failed to deallocate thread list memory: \(deallocResult)")
+          }
         }
       }
 
-      for index in 0 ..< threadsCount {
+      // 3. Calculate thread usage via `thread_info` API
+      // https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/thread_info.html
+      for index: mach_msg_type_number_t in 0 ..< threadsCount {
         var threadInfo = thread_basic_info()
         var threadInfoCount = mach_msg_type_number_t(THREAD_INFO_MAX)
 
-        let result = withUnsafeMutablePointer(to: &threadInfo) {
-          $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
-            thread_info(threadsList![Int(index)], thread_flavor_t(THREAD_BASIC_INFO), $0, &threadInfoCount)
+        let result = withUnsafeMutablePointer(to: &threadInfo) { structPointer in
+          structPointer.withMemoryRebound(to: integer_t.self, capacity: 1) { reboundPointer in
+            // Index out of bounds exceptions cause crashes, so it's nice to add an extra guard to avoid forced lookup.
+            guard let threadsList, Int(index) < Int(threadsCount) else {
+              return KERN_INVALID_ARGUMENT
+            }
+            let threadHandle = threadsList[Int(index)]
+            let infoType = thread_flavor_t(THREAD_BASIC_INFO)
+
+            // Call kernel for specific thread
+            return thread_info(
+              threadHandle, // Specific thread to query
+              infoType, // THREAD_BASIC_INFO = basic thread stats
+              reboundPointer, // Pointer to our struct (as integer_t*)
+              &threadInfoCount // In/out: expected/actual data size
+            )
           }
         }
 
         if result == KERN_SUCCESS {
-          if threadInfo.flags & TH_FLAGS_IDLE == 0 {
+          // If thread is idle, then thread cpu_usage should be assumed to be zero for monitoring purposes.
+          if (threadInfo.flags & TH_FLAGS_IDLE) == 0 {
+            // CPU usage is scaled by TH_USAGE_SCALE, so we need to divide again in order to get a percentage
+            // See GNU docs - https://www.gnu.org/software/hurd/gnumach-doc/Thread-Information.html
             totalUsage += Double(threadInfo.cpu_usage) / Double(TH_USAGE_SCALE)
           }
+        } else {
+          AwsInternalLogger.debug("Failed to retrieve thread info for thread \(index): \(result)")
         }
       }
       return roundValue(totalUsage)
     #else
+      AwsInternalLogger.debug("Platform does not support CPU")
       return nil
     #endif
   }

@@ -258,4 +258,16 @@ class DeviceKitPolyfillTests: XCTestCase {
       XCTAssertNil(memoryUsage)
     #endif
   }
+
+  func testCPUUsageAfterDeallocationFailure() {
+    // Setup
+    DeviceKitPolyfill.deallocationFailure = true
+
+    // Run
+    let blockedResult = DeviceKitPolyfill.getCPUUsage()
+    XCTAssertNil(blockedResult, "getCPUUsage should return nil after deallocation failure")
+
+    // Reset
+    DeviceKitPolyfill.deallocationFailure = false
+  }
 }
