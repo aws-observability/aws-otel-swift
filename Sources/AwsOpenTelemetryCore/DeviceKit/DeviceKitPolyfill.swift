@@ -21,7 +21,7 @@
  */
 
 import Foundation
-#if canImport(UIKit) && !os(watchOS)
+#if canImport(UIKit) && os(iOS)
   import UIKit
 #endif
 
@@ -226,10 +226,11 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
     return mapToDevice(identifier: identifier)
   }
 
-  /// Gets the battery level as a percentage (0.0 to 1.0)
+  /// Gets the battery level as a percentage (0.0 to 1.0). As of now, only iOS is supported via UIKIt.
+  /// In the future, we can onboard to IOKit to get broader platform support.
   /// - Returns: Battery level where 0.0 = 0%, 1.0 = 100%, or nil if unavailable
   public static func getBatteryLevel() -> Double? {
-    #if canImport(UIKit) && !os(watchOS)
+    #if canImport(UIKit) && os(iOS)
       UIDevice.current.isBatteryMonitoringEnabled = true
       let level = UIDevice.current.batteryLevel
       return level >= 0 ? roundValue(Double(level)) : nil
