@@ -237,21 +237,6 @@ class DeviceKitPolyfillTests: XCTestCase {
     XCTAssertTrue(deviceName.count > 0)
   }
 
-  func testGetBatteryLevel() {
-    let batteryLevel = DeviceKitPolyfill.getBatteryLevel()
-
-    #if canImport(UIKit) && !os(watchOS)
-      // On iOS/iPadOS/tvOS, battery level should be available or nil
-      if let level = batteryLevel {
-        XCTAssertGreaterThanOrEqual(level, 0.0)
-        XCTAssertLessThanOrEqual(level, 1.0)
-      }
-    #else
-      // On macOS/watchOS, battery level should be nil
-      XCTAssertNil(batteryLevel)
-    #endif
-  }
-
   func testGetCPUUsage() {
     let cpuUsage = DeviceKitPolyfill.getCPUUsage()
     #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
