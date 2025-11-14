@@ -64,7 +64,7 @@ jobs:
       run: |
         xcodebuild -project Examples/PetClinic/PetClinic.xcodeproj \
           -scheme PetClinic \
-          -destination 'platform=iOS' \
+          -destination 'generic/platform=iOS' \
           -derivedDataPath Examples/PetClinic/build \
           -allowProvisioningUpdates \
           build-for-testing 
