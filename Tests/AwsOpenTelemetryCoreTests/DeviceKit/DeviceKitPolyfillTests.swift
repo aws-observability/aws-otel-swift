@@ -123,6 +123,14 @@ class DeviceKitPolyfillTests: XCTestCase {
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "iPod7,1"), "iPod touch (6th generation)")
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "iPod9,1"), "iPod touch (7th generation)")
     }
+
+    func testGetBatteryLevel() {
+      let batteryLevel = DeviceKitPolyfill.getBatteryLevel()
+      if let level = batteryLevel {
+        XCTAssertGreaterThanOrEqual(level, 0.0)
+        XCTAssertLessThanOrEqual(level, 1.0)
+      }
+    }
   #endif
 
   #if os(tvOS)
@@ -131,6 +139,14 @@ class DeviceKitPolyfillTests: XCTestCase {
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "AppleTV6,2"), "Apple TV 4K")
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "AppleTV11,1"), "Apple TV 4K (2nd generation)")
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "AppleTV14,1"), "Apple TV 4K (3rd generation)")
+    }
+
+    func testGetBatteryLevel() {
+      let batteryLevel = DeviceKitPolyfill.getBatteryLevel()
+      if let level = batteryLevel {
+        XCTAssertGreaterThanOrEqual(level, 0.0)
+        XCTAssertLessThanOrEqual(level, 1.0)
+      }
     }
   #endif
 
@@ -191,6 +207,11 @@ class DeviceKitPolyfillTests: XCTestCase {
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "Watch7,18"), "Apple Watch Series 11 46mm")
       XCTAssertEqual(DeviceKitPolyfill.mapToDevice(identifier: "Watch7,20"), "Apple Watch Series 11 46mm")
     }
+
+    func testGetBatteryLevel() {
+      let batteryLevel = DeviceKitPolyfill.getBatteryLevel()
+      XCTAssertNil(batteryLevel)
+    }
   #endif
 
   func testSimulatorIdentifiers() {
@@ -214,5 +235,39 @@ class DeviceKitPolyfillTests: XCTestCase {
     let deviceName = DeviceKitPolyfill.getDeviceName()
     XCTAssertFalse(deviceName.isEmpty)
     XCTAssertTrue(deviceName.count > 0)
+  }
+
+  func testGetCPUUsage() {
+    let cpuUsage = DeviceKitPolyfill.getCPUUsage()
+    #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+      if let cpu = cpuUsage {
+        XCTAssertGreaterThanOrEqual(cpu, 0.0)
+      }
+    #else
+      XCTAssertNil(cpuUsage)
+    #endif
+  }
+
+  func testGetMemoryUsage() {
+    let memoryUsage = DeviceKitPolyfill.getMemoryUsage()
+    #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS)
+      if let memory = memoryUsage {
+        XCTAssertGreaterThan(memory, 0)
+      }
+    #else
+      XCTAssertNil(memoryUsage)
+    #endif
+  }
+
+  func testCPUUsageAfterDeallocationFailure() {
+    // Setup
+    DeviceKitPolyfill.deallocationFailure = true
+
+    // Run
+    let blockedResult = DeviceKitPolyfill.getCPUUsage()
+    XCTAssertNil(blockedResult, "getCPUUsage should return nil after deallocation failure")
+
+    // Reset
+    DeviceKitPolyfill.deallocationFailure = false
   }
 }

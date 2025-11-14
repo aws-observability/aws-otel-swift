@@ -422,6 +422,7 @@ public class AwsOpenTelemetryRumBuilder {
       .add(spanProcessor: MultiSpanProcessor(
         spanProcessors: [batchProcessor]
       ))
+      .add(spanProcessor: AwsDeviceKitSpanProcessor())
       .add(spanProcessor: AwsGlobalAttributesSpanProcessor(globalAttributesManager: AwsGlobalAttributesProvider.getInstance()))
       .add(spanProcessor: AwsSessionSpanProcessor(sessionManager: AwsSessionManagerProvider.getInstance()))
       .add(spanProcessor: AwsUIDSpanProcessor(uidManager: AwsUIDManagerProvider.getInstance()))
@@ -454,7 +455,8 @@ public class AwsOpenTelemetryRumBuilder {
       maxQueueSize: exporterConfig.maxQueueSize,
       maxExportBatchSize: exporterConfig.maxBatchSize
     )
-    let samplerProcessor = AwsSessionLogSampler(nextProcessor: batchProcessor)
+    let deviceKitProcessor = AwsDeviceKitLogProcessor(nextProcessor: batchProcessor)
+    let samplerProcessor = AwsSessionLogSampler(nextProcessor: deviceKitProcessor)
     let uidProcessor = AwsUIDLogRecordProcessor(nextProcessor: samplerProcessor)
     let sessionProcessor = AwsSessionLogProcessor(nextProcessor: uidProcessor)
     let screenProcessor = AwsScreenLogRecordProcessor(nextProcessor: sessionProcessor)
