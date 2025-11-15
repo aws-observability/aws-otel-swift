@@ -226,30 +226,32 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
   static func extractCrashMessage(from stackTrace: String) -> String {
     let lines = stackTrace.components(separatedBy: "\n")
 
-    // Look for exception type and codes
-    if let exceptionTypeLine = lines.first(where: { $0.hasPrefix("Exception Type:") }),
-       let exceptionCodesLine = lines.first(where: { $0.hasPrefix("Exception Codes:") }) {
-      let exceptionType = exceptionTypeLine.replacingOccurrences(of: "Exception Type:", with: "")
-        .trimmingCharacters(in: .whitespaces)
-      let exceptionCodes = exceptionCodesLine.replacingOccurrences(of: "Exception Codes:", with: "")
-        .trimmingCharacters(in: .whitespaces)
+    // Get exception type
+    let exceptionType = lines.first(where: { $0.hasPrefix("Exception Type:") })?
+      .replacingOccurrences(of: "Exception Type:", with: "")
+      .trimmingCharacters(in: .whitespaces) ?? "Unknown exception"
 
-      return "\(exceptionType): \(exceptionCodes)"
-    }
-
-    // Fallback to thread and first frame if exception codes not found
+    // Fallback to thread and first frame
     guard let crashedLine = lines.first(where: { $0.range(of: #"Thread \d+ Crashed:"#, options: .regularExpression) != nil }),
           let threadMatch = crashedLine.range(of: #"Thread (\d+) Crashed:"#, options: .regularExpression),
           let crashedIndex = lines.firstIndex(of: crashedLine),
           let firstFrame = lines.dropFirst(crashedIndex + 1).first(where: { $0.hasPrefix("0   ") }) else {
-      return "Crash detected at unknown location"
+      return "\(exceptionType) detected at unknown location"
     }
 
     let threadNumber = String(crashedLine[threadMatch]).replacingOccurrences(of: #"Thread (\d+) Crashed:"#, with: "$1", options: .regularExpression)
-    let cleanFrame = String(firstFrame.dropFirst(2)) // Remove "0 " prefix
-      .replacingOccurrences(of: #"[\s\t]+"#, with: " ", options: .regularExpression) // reduce white spaces to single spaces
-      .trimmingCharacters(in: .whitespaces) // trim white spaces
-    return "Crash detected on thread \(threadNumber) at \(cleanFrame)"
+
+    // Extract module and offset (skip instruction pointer which is unique per crash and breaks grouping)
+    // Frame format: "0   ModuleName   0x00000001dccb1658   0x1dccab000 + 26200"
+    //                    ^module      ^instruction pointer  ^base addr   ^offset
+    let frameComponents = firstFrame.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+    guard frameComponents.count >= 4,
+          let module = frameComponents.dropFirst().first,
+          let offset = frameComponents.last else {
+      return "\(exceptionType) detected on thread \(threadNumber) at unknown location"
+    }
+
+    return "\(exceptionType) detected on thread \(threadNumber) at \(module) + \(offset)"
   }
 
   /// If sessionId and timestamp can be recovered, then attempt to restore original context.
