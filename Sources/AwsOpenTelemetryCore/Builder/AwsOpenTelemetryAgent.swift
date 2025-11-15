@@ -89,12 +89,14 @@ import OpenTelemetryApi
   func initialize(config: AwsOpenTelemetryConfig) -> Bool {
     AwsInternalLogger.info("Initializing with region: \(config.aws.region), appMonitorId: \(config.aws.rumAppMonitorId)")
 
-    do {
-      try AwsOpenTelemetryRumBuilder.create(config: config).build()
-      return true
-    } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      AwsInternalLogger.debug("SDK is already initialized.")
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      AwsInternalLogger.error("Failed to create builder")
       return false
+    }
+
+    do {
+      try builder.build()
+      return true
     } catch {
       AwsInternalLogger.error("Error starting OpenTelemetrySDK: \(error.localizedDescription)")
       return false

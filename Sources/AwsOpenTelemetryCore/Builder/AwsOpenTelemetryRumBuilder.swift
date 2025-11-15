@@ -68,20 +68,24 @@ public class AwsOpenTelemetryRumBuilder {
    * This method checks if the SDK is already initialized to ensure thread safety.
    *
    * @param config The AWS OpenTelemetry configuration
-   * @return A new builder instance
-   * @throws AwsOpenTelemetryConfigError.alreadyInitialized if the SDK is already initialized
+   * @return A new builder instance, or nil if initialization fails
    */
-  public static func create(config: AwsOpenTelemetryConfig) throws -> AwsOpenTelemetryRumBuilder {
+  public static func create(config: AwsOpenTelemetryConfig) -> AwsOpenTelemetryRumBuilder? {
     // Check if the SDK is already initialized
     guard !AwsOpenTelemetryAgent.shared.isInitialized else {
       AwsInternalLogger.debug("SDK is already initialized.")
-      throw AwsOpenTelemetryConfigError.alreadyInitialized
+      return nil
     }
 
     // Store the configuration in the shared instance
     AwsOpenTelemetryAgent.shared.configuration = config
 
-    return AwsOpenTelemetryRumBuilder(config: config)
+    do {
+      return try AwsOpenTelemetryRumBuilder(config: config)
+    } catch {
+      AwsInternalLogger.debug("Failed to create builder: \(error)")
+      return nil
+    }
   }
 
   /**
@@ -89,7 +93,7 @@ public class AwsOpenTelemetryRumBuilder {
    *
    * @param config The AWS OpenTelemetry configuration
    */
-  private init(config: AwsOpenTelemetryConfig) {
+  private init(config: AwsOpenTelemetryConfig) throws {
     self.config = config
     exporterConfig = AwsExporterConfig.default
     resource = AwsResourceBuilder.buildResource(config: config)
@@ -116,30 +120,30 @@ public class AwsOpenTelemetryRumBuilder {
    *
    * ## Error Handling
    *
-   * This method will throw an error if:
+   * This method will log errors using AwsInternalLogger.error if:
    * - Endpoint URLs are malformed or invalid
    * - Required configuration parameters are missing
-   * - The SDK has already been initialized
    *
    * ## Thread Safety
    *
    * This method is not thread-safe and should only be called once during
    * application initialization, typically from the main thread.
    *
-   * @throws AwsOpenTelemetryConfigError.malformedURL if endpoint URLs are invalid
    * @return This builder instance for method chaining
    */
   @discardableResult
-  public func build() throws -> Self {
+  public func build() -> Self {
     // AWS OpenTelemetry Swift SDK instrumentation constants
 
     let tracesEndpoint = buildTracesEndpoint(region: config.aws.region, exportOverride: config.exportOverride)
     guard let tracesEndpointURL = URL(string: tracesEndpoint) else {
-      throw AwsOpenTelemetryConfigError.malformedURL(tracesEndpoint)
+      AwsInternalLogger.error("Malformed traces URL: \(tracesEndpoint)")
+      return self
     }
     let logsEndpoint = buildLogsEndpoint(region: config.aws.region, exportOverride: config.exportOverride)
     guard let logsEndpointURL = URL(string: logsEndpoint) else {
-      throw AwsOpenTelemetryConfigError.malformedURL(logsEndpoint)
+      AwsInternalLogger.error("Malformed logs URL: \(logsEndpoint)")
+      return self
     }
 
     let spanExporter = buildSpanExporter(tracesEndpointURL: tracesEndpointURL)
