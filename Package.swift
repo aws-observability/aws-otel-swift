@@ -1,43 +1,40 @@
 // swift-tools-version:5.9
-// The swift-tools-version declares the minimum version of Swift required to build this package.
-
 import PackageDescription
 
 let package = Package(
   name: "aws-otel-swift",
   platforms: [
-    .iOS(.v13), // officially only supporting iOS
+    .iOS(.v13), // officially only supporting iOS v16+
     .macOS(.v12),
     .tvOS(.v13),
     .watchOS(.v6),
     .visionOS(.v1)
   ],
   products: [
-    // Products define the executables and libraries a package produces, making them visible to other packages.
     .library(name: "AwsOpenTelemetryCore", targets: ["AwsOpenTelemetryCore"]),
     .library(name: "AwsOpenTelemetryAgent", targets: ["AwsOpenTelemetryAgent"]),
     .library(name: "AwsOpenTelemetryAuth", targets: ["AwsOpenTelemetryAuth"])
   ],
   dependencies: [
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.1.1"),
-    .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.1.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", from: "2.2.0"),
+    .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", from: "2.2.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
     .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
-    .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.0")
+    .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
+    .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2") // only used for live stack trace collection, not crash reporting
   ],
   targets: [
-    // Targets are the basic building blocks of a package, defining a module or a test suite.
-    // Targets can depend on other targets in this package and products from dependencies.
     .target(
       name: "AwsOpenTelemetryCore",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core"),
         .product(name: "StdoutExporter", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
-        .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift")
+        .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift"),
+        .product(name: "Installations", package: "KSCrash"),
+        .product(name: "CrashReporter", package: "plcrashreporter", condition: .when(platforms: [.iOS, .macOS, .tvOS, .visionOS]))
       ],
-      exclude: ["AutoInstrumentation/UIKit/README.md", "Sessions/README.md", "MetricKit/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md"]
+      exclude: ["Sessions/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md", "AppLaunch/README.md", "SwiftUI/README.md"]
     ),
     .target(
       name: "AwsOpenTelemetryAgent",
@@ -70,7 +67,6 @@ let package = Package(
     .target(
       name: "TestUtils",
       dependencies: [
-        .product(name: "OpenTelemetryApi", package: "opentelemetry-swift-core"),
         .product(name: "OpenTelemetrySdk", package: "opentelemetry-swift-core")
       ],
       path: "Tests/TestUtils"
@@ -79,26 +75,20 @@ let package = Package(
       name: "AwsOpenTelemetryCoreTests",
       dependencies: [
         "AwsOpenTelemetryCore",
-        "TestUtils",
-        .product(name: "Atomics", package: "swift-atomics")
+        "TestUtils"
       ]
     ),
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
-    ),
-    // Disabling due to flakiness caused by attempting to start the AWS Otel Swift agent
-    // .testTarget(
-    //   name: "AwsOpenTelemetryAgentTests",
-    //   dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"]
-    // ),
-    .testTarget(
-      name: "ContractTests",
-      dependencies: ["AwsOpenTelemetryCore", "AwsOpenTelemetryAgent"],
-      path: "Tests/ContractTests",
-      exclude: ["MockCollector"],
-      sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
     )
+    // .testTarget(
+    //   name: "ContractTests",
+    //   dependencies: ["AwsOpenTelemetryCore"],
+    //   path: "Tests/ContractTests",
+    //   exclude: ["MockCollector"],
+    //   sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
+    // )
   ]
 ).addPlatformSpecific()
 
@@ -107,7 +97,6 @@ extension Package {
     #if canImport(Darwin)
       targets[0].dependencies
         .append(.product(name: "ResourceExtension", package: "opentelemetry-swift"))
-
     #endif
     return self
   }

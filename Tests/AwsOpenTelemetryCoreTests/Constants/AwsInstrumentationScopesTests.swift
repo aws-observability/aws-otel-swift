@@ -17,12 +17,8 @@ import XCTest
 @testable import AwsOpenTelemetryCore
 
 final class AwsInstrumentationScopesTests: XCTestCase {
-  func testCrashDiagnostic() {
-    XCTAssertEqual(AwsInstrumentationScopes.CRASH_DIAGNOSTIC, "software.amazon.opentelemetry.MXCrashDiagnostic")
-  }
-
-  func testHangDiagnostic() {
-    XCTAssertEqual(AwsInstrumentationScopes.HANG_DIAGNOSTIC, "software.amazon.opentelemetry.MXHangDiagnostic")
+  func testAppStart() {
+    XCTAssertEqual(AwsInstrumentationScopes.APP_START, "software.amazon.opentelemetry.appstart")
   }
 
   func testSession() {
@@ -30,6 +26,18 @@ final class AwsInstrumentationScopesTests: XCTestCase {
   }
 
   func testUIKitView() {
-    XCTAssertEqual(AwsInstrumentationScopes.UIKIT_VIEW, "software.amazon.opentelemetry.UIKitView")
+    XCTAssertEqual(AwsInstrumentationScopes.UIKIT_VIEW, "software.amazon.opentelemetry.uikit")
+  }
+
+  func testSwiftUIView() {
+    XCTAssertEqual(AwsInstrumentationScopes.SWIFTUI_VIEW, "software.amazon.opentelemetry.swiftui")
+  }
+
+  func testHang() {
+    XCTAssertEqual(AwsInstrumentationScopes.HANG, "software.amazon.opentelemetry.hang")
+  }
+
+  func testKSCrash() {
+    XCTAssertEqual(AwsInstrumentationScopes.KSCRASH, "software.amazon.opentelemetry.kscrash")
   }
 }

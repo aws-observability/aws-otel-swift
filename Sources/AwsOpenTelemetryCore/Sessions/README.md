@@ -16,8 +16,8 @@ Session instrumentation is automatically enabled when session events telemetry i
     "region": "us-west-2",
     "rumAppMonitorId": "your-app-monitor-id"
   },
-  "applicationAttributes": {
-    "application.version": "1.0.0"
+  "otelResourceAttributes": {
+    "service.version": "1.0.0"
   },
   "telemetry": {
     "sessionEvents": { "enabled": true } // enabled by default
@@ -38,7 +38,7 @@ let awsConfig = AwsConfig(region: "us-west-2", rumAppMonitorId: "your-app-monito
 let config = AwsOpenTelemetryConfig.builder()
     .with(aws: awsConfig)
     .with(sessionTimeout: 1800)
-    .with(telemetry: TelemetryConfig.builder()
+    .with(telemetry: AwsTelemetryConfig.builder()
         .with(sessionEvents: TelemetryFeature(enabled: true))
         .build())
     .build()
@@ -145,7 +145,7 @@ The session module automatically adds session attributes to all telemetry data t
 
 ### Log and Span Attribution
 
-`AwsSessionLogRecordProcessor` automatically adds session attributes to all log records:
+`AwsSessionLogProcessor` automatically adds session attributes to all log records:
 
 | Attribute             | Type   | Description                                  | Example                                  |
 | --------------------- | ------ | -------------------------------------------- | ---------------------------------------- |

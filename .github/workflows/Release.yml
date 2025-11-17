@@ -1,0 +1,50 @@
+name: Release Build
+on:
+  workflow_dispatch:
+
+ # Publish to GitHub releases
+jobs:
+  build:
+    environment: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+
+      - name: Extract version from Info.plist
+        run: |
+          VERSION=$(grep -o '"[0-9]\+\.[0-9]\+\.[0-9]\+"' Info.plist | tr -d '"')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+      - name: Create GH release
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        # GITHUB_REF_NAME is a GitHub Actions environment variable that contains the short ref name of the branch or tag that triggered the workflow run.
+        # SPM officially recognizes tags both with and without v in `v0.0.0` but recommends without v.
+        run: |
+          # Extract CHANGELOG entries for this version
+          CHANGELOG_ENTRIES=$(python3 -c "
+          import re, os
+          version = os.environ['VERSION']
+          with open('CHANGELOG.md', 'r') as f:
+              content = f.read()
+          version_pattern = rf'## v{re.escape(version)}.*?\n(.*?)(?=\n## |\Z)'
+          version_match = re.search(version_pattern, content, re.DOTALL)
+          if version_match:
+              entries = version_match.group(1).strip()
+              if entries:
+                  print(entries)
+          ")
+
+          # Create release notes
+          cat > release_notes.md << EOF
+          $(if [ -n "$CHANGELOG_ENTRIES" ]; then echo "## What's Changed"; echo "$CHANGELOG_ENTRIES"; echo ""; fi)
+          EOF
+
+          # Tag a GitHub release
+          gh release create "${VERSION}" \
+             --target "$GITHUB_REF_NAME" \
+             --title "Release ${VERSION}" \
+             --notes-file release_notes.md \
+             --draft 

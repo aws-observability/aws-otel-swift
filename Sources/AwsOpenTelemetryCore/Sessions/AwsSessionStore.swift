@@ -44,11 +44,9 @@ class AwsSessionStore {
   /// Schedules a session to be saved to UserDefaults on the next timer interval
   /// - Parameter session: The session to save
   static func scheduleSave(session: AwsSession) {
-    AwsOpenTelemetryLogger.debug("Scheduling session save: \(session.id)")
     pendingSession = session
 
     if saveTimer == nil {
-      AwsOpenTelemetryLogger.debug("Creating save timer with interval: \(saveInterval)s")
       // save initial session
       saveImmediately(session: session)
 
@@ -56,7 +54,6 @@ class AwsSessionStore {
       saveTimer = Timer.scheduledTimer(withTimeInterval: saveInterval, repeats: true) { _ in
         // only write to disk if it is a new sesssion
         if let pending = pendingSession, prevSession != pending {
-          AwsOpenTelemetryLogger.debug("Timer triggered, saving pending session")
           saveImmediately(session: pending)
         }
       }
@@ -66,7 +63,7 @@ class AwsSessionStore {
   /// Immediately saves a session to UserDefaults
   /// - Parameter session: The session to save
   static func saveImmediately(session: AwsSession) {
-    AwsOpenTelemetryLogger.debug("Saving session to UserDefaults: \(session.id)")
+    AwsInternalLogger.debug("Saving session to UserDefaults: \(session.id)")
 
     // Persist session
     UserDefaults.standard.set(session.id, forKey: idKey)
@@ -79,26 +76,22 @@ class AwsSessionStore {
     prevSession = session
     // clear pending session, since it is now outdated
     pendingSession = nil
-
-    AwsOpenTelemetryLogger.debug("Session saved successfully")
   }
 
   /// Loads a previously saved session from UserDefaults
   /// - Returns: The saved session if ID, startTime, and expireTime exist. nil otherwise
   static func load() -> AwsSession? {
-    AwsOpenTelemetryLogger.debug("Loading session from UserDefaults")
-
     guard let startTime = UserDefaults.standard.object(forKey: startTimeKey) as? Date,
           let id = UserDefaults.standard.string(forKey: idKey),
           let expireTime = UserDefaults.standard.object(forKey: expireTimeKey) as? Date,
           let sessionTimeout = UserDefaults.standard.object(forKey: sessionTimeoutKey) as? Int
     else {
-      AwsOpenTelemetryLogger.debug("No valid session found in UserDefaults")
+      AwsInternalLogger.debug("No valid session found in UserDefaults")
       return nil
     }
 
     let previousId = UserDefaults.standard.string(forKey: previousIdKey)
-    AwsOpenTelemetryLogger.debug("Found session in UserDefaults: \(id), previous: \(previousId ?? "none")")
+    AwsInternalLogger.debug("Found session in UserDefaults: \(id), previous: \(previousId ?? "none")")
 
     // reset sessions so it does not get overridden in the next scheduled save
     pendingSession = nil
@@ -114,7 +107,7 @@ class AwsSessionStore {
 
   /// Cleans up timer and UserDefaults
   static func teardown() {
-    AwsOpenTelemetryLogger.info("Tearing down AwsSessionStore")
+    AwsInternalLogger.info("Tearing down AwsSessionStore")
     saveTimer?.invalidate()
     saveTimer = nil
     pendingSession = nil
@@ -124,6 +117,6 @@ class AwsSessionStore {
     UserDefaults.standard.removeObject(forKey: expireTimeKey)
     UserDefaults.standard.removeObject(forKey: previousIdKey)
     UserDefaults.standard.removeObject(forKey: sessionTimeoutKey)
-    AwsOpenTelemetryLogger.debug("AwsSessionStore teardown complete")
+    AwsInternalLogger.debug("AwsSessionStore teardown complete")
   }
 }

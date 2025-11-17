@@ -1,11 +1,24 @@
+/*
+ * Copyright Amazon.com, Inc. or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *  http://aws.amazon.com/apache2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 import Foundation
 import OpenTelemetrySdk
 import OpenTelemetryApi
 
 /// AWS OTel log record processor that adds UID to all log records
 class AwsUIDLogRecordProcessor: LogRecordProcessor {
-  /// The attribute key used to store UID in log records
-  var userIdKey = "user.id"
   /// Reference to the UID manager for retrieving current UID
   private var uidManager: AwsUIDManager
   /// The next processor in the chain
@@ -18,27 +31,14 @@ class AwsUIDLogRecordProcessor: LogRecordProcessor {
   init(nextProcessor: LogRecordProcessor, uidManager: AwsUIDManager? = nil) {
     self.nextProcessor = nextProcessor
     self.uidManager = uidManager ?? AwsUIDManagerProvider.getInstance()
-    AwsOpenTelemetryLogger.debug("Initializing AwsUIDLogRecordProcessor")
   }
 
   /// Called when a log record is emitted - adds UID and forwards to next processor
   /// - Parameter logRecord: The log record being processed
   func onEmit(logRecord: ReadableLogRecord) {
     let uid = uidManager.getUID()
-    var newAttributes = logRecord.attributes
-    newAttributes[userIdKey] = AttributeValue.string(uid)
-
-    let enhancedRecord = ReadableLogRecord(
-      resource: logRecord.resource,
-      instrumentationScopeInfo: logRecord.instrumentationScopeInfo,
-      timestamp: logRecord.timestamp,
-      observedTimestamp: logRecord.observedTimestamp,
-      spanContext: logRecord.spanContext,
-      severity: logRecord.severity,
-      body: logRecord.body,
-      attributes: newAttributes
-    )
-
+    var enhancedRecord = logRecord
+    enhancedRecord.setAttribute(key: AwsUserSemvConv.id, value: uid)
     nextProcessor.onEmit(logRecord: enhancedRecord)
   }
 

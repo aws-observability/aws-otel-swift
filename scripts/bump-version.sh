@@ -13,8 +13,9 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # File paths
-AGENT_FILE="Sources/AwsOpenTelemetryCore/AwsOpenTelemetryAgent.swift"
+AGENT_FILE="Sources/AwsOpenTelemetryCore/Builder/AwsOpenTelemetryAgent.swift"
 README_FILE="README.md"
+INFO_PLIST_FILE="Info.plist"
 
 # Function to print colored output
 print_color() {
@@ -168,6 +169,17 @@ update_version_in_readme_file() {
     update_version_in_file "$README_FILE" "$old_pattern" "$new_pattern"
 }
 
+# Function to update version in Info.plist file
+update_version_in_info_plist() {
+    local old_version=$1
+    local new_version=$2
+    
+    local old_pattern="\"CFBundleShortVersionString\" = \"$old_version\""
+    local new_pattern="\"CFBundleShortVersionString\" = \"$new_version\""
+    
+    update_version_in_file "$INFO_PLIST_FILE" "$old_pattern" "$new_pattern"
+}
+
 # Function to commit and tag the version bump
 commit_and_tag_version() {
     local version=$1
@@ -176,7 +188,7 @@ commit_and_tag_version() {
     
     if [[ "$do_commit" == true ]]; then
         print_color $BLUE "Committing version bump..."
-        git add "$AGENT_FILE" "$README_FILE"
+        git add "$AGENT_FILE" "$README_FILE" "$INFO_PLIST_FILE"
         git commit -m "chore(release): v$version"
         print_color $GREEN "✓ Committed version bump with message: 'chore(release): v$version'"
     fi
@@ -257,9 +269,10 @@ main() {
         exit 0
     fi
     
-    # Update the versions in both files
+    # Update the versions in all files
     local agent_success=false
     local readme_success=false
+    local info_plist_success=false
     
     # Update agent file
     if update_version_in_agent_file "$current_version" "$new_version"; then
@@ -271,11 +284,17 @@ main() {
         readme_success=true
     fi
     
+    # Update Info.plist file
+    if update_version_in_info_plist "$current_version" "$new_version"; then
+        info_plist_success=true
+    fi
+    
     # Check if at least one update was successful
     if [[ "$agent_success" == true ]]; then
         # Clean up backups if successful
         rm -f "${AGENT_FILE}.backup"
         rm -f "${README_FILE}.backup"
+        rm -f "${INFO_PLIST_FILE}.backup"
         
         print_color $GREEN "Version bump completed successfully!"
         print_color $BLUE "Files updated:"
@@ -284,6 +303,9 @@ main() {
         fi
         if [[ "$readme_success" == true ]]; then
             print_color $BLUE "  - $README_FILE (package dependency)"
+        fi
+        if [[ "$info_plist_success" == true ]]; then
+            print_color $BLUE "  - $INFO_PLIST_FILE (bundle version)"
         fi
         
         # Commit and tag if requested

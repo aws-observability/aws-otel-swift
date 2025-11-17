@@ -16,34 +16,13 @@
 import SwiftUI
 
 /**
- * Entry point view responsible for initializing AWS and passing dependencies to child views.
- *
- * Displays a progress indicator while initializing, an error message on failure,
- * or the main content on successful AWS setup.
+ * Entry point view for the demo app.
  */
 @MainActor
 struct LoaderView: View {
-  @StateObject private var viewModel: LoaderViewModel
-
-  /// Initializes the loader with AWS configuration
-  init(cognitoPoolId: String, region: String) {
-    _viewModel = StateObject(wrappedValue: LoaderViewModel(cognitoPoolId: cognitoPoolId, region: region))
-  }
+  @StateObject private var viewModel = LoaderViewModel()
 
   var body: some View {
-    Group {
-      if viewModel.isLoading {
-        ProgressView("Initializing AWS...")
-      } else if let error = viewModel.error {
-        Text("Failed to initialize AWS: \(error.localizedDescription)")
-          .foregroundColor(.red)
-          .padding()
-      } else {
-        ContentView(viewModel: viewModel)
-      }
-    }
-    .task {
-      await viewModel.initialize()
-    }
+    ContentView(viewModel: viewModel)
   }
 }

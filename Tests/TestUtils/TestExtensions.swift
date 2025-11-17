@@ -17,6 +17,67 @@ import Foundation
 import OpenTelemetryApi
 import OpenTelemetrySdk
 
+public class MockURLSession: URLSession {
+  public var mockResponse: HTTPURLResponse?
+  public var mockError: Error?
+  public var mockData: Data?
+  public var requestCount = 0
+
+  override public init() {
+    super.init()
+  }
+
+  override public func dataTask(with request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
+    requestCount += 1
+    return MockURLSessionDataTask {
+      completionHandler(self.mockData, self.mockResponse, self.mockError)
+    }
+  }
+}
+
+public class MockURLSessionDataTask: URLSessionDataTask {
+  private let closure: () -> Void
+
+  public init(closure: @escaping () -> Void) {
+    self.closure = closure
+    super.init()
+  }
+
+  override public func resume() {
+    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+      self.closure()
+    }
+  }
+}
+
+public func TestLogRecord() -> ReadableLogRecord {
+  return ReadableLogRecord(
+    resource: Resource(),
+    instrumentationScopeInfo: InstrumentationScopeInfo(name: "test"),
+    timestamp: Date(),
+    observedTimestamp: Date(),
+    spanContext: nil,
+    severity: .info,
+    body: AttributeValue.string("Test log message"),
+    attributes: [:]
+  )
+}
+
+public func TestSpanData() -> SpanData {
+  // Create SpanData using a simple approach - create a real span and convert it
+  let tracerProvider = TracerProviderBuilder().build()
+  let tracer = tracerProvider.get(instrumentationName: "test")
+  let span = tracer.spanBuilder(spanName: "test-span").startSpan()
+  span.end()
+
+  if let readableSpan = span as? ReadableSpan {
+    return readableSpan.toSpanData()
+  } else {
+    // Fallback: create minimal SpanData using a different approach
+    fatalError("Unable to create test SpanData")
+  }
+}
+
 // MARK: - ReadableSpan Extensions
 
 extension ReadableSpan {

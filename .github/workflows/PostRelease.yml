@@ -1,0 +1,120 @@
+name: Post Release - Prepare Main for Next Development Cycle
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        default: 'minor'
+        options:
+          - major
+          - minor
+          - patch
+
+env:
+  AWS_DEFAULT_REGION: us-west-2
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Configure AWS credentials for BOT secrets
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 #v5.0.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_SECRETS_MANAGER }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Get Bot secrets
+        uses: aws-actions/aws-secretsmanager-get-secrets@a9a7eb4e2f2871d30dc5b892576fde60a2ecc802 #v2.0.10
+        id: bot_secrets
+        with:
+          secret-ids: |
+            BOT_TOKEN ,${{ secrets.BOT_TOKEN_SECRET_ARN }}
+          parse-json-secrets: true
+
+      - name: Setup Git
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+        with:
+          fetch-depth: 0
+          token: ${{ env.BOT_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Calculate next version
+        run: |
+          # Get current version from Info.plist
+          CURRENT_VERSION=$(grep -o '"[0-9]\+\.[0-9]\+\.[0-9]\+"' Info.plist | tr -d '"')
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Extract major, minor, patch
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          
+          # Calculate next version based on input
+          case "${{ github.event.inputs.version_type || 'minor' }}" in
+            major)
+              NEW_VERSION="$((MAJOR + 1)).0.0"
+              ;;
+            minor)
+              NEW_VERSION="${MAJOR}.$((MINOR + 1)).0"
+              ;;
+            patch)
+              NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+              ;;
+          esac
+          
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "Next version will be: $NEW_VERSION"
+
+      - name: Update version to next development version in main
+        run: |
+          git checkout -b "prepare-main-for-next-dev-cycle-${NEW_VERSION}"
+          
+          # Use bump-version script with version type
+          echo "y" | ./scripts/bump-version.sh "${{ github.event.inputs.version_type || 'minor' }}"
+          
+          # For patch releases, handle CHANGELOG merge conflicts
+          if [[ "${{ github.event.inputs.version_type || 'minor' }}" == "patch" ]]; then
+            # Copy the patch release entries
+            sed -n "/^## v${NEW_VERSION}/,/^## v[0-9]/p" CHANGELOG.md | sed '$d' > /tmp/patch_release_section.txt
+
+            git fetch origin main
+            git show origin/main:CHANGELOG.md > CHANGELOG.md
+
+            # Insert the patch release entries after Unreleased
+            awk -i inplace '/^## v[0-9]/ && !inserted { system("cat /tmp/patch_release_section.txt"); inserted=1 } {print}' CHANGELOG.md
+          fi
+          
+          git add .
+          git commit -m "Prepare main for next development cycle: Update version to $NEW_VERSION"
+          git push --set-upstream origin "prepare-main-for-next-dev-cycle-${NEW_VERSION}"
+
+      - name: Create Pull Request to main
+        env:
+          GH_TOKEN: ${{ env.BOT_TOKEN }}
+        run: |
+          gh pr create --title "Post release: Update version to $NEW_VERSION" \
+                       --body "This PR prepares the main branch for the next development cycle by updating the version to $NEW_VERSION in Info.plist.
+          
+          This PR should only be merged when the release is successful.
+          
+          By submitting this pull request, I confirm that you can use, modify, copy, and redistribute this contribution, under the terms of your choice." \
+                       --head prepare-main-for-next-dev-cycle-${NEW_VERSION} \
+                       --base main
