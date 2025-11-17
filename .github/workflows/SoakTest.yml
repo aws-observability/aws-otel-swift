@@ -79,6 +79,7 @@ jobs:
         export TEST_PACKAGE_ZIP=${{ github.workspace }}/Examples/PetClinic/build/Build/Products/Debug-iphoneos/PetClinicUITests-Runner.app.zip
         zip -r $TEST_PACKAGE_ZIP $TEST_PACKAGE
         zip -r $TEST_PACKAGE_ZIP $XCTESTRUN_FILE
+        echo "TEST_PACKAGE_ZIP=$TEST_PACKAGE_ZIP" >> $GITHUB_ENV
 
     - name: Build Artifacts - App
       uses: actions/upload-artifact@v4
