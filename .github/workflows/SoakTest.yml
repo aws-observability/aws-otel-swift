@@ -3,7 +3,7 @@ name: Soak Test
 on:
   workflow_dispatch:
   push:
-    branches: [ main, test/e2e ]
+    branches: [ main ]
 
 jobs:
   run-soak-test:
