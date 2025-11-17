@@ -71,34 +71,15 @@ jobs:
           CODE_SIGNING_REQUIRED=NO \
           CODE_SIGNING_ALLOWED=NO \
           build-for-testing 
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_RUM_GAMMA_OIDC_ROLE }}
-        aws-region: ${{ secrets.AWS_RUM_GAMMA_REGION }}
-        bucket_name: ${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}
-    
-    - name: Upload TestSpec to S3
-      run: |
-        # Upload test specification
-        set -o pipefail && aws s3 cp ${{ github.workspace }}/Examples/PetClinic/deviceFarmTestSpec.yaml s3://${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}/testSpec/testSpec_$(date +%Y%m%d_%H%M%S).yaml --region ${{ secrets.AWS_RUM_GAMMA_REGION }} --metadata "commitHash=${{ github.sha }}"
 
-    - name: Upload TestPackage to S3
-      run: |
-        # Upload test package
+    - name: Create test package zip
+      run: | 
         export XCTESTRUN_FILE=$(find ${{ github.workspace }}/Examples/PetClinic/build/Build/Products/ -name "PetClinic_PetClinic_iphoneos*-arm64.xctestrun" | head -1)
         export TEST_PACKAGE=${{ github.workspace }}/Examples/PetClinic/build/Build/Products/Debug-iphoneos/PetClinicUITests-Runner.app
         export TEST_PACKAGE_ZIP=${{ github.workspace }}/Examples/PetClinic/build/Build/Products/Debug-iphoneos/PetClinicUITests-Runner.app.zip
         zip -r $TEST_PACKAGE_ZIP $TEST_PACKAGE
         zip -r $TEST_PACKAGE_ZIP $XCTESTRUN_FILE
-        set -o pipefail && aws s3 cp $TEST_PACKAGE_ZIP s3://${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}/tests/tests_$(date +%Y%m%d_%H%M%S).app.zip --region ${{ secrets.AWS_RUM_GAMMA_REGION }} --metadata "commitHash=${{ github.sha }}"
 
-    - name: Upload App to S3
-      run: |
-        # Upload app
-        set -o pipefail && aws s3 cp ${{ github.workspace }}/Examples/PetClinic/PetClinic.ipa s3://${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}/app/PetClinic_$(date +%Y%m%d_%H%M%S).ipa --region ${{ secrets.AWS_RUM_GAMMA_REGION }} --metadata "commitHash=${{ github.sha }}"
-        
     - name: Build Artifacts - App
       uses: actions/upload-artifact@v4
       with:
@@ -113,3 +94,32 @@ jobs:
         path: $TEST_PACKAGE_ZIP
         retention-days: 7
     
+    - name: Build Artifacts - TestSpec
+      uses: actions/upload-artifact@v4
+      with:
+        name: petclinic-ios-test-spec
+        path: $TEST_PACKAGE_ZIP
+        retention-days: 7
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_RUM_GAMMA_OIDC_ROLE }}
+        aws-region: ${{ secrets.AWS_RUM_GAMMA_REGION }}
+        role-session-name: GitHubActions-SoakTest
+        audience: sts.amazonaws.com
+
+    - name: Upload TestSpec to S3
+      run: |
+        # Upload test specification
+        set -o pipefail && aws s3 cp ${{ github.workspace }}/Examples/PetClinic/deviceFarmTestSpec.yaml s3://${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}/testSpec/testSpec_$(date +%Y%m%d_%H%M%S).yaml --region ${{ secrets.AWS_RUM_GAMMA_REGION }} --metadata "commitHash=${{ github.sha }}"
+
+    - name: Upload TestPackage to S3
+      run: |
+        # Upload test package
+        set -o pipefail && aws s3 cp $TEST_PACKAGE_ZIP s3://${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}/tests/tests_$(date +%Y%m%d_%H%M%S).app.zip --region ${{ secrets.AWS_RUM_GAMMA_REGION }} --metadata "commitHash=${{ github.sha }}"
+
+    - name: Upload App to S3
+      run: |
+        # Upload app
+        set -o pipefail && aws s3 cp ${{ github.workspace }}/Examples/PetClinic/PetClinic.ipa s3://${{ secrets.AWS_RUM_GAMMA_BUCKET_NAME }}/app/PetClinic_$(date +%Y%m%d_%H%M%S).ipa --region ${{ secrets.AWS_RUM_GAMMA_REGION }} --metadata "commitHash=${{ github.sha }}"
