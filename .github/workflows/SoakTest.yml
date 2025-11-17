@@ -91,14 +91,14 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: petclinic-ios-test-package-zip
-        path: $TEST_PACKAGE_ZIP
+        path: ${{ env.TEST_PACKAGE_ZIP }}
         retention-days: 7
     
     - name: Build Artifacts - TestSpec
       uses: actions/upload-artifact@v4
       with:
         name: petclinic-ios-test-spec
-        path: $TEST_PACKAGE_ZIP
+        path: ${{ github.workspace }}/Examples/PetClinic/deviceFarmTestSpec.yaml
         retention-days: 7
 
     - name: Configure AWS credentials
