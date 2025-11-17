@@ -60,101 +60,86 @@ final class AwsKSCrashInstrumentationTests: XCTestCase {
     XCTAssertEqual(AwsKSCrashInstrumentation.maxStackTraceBytes, 25 * 1024)
   }
 
-  func testExtractCrashMessageWithExceptionCodes() {
+  func testExtractCrashMessageWithExceptionType() {
     let stackTrace = """
-    Incident Identifier: 3F2AFC2A-DA05-465B-BD41-436FC333127A
-    CrashReporter Key:   2d7a9903541465dabf265effbee827cd9e6da6e1
-    Hardware Model:      iPhone15,4
-    Process:             AwsHackerNewsDemo [680]
-    Path:                /private/var/containers/Bundle/Application/83BD3EA1-BE39-4D4A-A88E-06ADA0466843/AwsHackerNewsDemo.app/AwsHackerNewsDemo
-    Identifier:          AwsHackerNewsDemo
-    Version:             1.0 (19)
-    Code Type:           ARM-64 (Native)
-    Role:                Foreground
-    Parent Process:      launchd [1]
-
-    Date/Time:           2025-11-06 15:12:20.759 -0800
-    OS Version:          iOS 18.6 (22G86)
-    Report Version:      104
-
     Exception Type:  EXC_BREAKPOINT (SIGTRAP)
-    Exception Codes: KERN_INVALID_ADDRESS at 0x000000019bd6c8c4
-    Triggered by Thread:  0
+    Thread 0 Crashed:
+    0   libswiftCore.dylib            0x000000019ed5c8c4 $ss17_assertionFailure + 172
     """
 
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP): KERN_INVALID_ADDRESS at 0x000000019bd6c8c4")
+    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP) detected on thread 0 at libswiftCore.dylib + 172")
   }
 
   func testExtractCrashMessageWithBadAccess() {
     let stackTrace = """
     Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
-    Exception Codes: KERN_INVALID_ADDRESS at 0xffffffff
+    Thread 2 Crashed:
+    0   MyApp                         0x0000000104abc123 main + 456
     """
 
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV): KERN_INVALID_ADDRESS at 0xffffffff")
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) detected on thread 2 at MyApp + 456")
   }
 
-  func testExtractCrashMessageFallbackToThread() {
+  func testExtractCrashMessageWithoutExceptionType() {
     let stackTrace = """
     Thread 0 Crashed:
-    0   libswiftCore.dylib            \t0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172
-    1   libswiftCore.dylib            \t0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172
+    0   libswiftCore.dylib            0x000000019ed5c8c4 $ss17_assertionFailure + 172
     """
 
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "Crash detected on thread 0 at libswiftCore.dylib 0x000000019ed5c8c4 $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF + 172")
+    XCTAssertEqual(result, "Unknown exception detected on thread 0 at libswiftCore.dylib + 172")
   }
 
-  func testExtractCrashMessageFallbackWithDifferentThread() {
+  func testExtractCrashMessageWithDifferentThread() {
     let stackTrace = """
+    Exception Type:  EXC_CRASH (SIGABRT)
     Thread 5 Crashed:
-    0   SomeFramework                 \t0x00000001f14e1a90 someFunction + 8
+    0   SomeFramework                 0x00000001f14e1a90 someFunction + 8
     """
 
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "Crash detected on thread 5 at SomeFramework 0x00000001f14e1a90 someFunction + 8")
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) detected on thread 5 at SomeFramework + 8")
   }
 
   func testExtractCrashMessageEdgeCases() {
-    XCTAssertEqual(AwsKSCrashInstrumentation.extractCrashMessage(from: ""), "Crash detected at unknown location")
-    XCTAssertEqual(AwsKSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Crash detected at unknown location")
+    XCTAssertEqual(AwsKSCrashInstrumentation.extractCrashMessage(from: ""), "Unknown exception detected at unknown location")
+    XCTAssertEqual(AwsKSCrashInstrumentation.extractCrashMessage(from: "Thread Crashed:\n0   SomeFramework"), "Unknown exception detected at unknown location")
 
     let noThreadCrashed = "Some other content\nThread 1:\n0   libsystem_kernel.dylib"
-    XCTAssertEqual(AwsKSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Crash detected at unknown location")
+    XCTAssertEqual(AwsKSCrashInstrumentation.extractCrashMessage(from: noThreadCrashed), "Unknown exception detected at unknown location")
   }
 
   func testExtractCrashMessageWithWhitespaceHandling() {
     let stackTrace = """
+    Exception Type:  EXC_BAD_ACCESS (SIGSEGV)
     Thread 2 Crashed:
     0     MyFramework     \t\t\t    0x123456789    myFunction    +    123
     """
 
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "Crash detected on thread 2 at MyFramework 0x123456789 myFunction + 123")
+    XCTAssertEqual(result, "EXC_BAD_ACCESS (SIGSEGV) detected on thread 2 at MyFramework + 123")
   }
 
-  func testExtractCrashMessageWithExceptionCodesOnly() {
+  func testExtractCrashMessageWithExceptionTypeOnly() {
     let stackTrace = """
     Exception Type:  EXC_CRASH (SIGABRT)
-    Exception Codes: 0x0000000000000000
     """
 
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "EXC_CRASH (SIGABRT): 0x0000000000000000")
+    XCTAssertEqual(result, "EXC_CRASH (SIGABRT) detected at unknown location")
   }
 
-  func testExtractCrashMessageWithPartialExceptionInfo() {
+  func testExtractCrashMessageWithCompleteInfo() {
     let stackTrace = """
     Exception Type:  EXC_BREAKPOINT (SIGTRAP)
     Thread 0 Crashed:
     0   SomeFramework                 0x123456789 someFunction + 8
     """
 
-    // Should fallback to thread info when exception codes are missing
     let result = AwsKSCrashInstrumentation.extractCrashMessage(from: stackTrace)
-    XCTAssertEqual(result, "Crash detected on thread 0 at SomeFramework 0x123456789 someFunction + 8")
+    XCTAssertEqual(result, "EXC_BREAKPOINT (SIGTRAP) detected on thread 0 at SomeFramework + 8")
   }
 
   func testRecoverCrashContextSuccess() {
