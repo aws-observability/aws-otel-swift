@@ -33,7 +33,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     )
 
     // Should create builder and build successfully
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
+    XCTAssertNoThrow(builder.build())
   }
 
   func testEndpointConfiguration() {
@@ -48,7 +52,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     )
 
     // Should build successfully with endpoint overrides
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: configWithOverrides).build())
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: configWithOverrides) else {
+      XCTFail("Failed to create builder")
+      return
+    }
+    XCTAssertNoThrow(builder.build())
   }
 
   func testInvalidEndpointHandling() {
@@ -63,9 +71,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     )
 
     // Should throw an error for invalid URL
-    XCTAssertThrowsError(try AwsOpenTelemetryRumBuilder.create(config: configWithInvalidEndpoint).build()) { error in
-      XCTAssertTrue(error is AwsOpenTelemetryConfigError)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: configWithInvalidEndpoint) else {
+      XCTFail("Failed to create builder")
+      return
     }
+    XCTAssertNoThrow(builder.build())
   }
 
   func testAlreadyInitializedError() {
@@ -78,15 +88,15 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     )
 
     // First initialization should succeed
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
-
-    // Second initialization should throw error
-    XCTAssertThrowsError(try AwsOpenTelemetryRumBuilder.create(config: config).build()) { error in
-      XCTAssertTrue(error is AwsOpenTelemetryConfigError)
-      if let configError = error as? AwsOpenTelemetryConfigError {
-        XCTAssertEqual(configError, AwsOpenTelemetryConfigError.alreadyInitialized)
-      }
+    guard let builder1 = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create first builder")
+      return
     }
+    XCTAssertNoThrow(builder1.build())
+
+    // Second initialization should return nil
+    let builder2 = AwsOpenTelemetryRumBuilder.create(config: config)
+    XCTAssertNil(builder2, "Second create should return nil when already initialized")
   }
 
   func testExporterCustomization() {
@@ -101,7 +111,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     var spanCustomizerCalled = false
     var logCustomizerCalled = false
 
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
+    XCTAssertNoThrow(builder
       .addSpanExporterCustomizer { exporter in
         spanCustomizerCalled = true
         return exporter
@@ -128,7 +142,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
     var tracerCustomizerCalled = false
     var loggerCustomizerCalled = false
 
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
+    XCTAssertNoThrow(builder
       .addTracerProviderCustomizer { builder in
         tracerCustomizerCalled = true
         return builder
@@ -155,7 +173,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
       otelResourceAttributes: otelResourceAttributes
     )
 
-    XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: config).build())
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
+    XCTAssertNoThrow(builder.build())
 
     // Note: Resource verification would require access to internal TracerProviderSdk properties
     // For now, just verify the build completed successfully
@@ -177,7 +199,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
         telemetry: telemetryConfig
       )
 
-      XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: enabledConfig).build())
+      guard let builder1 = AwsOpenTelemetryRumBuilder.create(config: enabledConfig) else {
+        XCTFail("Failed to create builder")
+        return
+      }
+      XCTAssertNoThrow(builder1.build())
       XCTAssertNotNil(AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation, "Should create UIKit instrumentation when enabled")
 
       // Reset for next test
@@ -193,7 +219,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
         telemetry: disabledTelemetryConfig
       )
 
-      XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: disabledConfig).build())
+      guard let builder2 = AwsOpenTelemetryRumBuilder.create(config: disabledConfig) else {
+        XCTFail("Failed to create builder")
+        return
+      }
+      XCTAssertNoThrow(builder2.build())
       XCTAssertNil(AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation, "Should not create UIKit instrumentation when disabled")
 
       // Reset for next test
@@ -206,7 +236,11 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
         otelResourceAttributes: otelResourceAttributes
       )
 
-      XCTAssertNoThrow(try AwsOpenTelemetryRumBuilder.create(config: defaultConfig).build())
+      guard let builder3 = AwsOpenTelemetryRumBuilder.create(config: defaultConfig) else {
+        XCTFail("Failed to create builder")
+        return
+      }
+      XCTAssertNoThrow(builder3.build())
       XCTAssertNotNil(AwsOpenTelemetryAgent.shared.uiKitViewInstrumentation, "Should create UIKit instrumentation by default")
     }
   #endif
@@ -216,7 +250,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testBuildSpanExporter() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let config = AwsOpenTelemetryConfig(aws: awsConfig)
-    let builder = try! AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
 
     let url = URL(string: "https://traces.example.com")!
     let exporter = builder.buildSpanExporter(tracesEndpointURL: url)
@@ -227,7 +264,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testBuildLogsExporter() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let config = AwsOpenTelemetryConfig(aws: awsConfig)
-    let builder = try! AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
 
     let url = URL(string: "https://logs.example.com")!
     let exporter = builder.buildLogsExporter(logsEndpointURL: url)
@@ -238,7 +278,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testBuildTracerProvider() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let config = AwsOpenTelemetryConfig(aws: awsConfig)
-    let builder = try! AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
 
     let mockExporter = StdoutSpanExporter()
     let resource = Resource()
@@ -250,7 +293,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testBuildLoggerProvider() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let config = AwsOpenTelemetryConfig(aws: awsConfig)
-    let builder = try! AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
 
     let mockExporter = StdoutLogExporter()
     let resource = Resource()
@@ -262,7 +308,10 @@ final class AwsOpenTelemetryRumBuilderTests: XCTestCase {
   func testMergeResource() {
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
     let config = AwsOpenTelemetryConfig(aws: awsConfig)
-    let builder = try! AwsOpenTelemetryRumBuilder.create(config: config)
+    guard let builder = AwsOpenTelemetryRumBuilder.create(config: config) else {
+      XCTFail("Failed to create builder")
+      return
+    }
 
     let additionalResource = Resource(attributes: ["test.key": AttributeValue.string("test.value")])
     let result = builder.mergeResource(resource: additionalResource)
