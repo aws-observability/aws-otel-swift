@@ -53,13 +53,6 @@ struct SimpleAwsDemoApp: App {
       debug: true
     )
 
-    do {
-      try AwsOpenTelemetryRumBuilder.create(config: config)
-        .build()
-    } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      print("SDK is already initialized")
-    } catch {
-      print("Error initializing SDK: \(error)")
-    }
+    AwsOpenTelemetryRumBuilder.create(config: config)?.build()
   }
 }

@@ -1,91 +1,116 @@
 # Contributing Guidelines
 
-Thank you for your interest in contributing to our project. Whether it's a bug report, new feature, correction, or additional
-documentation, we greatly value feedback and contributions from our community.
+Thank you for your interest in contributing to AWS Distro for OpenTelemetry Swift. We welcome bug reports, feature requests, documentation improvements, and code contributions.
 
-Please read through this document before submitting any issues or pull requests to ensure we have all the necessary
-information to effectively respond to your bug report or contribution.
-
-
-## Reporting Bugs/Feature Requests
-
-We welcome you to use the GitHub issue tracker to report bugs or suggest features.
-
-When filing an issue, please check existing open, or recently closed, issues to make sure somebody else hasn't already
-reported the issue. Please try to include as much information as you can. Details like these are incredibly useful:
-
-* A reproducible test case or series of steps
-* The version of our code being used
-* Any modifications you've made relevant to the bug
-* Anything unusual about your environment or deployment
-
-
-## Contributing via Pull Requests
-Contributions via pull requests are much appreciated. Before sending us a pull request, please ensure that:
-
-1. You are working against the latest source on the *main* branch.
-2. You check existing open, and recently merged, pull requests to make sure someone else hasn't addressed the problem already.
-3. You open an issue to discuss any significant work - we would hate for your time to be wasted.
-
-To send us a pull request, please:
-
-1. Fork the repository.
-2. Modify the source; please focus on the specific change you are contributing. If you also reformat all the code, it will be hard for us to focus on your change.
-3. Ensure local tests pass (see [Testing](#testing) section below).
-4. Commit to your fork using clear commit messages.
-5. Send us a pull request, answering any default questions in the pull request interface.
-6. Pay attention to any automated CI failures reported in the pull request, and stay involved in the conversation.
-
-GitHub provides additional document on [forking a repository](https://help.github.com/articles/fork-a-repo/) and
-[creating a pull request](https://help.github.com/articles/creating-a-pull-request/).
-
-## Testing
+## Getting Started
 
 ### Prerequisites
 
-Before running tests, ensure you have:
+- Xcode 16.0 or later
+- iOS Simulator (iPhone 16 recommended)
+- Git hooks setup (run `./scripts/setup-all.sh`)
 
-- Xcode 15.0 or later
-- iOS Simulator (iPhone 16 or compatible device)
+### Development Setup
 
-### Running All Tests
-**Primary Method via Xcode IDE:**
-1. Open the project in Xcode
-2. Select the `aws-otel-swift-Package` scheme
-3. Choose your target simulator (iPhone 16 recommended)
-4. Press `Cmd+U` or go to Product → Test
+Clone the repository and set up development tools:
 
-**Primary Method via CLI:**
 ```bash
-# Navigate to the project directory
-cd /path/to/aws-otel-swift
-
-# Run all tests using xcodebuild
-xcodebuild test -scheme aws-otel-swift-Package -destination 'platform=iOS Simulator,name=iPhone 16'
+git clone https://github.com/aws-observability/aws-otel-swift.git
+cd aws-otel-swift
+./scripts/setup-all.sh
 ```
 
-**Alternative Methods:**
-*Using Swift Package Manager:*
+## Reporting Issues
+
+Before filing an issue, check existing open or recently closed issues to avoid duplicates.
+
+Include the following information:
+
+- Reproducible test case or steps
+- Code version being used
+- Relevant modifications made
+- Environment details
+
+## Contributing Code
+
+### Before You Start
+
+- Check existing PRs to avoid duplicate work
+- Open an issue for significant changes to discuss approach
+
+### Pull Request Process
+
+1. **Fork** the repository
+2. **Create a branch** from `main`
+3. **Make focused changes** - avoid reformatting unrelated code
+4. **Run tests** locally (see [Testing](#testing))
+5. **Commit** with in [conventional commit format](https://www.conventionalcommits.org/en/v1.0.0/)
+6. **Open a pull request** with detailed description
+7. **Respond** to review feedback
+
+## Testing
+
+### Running Tests
+
+**Via CLI:**
+
 ```bash
-# For basic Swift package tests (limited testing for iOS specific functionality)
-swift test
+# Coverage and Quality
+make check-coverage          # Run tests on macOS with coverage requirement (85% repository, 85% PR)
+make lint                    # Run all linting checks
+make format                  # Auto-fix formatting issues
+
+# Platform Testing
+make test-ios                # Run full test cycle for iOS
+make test-tvos               # Run full test cycle for tvOS
+make test-watchos            # Run full test cycle for watchOS
+make test-visionos           # Run full test cycle for visionOS
+make test-macos              # Run tests on macOS
+
+# To run a specific test
+make test-ios TEST=AwsOpenTelemetryCore/TestSuiteName
 ```
 
+**Via Xcode:**
 
-## Finding contributions to work on
-Looking at the existing issues is a great way to find something to contribute on. As our projects, by default, use the default GitHub issue labels (enhancement/bug/duplicate/help wanted/invalid/question/wontfix), looking at any 'help wanted' issues is a great place to start.
+1. Open project in Xcode
+2. Select `aws-otel-swift-Package` scheme
+3. Choose iPhone 16 simulator
+4. Press `Cmd+U`
 
+## Version Management
+
+Version bumping is handled automatically by CI workflows. For manual version control:
+
+```bash
+# Patch version (x.y.z → x.y.z+1)
+./scripts/bump-version.sh patch
+
+# Minor version (x.y.z → x.y+1.0)
+./scripts/bump-version.sh minor
+
+# Major version (x.y.z → x+1.0.0)
+./scripts/bump-version.sh major
+
+# Specific version
+./scripts/bump-version.sh 2.1.3
+
+# With commit and tag
+./scripts/bump-version.sh patch --commit-tag
+```
+
+## Finding Work
+
+Look for issues labeled `help wanted` or `good first issue` to get started.
 
 ## Code of Conduct
-This project has adopted the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct).
-For more information see the [Code of Conduct FAQ](https://aws.github.io/code-of-conduct-faq) or contact
-opensource-codeofconduct@amazon.com with any additional questions or comments.
 
+This project follows the [Amazon Open Source Code of Conduct](https://aws.github.io/code-of-conduct).
 
-## Security issue notifications
-If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public github issue.
+## Security Issues
 
+Report security vulnerabilities through [AWS Security](http://aws.amazon.com/security/vulnerability-reporting/). **Do not** create public GitHub issues for security concerns.
 
-## Licensing
+## License
 
-See the [LICENSE](LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
+See [LICENSE](LICENSE) for project licensing. Contributors must confirm licensing of their contributions.
