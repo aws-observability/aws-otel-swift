@@ -50,6 +50,16 @@ import Foundation
   /// Telemetry feature configuration settings
   public var telemetry: AwsTelemetryConfig?
 
+  private enum CodingKeys: String, CodingKey {
+    case aws
+    case exportOverride
+    case sessionTimeout
+    case sessionSampleRate
+    case otelResourceAttributes
+    case debug
+    case telemetry
+  }
+
   /**
    * Initializes a new configuration instance.
    *
@@ -93,6 +103,7 @@ import Foundation
     otelResourceAttributes = try container.decodeIfPresent([String: String].self, forKey: .otelResourceAttributes)
     debug = try container.decodeIfPresent(Bool.self, forKey: .debug)
     telemetry = try container.decodeIfPresent(AwsTelemetryConfig.self, forKey: .telemetry) ?? AwsTelemetryConfig()
+
     super.init()
   }
 }
