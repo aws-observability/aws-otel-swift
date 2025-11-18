@@ -32,10 +32,14 @@ public class AwsResourceBuilder {
    * @return A resource with AWS RUM attributes
    */
   public static func buildResource(config: AwsOpenTelemetryConfig) -> Resource {
-    let rumResourceAttributes: [String: String] = [
+    var rumResourceAttributes: [String: String] = [
       AwsAttributes.rumAppMonitorId.rawValue: config.aws.rumAppMonitorId,
       AwsAttributes.rumSdkVersion.rawValue: AwsOpenTelemetryAgent.version
     ]
+
+    if let rumAlias = config.aws.rumAlias {
+      rumResourceAttributes[AwsAttributes.rumAppMonitorAlias.rawValue] = rumAlias
+    }
 
     let cloudResourceAttributes: [String: String] = [
       SemanticConventions.Cloud.region.rawValue: config.aws.region,

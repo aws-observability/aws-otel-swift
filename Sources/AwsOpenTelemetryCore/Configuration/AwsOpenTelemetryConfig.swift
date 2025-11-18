@@ -93,6 +93,7 @@ import Foundation
     otelResourceAttributes = try container.decodeIfPresent([String: String].self, forKey: .otelResourceAttributes)
     debug = try container.decodeIfPresent(Bool.self, forKey: .debug)
     telemetry = try container.decodeIfPresent(AwsTelemetryConfig.self, forKey: .telemetry) ?? AwsTelemetryConfig()
+
     super.init()
   }
 }

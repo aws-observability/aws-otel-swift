@@ -141,4 +141,13 @@ final class AwsOpenTelemetryConfigTests: XCTestCase {
     XCTAssertEqual(config.telemetry?.hang?.enabled, true)
     XCTAssertEqual(config.telemetry?.view?.enabled, true)
   }
+
+  func testRumAliasInResourceAttributes() {
+    let awsConfig = AwsConfig(region: region, rumAppMonitorId: rumAppMonitorId, rumAlias: "resource-alias")
+    let config = AwsOpenTelemetryConfig(aws: awsConfig)
+    let resource = AwsResourceBuilder.buildResource(config: config)
+
+    XCTAssertEqual(config.aws.rumAlias, "resource-alias")
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorAlias.rawValue]?.description, "resource-alias")
+  }
 }

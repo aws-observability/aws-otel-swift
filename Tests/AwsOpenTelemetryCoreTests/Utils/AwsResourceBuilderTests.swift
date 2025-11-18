@@ -28,6 +28,7 @@ final class AwsResourceBuilderTests: XCTestCase {
     XCTAssertEqual(resource.attributes["cloud.provider"]?.description, "aws")
     XCTAssertEqual(resource.attributes["cloud.platform"]?.description, "aws_rum")
     XCTAssertEqual(resource.attributes[AwsAttributes.rumSdkVersion.rawValue]?.description, AwsOpenTelemetryAgent.version)
+    XCTAssertNil(resource.attributes[AwsAttributes.rumAppMonitorAlias.rawValue])
     XCTAssertNotNil(resource.attributes["device.model.name"])
   }
 
@@ -129,5 +130,23 @@ final class AwsResourceBuilderTests: XCTestCase {
     // Check that other attributes are still present
     XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "test-id")
     XCTAssertEqual(resource.attributes["cloud.region"]?.description, "us-east-1")
+  }
+
+  func testBuildResourceWithRumAlias() {
+    let config = AwsOpenTelemetryConfig(
+      aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id", rumAlias: "test-alias")
+    )
+    let resource = AwsResourceBuilder.buildResource(config: config)
+
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "test-id")
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorAlias.rawValue]?.description, "test-alias")
+  }
+
+  func testBuildResourceWithoutRumAlias() {
+    let config = AwsOpenTelemetryConfig(aws: AwsConfig(region: "us-east-1", rumAppMonitorId: "test-id"))
+    let resource = AwsResourceBuilder.buildResource(config: config)
+
+    XCTAssertEqual(resource.attributes[AwsAttributes.rumAppMonitorId.rawValue]?.description, "test-id")
+    XCTAssertNil(resource.attributes[AwsAttributes.rumAppMonitorAlias.rawValue])
   }
 }
