@@ -50,6 +50,9 @@ import Foundation
   /// Telemetry feature configuration settings
   public var telemetry: AwsTelemetryConfig?
 
+  /// Custom X-Forwarded-For header value (optional)
+  public var xForwardedFor: String?
+
   /**
    * Initializes a new configuration instance.
    *
@@ -67,7 +70,8 @@ import Foundation
               sessionSampleRate: Double? = nil,
               applicationAttributes: [String: String]? = nil,
               debug: Bool? = nil,
-              telemetry: AwsTelemetryConfig? = AwsTelemetryConfig()) {
+              telemetry: AwsTelemetryConfig? = AwsTelemetryConfig(),
+              xForwardedFor: String? = nil) {
     self.aws = aws
     self.exportOverride = exportOverride
     self.sessionTimeout = sessionTimeout
@@ -75,6 +79,7 @@ import Foundation
     self.applicationAttributes = applicationAttributes
     self.debug = debug
     self.telemetry = telemetry
+    self.xForwardedFor = xForwardedFor
     super.init()
   }
 

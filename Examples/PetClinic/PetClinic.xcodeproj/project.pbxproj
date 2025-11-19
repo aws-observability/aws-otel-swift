@@ -7,10 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0F8D1B7B2E7CBC6A0071E428 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 0F8D1B7A2E7CBC6A0071E428 /* AwsOpenTelemetryAuth */; };
+		3045DE042ECBDC6900AEB693 /* aws_config.json in Resources */ = {isa = PBXBuildFile; fileRef = 3045DE032ECBDC6700AEB693 /* aws_config.json */; };
+		308206392ECE421E00A7AC9E /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 308206382ECE421E00A7AC9E /* AwsOpenTelemetryCore */; };
 		3F48C1902E8B0ADB00C0D29B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3F48C18F2E8B0ADB00C0D29B /* Assets.xcassets */; };
-		3F48C1F32E8B40FB00C0D29B /* AwsOpenTelemetryAgent in Frameworks */ = {isa = PBXBuildFile; productRef = 3F48C1F22E8B40FB00C0D29B /* AwsOpenTelemetryAgent */; };
-		3F48C1F72E8B40FB00C0D29B /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3F48C1F62E8B40FB00C0D29B /* AwsOpenTelemetryCore */; };
 		A1000001 /* PetClinicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002 /* PetClinicApp.swift */; };
 		A1000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004 /* ContentView.swift */; };
 		A1000005 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006 /* Models.swift */; };
@@ -29,6 +28,7 @@
 
 /* Begin PBXFileReference section */
 		0F147AE32E7CCCE100FAE8B6 /* PetClinicUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PetClinicUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		3045DE032ECBDC6700AEB693 /* aws_config.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = aws_config.json; sourceTree = "<group>"; };
 		3F48C18F2E8B0ADB00C0D29B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000000 /* PetClinic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PetClinic.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000002 /* PetClinicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetClinicApp.swift; sourceTree = "<group>"; };
@@ -54,9 +54,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3F48C1F32E8B40FB00C0D29B /* AwsOpenTelemetryAgent in Frameworks */,
-				0F8D1B7B2E7CBC6A0071E428 /* AwsOpenTelemetryAuth in Frameworks */,
-				3F48C1F72E8B40FB00C0D29B /* AwsOpenTelemetryCore in Frameworks */,
+				308206392ECE421E00A7AC9E /* AwsOpenTelemetryCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,6 +81,7 @@
 		A1000012 /* PetClinic */ = {
 			isa = PBXGroup;
 			children = (
+				3045DE032ECBDC6700AEB693 /* aws_config.json */,
 				3F48C18F2E8B0ADB00C0D29B /* Assets.xcassets */,
 				A1000002 /* PetClinicApp.swift */,
 				A1000004 /* ContentView.swift */,
@@ -174,7 +173,7 @@
 			);
 			mainGroup = A1000011;
 			packageReferences = (
-				0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */,
+				308206372ECE421E00A7AC9E /* XCRemoteSwiftPackageReference "aws-otel-swift" */,
 			);
 			productRefGroup = A1000013 /* Products */;
 			projectDirPath = "";
@@ -199,6 +198,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3F48C1902E8B0ADB00C0D29B /* Assets.xcassets in Resources */,
+				3045DE042ECBDC6900AEB693 /* aws_config.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -414,6 +414,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.rum.PetClinic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRIP_STYLE = debugging;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -443,6 +444,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.rum.PetClinic;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRIP_STYLE = debugging;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -481,26 +483,21 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../aws-otel-swift";
+/* Begin XCRemoteSwiftPackageReference section */
+		308206372ECE421E00A7AC9E /* XCRemoteSwiftPackageReference "aws-otel-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/aws-observability/aws-otel-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.0.0;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		0F8D1B7A2E7CBC6A0071E428 /* AwsOpenTelemetryAuth */ = {
+		308206382ECE421E00A7AC9E /* AwsOpenTelemetryCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = AwsOpenTelemetryAuth;
-		};
-		3F48C1F22E8B40FB00C0D29B /* AwsOpenTelemetryAgent */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */;
-			productName = AwsOpenTelemetryAgent;
-		};
-		3F48C1F62E8B40FB00C0D29B /* AwsOpenTelemetryCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0F8D1B772E7CBC6A0071E428 /* XCLocalSwiftPackageReference "../aws-otel-swift" */;
+			package = 308206372ECE421E00A7AC9E /* XCRemoteSwiftPackageReference "aws-otel-swift" */;
 			productName = AwsOpenTelemetryCore;
 		};
 /* End XCSwiftPackageProductDependency section */

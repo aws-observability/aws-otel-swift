@@ -1,0 +1,10 @@
+{
+  "aws": {
+    "region": "us-west-1",
+    "rumAppMonitorId": "31098f11-1819-46d7-ab54-5911eaa4412d",
+  },
+  "otelResourceAttributes": {
+      "service.name": "MyApp", // Note: Update this with your application name
+      "service.version": "1.0.0-limhye-ios" // Note: Keep this updated with latest application version
+  }
+}

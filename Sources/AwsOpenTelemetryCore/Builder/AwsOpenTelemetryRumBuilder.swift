@@ -365,7 +365,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A configured span exporter
    */
   func buildSpanExporter(tracesEndpointURL: URL) -> SpanExporter {
-    let retryableExporter = AwsRetryableSpanExporter(endpoint: tracesEndpointURL, config: exporterConfig)
+    let retryableExporter = AwsRetryableSpanExporter(endpoint: tracesEndpointURL, config: exporterConfig, otelConfig: config)
 
     let defaultExporter: SpanExporter = if config.debug ?? false {
       MultiSpanExporter(spanExporters: [
@@ -386,7 +386,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return A configured log record exporter
    */
   func buildLogsExporter(logsEndpointURL: URL) -> LogRecordExporter {
-    let retryableExporter = AwsRetryableLogExporter(endpoint: logsEndpointURL, config: exporterConfig)
+    let retryableExporter = AwsRetryableLogExporter(endpoint: logsEndpointURL, config: exporterConfig, otelConfig: config)
 
     let defaultExporter: LogRecordExporter = if config.debug ?? false {
       MultiLogRecordExporter(logRecordExporters: [

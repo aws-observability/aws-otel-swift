@@ -25,8 +25,8 @@ import OpenTelemetryProtocolExporterCommon
 public class AwsRetryableLogExporter: LogRecordExporter {
   private let otlpExporter: OtlpHttpLogExporter
 
-  public init(endpoint: URL, config: AwsExporterConfig = .default) {
-    let httpClient = AwsHttpClient(config: config)
+  public init(endpoint: URL, config: AwsExporterConfig = .default, otelConfig: AwsOpenTelemetryConfig? = nil) {
+    let httpClient = AwsHttpClient(config: config, otelConfig: otelConfig)
     otlpExporter = OtlpHttpLogExporter(
       endpoint: endpoint,
       config: OtlpConfiguration(compression: .none),

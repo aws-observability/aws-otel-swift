@@ -49,6 +49,7 @@ class PetClinicUITests: XCTestCase {
     app.buttons["💥 Trigger App Crash"].tap()
 
     // App will crash here
+    app.launch()
   }
 
   private func navigateToOwnersScreen(app: XCUIApplication) {
