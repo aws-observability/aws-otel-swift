@@ -30,14 +30,6 @@ struct PetClinicApp: App {
       debug: true
 //      xForwardedFor: "99.49.114.104" // San Jose, California, USA*/
     )
-
-    do {
-      try AwsOpenTelemetryRumBuilder.create(config: config)
-        .build()
-    } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      print("SDK is already initialized")
-    } catch {
-      print("Error initializing SDK: \(error)")
-    }
+    AwsOpenTelemetryRumBuilder.create(config: config)?.build()
   }
 }

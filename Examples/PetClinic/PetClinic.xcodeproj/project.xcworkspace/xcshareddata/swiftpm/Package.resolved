@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/aws-observability/aws-otel-swift",
       "state" : {
-        "revision" : "e54dbb31785d3af25876c8be4985d87e31151e44",
-        "version" : "0.0.0"
+        "revision" : "4859a4f624cd95cccb5c84afbe12a8c654cdc44f",
+        "version" : "1.0.0"
       }
     },
     {
