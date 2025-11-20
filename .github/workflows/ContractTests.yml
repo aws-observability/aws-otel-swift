@@ -23,9 +23,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Initialize
-        uses: ./.github/actions/initialization
-
       - name: Run contract tests
         run: make contract-test-run-ios
 
