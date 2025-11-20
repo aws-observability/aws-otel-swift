@@ -4,12 +4,11 @@ on:
     branches:
       - main
       - release/*
-      - fix/*
 
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - release/*
+  pull_request:
+    branches:
+      - main
+      - release/*
 
 jobs:
   ios:
