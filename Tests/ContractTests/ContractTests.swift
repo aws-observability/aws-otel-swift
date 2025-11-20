@@ -6,6 +6,7 @@ class AllEventsTests: XCTestCase {
 
   // MARK: - software.amazon.opentelemetry.appstart
 
+  // Verifies that app launch notification is logged when app starts
   func testAppLaunchLogExists() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let appStartLogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.appstart" }
@@ -14,6 +15,7 @@ class AllEventsTests: XCTestCase {
     XCTAssertNotNil(launchLog, "App launch log should exist")
   }
 
+  // Verifies cold app start span with correct launch timing attributes
   func testAppStartSpanExists() {
     let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
     let appStartSpans = spans.filter { $0.scope.name == "software.amazon.opentelemetry.appstart" }
@@ -27,6 +29,7 @@ class AllEventsTests: XCTestCase {
     XCTAssertEqual(appStartSpan?.attributes.first { $0.key == "launch_start_name" }?.value.stringValue, "kp_proc.p_starttime")
   }
 
+  // Verifies warm app start span when app returns from background
   func testWarmLaunchSpanExists() {
     let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
     let appStartSpans = spans.filter { $0.scope.name == "software.amazon.opentelemetry.appstart" }
@@ -42,6 +45,7 @@ class AllEventsTests: XCTestCase {
 
   // MARK: - software.amazon.opentelemetry.hang
 
+  // Verifies app hang detection with crash report and timing
   func testAppHangSpanExists() {
     let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
     let hangSpans = spans.filter { $0.scope.name == "software.amazon.opentelemetry.hang" }
@@ -76,6 +80,7 @@ class AllEventsTests: XCTestCase {
 
   // MARK: - software.amazon.opentelemetry.session
 
+  // Verifies that session start events are logged correctly
   func testSessionStartLogExists() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let sessionLogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.session" }
@@ -84,6 +89,7 @@ class AllEventsTests: XCTestCase {
     XCTAssertEqual(sessionStartLogs.count, 2, "Should have exactly 2 session start logs")
   }
 
+  // Verifies session IDs link correctly between session events
   func testSessionLinking() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let sessionLogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.session" }
@@ -117,6 +123,7 @@ class AllEventsTests: XCTestCase {
     XCTAssertEqual(firstStartSessionId, secondStartPreviousId, "Second session start previous_id should match first session start session.id")
   }
 
+  // Verifies all events within a session have the same session ID
   func testSessionIdConsistency() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let sessionLogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.session" }
@@ -183,6 +190,7 @@ class AllEventsTests: XCTestCase {
     }
   }
 
+  // Verifies all events have the same anonymous user ID
   func testUserIdConsistency() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let sessionLogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.session" }
@@ -220,6 +228,7 @@ class AllEventsTests: XCTestCase {
     }
   }
 
+  // Verifies session end events contain required attributes
   func testSessionEndLogExists() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let sessionLogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.session" }
@@ -231,8 +240,34 @@ class AllEventsTests: XCTestCase {
     XCTAssertNotNil(sessionEndLog?.attributes.first { $0.key == "session.previous_id" }?.value.stringValue)
   }
 
+  // MARK: - User Journey
+
+  // Verifies screen navigation parent-child relationships are tracked
+  func testParentScreenLinking() {
+    let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
+    let swiftUILogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.swiftui" }
+    let viewDidAppearLogs = swiftUILogs.flatMap(\.logRecords)
+      .filter { $0.eventName == "app.screen.view_did_appear" }
+      .sorted { UInt64($0.observedTimeUnixNano ?? $0.timeUnixNano) ?? 0 < UInt64($1.observedTimeUnixNano ?? $1.timeUnixNano) ?? 0 }
+
+    XCTAssertEqual(viewDidAppearLogs.count, 2, "Should have 2 view_did_appear logs")
+
+    // Check parent linking
+    if viewDidAppearLogs.count >= 2 {
+      let firstLog = viewDidAppearLogs[0]
+      let secondLog = viewDidAppearLogs[1]
+
+      let firstScreenName = firstLog.attributes.first { $0.key == "screen.name" }?.value.stringValue
+      let secondParentName = secondLog.attributes.first { $0.key == "app.screen.parent_screen.name" }?.value.stringValue
+
+      XCTAssertEqual(firstScreenName, "TabBarView", "First screen should be TabBarView")
+      XCTAssertEqual(secondParentName, "HomeScreen", "Second screen parent should be HomeScreen")
+    }
+  }
+
   // MARK: - System Metrics
 
+  // Verifies all events include memory and CPU usage metrics
   func testSystemMetricsOnAllEvents() {
     // Note: Battery metrics are not supported in simulator environment for contract tests
 
@@ -269,28 +304,59 @@ class AllEventsTests: XCTestCase {
     }
   }
 
+  // MARK: - software.amazon.opentelemetry.uikit
+
+  // Verifies UIKit view controller appearance timing is tracked
+  func testUIKitTimeToFirstAppearSpanExists() {
+    let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
+    let uikitSpans = spans.filter { $0.scope.name == "software.amazon.opentelemetry.uikit" }
+    let uikitScreenSpan = uikitSpans.flatMap(\.spans).first { $0.name == "app.screen.time_to_first_appear" }
+
+    XCTAssertNotNil(uikitScreenSpan, "UIKit screen span should exist")
+    XCTAssertEqual(uikitScreenSpan?.attributes.first { $0.key == "app.screen.type" }?.value.stringValue, "uikit")
+    XCTAssertEqual(uikitScreenSpan?.attributes.first { $0.key == "screen.name" }?.value.stringValue, "RootViewController")
+    XCTAssertNotNil(uikitScreenSpan?.attributes.first { $0.key == "session.id" }?.value.stringValue)
+    XCTAssertNotNil(uikitScreenSpan?.attributes.first { $0.key == "user.id" }?.value.stringValue)
+  }
+
   // MARK: - software.amazon.opentelemetry.swiftui
 
+  // Verifies SwiftUI view appearance events are logged with metadata
   func testScreenViewLogExists() {
     let logs = data?.logs.flatMap { $0.resourceLogs.flatMap(\.scopeLogs) } ?? []
     let swiftUILogs = logs.filter { $0.scope.name == "software.amazon.opentelemetry.swiftui" }
-    let screenViewLog = swiftUILogs.flatMap(\.logRecords).first { $0.eventName == "app.screen.view_did_appear" }
+    let screenViewLogs = swiftUILogs.flatMap(\.logRecords).filter { $0.eventName == "app.screen.view_did_appear" }
 
-    XCTAssertNotNil(screenViewLog, "Screen view log should exist")
-    XCTAssertTrue(screenViewLog?.attributes.contains { $0.key == "screen.name" } ?? false)
-    XCTAssertTrue(screenViewLog?.attributes.contains { $0.key == "app.screen.type" } ?? false)
-    XCTAssertTrue(screenViewLog?.attributes.contains { $0.key == "app.screen.interaction" } ?? false)
-    XCTAssertTrue(screenViewLog?.attributes.contains { $0.key == "app.screen.parent_screen.name" } ?? false)
-    XCTAssertTrue(screenViewLog?.attributes.contains { $0.key == "session.id" } ?? false)
-    XCTAssertTrue(screenViewLog?.attributes.contains { $0.key == "user.id" } ?? false)
+    XCTAssertEqual(screenViewLogs.count, 2, "Should have 2 SwiftUI view_did_appear logs")
+
+    for log in screenViewLogs {
+      XCTAssertNotNil(log.attributes.first { $0.key == "screen.name" }?.value.stringValue)
+      XCTAssertEqual(log.attributes.first { $0.key == "app.screen.type" }?.value.stringValue, "swiftui")
+      XCTAssertNotNil(log.attributes.first { $0.key == "app.screen.interaction" }?.value.intValue)
+      XCTAssertNotNil(log.attributes.first { $0.key == "app.screen.parent_screen.name" }?.value.stringValue)
+      XCTAssertNotNil(log.attributes.first { $0.key == "session.id" }?.value.stringValue)
+      XCTAssertNotNil(log.attributes.first { $0.key == "user.id" }?.value.stringValue)
+    }
+
+    // Check for specific view logs
+    let tabBarViewLog = screenViewLogs.first { log in
+      log.attributes.contains { $0.key == "screen.name" && $0.value.stringValue == "TabBarView" }
+    }
+    XCTAssertNotNil(tabBarViewLog, "TabBarView log should exist")
+
+    let contentViewLog = screenViewLogs.first { log in
+      log.attributes.contains { $0.key == "screen.name" && $0.value.stringValue == "ContentView" }
+    }
+    XCTAssertNotNil(contentViewLog, "ContentView log should exist")
   }
 
+  // Verifies SwiftUI view appearance timing spans for all screens
   func testScreenTimeToFirstAppearSpansExist() {
     let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
     let swiftUISpans = spans.filter { $0.scope.name == "software.amazon.opentelemetry.swiftui" }
     let screenSpans = swiftUISpans.flatMap(\.spans).filter { $0.name == "app.screen.time_to_first_appear" }
 
-    XCTAssertFalse(screenSpans.isEmpty, "Screen time to first appear spans should exist")
+    XCTAssertEqual(screenSpans.count, 4, "Should have 4 SwiftUI screen spans")
 
     for span in screenSpans {
       XCTAssertNotNil(span.attributes.first { $0.key == "screen.name" }?.value.stringValue)
@@ -298,21 +364,19 @@ class AllEventsTests: XCTestCase {
       XCTAssertNotNil(span.attributes.first { $0.key == "user.id" }?.value.stringValue)
     }
 
-    // Check for ContentView span
-    let contentViewSpan = screenSpans.first { span in
-      span.attributes.contains { $0.key == "screen.name" && $0.value.stringValue == "ContentView" }
+    // Check for all expected SwiftUI views
+    let expectedViews = ["TabBarView", "LoaderView", "ContentView", "HomeScreen"]
+    for viewName in expectedViews {
+      let viewSpan = screenSpans.first { span in
+        span.attributes.contains { $0.key == "screen.name" && $0.value.stringValue == viewName }
+      }
+      XCTAssertNotNil(viewSpan, "\(viewName) span should exist")
     }
-    XCTAssertNotNil(contentViewSpan, "ContentView span should exist")
-
-    // Check for LoaderView span
-    let loaderViewSpan = screenSpans.first { span in
-      span.attributes.contains { $0.key == "screen.name" && $0.value.stringValue == "LoaderView" }
-    }
-    XCTAssertNotNil(loaderViewSpan, "LoaderView span should exist")
   }
 
   // MARK: - NSURLSession
 
+  // Verifies HTTP network requests are tracked as spans
   func testNetworkSpansExist() {
     let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
     let networkSpans = spans.filter { $0.scope.name == "NSURLSession" }
@@ -339,6 +403,7 @@ class AllEventsTests: XCTestCase {
     XCTAssertNotNil(span500, "HTTP 500 span should exist")
   }
 
+  // Verifies network spans contain correct HTTP and system attributes
   func testNetworkSpanAttributes() {
     let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
     let networkSpans = spans.filter { $0.scope.name == "NSURLSession" }
@@ -360,6 +425,7 @@ class AllEventsTests: XCTestCase {
 
   // MARK: - Resource Attributes Tests
 
+  // Verifies telemetry data includes correct service and device metadata
   func testResourceAttributes() {
     guard let firstTrace = data?.traces.first?.resourceSpans.first else {
       XCTFail("No trace data found")

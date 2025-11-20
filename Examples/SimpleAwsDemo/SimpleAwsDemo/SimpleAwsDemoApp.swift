@@ -97,13 +97,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 }
 
+class RootViewController: UIViewController {
+  override func viewDidLoad() {
+    super.viewDidLoad()
+
+    let hostingController = UIHostingController(rootView: LoaderView())
+    addChild(hostingController)
+    view.addSubview(hostingController.view)
+    hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      hostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+      hostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      hostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+    ])
+    hostingController.didMove(toParent: self)
+  }
+}
+
+struct RootViewControllerWrapper: UIViewControllerRepresentable {
+  func makeUIViewController(context: Context) -> RootViewController {
+    RootViewController()
+  }
+
+  func updateUIViewController(_ uiViewController: RootViewController, context: Context) {}
+}
+
 @main
 struct SimpleAwsDemoApp: App {
   @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
   var body: some Scene {
     WindowGroup {
-      LoaderView()
+      RootViewControllerWrapper()
     }
   }
 }

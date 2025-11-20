@@ -82,9 +82,6 @@ case $DESTINATION in
     ;;
 esac
 
-# Wait for telemetry generation
-sleep 15
-
 # List generated files
 echo "Generated files:"
 ls -al "$PROJECT_ROOT/Examples/AwsOtelUI/out"
