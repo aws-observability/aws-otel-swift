@@ -14,31 +14,22 @@
  */
 
 import SwiftUI
+import UIKit
 import AwsOpenTelemetryCore
 
-@main
-struct SimpleAwsDemoApp: App {
-  private let region = "us-east-1"
-  private let appMonitorId = "YOUR_APP_MONITOR_ID_FROM_OUTPUT"
+class AppDelegate: UIResponder, UIApplicationDelegate {
+  private var contractTestViewModel: LoaderViewModel?
 
-  private func isImportCoreNoInitialization() -> Bool {
-    return !ProcessInfo.processInfo.arguments.contains("--importCoreNoInitialization")
-  }
-
-  init() {
-    if isImportCoreNoInitialization() {
+  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    if !ProcessInfo.processInfo.arguments.contains("--importCoreNoInitialization") {
       setupOpenTelemetry()
     }
-  }
-
-  var body: some Scene {
-    WindowGroup {
-      LoaderView()
-    }
+    contractTestHelpers()
+    return true
   }
 
   private func setupOpenTelemetry() {
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let awsConfig = AwsConfig(region: "us-east-1", rumAppMonitorId: "test-app-monitor-id")
     let exportOverride = AwsExportOverride(
       logs: "http://localhost:3000/v1/logs",
       traces: "http://localhost:3000/v1/traces"
@@ -46,13 +37,49 @@ struct SimpleAwsDemoApp: App {
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
-      // sessionTimeout: 30, // just 30 seconds for demo purposes
+      sessionTimeout: 5,
       otelResourceAttributes: [
-        "service.version": "1.0.0"
+        "service.version": "1.0.0",
+        "service.name": "SimpleAwsDemo"
       ],
       debug: true
     )
-
     AwsOpenTelemetryRumBuilder.create(config: config)?.build()
+  }
+
+  private func contractTestHelpers() {
+    print("Process arguments: \(ProcessInfo.processInfo.arguments)")
+    guard ProcessInfo.processInfo.arguments.contains("--contractTestMode") else {
+      print("Contract test mode not enabled")
+      return
+    }
+
+    Task {
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+
+      await MainActor.run {
+        print("Running contractTestHelpers")
+        self.contractTestViewModel = LoaderViewModel()
+
+        Task {
+          guard let viewModel = self.contractTestViewModel else { return }
+          await viewModel.make200Request()
+          await viewModel.make4xxRequest()
+          await viewModel.make5xxRequest()
+          print("Finished making network requests")
+        }
+      }
+    }
+  }
+}
+
+@main
+struct SimpleAwsDemoApp: App {
+  @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+  var body: some Scene {
+    WindowGroup {
+      LoaderView()
+    }
   }
 }

@@ -14,6 +14,7 @@
  */
 
 import SwiftUI
+import AwsOpenTelemetryCore
 
 /**
  * Entry point view for the demo app.
@@ -23,6 +24,8 @@ struct LoaderView: View {
   @StateObject private var viewModel = LoaderViewModel()
 
   var body: some View {
-    ContentView(viewModel: viewModel)
+    AwsOTelTraceView("LoaderView") {
+      ContentView(viewModel: viewModel)
+    }
   }
 }

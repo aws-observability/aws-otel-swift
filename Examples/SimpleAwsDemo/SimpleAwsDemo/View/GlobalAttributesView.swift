@@ -26,79 +26,81 @@ struct GlobalAttributesView: View {
   private let manager = AwsGlobalAttributesProvider.getInstance()
 
   var body: some View {
-    NavigationView {
-      VStack {
-        // Add new attribute section
-        VStack(alignment: .leading, spacing: 8) {
-          Text("Add New Attribute")
-            .font(.headline)
+    AwsOTelTraceView("GlobalAttributesView") {
+      NavigationView {
+        VStack {
+          // Add new attribute section
+          VStack(alignment: .leading, spacing: 8) {
+            Text("Add New Attribute")
+              .font(.headline)
 
-          HStack {
-            TextField("Key", text: $newKey)
-              .textFieldStyle(RoundedBorderTextFieldStyle())
+            HStack {
+              TextField("Key", text: $newKey)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
 
-            TextField("Value", text: $newValue)
-              .textFieldStyle(RoundedBorderTextFieldStyle())
+              TextField("Value", text: $newValue)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
 
-            Button("Add") {
-              addAttribute()
+              Button("Add") {
+                addAttribute()
+              }
+              .disabled(newKey.isEmpty || newValue.isEmpty)
             }
-            .disabled(newKey.isEmpty || newValue.isEmpty)
           }
-        }
-        .padding()
+          .padding()
 
-        Divider()
+          Divider()
 
-        // Current attributes list
-        VStack(alignment: .leading, spacing: 8) {
-          Text("Current Global Attributes")
-            .font(.headline)
+          // Current attributes list
+          VStack(alignment: .leading, spacing: 8) {
+            Text("Current Global Attributes")
+              .font(.headline)
 
-          if attributes.isEmpty {
-            Text("No global attributes set")
-              .foregroundColor(.gray)
-              .italic()
-          } else {
-            List {
-              ForEach(Array(attributes.keys.sorted()), id: \.self) { key in
-                HStack {
-                  VStack(alignment: .leading) {
-                    Text(key)
-                      .font(.subheadline)
-                      .fontWeight(.medium)
-                    Text(attributeValueToString(attributes[key]!))
-                      .font(.caption)
-                      .foregroundColor(.gray)
+            if attributes.isEmpty {
+              Text("No global attributes set")
+                .foregroundColor(.gray)
+                .italic()
+            } else {
+              List {
+                ForEach(Array(attributes.keys.sorted()), id: \.self) { key in
+                  HStack {
+                    VStack(alignment: .leading) {
+                      Text(key)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                      Text(attributeValueToString(attributes[key]!))
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    }
+
+                    Spacer()
+
+                    Button("Remove") {
+                      removeAttribute(key: key)
+                    }
+                    .foregroundColor(.red)
                   }
-
-                  Spacer()
-
-                  Button("Remove") {
-                    removeAttribute(key: key)
-                  }
-                  .foregroundColor(.red)
                 }
               }
             }
           }
-        }
-        .padding()
+          .padding()
 
-        Spacer()
-      }
-      .navigationTitle("Global Attributes")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .navigationBarTrailing) {
-          Button("Done") {
-            dismiss()
+          Spacer()
+        }
+        .navigationTitle("Global Attributes")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Done") {
+              dismiss()
+            }
           }
         }
       }
-    }
-    .onAppear {
-      loadAttributes()
+      .onAppear {
+        loadAttributes()
+      }
     }
   }
 

@@ -26,10 +26,7 @@ jobs:
         uses: ./.github/actions/initialization
 
       - name: Run contract tests
-        uses: ./.github/actions/contract_tests
-        with:
-          api-level: 18
-          destination: ios
+        run: make contract-test-run-ios
 
   # tvos:
   #   runs-on: macos-15

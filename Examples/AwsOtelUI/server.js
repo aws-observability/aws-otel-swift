@@ -73,8 +73,29 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // OTEL API endpoints
 app.post('/v1/traces', (req, res) => {
+  let eventCount = 0;
+  
+  try {
+    if (Buffer.isBuffer(req.body)) {
+      const decoded = TraceService.decode(req.body);
+      const json = decoded.toJSON();
+      eventCount = json.resourceSpans?.reduce((total, rs) => 
+        total + (rs.scopeSpans?.reduce((scopeTotal, ss) => 
+          scopeTotal + (ss.spans?.length || 0), 0) || 0), 0) || 0;
+    }
+  } catch (err) {
+    // Ignore decode errors for logging
+  }
+  
+  console.log(`[${new Date().toISOString()}] POST /v1/traces - Events: ${eventCount}, Size: ${req.body?.length || 0} bytes`);
+  
   // Enable this to verify the batch and retry logic is
   // Inject retryable faults 20% of the time
   // if (Math.random() < 0.2) {
@@ -114,6 +135,22 @@ app.post('/v1/traces', (req, res) => {
 });
 
 app.post('/v1/logs', (req, res) => {
+  let eventCount = 0;
+  
+  try {
+    if (Buffer.isBuffer(req.body)) {
+      const decoded = LogService.decode(req.body);
+      const json = decoded.toJSON();
+      eventCount = json.resourceLogs?.reduce((total, rl) => 
+        total + (rl.scopeLogs?.reduce((scopeTotal, sl) => 
+          scopeTotal + (sl.logRecords?.length || 0), 0) || 0), 0) || 0;
+    }
+  } catch (err) {
+    // Ignore decode errors for logging
+  }
+  
+  console.log(`[${new Date().toISOString()}] POST /v1/logs - Events: ${eventCount}, Size: ${req.body?.length || 0} bytes`);
+  
   // Enable this to verify the batch and retry logic is
   // Inject retryable faults 20% of the time
   // if (Math.random() < 0.2) {

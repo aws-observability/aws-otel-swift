@@ -81,14 +81,13 @@ let package = Package(
     .testTarget(
       name: "AwsOpenTelemetryAuthTests",
       dependencies: ["AwsOpenTelemetryAuth"]
+    ),
+    .testTarget(
+      name: "ContractTests",
+      dependencies: ["AwsOpenTelemetryCore"],
+      path: "Tests/ContractTests",
+      sources: ["ContractTests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
     )
-    // .testTarget(
-    //   name: "ContractTests",
-    //   dependencies: ["AwsOpenTelemetryCore"],
-    //   path: "Tests/ContractTests",
-    //   exclude: ["MockCollector"],
-    //   sources: ["NetworkTests.swift", "UITests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
-    // )
   ]
 ).addPlatformSpecific()
 

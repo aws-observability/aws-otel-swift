@@ -94,13 +94,9 @@ import OpenTelemetryApi
       return false
     }
 
-    do {
-      try builder.build()
-      return true
-    } catch {
-      AwsInternalLogger.error("Error starting OpenTelemetrySDK: \(error.localizedDescription)")
-      return false
-    }
+    builder.build()
+
+    return true
   }
 
   /**

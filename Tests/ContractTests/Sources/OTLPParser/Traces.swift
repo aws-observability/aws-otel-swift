@@ -20,7 +20,7 @@ struct Span: Codable {
   let parentSpanId: String?
   let flags: Int?
   let name: String
-  let kind: Int
+  let kind: String
   let startTimeUnixNano: String
   let endTimeUnixNano: String
   let attributes: [Attribute]
