@@ -66,7 +66,7 @@ mkdir -p "$PROJECT_ROOT/Examples/AwsOtelUI/out"
 # Start AwsOtelUI server
 echo "Starting AwsOtelUI server..."
 cd "$PROJECT_ROOT/Examples/AwsOtelUI"
-npm i &
+npm i
 npm start &
 SERVER_PID=$!
 sleep 5
