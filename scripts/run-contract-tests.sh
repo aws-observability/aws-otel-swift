@@ -45,6 +45,8 @@ cleanup() {
   echo "Cleaning up processes..."
   # Kill any processes using port 3000 (AwsOtelUI)
   lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+  # Kill any processes using port 8181 (MockEndpoint)
+  lsof -ti:8181 | xargs kill -9 2>/dev/null || true
   # Clean up output directory
   cd "$PROJECT_ROOT/Examples/AwsOtelUI"
   npm run clean
@@ -61,7 +63,21 @@ cleanup
 echo "Preparing directory..."
 mkdir -p "$PROJECT_ROOT/Examples/AwsOtelUI/out"
 
+# Start MockEndpoint server
+echo "Starting MockEndpoint server..."
+cd "$PROJECT_ROOT/Tests/ContractTests/MockEndpoint"
+node server.js &
+MOCK_SERVER_PID=$!
+sleep 2
 
+# Verify MockEndpoint server is running
+echo "Verifying MockEndpoint server..."
+if ! bash test.sh; then
+  echo "Error: MockEndpoint server verification failed"
+  kill $MOCK_SERVER_PID 2>/dev/null || true
+  exit 1
+fi
+echo "MockEndpoint server verified successfully"
 
 # Start AwsOtelUI server
 echo "Starting AwsOtelUI server..."

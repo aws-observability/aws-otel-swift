@@ -85,7 +85,8 @@ let package = Package(
     .testTarget(
       name: "ContractTests",
       dependencies: ["AwsOpenTelemetryCore"],
-      path: "Tests/ContractTests"
+      path: "Tests/ContractTests",
+      exclude: ["MockEndpoint/"]
     )
   ]
 ).addPlatformSpecific()
