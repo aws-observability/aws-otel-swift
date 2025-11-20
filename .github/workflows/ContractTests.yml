@@ -1,9 +1,10 @@
 name: Contract tests
 on:
-  # push:
-  #   branches:
-  #     - main
-  #     - release/*
+  push:
+    branches:
+      - main
+      - release/*
+      - fix/*
 
   # pull_request:
   #   branches:
