@@ -16,14 +16,12 @@
 import SwiftUI
 import AwsOpenTelemetryCore
 
-/**
- * Entry point view for the demo app.
- */
-@MainActor
-struct LoaderView: View {
+struct HomeScreen: View {
+  @ObservedObject var viewModel: LoaderViewModel
+
   var body: some View {
-    AwsOTelTraceView("LoaderView") {
-      TabBarView()
+    AwsOTelTraceView("HomeScreen") {
+      ContentView(viewModel: viewModel)
     }
   }
 }

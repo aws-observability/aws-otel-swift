@@ -15,6 +15,7 @@
 
 import UIKit
 import SwiftUI
+import AwsOpenTelemetryCore
 
 /**
  * A simple UIKit view controller that demonstrates telemetry generation.
@@ -143,5 +144,13 @@ struct DemoViewControllerRepresentable: UIViewControllerRepresentable {
 
   func updateUIViewController(_ uiViewController: DemoViewController, context: Context) {
     // No updates needed for this demo
+  }
+}
+
+struct TracedDemoViewControllerRepresentable: View {
+  var body: some View {
+    AwsOTelTraceView("DemoViewControllerRepresentable") {
+      DemoViewControllerRepresentable()
+    }
   }
 }

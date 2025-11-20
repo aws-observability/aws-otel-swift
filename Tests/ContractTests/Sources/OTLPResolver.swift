@@ -6,8 +6,8 @@ struct ParsedOtlpData {
 }
 
 class OtlpResolver {
-  private static let LOGS_LOCATION = "/tmp/otel-swift-collector/logs.txt"
-  private static let TRACES_LOCATION = "/tmp/otel-swift-collector/traces.txt"
+  private static let LOGS_LOCATION = "Examples/AwsOtelUI/out/logs.jsonl"
+  private static let TRACES_LOCATION = "Examples/AwsOtelUI/out/traces.jsonl"
 
   static var shared: OtlpResolver! {
     return OtlpResolver()
@@ -20,24 +20,23 @@ class OtlpResolver {
   private init() {}
 
   private static func parseData() -> ParsedOtlpData {
-    let logsFileURL = URL(fileURLWithPath: LOGS_LOCATION)
-    let tracesFileURL = URL(fileURLWithPath: TRACES_LOCATION)
+    // Find project root by looking for Package.swift
+    let currentDir = FileManager.default.currentDirectoryPath
+    var projectRoot = currentDir
+    while !FileManager.default.fileExists(atPath: "\(projectRoot)/Package.swift") {
+      let parent = (projectRoot as NSString).deletingLastPathComponent
+      if parent == projectRoot { break } // Reached filesystem root
+      projectRoot = parent
+    }
 
-    if !FileManager.default.fileExists(atPath: LOGS_LOCATION) ||
-      !FileManager.default.fileExists(atPath: TRACES_LOCATION) {
-      print("Cloud not find logs and traces files at expected locations: \(LOGS_LOCATION), \(TRACES_LOCATION)")
-      // Wait for files to exist (equivalent to Awaitility.await())
-      var timeoutCount = 0
-      while !FileManager.default.fileExists(atPath: LOGS_LOCATION) ||
-        !FileManager.default.fileExists(atPath: TRACES_LOCATION) {
-        Thread.sleep(forTimeInterval: 5.0) // 5 second interval
-        timeoutCount += 1
-        if timeoutCount >= 4 { // 20 seconds timeout (4 * 5 seconds)
-          break
-        }
-      }
-    } else {
-      print("Found logs and traces files at expected locations: \(LOGS_LOCATION), \(TRACES_LOCATION)")
+    let logsPath = "\(projectRoot)/\(LOGS_LOCATION)"
+    let tracesPath = "\(projectRoot)/\(TRACES_LOCATION)"
+    let logsFileURL = URL(fileURLWithPath: logsPath)
+    let tracesFileURL = URL(fileURLWithPath: tracesPath)
+
+    if !FileManager.default.fileExists(atPath: logsPath) ||
+      !FileManager.default.fileExists(atPath: tracesPath) {
+      print("[ERROR] Could not find logs and traces files at expected locations: \(logsPath), \(tracesPath)")
     }
 
     return ParsedOtlpData(logs: OtlpFileParser.readLogsFile(file: logsFileURL), traces: OtlpFileParser.readTracesFile(file: tracesFileURL))

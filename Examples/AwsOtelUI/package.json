@@ -4,7 +4,8 @@
   "description": "Node.js Express server for OTEL Timeline Viewer",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "clean": "rm -f out/traces.jsonl out/logs.jsonl"
   },
   "dependencies": {
     "@opentelemetry/otlp-transformer": "^0.207.0",

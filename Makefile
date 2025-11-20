@@ -114,6 +114,10 @@ build-tvos:
 build-watchos:
 	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) build | xcbeautify --renderer github-actions
 
+.PHONY: build-visionos
+build-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build | xcbeautify --renderer github-actions
+
 # Build-for-Testing Commands - Prepare test bundles (faster than full test)
 .PHONY: build-for-testing-ios
 build-for-testing-ios:  ## Build test bundles for iOS
@@ -127,6 +131,10 @@ build-for-testing-tvos:
 build-for-testing-watchos:
 	set -o pipefail && xcodebuild OTHER_LDFLAGS="$(OTHER_LDFLAGS) -fprofile-instr-generate" $(XCODEBUILD_OPTIONS_WATCHOS) build-for-testing | xcbeautify --renderer github-actions
 
+.PHONY: build-for-testing-visionos
+build-for-testing-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build-for-testing | xcbeautify --renderer github-actions
+
 .PHONY: test-macos
 test-macos:  ## Run tests on macOS excluding ContractTests
 	swift test --skip ContractTests
@@ -134,58 +142,50 @@ test-macos:  ## Run tests on macOS excluding ContractTests
 # Test Commands - Full build + test cycle
 .PHONY: test-ios
 test-ios:  ## Run full test cycle for iOS (use TEST=TestSuiteName to run specific suite)
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
 
 .PHONY: test-tvos
 test-tvos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
 
 .PHONY: test-watchos
 test-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+
+.PHONY: test-visionos
+test-visionos:
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
 
 # Test-without-Building Commands - Use pre-built test bundles (fast)
 .PHONY: test-without-building-ios
 test-without-building-ios:  ## Run tests using pre-built iOS bundles
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test-without-building $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_IOS) test-without-building -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
 
 .PHONY: test-without-building-tvos
 test-without-building-tvos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test-without-building $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_TVOS) test-without-building -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
 
 .PHONY: test-without-building-watchos
 test-without-building-watchos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
-
-# Contract Test - Run Commands
-.PHONY: contract-test-run-ios
-contract-test-run-ios: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_IOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
-
-.PHONY: contract-test-run-tvos
-contract-test-run-tvos: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_TVOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
-
-.PHONY: contract-test-run-watchos
-contract-test-run-watchos: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_WATCHOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
-
-.PHONY: build-visionos
-build-visionos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build | xcbeautify --renderer github-actions
-
-.PHONY: build-for-testing-visionos
-build-for-testing-visionos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) build-for-testing | xcbeautify --renderer github-actions
-
-.PHONY: test-visionos
-test-visionos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_WATCHOS) test-without-building -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
 
 .PHONY: test-without-building-visionos
 test-without-building-visionos:
-	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
- 
+	set -o pipefail && xcodebuild $(XCODEBUILD_OPTIONS_VISIONOS) test-without-building -skip-testing:ContractTests $(if $(TEST),-only-testing:$(TEST)) | xcbeautify --renderer github-actions
+
+# Contract Test - Run Commands
+.PHONY: contract-test-run-ios
+contract-test-run-ios: ## Run contract tests for iOS
+	./scripts/run-contract-tests.sh --destination ios
+
+.PHONY: contract-test-run-tvos
+contract-test-run-tvos: ## Run contract tests for tvOS
+	./scripts/run-contract-tests.sh --destination tvos
+
+.PHONY: contract-test-run-watchos
+contract-test-run-watchos: ## Run contract tests for watchOS
+	./scripts/run-contract-tests.sh --destination watchos
+
 .PHONY: contract-test-run-visionos
-contract-test-run-visionos: ## `xcodebuild test` automatically builds and tests
-	set -o pipefail && xcodebuild test $(XCODEBUILD_OPTIONS_VISIONOS_CONTRACT_RUN) | xcbeautify --renderer github-actions
+contract-test-run-visionos: ## Run contract tests for visionOS
+	./scripts/run-contract-tests.sh --destination visionos

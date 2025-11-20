@@ -69,6 +69,15 @@ make test-macos              # Run tests on macOS
 
 # To run a specific test
 make test-ios TEST=AwsOpenTelemetryCore/TestSuiteName
+
+# Contract Testing (full pipeline: setup + data generation + test execution)
+make contract-test-run-ios
+make contract-test-run-tvos
+make contract-test-run-watchos
+make contract-test-run-visionos
+
+# Or run the script directly
+./scripts/run-contract-tests.sh --destination ios
 ```
 
 **Via Xcode:**

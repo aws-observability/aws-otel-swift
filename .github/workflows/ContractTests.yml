@@ -1,15 +1,14 @@
-name: Contract tests
+name: Contract Tests
 on:
-  # push:
-  #   branches:
-  #     - main
-  #     - release/*
+  push:
+    branches:
+      - main
+      - release/*
 
-  # pull_request:
-  #   branches:
-  #     - main
-  #     - release/*
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+      - release/*
 
 jobs:
   ios:
@@ -22,68 +21,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Initialize
-        uses: ./.github/actions/initialization
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache Swift Package Manager
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
 
       - name: Run contract tests
-        uses: ./.github/actions/contract_tests
-        with:
-          api-level: 18
-          destination: ios
-
-  # tvos:
-  #   runs-on: macos-15
-
-  #   # This job will be cancelled after 60 minutes
-  #   timeout-minutes: 60
-
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v5
-
-  #     - name: Initialize
-  #       uses: ./.github/actions/initialization
-
-  #     - name: Run contract tests
-  #       uses: ./.github/actions/contract_tests
-  #       with:
-  #         api-level: 18
-  #         destination: tvos
-
-  # watchos:
-  #   runs-on: macos-15
-
-  #   # This job will be cancelled after 60 minutes
-  #   timeout-minutes: 60
-
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v5
-
-  #     - name: Initialize
-  #       uses: ./.github/actions/initialization
-
-  #     - name: Run contract tests
-  #       uses: ./.github/actions/contract_tests
-  #       with:
-  #         api-level: 11
-  #         destination: watchos
-
-  # visionos:
-  #   runs-on: macos-15
-
-  #   # This job will be cancelled after 60 minutes
-  #   timeout-minutes: 60
-
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v5
-
-  #     - name: Initialize
-  #       uses: ./.github/actions/initialization
-
-  #     - name: Run contract tests
-  #       uses: ./.github/actions/contract_tests
-  #       with:
-  #         api-level: 2
-  #         destination: visionos
+        run: make contract-test-run-ios

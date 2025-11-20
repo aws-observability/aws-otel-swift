@@ -3,200 +3,92 @@ import XCTest
 
 class NetworkTests: XCTestCase {
   private let data = OtlpResolver.shared.parsedData
-  private let HTTP_REQUEST_METHOD_ATTR = "http.method"
-  private let STATUS_CODE_ATTR = "http.status_code"
-  private let URL_FULL = "http.url"
-  private let SERVER_ADDR_ATTR = "net.peer.name"
-  private let SERVER_PORT_ATTR = "net.peer.port"
-  private let HTTP_200_URL = "http://localhost:8181/200"
-  private let HTTP_404_URL = "http://localhost:8181/404"
-  private let HTTP_500_URL = "http://localhost:8181/500"
-  private let URL_SESSION = "NSURLSession"
 
-  func testNetworkSpansExistForGET() {
-    let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
-      trace.resourceSpans.flatMap { resourceSpan in
-        resourceSpan.scopeSpans.filter { scopeSpan in
-          scopeSpan.scope.name == URL_SESSION
-        }
-      }
-    } ?? []
+  // Verifies HTTP network requests are tracked as spans
+  func testNetworkSpansExist() {
+    let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
+    let networkSpans = spans.filter { $0.scope.name == "NSURLSession" }
+    let httpSpans = networkSpans.flatMap(\.spans).filter { $0.name == "HTTP GET" }
 
-    let spans: [Span] = scopeSpans.flatMap { scopeSpan in
-      scopeSpan.spans.filter { span in
-        span.name == "HTTP GET"
-      }
+    XCTAssertEqual(httpSpans.count, 3, "Should have 3 HTTP GET spans")
+
+    // Check for 200 request
+    let span200 = httpSpans.first { span in
+      span.attributes.contains { $0.key == "http.url" && $0.value.stringValue == "http://localhost:8181/200" }
     }
+    XCTAssertNotNil(span200, "HTTP 200 span should exist")
 
-    // Assert spans collection is not empty
-    XCTAssertFalse(spans.isEmpty, "Spans collection should not be empty")
-
-    // Check for GET method
-    let hasGetMethod = spans.contains { span in
-      let methodAttribute = span.attributes.first { attr in
-        attr.key == HTTP_REQUEST_METHOD_ATTR
-      }
-
-      if let attr = methodAttribute {
-        return attr.value.stringValue == "GET"
-      }
-      return false
+    // Check for 404 request
+    let span404 = httpSpans.first { span in
+      span.attributes.contains { $0.key == "http.url" && $0.value.stringValue == "http://localhost:8181/404" }
     }
+    XCTAssertNotNil(span404, "HTTP 404 span should exist")
 
-    XCTAssertTrue(hasGetMethod)
-
-    // Check server address exists
-    let serverAddr = spans.first?.attributes.first { attr in
-      attr.key == SERVER_ADDR_ATTR
+    // Check for 500 request
+    let span500 = httpSpans.first { span in
+      span.attributes.contains { $0.key == "http.url" && $0.value.stringValue == "http://localhost:8181/500" }
     }
-    XCTAssertNotNil(serverAddr?.value.stringValue)
-
-    // Check server port exists
-    let serverPort = spans.first?.attributes.first { attr in
-      attr.key == SERVER_PORT_ATTR
-    }
-    XCTAssertNotNil(serverPort?.value.intValue)
+    XCTAssertNotNil(span500, "HTTP 500 span should exist")
   }
 
-  func testNetworkSpansExistFor200() {
-    let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
-      trace.resourceSpans.flatMap { resourceSpan in
-        resourceSpan.scopeSpans.filter { scopeSpan in
-          scopeSpan.scope.name == URL_SESSION
-        }
-      }
-    } ?? []
+  // Verifies network spans contain correct HTTP and system attributes
+  func testNetworkSpanAttributes() {
+    let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
+    let networkSpans = spans.filter { $0.scope.name == "NSURLSession" }
+    let httpSpans = networkSpans.flatMap(\.spans).filter { $0.name == "HTTP GET" }
 
-    let spans: [Span] = scopeSpans.flatMap { scopeSpan in
-      scopeSpan.spans.filter { span in
-        span.name == "HTTP GET"
-      }
-    }
+    for span in httpSpans {
+      // HTTP attributes
+      XCTAssertEqual(span.attributes.first { $0.key == "http.method" }?.value.stringValue, "GET")
+      XCTAssertNotNil(span.attributes.first { $0.key == "http.url" }?.value.stringValue)
+      XCTAssertEqual(span.attributes.first { $0.key == "http.scheme" }?.value.stringValue, "http")
+      XCTAssertNotNil(span.attributes.first { $0.key == "http.target" }?.value.stringValue)
+      XCTAssertNotNil(span.attributes.first { $0.key == "http.status_code" }?.value.intValue)
+      XCTAssertNotNil(span.attributes.first { $0.key == "http.response.body.size" }?.value.intValue)
 
-    // Check for status code
-    let hasStatusCode = spans.contains { span in
-      let statusCodeAttribute = span.attributes.first { attr in
-        attr.key == STATUS_CODE_ATTR
-      }
-      return statusCodeAttribute != nil
+      // Network attributes
+      XCTAssertEqual(span.attributes.first { $0.key == "net.peer.name" }?.value.stringValue, "localhost")
+      XCTAssertEqual(span.attributes.first { $0.key == "net.peer.port" }?.value.intValue, "8181")
+      XCTAssertEqual(span.attributes.first { $0.key == "network.connection.type" }?.value.stringValue, "unavailable")
     }
-
-    XCTAssertTrue(hasStatusCode)
-
-    // Check for HTTP 200 URL
-    let has200URL = spans.contains { span in
-      let urlAttribute = span.attributes.first { attr in
-        attr.key == URL_FULL
-      }
-      return urlAttribute?.value.stringValue == HTTP_200_URL
-    }
-    XCTAssertTrue(has200URL)
-
-    // Check status code 200
-    let spans200 = spans.filter { span in
-      let urlAttribute = span.attributes.first { attr in
-        attr.key == URL_FULL
-      }
-      return urlAttribute?.value.stringValue == HTTP_200_URL
-    }
-    let status200 = spans200.first?.attributes.first { attr in
-      attr.key == STATUS_CODE_ATTR
-    }
-    XCTAssertEqual(status200?.value.intValue, "200")
   }
 
-  // func testNetworkSpansExistFor404() {
-  //   let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
-  //     trace.resourceSpans.flatMap { resourceSpan in
-  //       resourceSpan.scopeSpans.filter { scopeSpan in
-  //         scopeSpan.scope.name == URL_SESSION
-  //       }
-  //     }
-  //   } ?? []
+  // Verifies specific HTTP status codes and response attributes
+  func testNetworkSpanStatusCodes() {
+    let spans = data?.traces.flatMap { $0.resourceSpans.flatMap(\.scopeSpans) } ?? []
+    let networkSpans = spans.filter { $0.scope.name == "NSURLSession" }
+    let httpSpans = networkSpans.flatMap(\.spans).filter { $0.name == "HTTP GET" }
 
-  //   let spans: [Span] = scopeSpans.flatMap { scopeSpan in
-  //     scopeSpan.spans.filter { span in
-  //       span.name == "HTTP GET"
-  //     }
-  //   }
-
-  //   // Check for status code
-  //   let hasStatusCode = spans.contains { span in
-  //     let statusCodeAttribute = span.attributes.first { attr in
-  //       attr.key == STATUS_CODE_ATTR
-  //     }
-  //     return statusCodeAttribute != nil
-  //   }
-
-  //   XCTAssertTrue(hasStatusCode)
-
-  //   // Check for HTTP 404 URL
-  //   let has404URL = spans.contains { span in
-  //     let urlAttribute = span.attributes.first { attr in
-  //       attr.key == URL_FULL
-  //     }
-  //     return urlAttribute?.value.stringValue == HTTP_404_URL
-  //   }
-  //   XCTAssertTrue(has404URL)
-
-  //   // Check status code 404
-  //   let spans404 = spans.filter { span in
-  //     let urlAttribute = span.attributes.first { attr in
-  //       attr.key == URL_FULL
-  //     }
-  //     return urlAttribute?.value.stringValue == HTTP_404_URL
-  //   }
-  //   let status404 = spans404.first?.attributes.first { attr in
-  //     attr.key == STATUS_CODE_ATTR
-  //   }
-  //   XCTAssertEqual(status404?.value.intValue, "404")
-
-  // }
-
-  func testNetworkSpansExistFor500() {
-    let scopeSpans: [ScopeSpan] = data?.traces.flatMap { trace in
-      trace.resourceSpans.flatMap { resourceSpan in
-        resourceSpan.scopeSpans.filter { scopeSpan in
-          scopeSpan.scope.name == URL_SESSION
-        }
-      }
-    } ?? []
-
-    let spans: [Span] = scopeSpans.flatMap { scopeSpan in
-      scopeSpan.spans.filter { span in
-        span.name == "HTTP GET"
-      }
+    // Test 200 OK span
+    let span200 = httpSpans.first { span in
+      span.attributes.contains { $0.key == "http.url" && $0.value.stringValue == "http://localhost:8181/200" }
     }
+    XCTAssertNotNil(span200)
+    XCTAssertEqual(span200?.attributes.first { $0.key == "http.status_code" }?.value.intValue, "200")
+    XCTAssertEqual(span200?.attributes.first { $0.key == "http.target" }?.value.stringValue, "/200")
+    XCTAssertEqual(span200?.attributes.first { $0.key == "http.response.body.size" }?.value.intValue, "46")
+    XCTAssertNil(span200?.status?.message) // 200 should not have error status
 
-    // Check for status code
-    let hasStatusCode = spans.contains { span in
-      let statusCodeAttribute = span.attributes.first { attr in
-        attr.key == STATUS_CODE_ATTR
-      }
-      return statusCodeAttribute != nil
+    // Test 404 span
+    let span404 = httpSpans.first { span in
+      span.attributes.contains { $0.key == "http.url" && $0.value.stringValue == "http://localhost:8181/404" }
     }
+    XCTAssertNotNil(span404)
+    XCTAssertEqual(span404?.attributes.first { $0.key == "http.status_code" }?.value.intValue, "404")
+    XCTAssertEqual(span404?.attributes.first { $0.key == "http.target" }?.value.stringValue, "/404")
+    XCTAssertEqual(span404?.attributes.first { $0.key == "http.response.body.size" }?.value.intValue, "78")
+    XCTAssertEqual(span404?.status?.message, "404")
+    XCTAssertEqual(span404?.status?.code, "STATUS_CODE_ERROR")
 
-    XCTAssertTrue(hasStatusCode)
-
-    // Check for HTTP 500 URL
-    let has500URL = spans.contains { span in
-      let urlAttribute = span.attributes.first { attr in
-        attr.key == URL_FULL
-      }
-      return urlAttribute?.value.stringValue == HTTP_500_URL
+    // Test 500 span
+    let span500 = httpSpans.first { span in
+      span.attributes.contains { $0.key == "http.url" && $0.value.stringValue == "http://localhost:8181/500" }
     }
-    XCTAssertTrue(has500URL)
-
-    // Check status code 500
-    let spans500 = spans.filter { span in
-      let urlAttribute = span.attributes.first { attr in
-        attr.key == URL_FULL
-      }
-      return urlAttribute?.value.stringValue == HTTP_500_URL
-    }
-    let status500 = spans500.first?.attributes.first { attr in
-      attr.key == STATUS_CODE_ATTR
-    }
-    XCTAssertEqual(status500?.value.intValue, "500")
+    XCTAssertNotNil(span500)
+    XCTAssertEqual(span500?.attributes.first { $0.key == "http.status_code" }?.value.intValue, "500")
+    XCTAssertEqual(span500?.attributes.first { $0.key == "http.target" }?.value.stringValue, "/500")
+    XCTAssertEqual(span500?.attributes.first { $0.key == "http.response.body.size" }?.value.intValue, "82")
+    XCTAssertEqual(span500?.status?.message, "500")
+    XCTAssertEqual(span500?.status?.code, "STATUS_CODE_ERROR")
   }
 }

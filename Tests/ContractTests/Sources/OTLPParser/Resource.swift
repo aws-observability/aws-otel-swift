@@ -13,11 +13,13 @@ struct Value: Codable {
   let stringValue: String?
   let doubleValue: Double?
   let intValue: String?
+  let boolValue: Bool?
 
   enum CodingKeys: String, CodingKey {
     case stringValue
     case doubleValue
     case intValue
+    case boolValue
   }
 }
 

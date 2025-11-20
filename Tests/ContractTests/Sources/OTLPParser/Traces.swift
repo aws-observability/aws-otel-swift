@@ -20,12 +20,13 @@ struct Span: Codable {
   let parentSpanId: String?
   let flags: Int?
   let name: String
-  let kind: Int
+  let kind: String
   let startTimeUnixNano: String
   let endTimeUnixNano: String
   let attributes: [Attribute]
   let droppedAttributesCount: Int?
   let events: [SpanEvent]?
+  let status: SpanStatus?
 
   enum CodingKeys: String, CodingKey {
     case traceId
@@ -39,6 +40,7 @@ struct Span: Codable {
     case attributes
     case droppedAttributesCount
     case events
+    case status
   }
 
   func hasDuration() -> Bool {
@@ -61,4 +63,9 @@ struct SpanEvent: Codable {
     name = try container.decode(String.self, forKey: .name)
     // This implements @JsonIgnoreUnknownKeys functionality by only decoding the required fields
   }
+}
+
+struct SpanStatus: Codable {
+  let message: String?
+  let code: String?
 }

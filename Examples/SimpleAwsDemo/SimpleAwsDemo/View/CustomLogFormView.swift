@@ -1,4 +1,5 @@
 import SwiftUI
+import AwsOpenTelemetryCore
 
 struct CustomLogFormView: View {
   @ObservedObject var viewModel: LoaderViewModel
@@ -11,49 +12,51 @@ struct CustomLogFormView: View {
   ]
 
   var body: some View {
-    NavigationView {
-      Form {
-        Section("Log Message") {
-          TextField("Enter log message", text: $message)
-        }
+    AwsOTelTraceView("CustomLogFormView") {
+      NavigationView {
+        Form {
+          Section("Log Message") {
+            TextField("Enter log message", text: $message)
+          }
 
-        Section("Attributes") {
-          ForEach(attributes.indices, id: \.self) { index in
-            HStack {
-              TextField("Key", text: $attributes[index].key)
-              TextField("Value", text: $attributes[index].value)
-              Button("Remove") {
-                attributes.remove(at: index)
+          Section("Attributes") {
+            ForEach(attributes.indices, id: \.self) { index in
+              HStack {
+                TextField("Key", text: $attributes[index].key)
+                TextField("Value", text: $attributes[index].value)
+                Button("Remove") {
+                  attributes.remove(at: index)
+                }
+                .foregroundColor(.red)
               }
-              .foregroundColor(.red)
+            }
+
+            Button("Add Attribute") {
+              attributes.append(AttributePair(key: "", value: ""))
+            }
+          }
+        }
+        .navigationTitle("Create Custom Log")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+          ToolbarItem(placement: .navigationBarLeading) {
+            Button("Cancel") {
+              dismiss()
             }
           }
 
-          Button("Add Attribute") {
-            attributes.append(AttributePair(key: "", value: ""))
+          ToolbarItem(placement: .navigationBarTrailing) {
+            Button("Submit") {
+              let attributeDict = Dictionary(uniqueKeysWithValues:
+                attributes.compactMap { pair in
+                  pair.key.isEmpty ? nil : (pair.key, pair.value)
+                }
+              )
+              viewModel.createCustomLog(message: message, attributes: attributeDict)
+              dismiss()
+            }
+            .disabled(message.isEmpty)
           }
-        }
-      }
-      .navigationTitle("Create Custom Log")
-      .navigationBarTitleDisplayMode(.inline)
-      .toolbar {
-        ToolbarItem(placement: .navigationBarLeading) {
-          Button("Cancel") {
-            dismiss()
-          }
-        }
-
-        ToolbarItem(placement: .navigationBarTrailing) {
-          Button("Submit") {
-            let attributeDict = Dictionary(uniqueKeysWithValues:
-              attributes.compactMap { pair in
-                pair.key.isEmpty ? nil : (pair.key, pair.value)
-              }
-            )
-            viewModel.createCustomLog(message: message, attributes: attributeDict)
-            dismiss()
-          }
-          .disabled(message.isEmpty)
         }
       }
     }
