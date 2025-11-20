@@ -47,6 +47,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     AwsOpenTelemetryRumBuilder.create(config: config)?.build()
   }
 
+  /// UITests are really slow and flaky, so we will generate telemetries this way for contract tests.
   private func contractTestHelpers() {
     print("Process arguments: \(ProcessInfo.processInfo.arguments)")
     guard ProcessInfo.processInfo.arguments.contains("--contractTestMode") else {
@@ -67,6 +68,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
           await viewModel.make4xxRequest()
           await viewModel.make5xxRequest()
           print("Finished making network requests")
+
+          // Trigger app hang. This will also trigger a session start event when the next event is recorded, since we stalled for 5 seconds.
+          viewModel.hangApplication(seconds: 5)
+
+          // Trigger warm launch
+          await self.mockWarmLaunch()
+        }
+      }
+    }
+  }
+
+  private func mockWarmLaunch() async {
+    await MainActor.run {
+      // Move to background
+      NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: UIApplication.shared)
+
+      Task {
+        try? await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+
+        await MainActor.run {
+          // Bring back to foreground
+          NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: UIApplication.shared)
+          NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: UIApplication.shared)
         }
       }
     }

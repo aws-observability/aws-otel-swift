@@ -10,9 +10,11 @@ class EmptyUITests: XCTestCase {
     app.launch()
   }
 
+  // Note: the 30 second stall is just to give the github host enough time to do all the mock interactions, and send all the telemtries
+  // to the local endpoint. You can reduce this timeout significantly during local development (e.g. 15 seconds is more than enough).
   func testLaunchApp() throws {
-    print("Waiting 30 seconds for telemetry generation...")
-    Thread.sleep(forTimeInterval: 30)
+    print("Waiting 15 seconds for telemetry generation...")
+    Thread.sleep(forTimeInterval: 15)
     print("Test completed")
     XCTAssertTrue(true)
   }
