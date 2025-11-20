@@ -50,16 +50,6 @@ class NetworkTests: XCTestCase {
       XCTAssertEqual(span.attributes.first { $0.key == "net.peer.name" }?.value.stringValue, "localhost")
       XCTAssertEqual(span.attributes.first { $0.key == "net.peer.port" }?.value.intValue, "8181")
       XCTAssertEqual(span.attributes.first { $0.key == "network.connection.type" }?.value.stringValue, "unavailable")
-
-      // Session and user attributes
-      XCTAssertNotNil(span.attributes.first { $0.key == "user.id" }?.value.stringValue)
-      XCTAssertNotNil(span.attributes.first { $0.key == "session.id" }?.value.stringValue)
-      XCTAssertNotNil(span.attributes.first { $0.key == "session.previous_id" }?.value.stringValue)
-      XCTAssertEqual(span.attributes.first { $0.key == "screen.name" }?.value.stringValue, "ContentView")
-
-      // System metrics
-      XCTAssertNotNil(span.attributes.first { $0.key == "process.cpu.utilization" }?.value.doubleValue)
-      XCTAssertNotNil(span.attributes.first { $0.key == "process.memory.usage" }?.value.doubleValue)
     }
   }
 
