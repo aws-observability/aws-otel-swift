@@ -33,9 +33,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Initialize
-        uses: ./.github/actions/initialization
-
       - name: Run performance tests
         uses: ./.github/actions/performance_tests
         with:
