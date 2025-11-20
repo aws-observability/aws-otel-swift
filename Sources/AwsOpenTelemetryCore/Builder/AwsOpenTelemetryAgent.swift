@@ -101,8 +101,6 @@ import OpenTelemetryApi
       AwsInternalLogger.error("Error starting OpenTelemetrySDK: \(error.localizedDescription)")
       return false
     }
-
-    return true
   }
 
   /**
