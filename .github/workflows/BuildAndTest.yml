@@ -57,6 +57,7 @@ jobs:
   macOS:
     name: macOS (with coverage)
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
         with:
@@ -80,6 +81,7 @@ jobs:
 
   iOS:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: maxim-lobanov/setup-xcode@v1
@@ -105,6 +107,7 @@ jobs:
 
   tvOS:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: maxim-lobanov/setup-xcode@v1
@@ -130,6 +133,7 @@ jobs:
 
   watchOS:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: maxim-lobanov/setup-xcode@v1
@@ -155,6 +159,7 @@ jobs:
 
   visionOS:
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: maxim-lobanov/setup-xcode@v1
