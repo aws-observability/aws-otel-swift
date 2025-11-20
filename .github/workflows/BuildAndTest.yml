@@ -71,7 +71,8 @@ jobs:
             .build
             ~/Library/Caches/org.swift.swiftpm
             ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+            ~/.cache/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', 'Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-
       - name: Check Coverage
@@ -91,7 +92,8 @@ jobs:
             .build
             ~/Library/Caches/org.swift.swiftpm
             ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+            ~/.cache/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', 'Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
@@ -115,7 +117,8 @@ jobs:
             .build
             ~/Library/Caches/org.swift.swiftpm
             ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+            ~/.cache/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', 'Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
@@ -139,7 +142,8 @@ jobs:
             .build
             ~/Library/Caches/org.swift.swiftpm
             ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+            ~/.cache/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', 'Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
@@ -163,7 +167,8 @@ jobs:
             .build
             ~/Library/Caches/org.swift.swiftpm
             ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+            ~/.cache/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', 'Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
