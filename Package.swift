@@ -85,8 +85,7 @@ let package = Package(
     .testTarget(
       name: "ContractTests",
       dependencies: ["AwsOpenTelemetryCore"],
-      path: "Tests/ContractTests",
-      sources: ["ContractTests.swift", "Sources/OTLPResolver.swift", "Sources/OTLPParser"]
+      path: "Tests/ContractTests"
     )
   ]
 ).addPlatformSpecific()
