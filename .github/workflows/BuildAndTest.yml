@@ -100,10 +100,8 @@ jobs:
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
         run: make setup-brew
-      - name: Build for iOS
-        run: make build-for-testing-ios
       - name: Test for iOS
-        run: make test-without-building-ios
+        run: make test-ios
 
   tvOS:
     runs-on: macos-15
@@ -126,10 +124,8 @@ jobs:
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
         run: make setup-brew
-      - name: Build for tvOS
-        run: make build-for-testing-tvos
       - name: Test for tvOS
-        run: make test-without-building-tvos
+        run: make test-tvos
 
   watchOS:
     runs-on: macos-15
@@ -152,10 +148,8 @@ jobs:
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
         run: make setup-brew
-      - name: Build for watchOS
-        run: make build-for-testing-watchos
       - name: Test for watchOS
-        run: make test-without-building-watchos
+        run: make test-watchos
 
   visionOS:
     runs-on: macos-15
@@ -178,7 +172,5 @@ jobs:
             ${{ runner.os }}-spm-
       - name: Install Homebrew kegs
         run: make setup-brew
-      - name: Build for visionOS
-        run: make build-for-testing-visionos
       - name: Test for visionOS
-        run: make test-without-building-visionos
+        run: make test-visionos
