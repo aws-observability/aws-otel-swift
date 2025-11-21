@@ -29,7 +29,7 @@ public class AwsRetryableSpanExporter: SpanExporter {
     let httpClient = AwsHttpClient(config: config, otelConfig: otelConfig)
     otlpExporter = OtlpHttpTraceExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .none, encoding: .json),
+      config: OtlpConfiguration(compression: .none, exportAsJson: true),
       httpClient: httpClient
     )
   }
@@ -37,7 +37,7 @@ public class AwsRetryableSpanExporter: SpanExporter {
   init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
     otlpExporter = OtlpHttpTraceExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .none, encoding: .json),
+      config: OtlpConfiguration(compression: .none, exportAsJson: true),
       httpClient: httpClient
     )
   }

@@ -133,7 +133,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
 
     let otlpTracesConfig = OtlpConfiguration(
       compression: .none,
-      encoding: .json
+      exportAsJson: true
     )
     URLProtocol.registerClass(AwsSigV4RequestInterceptor.self)
     let configuration = URLSessionConfiguration.default
