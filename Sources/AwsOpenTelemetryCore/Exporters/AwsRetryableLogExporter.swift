@@ -29,7 +29,7 @@ public class AwsRetryableLogExporter: LogRecordExporter {
     let httpClient = AwsHttpClient(config: config, otelConfig: otelConfig)
     otlpExporter = OtlpHttpLogExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .none),
+      config: OtlpConfiguration(compression: .none, encoding: .json),
       httpClient: httpClient
     )
   }
@@ -37,7 +37,7 @@ public class AwsRetryableLogExporter: LogRecordExporter {
   init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
     otlpExporter = OtlpHttpLogExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .none),
+      config: OtlpConfiguration(compression: .none, encoding: .json),
       httpClient: httpClient
     )
   }

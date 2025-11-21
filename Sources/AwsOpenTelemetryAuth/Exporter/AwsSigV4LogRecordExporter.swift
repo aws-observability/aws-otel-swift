@@ -132,7 +132,8 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
     let endpointURL = URL(string: endpoint)!
 
     let otlpTracesConfig = OtlpConfiguration(
-      compression: .none
+      compression: .none,
+      encoding: .json
     )
     URLProtocol.registerClass(AwsSigV4RequestInterceptor.self)
     let configuration = URLSessionConfiguration.default
