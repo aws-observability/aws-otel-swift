@@ -15,6 +15,7 @@
 
 import Foundation
 import AwsCommonRuntimeKit
+import AwsOpenTelemetryCore
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterHttp
@@ -25,7 +26,6 @@ import OpenTelemetryProtocolExporterCommon
  *
  * This exporter wraps an OTLP HTTP exporter and ensures that all
  * outgoing requests are signed with AWS SigV4 authentication.
- * It can either use a provided parent exporter or create a default OTLP HTTP exporter.
  */
 public class AwsSigV4SpanExporter: SpanExporter {
   /// The endpoint URL for the AWS service
@@ -40,14 +40,8 @@ public class AwsSigV4SpanExporter: SpanExporter {
   /// The provider that supplies AWS credentials for signing
   private let credentialsProvider: CredentialsProviding
 
-  /// A serial dispatch queue for thread-safe access to span data
-  private let queue = DispatchQueue(label: "com.aws.opentelemetry.spanDataQueue")
-
   /// The underlying span exporter that handles the actual export
-  private var parentExporter: SpanExporter?
-
-  /// The span data being processed
-  private var spanData: [SpanData] = []
+  private let exporter: SpanExporter
 
   /**
    * Creates a new AwsSigV4SpanExporter.
@@ -56,39 +50,29 @@ public class AwsSigV4SpanExporter: SpanExporter {
    * @param region The AWS region code
    * @param serviceName The AWS service name
    * @param credentialsProvider The provider that supplies AWS credentials
-   * @param parentExporter Optional underlying exporter; if nil, a default OTLP HTTP exporter will be created
    */
-  public init(endpoint: String,
+  public init(endpoint: String? = nil,
               region: String,
               serviceName: String = "rum",
-              credentialsProvider: CredentialsProviding,
-              parentExporter: SpanExporter? = nil) {
-    self.endpoint = endpoint
+              credentialsProvider: CredentialsProviding) {
+    self.endpoint = endpoint ?? AwsExporterUtils.rumEndpoint(region: region)
     self.region = region
     self.serviceName = serviceName
     self.credentialsProvider = credentialsProvider
-    self.parentExporter = parentExporter
-    if self.parentExporter == nil {
-      Task {
-        self.parentExporter = await createDefaultExporter()
-      }
-    }
+    exporter = Self.createExporter(endpoint: self.endpoint)
     AwsSigV4Authenticator.configure(credentialsProvider: credentialsProvider, region: region, serviceName: serviceName)
   }
 
   /**
    * Exports the given spans.
    *
-   * This method stores the spans locally and delegates the export operation
-   * to the parent exporter.
-   *
    * @param spans The spans to export
    * @param explicitTimeout Optional timeout for the export operation
    * @returns The result code of the export operation
    */
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
-    queue.sync { self.spanData = spans }
-    return parentExporter!.export(spans: spanData, explicitTimeout: explicitTimeout)
+    AwsInternalLogger.debug("exporting \(spans.count) spans")
+    return exporter.export(spans: spans, explicitTimeout: explicitTimeout)
   }
 
   /**
@@ -98,7 +82,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
    * @returns The result code of the flush operation
    */
   public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
-    return parentExporter!.flush(explicitTimeout: explicitTimeout)
+    return exporter.flush(explicitTimeout: explicitTimeout)
   }
 
   /**
@@ -107,7 +91,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
    * @param explicitTimeout Optional timeout for the shutdown operation
    */
   public func shutdown(explicitTimeout: TimeInterval?) {
-    parentExporter!.shutdown(explicitTimeout: explicitTimeout)
+    exporter.shutdown(explicitTimeout: explicitTimeout)
   }
 
   /**
@@ -120,25 +104,23 @@ public class AwsSigV4SpanExporter: SpanExporter {
   }
 
   /**
-   * Creates a default OTLP HTTP trace exporter with SigV4 authentication.
+   * Creates an AwsRetryableSpanExporter with SigV4 authentication.
    *
-   * This method is called when no parent exporter is provided to the constructor.
-   * It creates an OTLP HTTP trace exporter that uses the AwsSigV4RequestInterceptor to
-   * sign all outgoing requests.
-   *
-   * @returns A configured OTLP HTTP trace exporter
+   * @param endpoint The endpoint URL string
+   * @returns A configured AwsRetryableSpanExporter with SigV4 authentication
    */
-  private func createDefaultExporter() async -> SpanExporter {
+  private static func createExporter(endpoint: String) -> SpanExporter {
     let endpointURL = URL(string: endpoint)!
 
-    let otlpTracesConfig = OtlpConfiguration(
-      compression: .none
-    )
+    // Create URLSession with SigV4 interceptor
     URLProtocol.registerClass(AwsSigV4RequestInterceptor.self)
     let configuration = URLSessionConfiguration.default
     configuration.protocolClasses = [AwsSigV4RequestInterceptor.self]
     let session = URLSession(configuration: configuration)
 
-    return OtlpHttpTraceExporter(endpoint: endpointURL, config: otlpTracesConfig, httpClient: HTTPClientWithSession(session: session))
+    // Create SigV4-enabled AwsHttpClient
+    let httpClient = AwsHttpClient(session: session)
+
+    return AwsRetryableSpanExporter(endpoint: endpointURL, config: AwsExporterConfig.default, httpClient: httpClient)
   }
 }

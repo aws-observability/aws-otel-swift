@@ -34,7 +34,7 @@ public class AwsRetryableLogExporter: LogRecordExporter {
     )
   }
 
-  init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
+  public init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
     otlpExporter = OtlpHttpLogExporter(
       endpoint: endpoint,
       config: OtlpConfiguration(compression: .gzip),

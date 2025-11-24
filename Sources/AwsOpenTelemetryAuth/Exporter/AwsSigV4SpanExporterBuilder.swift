@@ -37,9 +37,6 @@ public class AwsSigV4SpanExporterBuilder {
   /// The provider that supplies AWS credentials for signing
   private var credentialsProvider: CredentialsProviding?
 
-  /// The underlying span exporter that will be wrapped with SigV4 authentication
-  private var parentExporter: SpanExporter?
-
   /**
    * Creates a new builder instance with default values.
    */
@@ -90,17 +87,6 @@ public class AwsSigV4SpanExporterBuilder {
   }
 
   /**
-   * Sets the parent span exporter that will be wrapped with SigV4 authentication.
-   *
-   * @param parentExporter The underlying span exporter
-   * @returns The builder instance for method chaining
-   */
-  public func setParentExporter(parentExporter: SpanExporter) -> AwsSigV4SpanExporterBuilder {
-    self.parentExporter = parentExporter
-    return self
-  }
-
-  /**
    * Builds and returns a new AwsSigV4SpanExporter instance.
    *
    * @returns A configured AwsSigV4SpanExporter
@@ -108,11 +94,10 @@ public class AwsSigV4SpanExporterBuilder {
    */
   public func build() throws -> AwsSigV4SpanExporter {
     return AwsSigV4SpanExporter(
-      endpoint: endpoint!,
+      endpoint: endpoint,
       region: region!,
       serviceName: serviceName ?? "rum",
-      credentialsProvider: credentialsProvider!,
-      parentExporter: parentExporter
+      credentialsProvider: credentialsProvider!
     )
   }
 }

@@ -37,9 +37,6 @@ public class AwsSigV4LogRecordExporterBuilder {
   /// The provider that supplies AWS credentials for signing
   private var credentialsProvider: CredentialsProviding?
 
-  /// The underlying log record exporter that will be wrapped with SigV4 authentication
-  private var parentExporter: LogRecordExporter?
-
   /**
    * Creates a new builder instance with default values.
    */
@@ -90,17 +87,6 @@ public class AwsSigV4LogRecordExporterBuilder {
   }
 
   /**
-   * Sets the parent log record exporter that will be wrapped with SigV4 authentication.
-   *
-   * @param parentExporter The underlying log record exporter
-   * @returns The builder instance for method chaining
-   */
-  public func setParentExporter(parentExporter: LogRecordExporter) -> AwsSigV4LogRecordExporterBuilder {
-    self.parentExporter = parentExporter
-    return self
-  }
-
-  /**
    * Builds and returns a new AwsSigV4LogRecordExporter instance.
    *
    * @returns A configured AwsSigV4LogRecordExporter
@@ -108,11 +94,10 @@ public class AwsSigV4LogRecordExporterBuilder {
    */
   public func build() throws -> AwsSigV4LogRecordExporter {
     return AwsSigV4LogRecordExporter(
-      endpoint: endpoint!,
+      endpoint: endpoint,
       region: region!,
       serviceName: serviceName ?? "rum",
-      credentialsProvider: credentialsProvider!,
-      parentExporter: parentExporter
+      credentialsProvider: credentialsProvider!
     )
   }
 }

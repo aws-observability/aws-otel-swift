@@ -151,6 +151,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 ```
 
+### Authentication
+
+For advanced authentication scenarios, you can implement custom identity providers using the `AwsOpenTelemetryAuth` module:
+
+```swift
+import AwsOpenTelemetryCore
+import AwsOpenTelemetryAuth
+
+class CustomIdentityProvider: CredentialsProviding {
+    func getCredentials() async throws -> Credentials {
+        // Your custom credential logic here
+        return Credentials(...)
+    }
+}
+
+// Create SigV4 exporters (uses default AWS RUM regional endpoints)
+let customProvider = CustomIdentityProvider()
+let sigV4SpanExporter = AwsSigV4SpanExporter(
+    region: "us-east-1",
+    credentialsProvider: customProvider
+)
+let sigV4LogExporter = AwsSigV4LogRecordExporter(
+    region: "us-east-1",
+    credentialsProvider: customProvider
+)
+
+// Add to agent builder
+AwsOpenTelemetryRumBuilder.create(config: config)?
+    .addSpanExporterCustomizer { _ in sigv4SpanExporter }
+    .addLogRecordExporterCustomizer { _ in sigv4LogExporter }
+    .build()
+```
+
+See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for complete examples including Cognito Identity Pool integration.
+
 #### Root Configuration
 
 | Field                  | Type                 | Required | Default     | Description                                                                                    |
