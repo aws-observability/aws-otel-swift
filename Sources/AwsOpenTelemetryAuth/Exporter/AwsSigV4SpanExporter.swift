@@ -19,6 +19,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetryProtocolExporterCommon
+import AwsOpenTelemetryCore
 
 /**
  * A span exporter that adds AWS SigV4 authentication to span export requests.
@@ -68,6 +69,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
     self.serviceName = serviceName
     self.credentialsProvider = credentialsProvider
     self.parentExporter = parentExporter
+    AwsInternalLogger.debug("Initializing AwsSigV4SpanExporter with endpoint: \(endpoint), region: \(region), serviceName: \(serviceName)")
     if self.parentExporter == nil {
       Task {
         self.parentExporter = await createDefaultExporter()
@@ -87,6 +89,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
    * @returns The result code of the export operation
    */
   public func export(spans: [SpanData], explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    AwsInternalLogger.debug("AwsSigV4SpanExporter exporting \(spans.count) spans")
     queue.sync { self.spanData = spans }
     return parentExporter!.export(spans: spanData, explicitTimeout: explicitTimeout)
   }
@@ -98,6 +101,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
    * @returns The result code of the flush operation
    */
   public func flush(explicitTimeout: TimeInterval?) -> SpanExporterResultCode {
+    AwsInternalLogger.debug("AwsSigV4SpanExporter flushing")
     return parentExporter!.flush(explicitTimeout: explicitTimeout)
   }
 
@@ -107,6 +111,7 @@ public class AwsSigV4SpanExporter: SpanExporter {
    * @param explicitTimeout Optional timeout for the shutdown operation
    */
   public func shutdown(explicitTimeout: TimeInterval?) {
+    AwsInternalLogger.debug("AwsSigV4SpanExporter shutting down")
     parentExporter!.shutdown(explicitTimeout: explicitTimeout)
   }
 

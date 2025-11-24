@@ -16,6 +16,7 @@
 import Foundation
 import AwsCommonRuntimeKit
 import AWSCognitoIdentity
+import AwsOpenTelemetryCore
 
 /**
  * A credentials provider that retrieves AWS credentials from Amazon Cognito Identity
@@ -67,6 +68,7 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
     cognitoIdentityClient = cognitoClient
     self.loginsMap = loginsMap
     self.refreshBufferWindow = refreshBufferWindow
+    AwsInternalLogger.debug("Initializing CognitoCachedCredentialsProvider with poolId: \(cognitoPoolId), refreshBuffer: \(refreshBufferWindow)s")
   }
 
   /**
@@ -88,10 +90,14 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
       cachedCredentials: cachedCredentials,
       refreshBufferWindow: refreshBufferWindow
     ) {
+      AwsInternalLogger.debug("CognitoCachedCredentialsProvider fetching new credentials")
       let identityId = try await fetchIdentityId(client: cognitoIdentityClient)
       let credentials = try await fetchCredentialsForIdentity(client: cognitoIdentityClient, identityId: identityId)
 
       cachedCredentials = credentials
+      AwsInternalLogger.debug("CognitoCachedCredentialsProvider cached new credentials")
+    } else {
+      AwsInternalLogger.debug("CognitoCachedCredentialsProvider using cached credentials")
     }
 
     return try Credentials(
@@ -115,13 +121,16 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
    *   - `AwsOpenTelemetryAuthError.noIdentityId` if the response doesn't contain an identity ID
    */
   private func fetchIdentityId(client: CognitoIdentityClient) async throws -> String {
+    AwsInternalLogger.debug("CognitoCachedCredentialsProvider fetching identity ID")
     let identityOutput = try await client.getId(
       input: GetIdInput(identityPoolId: cognitoPoolId, logins: loginsMap)
     )
 
     guard let identityId = identityOutput.identityId else {
+      AwsInternalLogger.debug("CognitoCachedCredentialsProvider failed to get identity ID")
       throw AwsOpenTelemetryAuthError.noIdentityId
     }
+    AwsInternalLogger.debug("CognitoCachedCredentialsProvider got identity ID: \(identityId)")
     return identityId
   }
 
@@ -140,13 +149,16 @@ public class CognitoCachedCredentialsProvider: CredentialsProviding {
    *   - `AwsOpenTelemetryAuthError.credentialsError` if the response doesn't contain credentials
    */
   private func fetchCredentialsForIdentity(client: CognitoIdentityClient, identityId: String) async throws -> CognitoIdentityClientTypes.Credentials {
+    AwsInternalLogger.debug("CognitoCachedCredentialsProvider fetching credentials for identity: \(identityId)")
     let credentialsOutput = try await client.getCredentialsForIdentity(
       input: GetCredentialsForIdentityInput(identityId: identityId)
     )
 
     guard let credentials = credentialsOutput.credentials else {
+      AwsInternalLogger.debug("CognitoCachedCredentialsProvider failed to get credentials")
       throw AwsOpenTelemetryAuthError.credentialsError
     }
+    AwsInternalLogger.debug("CognitoCachedCredentialsProvider got credentials with expiration: \(credentials.expiration?.description ?? "none")")
     return credentials
   }
 }

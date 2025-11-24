@@ -19,6 +19,7 @@ import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterHttp
 import OpenTelemetryProtocolExporterCommon
+import AwsOpenTelemetryCore
 
 /**
  * A log record exporter that adds AWS SigV4 authentication to log export requests.
@@ -68,6 +69,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
     self.serviceName = serviceName
     self.credentialsProvider = credentialsProvider
     self.parentExporter = parentExporter
+    AwsInternalLogger.debug("Initializing AwsSigV4LogRecordExporter with endpoint: \(endpoint), region: \(region), serviceName: \(serviceName)")
     if self.parentExporter == nil {
       Task {
         self.parentExporter = await createDefaultExporter()
@@ -87,6 +89,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    * @returns The result of the export operation
    */
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
+    AwsInternalLogger.debug("AwsSigV4LogRecordExporter exporting \(logRecords.count) log records")
     queue.sync { self.logData = logRecords }
     return parentExporter!.export(logRecords: logRecords, explicitTimeout: explicitTimeout)
   }
@@ -98,6 +101,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    * @returns The result of the flush operation
    */
   public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
+    AwsInternalLogger.debug("AwsSigV4LogRecordExporter force flushing")
     return parentExporter!.forceFlush(explicitTimeout: explicitTimeout)
   }
 
@@ -107,6 +111,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    * @param explicitTimeout Optional timeout for the shutdown operation
    */
   public func shutdown(explicitTimeout: TimeInterval?) {
+    AwsInternalLogger.debug("AwsSigV4LogRecordExporter shutting down")
     parentExporter!.shutdown(explicitTimeout: explicitTimeout)
   }
 

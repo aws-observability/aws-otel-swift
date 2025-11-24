@@ -16,6 +16,8 @@
 import SwiftUI
 import UIKit
 import AwsOpenTelemetryCore
+import AwsOpenTelemetryAuth
+import AWSCognitoIdentity
 
 class AppDelegate: UIResponder, UIApplicationDelegate {
   private var contractTestViewModel: LoaderViewModel?
@@ -29,6 +31,63 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   }
 
   private func setupOpenTelemetry() {
+    // Setup AWS SigV4 exporters with Cognito Identity Pool
+    Task {
+      do {
+        let cognitoIdentityPoolId = "us-east-1:4a23e4af-b5e5-48dd-a7bd-18ee94928256"
+        let region = "us-east-1"
+
+        // Create Cognito credentials provider
+        let cognitoClient = try CognitoIdentityClient(region: region)
+        let credentialsProvider = CognitoCachedCredentialsProvider(
+          cognitoPoolId: cognitoIdentityPoolId,
+          cognitoClient: cognitoClient
+        )
+
+        // Create SigV4 exporters using builders
+        let sigv4SpanExporter = try AwsSigV4SpanExporter.builder()
+          .setEndpoint(endpoint: "https://dataplane.rum.us-east-1.amazonaws.com/v1/rum")
+          .setRegion(region: region)
+          .setServiceName(serviceName: "rum")
+          .setCredentialsProvider(credentialsProvider: credentialsProvider)
+          .build()
+
+        let sigv4LogExporter = try AwsSigV4LogRecordExporter.builder()
+          .setEndpoint(endpoint: "https://dataplane.rum.us-east-1.amazonaws.com/v1/rum")
+          .setRegion(region: region)
+          .setServiceName(serviceName: "rum")
+          .setCredentialsProvider(credentialsProvider: credentialsProvider)
+          .build()
+
+        let awsConfig = AwsConfig(region: "us-east-1", rumAppMonitorId: "c6c5a92c-2b64-4897-a637-1580526080f2")
+        let config = AwsOpenTelemetryConfig(
+          aws: awsConfig,
+          sessionTimeout: 5,
+          otelResourceAttributes: [
+            "service.version": "1.0.0",
+            "service.name": "SimpleAwsDemo"
+          ],
+          debug: true
+        )
+
+        await MainActor.run {
+          AwsOpenTelemetryRumBuilder.create(config: config)?
+            .addSpanExporterCustomizer { _ in sigv4SpanExporter }
+            .addLogRecordExporterCustomizer { _ in sigv4LogExporter }
+            .build()
+        }
+
+      } catch {
+        print("Failed to setup AWS SigV4 exporters: \(error)")
+        // Fallback to default configuration
+        // await MainActor.run {
+        //   setupFallbackOpenTelemetry()
+        // }
+      }
+    }
+  }
+
+  private func setupFallbackOpenTelemetry() {
     let awsConfig = AwsConfig(region: "us-east-1", rumAppMonitorId: "test-app-monitor-id")
     let exportOverride = AwsExportOverride(
       logs: "http://localhost:3000/v1/logs",

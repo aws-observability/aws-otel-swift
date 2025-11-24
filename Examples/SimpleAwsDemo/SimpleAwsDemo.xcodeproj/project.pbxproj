@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		3FEA79882E833B710026E7AB /* PerformanceTests.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 3FEA79872E833B710026E7AB /* PerformanceTests.xctestplan */; };
 		5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */; };
+		DB3EFDEC2ED1298B00617714 /* AwsOpenTelemetryAuth in Frameworks */ = {isa = PBXBuildFile; productRef = DB3EFDEB2ED1298B00617714 /* AwsOpenTelemetryAuth */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -59,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DB3EFDEC2ED1298B00617714 /* AwsOpenTelemetryAuth in Frameworks */,
 				5E6803C72E13034100D1DBD3 /* AwsOpenTelemetryCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -131,6 +133,7 @@
 			name = SimpleAwsDemo;
 			packageProductDependencies = (
 				5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */,
+				DB3EFDEB2ED1298B00617714 /* AwsOpenTelemetryAuth */,
 			);
 			productName = SimpleAwsDemo;
 			productReference = 306BC6982E00C6AA00F19E48 /* SimpleAwsDemo.app */;
@@ -641,6 +644,11 @@
 		5E6803C62E13034100D1DBD3 /* AwsOpenTelemetryCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AwsOpenTelemetryCore;
+		};
+		DB3EFDEB2ED1298B00617714 /* AwsOpenTelemetryAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5E6803F12E1306FC00D1DBD3 /* XCLocalSwiftPackageReference "../../../aws-otel-swift" */;
+			productName = AwsOpenTelemetryAuth;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
