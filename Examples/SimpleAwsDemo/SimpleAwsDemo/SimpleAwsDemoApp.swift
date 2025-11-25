@@ -69,13 +69,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       // Create SigV4 exporters using builders
       let sigv4SpanExporter = try AwsSigV4SpanExporter.builder()
         .setRegion(region: region)
-        .setServiceName(serviceName: "rum")
         .setCredentialsProvider(credentialsProvider: credentialsProvider)
         .build()
 
       let sigv4LogExporter = try AwsSigV4LogRecordExporter.builder()
         .setRegion(region: region)
-        .setServiceName(serviceName: "rum")
         .setCredentialsProvider(credentialsProvider: credentialsProvider)
         .build()
 
