@@ -120,8 +120,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 ```
 
-- [Read more about custom instrumentation you can manually enable](docs/custom_instrumentation.md)
-
 ## Configuration
 
 ```jsonc
@@ -191,9 +189,29 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 | hang          | Object | No       | { "enabled": true } | Generate hang diagnostic as log records.                                                                                                                                                                  |
 | view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
 
-## Auth
+## Export Strategy
 
-Generally, [unauthenticated ingestion via RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html) is the recommended pattern for monitoring real users. However, we also support using custom identity provider scenarios with the `AwsOpenTelemetryAuth` module:
+The AWS OpenTelemetry Swift SDK uses OTLP (OpenTelemetry Protocol) over HTTP to export telemetry data to AWS CloudWatch RUM. The SDK supports multiple authentication methods and export configurations.
+
+### Default Export Behavior
+
+By default, the SDK exports telemetry data with unsigned requests, which is the recommended pattern for monitoring real users. Please refer to AWS docs for allowing [unauthenticated ingestion via RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html).
+
+| Field                | Type              | Required | Default                   | Description                                                       |
+| -------------------- | ----------------- | -------- | ------------------------- | ----------------------------------------------------------------- |
+| maxRetries           | `Int`             | No       | 3                         | Maximum number of retry attempts                                  |
+| retryableStatusCodes | `Set<Int>`        | No       | [429, 500, 502, 503, 504] | HTTP status codes that trigger retry logic                        |
+| maxBatchSize         | `Int`             | No       | 100                       | Maximum batch size for exports                                    |
+| maxQueueSize         | `Int`             | No       | 1048                      | Maximum in-memory queue size (separate queues for logs and spans) |
+| batchInterval        | `TimeInterval`    | No       | 5.0                       | Batch export interval in seconds                                  |
+| exportTimeout        | `TimeInterval`    | No       | 30.0                      | Export timeout in seconds                                         |
+| compression          | `CompressionType` | No       | .gzip                     | Compression type for OTLP exports                                 |
+
+See the [AwsExportConfig](Sources/AwsOpenTelemetryCore/Configuration/AwsExporterConfig.swift) for detailed configuration options.
+
+### SigV4 Authentication
+
+For scenarios requiring authenticated requests, the SDK supports AWS Signature Version 4 (SigV4) authentication using the `AwsOpenTelemetryAuth` module:
 
 ```swift
 import AwsOpenTelemetryCore
@@ -226,6 +244,55 @@ AwsOpenTelemetryRumBuilder.create(config: config)?
 
 - [Read more about configuring the SDK with authentication](docs/auth.md)
 - See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for detailed explanations on AwsOpenTelemetryAuth
+
+## Custom Events
+
+You can create custom span and log events using the OpenTelemetry APIs. The SDK provides convenient access to configured tracer and logger instances. All events are populated with [available metadata](#available-metadata) by ADOT Swift.
+
+- [Read more about custom events you can manually record](docs/custom_events.md)
+
+### Custom Span Example
+
+Use spans for events with durations and tracing support ([read more](https://opentelemetry.io/docs/concepts/signals/traces/)). **Warning:** AWS RUM OTLP endpoint requires span to be events, so you must set `spanName` for successful ingestion.
+
+```swift
+// Example: a database query can be recorded as a span event
+import AwsOpenTelemetryCore
+import OpenTelemetryApi
+
+// Get the configured tracer
+let tracer = AwsOpenTelemetryAgent.getTracer()
+
+// Track a database query operation
+let span = tracer.spanBuilder(spanName: "database.query") // `spanName` is REQUIRED
+    .startSpan()
+span.setAttribute(key: "db.operation", value: "SELECT")
+span.setAttribute(key: "db.table", value: "users")
+
+// Perform the database operation
+let users = await fetchUsers()
+
+// End the span when operation completes
+span.end()
+```
+
+### Custom Log Example
+
+Use logs for point-in-time events ([read more](https://opentelemetry.io/docs/concepts/signals/logs/)). **Warning:** AWS RUM OTLP endpoint requires log to be events, so you must set log `eventName` for successful ingestion.
+
+```swift
+// Example: a user login can be recorded as a log record.
+import AwsOpenTelemetryCore
+import OpenTelemetryApi
+
+// Get the configured logger
+let logger = AwsOpenTelemetryAgent.getLogger()
+
+// Log a login event
+logger.logRecordBuilder()
+    .setEventName("user.login") // `eventName` is REQUIRED
+    .emit()
+```
 
 ## Contributing
 

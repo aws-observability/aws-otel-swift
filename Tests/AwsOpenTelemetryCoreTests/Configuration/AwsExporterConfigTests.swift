@@ -15,6 +15,7 @@
 
 import XCTest
 @testable import AwsOpenTelemetryCore
+import OpenTelemetryProtocolExporterCommon
 
 class AwsExporterConfigTests: XCTestCase {
   func testDefaultConfiguration() {
@@ -25,6 +26,7 @@ class AwsExporterConfigTests: XCTestCase {
     XCTAssertEqual(config.maxQueueSize, 1048)
     XCTAssertEqual(config.batchInterval, 5.0)
     XCTAssertEqual(config.exportTimeout, 30.0)
+    XCTAssertEqual(config.compression, .gzip)
 
     // Test retryable status codes include 429 and standard AWS 5xx codes
     XCTAssertTrue(config.retryableStatusCodes.contains(429))
@@ -43,7 +45,8 @@ class AwsExporterConfigTests: XCTestCase {
       maxBatchSize: 50,
       maxQueueSize: 2000,
       batchInterval: 10.0,
-      exportTimeout: 60.0
+      exportTimeout: 60.0,
+      compression: .none
     )
 
     XCTAssertEqual(config.maxRetries, 5)
@@ -52,6 +55,7 @@ class AwsExporterConfigTests: XCTestCase {
     XCTAssertEqual(config.maxQueueSize, 2000)
     XCTAssertEqual(config.batchInterval, 10.0)
     XCTAssertEqual(config.exportTimeout, 60.0)
+    XCTAssertEqual(config.compression, .none)
   }
 
   func testBackoffCalculation() {
@@ -74,5 +78,6 @@ class AwsExporterConfigTests: XCTestCase {
     XCTAssertEqual(config.maxQueueSize, 1048)
     XCTAssertEqual(config.batchInterval, 5.0)
     XCTAssertEqual(config.exportTimeout, 30.0)
+    XCTAssertEqual(config.compression, .gzip)
   }
 }
