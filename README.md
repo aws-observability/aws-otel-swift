@@ -120,6 +120,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 ```
 
+- [Read more about custom instrumentation you can manually enable](docs/custom_instrumentation.md)
+- [Read more about configuring the SDK with authentication](docs/auth.md)
+
 ## Configuration
 
 ```jsonc
