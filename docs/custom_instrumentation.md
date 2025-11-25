@@ -25,35 +25,16 @@ processUser(user)
 Add context to your spans with attributes:
 
 ```swift
-let span = tracer.spanBuilder(spanName: "checkout")
-    .setAttribute(key: "cart.items", value: 3)
-    .setAttribute(key: "cart.total", value: 49.99)
-    .setAttribute(key: "payment.method", value: "credit_card")
-    .startSpan()
-defer { span.end() }
+func checkoutButton() {
+    let span = tracer.spanBuilder(spanName: "checkout")
+        .setAttribute(key: "cart.items", value: 3)
+        .setAttribute(key: "cart.total", value: 49.99)
+        .setAttribute(key: "payment.method", value: "credit_card")
+        .startSpan()
+    defer { span.end() } // close the span on function end
 
-processCheckout()
-```
-
-### Nested Spans
-
-Track sub-operations within a larger operation:
-
-```swift
-let parentSpan = tracer.spanBuilder(spanName: "load_dashboard").startSpan()
-OpenTelemetry.instance.contextProvider.setActiveSpan(parentSpan)
-
-loadUserData()
-
-let notificationsSpan = tracer.spanBuilder(spanName: "load_notifications").startSpan()
-fetchNotifications()
-notificationsSpan.end()
-
-let feedSpan = tracer.spanBuilder(spanName: "load_feed").startSpan()
-fetchFeed()
-feedSpan.end()
-
-parentSpan.end()
+    processCheckout()
+}
 ```
 
 ### Async Span Control
