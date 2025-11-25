@@ -16,6 +16,8 @@
 import SwiftUI
 import UIKit
 import AwsOpenTelemetryCore
+import AwsOpenTelemetryAuth
+import AWSCognitoIdentity
 
 class AppDelegate: UIResponder, UIApplicationDelegate {
   private var contractTestViewModel: LoaderViewModel?
@@ -23,11 +25,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     if !ProcessInfo.processInfo.arguments.contains("--importCoreNoInitialization") {
       setupOpenTelemetry()
+      // OPTIONAL: swap with setupOpenTelemetry to setup with cognito credentials
+      // setupOpenTelemetryWithCognito()
     }
     contractTestHelpers()
     return true
   }
 
+  /** Unauthenticated Example */
   private func setupOpenTelemetry() {
     let awsConfig = AwsConfig(region: "us-east-1", rumAppMonitorId: "test-app-monitor-id")
     let exportOverride = AwsExportOverride(
@@ -45,6 +50,52 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       debug: true
     )
     AwsOpenTelemetryRumBuilder.create(config: config)?.build()
+  }
+
+  /** Cognito Example */
+  private func setupOpenTelemetryWithCognito() {
+    // Setup AWS SigV4 exporters with Cognito Identity Pool
+    do {
+      let cognitoIdentityPoolId = "region:cognito-id"
+      let region = "us-east-1"
+
+      // Create Cognito credentials provider
+      let cognitoClient = try CognitoIdentityClient(region: region)
+      let credentialsProvider = CognitoCachedCredentialsProvider(
+        cognitoPoolId: cognitoIdentityPoolId,
+        cognitoClient: cognitoClient
+      )
+
+      // Create SigV4 exporters using builders
+      let sigv4SpanExporter = try AwsSigV4SpanExporter.builder()
+        .setRegion(region: region)
+        .setCredentialsProvider(credentialsProvider: credentialsProvider)
+        .build()
+
+      let sigv4LogExporter = try AwsSigV4LogRecordExporter.builder()
+        .setRegion(region: region)
+        .setCredentialsProvider(credentialsProvider: credentialsProvider)
+        .build()
+
+      let awsConfig = AwsConfig(region: "us-east-1", rumAppMonitorId: "test-app-monitor-id")
+      let config = AwsOpenTelemetryConfig(
+        aws: awsConfig,
+        sessionTimeout: 5,
+        otelResourceAttributes: [
+          "service.version": "1.0.0",
+          "service.name": "SimpleAwsDemo"
+        ],
+        debug: true
+      )
+
+      AwsOpenTelemetryRumBuilder.create(config: config)?
+        .addSpanExporterCustomizer { _ in sigv4SpanExporter }
+        .addLogRecordExporterCustomizer { _ in sigv4LogExporter }
+        .build()
+
+    } catch {
+      print("Failed to setup AWS SigV4 exporters: \(error)")
+    }
   }
 
   /// UITests are really slow and flaky, so we will generate telemetries this way for contract tests.

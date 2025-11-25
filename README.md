@@ -151,7 +151,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 ```
 
-#### Root Configuration
+### Root Configuration
 
 | Field                  | Type                 | Required | Default     | Description                                                                                    |
 | ---------------------- | -------------------- | -------- | ----------- | ---------------------------------------------------------------------------------------------- |
@@ -163,7 +163,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 | telemetry              | `AwsTelemetryConfig` | No       | all enabled | Telemetry feature configuration settings (see AwsTelemetryConfig section)                      |
 | debug                  | `Boolean`            | No       | false       | Flag to enable local logging for debugging purposes.                                           |
 
-#### AwsConfig
+### AwsConfig
 
 | Field           | Type   | Required | Default | Description                                                                                                                                                                                                                                                                                                                      |
 | --------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -171,14 +171,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 | rumAppMonitorId | String | Yes      | -       | Unique identifier for the RUM App Monitor                                                                                                                                                                                                                                                                                        |
 | rumAlias        | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor. See public docs for using an alias with a [RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html). |
 
-#### AwsExportOverride
+### AwsExportOverride
 
 | Field  | Type   | Required | Default | Description                                                                                                                               |
 | ------ | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | logs   | String | No       | nil     | Custom endpoint for log exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum`   |
 | traces | String | No       | nil     | Custom endpoint for trace exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum` |
 
-#### AwsTelemetryConfig
+### AwsTelemetryConfig
 
 | Field         | Type   | Required | Default             | Description                                                                                                                                                                                               |
 | ------------- | ------ | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -188,6 +188,41 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 | network       | Object | No       | { "enabled": true } | Generate spans of URLSession HTTP requests directly from OTel Swift's implementation of URLSessionInstrumentation. HTTP requests to the logs and spans endpoints are ignored to avoid infinite recursion. |
 | hang          | Object | No       | { "enabled": true } | Generate hang diagnostic as log records.                                                                                                                                                                  |
 | view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
+
+## Auth
+
+Generally, [unauthenticated ingestion via RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html) is the recommended pattern for monitoring real users. However, we also support using custom identity provider scenarios with the `AwsOpenTelemetryAuth` module:
+
+```swift
+import AwsOpenTelemetryCore
+import AwsOpenTelemetryAuth
+
+class CustomIdentityProvider: CredentialsProviding {
+    func getCredentials() async throws -> Credentials {
+        // Your custom credential logic here
+        return Credentials(...)
+    }
+}
+
+// Create SigV4 exporters (uses default AWS RUM regional endpoints)
+let customProvider = CustomIdentityProvider()
+let sigV4SpanExporter = AwsSigV4SpanExporter(
+    region: "us-east-1",
+    credentialsProvider: customProvider
+)
+let sigV4LogExporter = AwsSigV4LogRecordExporter(
+    region: "us-east-1",
+    credentialsProvider: customProvider
+)
+
+// Add to agent builder
+AwsOpenTelemetryRumBuilder.create(config: config)?
+    .addSpanExporterCustomizer { _ in sigv4SpanExporter }
+    .addLogRecordExporterCustomizer { _ in sigv4LogExporter }
+    .build()
+```
+
+See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for complete examples including Cognito Identity Pool integration.
 
 ## Contributing
 

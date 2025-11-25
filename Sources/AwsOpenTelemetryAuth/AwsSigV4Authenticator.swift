@@ -72,7 +72,8 @@ public class AwsSigV4Authenticator {
     guard let credentialsProvider,
           let region,
           let serviceName else {
-      fatalError("AwsSigV4Authenticator not configured. Call configure() first.")
+      AwsInternalLogger.error("AwsSigV4Authenticator not configured. Call configure() first.")
+      return urlRequest
     }
     guard let url = urlRequest.url else { return urlRequest }
     let urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: true)
@@ -108,7 +109,13 @@ public class AwsSigV4Authenticator {
 
     do {
       // Retrieve credentials and create identity for signing
-      let credentials = try await credentialsProvider.getCredentials()
+      let credentials: Credentials
+      do {
+        credentials = try await credentialsProvider.getCredentials()
+      } catch {
+        AwsInternalLogger.error("Error getting credentials: \(error)")
+        return urlRequest
+      }
       let identity = try AWSCredentialIdentity(crtAWSCredentialIdentity: credentials)
 
       // Configure the signing parameters

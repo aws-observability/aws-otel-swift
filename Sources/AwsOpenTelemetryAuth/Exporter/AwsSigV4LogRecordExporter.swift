@@ -15,6 +15,7 @@
 
 import Foundation
 import AwsCommonRuntimeKit
+import AwsOpenTelemetryCore
 import OpenTelemetryApi
 import OpenTelemetrySdk
 import OpenTelemetryProtocolExporterHttp
@@ -23,9 +24,8 @@ import OpenTelemetryProtocolExporterCommon
 /**
  * A log record exporter that adds AWS SigV4 authentication to log export requests.
  *
- * This exporter wraps an OTLP HTTP exporter and ensures that all
+ * This exporter wraps an AwsRetryableLogExporter and ensures that all
  * outgoing requests are signed with AWS SigV4 authentication.
- * It can either use a provided parent exporter or create a default OTLP HTTP exporter.
  */
 public class AwsSigV4LogRecordExporter: LogRecordExporter {
   /// The endpoint URL for the AWS service
@@ -40,14 +40,8 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
   /// The provider that supplies AWS credentials for signing
   private let credentialsProvider: CredentialsProviding
 
-  /// A serial dispatch queue for thread-safe access to log data
-  private let queue = DispatchQueue(label: "com.aws.opentelemetry.logDataQueue")
-
   /// The underlying log record exporter that handles the actual export
-  private var parentExporter: LogRecordExporter?
-
-  /// The log records being processed
-  private var logData: [ReadableLogRecord] = []
+  private let exporter: LogRecordExporter
 
   /**
    * Creates a new AwsSigV4LogRecordExporter.
@@ -56,39 +50,28 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    * @param region The AWS region code
    * @param serviceName The AWS service name
    * @param credentialsProvider The provider that supplies AWS credentials
-   * @param parentExporter Optional underlying exporter; if nil, a default OTLP HTTP exporter will be created
    */
-  public init(endpoint: String,
+  public init(endpoint: String? = nil,
               region: String,
               serviceName: String = "rum",
-              credentialsProvider: CredentialsProviding,
-              parentExporter: LogRecordExporter? = nil) {
-    self.endpoint = endpoint
+              credentialsProvider: CredentialsProviding) {
+    self.endpoint = endpoint ?? AwsExporterUtils.rumEndpoint(region: region)
     self.region = region
     self.serviceName = serviceName
     self.credentialsProvider = credentialsProvider
-    self.parentExporter = parentExporter
-    if self.parentExporter == nil {
-      Task {
-        self.parentExporter = await createDefaultExporter()
-      }
-    }
+    exporter = Self.createExporter(endpoint: self.endpoint)
     AwsSigV4Authenticator.configure(credentialsProvider: credentialsProvider, region: region, serviceName: serviceName)
   }
 
   /**
    * Exports the given log records.
    *
-   * This method stores the log records locally and delegates the export operation
-   * to the parent exporter.
-   *
    * @param logRecords The log records to export
    * @param explicitTimeout Optional timeout for the export operation
    * @returns The result of the export operation
    */
   public func export(logRecords: [ReadableLogRecord], explicitTimeout: TimeInterval?) -> ExportResult {
-    queue.sync { self.logData = logRecords }
-    return parentExporter!.export(logRecords: logRecords, explicitTimeout: explicitTimeout)
+    return exporter.export(logRecords: logRecords, explicitTimeout: explicitTimeout)
   }
 
   /**
@@ -98,7 +81,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    * @returns The result of the flush operation
    */
   public func forceFlush(explicitTimeout: TimeInterval?) -> ExportResult {
-    return parentExporter!.forceFlush(explicitTimeout: explicitTimeout)
+    return exporter.forceFlush(explicitTimeout: explicitTimeout)
   }
 
   /**
@@ -107,7 +90,7 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
    * @param explicitTimeout Optional timeout for the shutdown operation
    */
   public func shutdown(explicitTimeout: TimeInterval?) {
-    parentExporter!.shutdown(explicitTimeout: explicitTimeout)
+    exporter.shutdown(explicitTimeout: explicitTimeout)
   }
 
   /**
@@ -120,25 +103,23 @@ public class AwsSigV4LogRecordExporter: LogRecordExporter {
   }
 
   /**
-   * Creates a default OTLP HTTP log exporter with SigV4 authentication.
+   * Creates an AwsRetryableLogExporter with SigV4 authentication.
    *
-   * This method is called when no parent exporter is provided to the constructor.
-   * It creates an OTLP HTTP exporter that uses the AwsSigV4RequestInterceptor to
-   * sign all outgoing requests.
-   *
-   * @returns A configured OTLP HTTP log exporter
+   * @param endpoint The endpoint URL string
+   * @returns A configured AwsRetryableLogExporter with SigV4 authentication
    */
-  private func createDefaultExporter() async -> LogRecordExporter {
+  private static func createExporter(endpoint: String) -> LogRecordExporter {
     let endpointURL = URL(string: endpoint)!
 
-    let otlpTracesConfig = OtlpConfiguration(
-      compression: .none
-    )
+    // Create URLSession with SigV4 interceptor
     URLProtocol.registerClass(AwsSigV4RequestInterceptor.self)
     let configuration = URLSessionConfiguration.default
     configuration.protocolClasses = [AwsSigV4RequestInterceptor.self]
     let session = URLSession(configuration: configuration)
 
-    return OtlpHttpLogExporter(endpoint: endpointURL, config: otlpTracesConfig, httpClient: HTTPClientWithSession(session: session))
+    // Create SigV4-enabled AwsHttpClient
+    let httpClient = AwsHttpClient(session: session)
+
+    return AwsRetryableLogExporter(endpoint: endpointURL, config: AwsExporterConfig.default, httpClient: httpClient)
   }
 }

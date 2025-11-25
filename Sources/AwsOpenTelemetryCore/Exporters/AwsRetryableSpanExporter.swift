@@ -34,7 +34,7 @@ public class AwsRetryableSpanExporter: SpanExporter {
     )
   }
 
-  init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
+  public init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
     otlpExporter = OtlpHttpTraceExporter(
       endpoint: endpoint,
       config: OtlpConfiguration(compression: .gzip),

@@ -1,55 +1,8 @@
 # AWS OpenTelemetry Auth Module
 
-The `AwsOpenTelemetryAuth` module provides AWS authentication capabilities for OpenTelemetry exporters, enabling secure communication with AWS services using AWS Signature Version 4 (SigV4) authentication.
+The `AwsOpenTelemetryAuth` module provides AWS authentication capabilities for OpenTelemetry exporters, enabling secure communication with AWS services.
 
-## Overview
-
-This module extends the core OpenTelemetry functionality by adding AWS-specific authentication mechanisms. It includes:
-
-- **AWS SigV4 Authentication**: Sign HTTP requests with AWS SigV4 signatures
-- **Cognito Credentials Provider**: Manage AWS credentials using Amazon Cognito Identity
-- **Authenticated Exporters**: Span and log exporters with built-in AWS authentication
-- **Request Interceptors**: Middleware for adding authentication to HTTP requests
-
-## Components
-
-### Core Authentication
-
-#### `AwsSigV4Authenticator`
-A utility class that provides AWS Signature Version 4 authentication functionality. It signs HTTP requests with AWS SigV4 signatures to authenticate requests to AWS services.
-
-#### `CognitoCachedCredentialsProvider`
-A credentials provider that uses Amazon Cognito Identity to obtain and cache AWS credentials. It automatically refreshes credentials when they expire and provides a configurable refresh buffer window.
-
-**Key Features:**
-- Automatic credential caching and refresh
-- Configurable refresh buffer window (default: 10 seconds)
-- Support for authenticated and unauthenticated identities
-- Integration with Cognito Identity Pools
-
-#### `AwsSigV4RequestInterceptor`
-An HTTP request interceptor that automatically adds AWS SigV4 authentication headers to outgoing requests.
-
-### Exporters
-
-#### `AwsSigV4SpanExporter`
-A span exporter that adds AWS SigV4 authentication to span export requests. It wraps an OTLP HTTP exporter and ensures that all outgoing requests are signed with AWS SigV4 authentication.
-
-#### `AwsSigV4LogRecordExporter`
-A log record exporter that adds AWS SigV4 authentication to log export requests, similar to the span exporter but for log data.
-
-#### Builder Classes
-- `AwsSigV4SpanExporterBuilder`: Builder pattern for creating authenticated span exporters
-- `AwsSigV4LogRecordExporterBuilder`: Builder pattern for creating authenticated log exporters
-
-### Error Handling
-
-#### `AwsOpenTelemetryAuthError`
-Defines specific error types that can occur during authentication:
-- `noIdentityId`: When unable to obtain a Cognito identity ID
-- `credentialsError`: When credential retrieval or processing fails
-
-## Usage
+## Getting Started
 
 ### Basic Setup with Cognito
 
@@ -57,21 +10,21 @@ Defines specific error types that can occur during authentication:
 import AwsOpenTelemetryAuth
 import AWSCognitoIdentity
 
+let region = "your-region"
+
 // Create a Cognito Identity client
-let cognitoClient = try CognitoIdentityClient(region: "us-west-2")
+let cognitoClient = try CognitoIdentityClient(region: region)
 
 // Create a credentials provider
 let credentialsProvider = CognitoCachedCredentialsProvider(
-    cognitoPoolId: "us-west-2:your-identity-pool-id",
+    cognitoPoolId: "\(region):your-identity-pool-id",
     cognitoClient: cognitoClient
 )
 
-// Create an authenticated span exporter
-let spanExporter = try AwsSigV4SpanExporterBuilder()
-    .setEndpoint("https://your-otel-endpoint.amazonaws.com")
-    .setRegion("us-west-2")
-    .setServiceName("xray")
-    .setCredentialsProvider(credentialsProvider)
+// Create an authenticated span exporter (uses default AWS RUM endpoint)
+let spanExporter = try AwsSigV4SpanExporter.builder()
+    .setRegion(region: region)
+    .setCredentialsProvider(credentialsProvider: credentialsProvider)
     .build()
 ```
 
@@ -80,39 +33,78 @@ let spanExporter = try AwsSigV4SpanExporterBuilder()
 The `loginsMap` parameter allows you to provide tokens from federated identity providers such as Amazon, Facebook, Google, or any OpenID Connect-compatible provider.
 
 ```swift
-import AwsOpenTelemetryAuth
-
 // Example with Amazon Login
 let amazonLoginsMap = [
     "www.amazon.com": "amazon-access-token-here"
 ]
 
-let amazonCredentialsProvider = CognitoCachedCredentialsProvider(
-    identityPoolId: "us-west-2:your-identity-pool-id",
-    region: "us-west-2",
+let credentialsProvider = CognitoCachedCredentialsProvider(
+    cognitoPoolId: "\(region):your-identity-pool-id",
+    cognitoClient: cognitoClient,
     loginsMap: amazonLoginsMap
 )
-
 ```
 
-### Using with Custom Credentials
+### Complete Integration Example
+
+Here's a complete example showing how to integrate AWS SigV4 authentication with the AWS OpenTelemetry SDK:
 
 ```swift
-// Create your own credentials provider
-let customCredentialsProvider = YourCustomCredentialsProvider()
+import AwsOpenTelemetryCore
+import AwsOpenTelemetryAuth
+import AWSCognitoIdentity
 
-// Create authenticated exporters
-let spanExporter = try AwsSigV4SpanExporterBuilder()
-    .setEndpoint("https://your-endpoint.amazonaws.com")
-    .setRegion("us-east-1")
-    .setServiceName("xray")
-    .setCredentialsProvider(customCredentialsProvider)
-    .build()
+class AppDelegate: UIResponder, UIApplicationDelegate {
+  func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+    setupOpenTelemetry()
+    return true
+  }
 
-let logExporter = try AwsSigV4LogRecordExporterBuilder()
-    .setEndpoint("https://your-logs-endpoint.amazonaws.com")
-    .setRegion("us-east-1")
-    .setServiceName("logs")
-    .setCredentialsProvider(customCredentialsProvider)
-    .build()
+  private func setupOpenTelemetry() {
+    Task {
+      do {
+        let region = "us-east-1"
+        let cognitoIdentityPoolId = "\(region):your-identity-pool-id"
+
+        // Create Cognito credentials provider
+        let cognitoClient = try CognitoIdentityClient(region: region)
+        let credentialsProvider = CognitoCachedCredentialsProvider(
+          cognitoPoolId: cognitoIdentityPoolId,
+          cognitoClient: cognitoClient
+        )
+
+        // Create SigV4 exporters (uses default AWS RUM endpoints)
+        let sigv4SpanExporter = try AwsSigV4SpanExporter.builder()
+          .setRegion(region: region)
+          .setServiceName(serviceName: "rum")
+          .setCredentialsProvider(credentialsProvider: credentialsProvider)
+          .build()
+
+        let sigv4LogExporter = try AwsSigV4LogRecordExporter.builder()
+          .setRegion(region: region)
+          .setServiceName(serviceName: "rum")
+          .setCredentialsProvider(credentialsProvider: credentialsProvider)
+          .build()
+
+        // Configure AWS OpenTelemetry with SigV4 exporters
+        let awsConfig = AwsConfig(region: region, rumAppMonitorId: "your-app-monitor-id")
+        let config = AwsOpenTelemetryConfig(
+          aws: awsConfig,
+          otelResourceAttributes: [
+            "service.version": "1.0.0",
+            "service.name": "YourApp"
+          ]
+        )
+
+        AwsOpenTelemetryRumBuilder.create(config: config)?
+          .addSpanExporterCustomizer { _ in sigv4SpanExporter }
+          .addLogRecordExporterCustomizer { _ in sigv4LogExporter }
+          .build()
+
+      } catch {
+        print("Failed to setup AWS SigV4 exporters: \(error)")
+      }
+    }
+  }
+}
 ```

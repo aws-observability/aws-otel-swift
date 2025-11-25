@@ -346,7 +346,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return The traces endpoint URL string
    */
   private func buildTracesEndpoint(region: String, exportOverride: AwsExportOverride?) -> String {
-    return exportOverride?.traces ?? "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
+    return exportOverride?.traces ?? AwsExporterUtils.rumEndpoint(region: region)
   }
 
   /**
@@ -357,7 +357,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return The logs endpoint URL string
    */
   private func buildLogsEndpoint(region: String, exportOverride: AwsExportOverride?) -> String {
-    return exportOverride?.logs ?? "https://dataplane.rum.\(region).amazonaws.com/v1/rum"
+    return exportOverride?.logs ?? AwsExporterUtils.rumEndpoint(region: region)
   }
 
   // MARK: - Builder methods
