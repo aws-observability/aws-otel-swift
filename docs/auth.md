@@ -8,7 +8,7 @@ The simplest approach uses a resource-based policy. This works with both **AwsOp
 
 ### Setup
 
-1. Create a resource-based policy in your RUM app monitor with an alias
+1. [Create a resource-based policy in your RUM app monitor](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html)
 2. (OPTIONAL) Configure your app with the alias, if your policy requires it:
 
 **Agent (zero-code)** - `aws_config.json`:
@@ -17,7 +17,7 @@ The simplest approach uses a resource-based policy. This works with both **AwsOp
   "aws": {
     "region": "us-east-1",
     "rumAppMonitorId": "your-app-monitor-id",
-    "rumAlias": "your-rum-alias" // optional, if your policy has defined it
+    "rumAlias": "your-rum-alias" // OPTIONAL: if your policy has defined it
   },
   "otelResourceAttributes": {
     "service.name": "MyApplication",
@@ -37,7 +37,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 aws: AwsConfig(
                     rumAppMonitorId: "your-app-monitor-id",
                     region: "us-east-1",
-                    rumAlias: "your-rum-alias"
+                    rumAlias: "your-rum-alias" // OPTIONAL: if your policy has defined it
                 ),
                 otelResourceAttributes: [
                     "service.name": "MyApplication",
@@ -132,34 +132,4 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         .build()
     }
 }
-```
-
-### Cognito Credentials Provider (Not Recommended)
-
-> **Note:** For most use cases, Cognito is unnecessary and will complicate your solution. We advise to use resource-based policies with CloudWatch RUM instead for authorizing unauthenticated identities to write telemetry to your app monitor. The following instructions should be considered only if you have a specific need to integrate with Amazon Cognito. [Read more about using resource-based policies with CloudWatch RUM](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html).
-
-For convenience, **AwsOpenTelemetryAuth** ships with `CognitoCachedCredentialsProvider`:
-
-```swift
-import AWSCognitoIdentity
-
-let cognitoClient = try! CognitoIdentityClient(region: "us-east-1")
-let credentialsProvider = CognitoCachedCredentialsProvider(
-    cognitoPoolId: "us-east-1:your-identity-pool-id",
-    cognitoClient: cognitoClient
-)
-```
-
-The `loginsMap` parameter allows you to provide tokens from federated identity providers:
-
-```swift
-let loginsMap = [
-    "www.amazon.com": "amazon-access-token-here"
-]
-
-let credentialsProvider = CognitoCachedCredentialsProvider(
-    cognitoPoolId: "us-east-1:your-identity-pool-id",
-    cognitoClient: cognitoClient,
-    loginsMap: loginsMap
-)
 ```
