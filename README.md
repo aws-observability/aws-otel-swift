@@ -151,9 +151,47 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 }
 ```
 
-### Authentication
+### Root Configuration
 
-For advanced authentication scenarios, you can implement custom identity providers using the `AwsOpenTelemetryAuth` module:
+| Field                  | Type                 | Required | Default     | Description                                                                                    |
+| ---------------------- | -------------------- | -------- | ----------- | ---------------------------------------------------------------------------------------------- |
+| aws                    | `AwsConfig`          | Yes      | nil         | AWS service configuration settings (see AwsConfig section)                                     |
+| exportOverride         | `AwsExportOverride`  | No       | nil         | Export endpoint overrides for custom logs and traces endpoints (see AwsExportOverride section) |
+| sessionTimeout         | `Int`                | No       | 30 \* 60    | Session timeout in seconds. When nil, uses default value                                       |
+| sessionSampleRate      | `Double`             | No       | 1.0         | Session sample rate from 0.0 to 1.0. When nil, uses default value                              |
+| otelResourceAttributes | `Object`             | No       | nil         | Key-value pairs for resource metadata, which are added as resource attributes                  |
+| telemetry              | `AwsTelemetryConfig` | No       | all enabled | Telemetry feature configuration settings (see AwsTelemetryConfig section)                      |
+| debug                  | `Boolean`            | No       | false       | Flag to enable local logging for debugging purposes.                                           |
+
+### AwsConfig
+
+| Field           | Type   | Required | Default | Description                                                                                                                                                                                                                                                                                                                      |
+| --------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| region          | String | Yes      | -       | AWS region where the RUM service is deployed                                                                                                                                                                                                                                                                                     |
+| rumAppMonitorId | String | Yes      | -       | Unique identifier for the RUM App Monitor                                                                                                                                                                                                                                                                                        |
+| rumAlias        | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor. See public docs for using an alias with a [RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html). |
+
+### AwsExportOverride
+
+| Field  | Type   | Required | Default | Description                                                                                                                               |
+| ------ | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| logs   | String | No       | nil     | Custom endpoint for log exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum`   |
+| traces | String | No       | nil     | Custom endpoint for trace exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum` |
+
+### AwsTelemetryConfig
+
+| Field         | Type   | Required | Default             | Description                                                                                                                                                                                               |
+| ------------- | ------ | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| startup       | Object | No       | { "enabled": true } | Generate app launch diagnostic as log records.                                                                                                                                                            |
+| sessionEvents | Object | No       | { "enabled": true } | Creates `session.start` and `session.end` as log records according to OpenTelemetry Semantic Convention. As an ADOT-Swift extension, `session.end` also includes `duration` and `end_time`.               |
+| crash         | Object | No       | { "enabled": true } | Generate crash diagnostic as log records.                                                                                                                                                                 |
+| network       | Object | No       | { "enabled": true } | Generate spans of URLSession HTTP requests directly from OTel Swift's implementation of URLSessionInstrumentation. HTTP requests to the logs and spans endpoints are ignored to avoid infinite recursion. |
+| hang          | Object | No       | { "enabled": true } | Generate hang diagnostic as log records.                                                                                                                                                                  |
+| view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
+
+## Auth
+
+Generally, [unauthenticated ingestion via RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html) is the recommended pattern for monitoring real users. However, we also support using custom identity provider scenarios with the `AwsOpenTelemetryAuth` module:
 
 ```swift
 import AwsOpenTelemetryCore
@@ -185,44 +223,6 @@ AwsOpenTelemetryRumBuilder.create(config: config)?
 ```
 
 See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for complete examples including Cognito Identity Pool integration.
-
-#### Root Configuration
-
-| Field                  | Type                 | Required | Default     | Description                                                                                    |
-| ---------------------- | -------------------- | -------- | ----------- | ---------------------------------------------------------------------------------------------- |
-| aws                    | `AwsConfig`          | Yes      | nil         | AWS service configuration settings (see AwsConfig section)                                     |
-| exportOverride         | `AwsExportOverride`  | No       | nil         | Export endpoint overrides for custom logs and traces endpoints (see AwsExportOverride section) |
-| sessionTimeout         | `Int`                | No       | 30 \* 60    | Session timeout in seconds. When nil, uses default value                                       |
-| sessionSampleRate      | `Double`             | No       | 1.0         | Session sample rate from 0.0 to 1.0. When nil, uses default value                              |
-| otelResourceAttributes | `Object`             | No       | nil         | Key-value pairs for resource metadata, which are added as resource attributes                  |
-| telemetry              | `AwsTelemetryConfig` | No       | all enabled | Telemetry feature configuration settings (see AwsTelemetryConfig section)                      |
-| debug                  | `Boolean`            | No       | false       | Flag to enable local logging for debugging purposes.                                           |
-
-#### AwsConfig
-
-| Field           | Type   | Required | Default | Description                                                                                                                                                                                                                                                                                                                      |
-| --------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| region          | String | Yes      | -       | AWS region where the RUM service is deployed                                                                                                                                                                                                                                                                                     |
-| rumAppMonitorId | String | Yes      | -       | Unique identifier for the RUM App Monitor                                                                                                                                                                                                                                                                                        |
-| rumAlias        | String | No       | nil     | Adds an alias to all requests. It will be compared to the rum:alias service context key in the resource based policy attached to a RUM app monitor. See public docs for using an alias with a [RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html). |
-
-#### AwsExportOverride
-
-| Field  | Type   | Required | Default | Description                                                                                                                               |
-| ------ | ------ | -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| logs   | String | No       | nil     | Custom endpoint for log exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum`   |
-| traces | String | No       | nil     | Custom endpoint for trace exports. When nil, uses AWS CloudWatch RUM OTLP endpoint `https://dataplane.rum.${region}.amazonaws.com/v1/rum` |
-
-#### AwsTelemetryConfig
-
-| Field         | Type   | Required | Default             | Description                                                                                                                                                                                               |
-| ------------- | ------ | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| startup       | Object | No       | { "enabled": true } | Generate app launch diagnostic as log records.                                                                                                                                                            |
-| sessionEvents | Object | No       | { "enabled": true } | Creates `session.start` and `session.end` as log records according to OpenTelemetry Semantic Convention. As an ADOT-Swift extension, `session.end` also includes `duration` and `end_time`.               |
-| crash         | Object | No       | { "enabled": true } | Generate crash diagnostic as log records.                                                                                                                                                                 |
-| network       | Object | No       | { "enabled": true } | Generate spans of URLSession HTTP requests directly from OTel Swift's implementation of URLSessionInstrumentation. HTTP requests to the logs and spans endpoints are ignored to avoid infinite recursion. |
-| hang          | Object | No       | { "enabled": true } | Generate hang diagnostic as log records.                                                                                                                                                                  |
-| view          | Object | No       | { "enabled": true } | Create spans from views created with UIKit and SwiftUI.                                                                                                                                                   |
 
 ## Contributing
 
