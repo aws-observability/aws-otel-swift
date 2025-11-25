@@ -121,7 +121,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 ```
 
 - [Read more about custom instrumentation you can manually enable](docs/custom_instrumentation.md)
-- [Read more about configuring the SDK with authentication](docs/auth.md)
 
 ## Configuration
 
@@ -225,7 +224,8 @@ AwsOpenTelemetryRumBuilder.create(config: config)?
     .build()
 ```
 
-See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for complete examples including Cognito Identity Pool integration.
+- [Read more about configuring the SDK with authentication](docs/auth.md)
+- See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for detailed explanations on AwsOpenTelemetryAuth
 
 ## Contributing
 
