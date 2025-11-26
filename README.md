@@ -245,6 +245,14 @@ AwsOpenTelemetryRumBuilder.create(config: config)?
 - [Read more about configuring the SDK with authentication](docs/auth.md)
 - See the [AwsOpenTelemetryAuth README](Sources/AwsOpenTelemetryAuth/README.md) for detailed explanations on AwsOpenTelemetryAuth
 
+## Crash Report Symbolication
+
+| Method          | Support Status   | Description                                                                                                                                                                                                                                                     |
+| --------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Server-side** | ❌ Not supported | Please [open an issue](https://github.com/aws-observability/aws-otel-swift/issues) to prioritize this important feature!                                                                                                                                        |
+| **On-device**   | ✅ Supported     | Enable [on-device symbolication via KSCrash](https://github.com/kstenerud/KSCrash?tab=readme-ov-file#enabling-on-device-symbolication) by setting Strip Style to Debugging Symbols, which comes with the tradeoff of approximately ~5% increase in binary size. |
+| **Offline**     | ✅ Supported     | We've provided [a script in `Examples/Symbolication`](Examples/Symbolication/) to help with offline symbolication via `atos`, which also includes swift demangling. Offline symbolication is always possible via XCode or the native `atos` tool .              |
+
 ## Custom Events
 
 You can create custom span and log events using the OpenTelemetry APIs. The SDK provides convenient access to configured tracer and logger instances. All events are populated with [available metadata](#available-metadata) by ADOT Swift.
