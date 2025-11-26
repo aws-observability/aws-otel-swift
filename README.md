@@ -197,15 +197,15 @@ The AWS OpenTelemetry Swift SDK uses OTLP (OpenTelemetry Protocol) over HTTP to 
 
 By default, the SDK exports telemetry data with unsigned requests, which is the recommended pattern for monitoring real users. Please refer to AWS docs for allowing [unauthenticated ingestion via RUM resource based policy](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-RUM-resource-policies.html).
 
-| Field                | Type              | Required | Default                   | Description                                                       |
-| -------------------- | ----------------- | -------- | ------------------------- | ----------------------------------------------------------------- |
-| maxRetries           | `Int`             | No       | 3                         | Maximum number of retry attempts                                  |
-| retryableStatusCodes | `Set<Int>`        | No       | [429, 500, 502, 503, 504] | HTTP status codes that trigger retry logic                        |
-| maxBatchSize         | `Int`             | No       | 100                       | Maximum batch size for exports                                    |
-| maxQueueSize         | `Int`             | No       | 1048                      | Maximum in-memory queue size (separate queues for logs and spans) |
-| batchInterval        | `TimeInterval`    | No       | 5.0                       | Batch export interval in seconds                                  |
-| exportTimeout        | `TimeInterval`    | No       | 30.0                      | Export timeout in seconds                                         |
-| compression          | `CompressionType` | No       | .gzip                     | Compression type for OTLP exports                                 |
+| Field                | Type              | Required | Default                             | Description                                                       |
+| -------------------- | ----------------- | -------- | ----------------------------------- | ----------------------------------------------------------------- |
+| maxRetries           | `Int`             | No       | 3                                   | Maximum number of retry attempts                                  |
+| retryableStatusCodes | `Set<Int>`        | No       | [408, 429, 500, 502, 503, 504, 509] | HTTP status codes that trigger retry logic                        |
+| maxBatchSize         | `Int`             | No       | 100                                 | Maximum batch size for exports                                    |
+| maxQueueSize         | `Int`             | No       | 1048                                | Maximum in-memory queue size (separate queues for logs and spans) |
+| batchInterval        | `TimeInterval`    | No       | 5.0                                 | Batch export interval in seconds                                  |
+| exportTimeout        | `TimeInterval`    | No       | 30.0                                | Export timeout in seconds                                         |
+| compression          | `CompressionType` | No       | .gzip                               | Compression type for OTLP exports                                 |
 
 See the [AwsExportConfig](Sources/AwsOpenTelemetryCore/Configuration/AwsExporterConfig.swift) for detailed configuration options.
 
@@ -257,11 +257,17 @@ AwsOpenTelemetryRumBuilder.create(config: config)?
 
 You can create custom span and log events using the OpenTelemetry APIs. The SDK provides convenient access to configured tracer and logger instances. All events are populated with [available metadata](#available-metadata) by ADOT Swift.
 
-- [Read more about custom events you can manually record](docs/custom_events.md)
+Please be mindful about the following restrictions:
+
+1. AWS RUM OTLP endpoint enforces a 30KB limit on attribute size. If an event attribute exceeds the limit, then it is dropped from the payload.
+2. AWS RUM OTLP endpoint requires `spanName` to be set for successful ingestion.
+3. AWS RUM OTLP endpoint requires log to be events, so you must set log `eventName` for successful ingestion.
+
+[Read more about custom events you can manually record](docs/custom_events.md)
 
 ### Custom Span Example
 
-Use spans for events with durations and tracing support ([read more](https://opentelemetry.io/docs/concepts/signals/traces/)). **Warning:** AWS RUM OTLP endpoint requires `spanName` to be set for successful ingestion.
+Use spans for events with durations and tracing support ([read more](https://opentelemetry.io/docs/concepts/signals/traces/)). **Warning:** `spanName` must be set for successful ingestion.
 
 ```swift
 // Example: a database query can be recorded as a span
@@ -286,7 +292,7 @@ span.end()
 
 ### Custom Log Example
 
-Use logs for point-in-time events ([read more](https://opentelemetry.io/docs/concepts/signals/logs/)). **Warning:** AWS RUM OTLP endpoint requires log to be events, so you must set log `eventName` for successful ingestion.
+Use logs for point-in-time events ([read more](https://opentelemetry.io/docs/concepts/signals/logs/)). **Warning:** log `eventName` must be set for successful ingestion.
 
 ```swift
 // Example: a user login can be recorded as a log record.

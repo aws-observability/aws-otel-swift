@@ -44,7 +44,7 @@ public struct AwsExporterConfig {
   /// Default configuration with AWS-optimized settings
   public static let `default` = AwsExporterConfig(
     maxRetries: 3,
-    retryableStatusCodes: Set([429, 500, 502, 503, 504]),
+    retryableStatusCodes: Set([408, 429, 500, 502, 503, 504, 509]),
     maxBatchSize: 100,
     maxQueueSize: 1048,
     batchInterval: 5.0,
@@ -53,7 +53,7 @@ public struct AwsExporterConfig {
   )
 
   public init(maxRetries: Int = 3,
-              retryableStatusCodes: Set<Int> = Set([429, 500, 502, 503, 504]),
+              retryableStatusCodes: Set<Int> = [408, 429, 500, 502, 503, 504, 509],
               maxBatchSize: Int = 100,
               maxQueueSize: Int = 1048,
               batchInterval: TimeInterval = 5.0,

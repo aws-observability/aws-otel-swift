@@ -28,12 +28,14 @@ class AwsExporterConfigTests: XCTestCase {
     XCTAssertEqual(config.exportTimeout, 30.0)
     XCTAssertEqual(config.compression, .gzip)
 
-    // Test retryable status codes include 429 and standard AWS 5xx codes
+    // Test retryable status codes include 408, 429 and standard AWS 5xx codes
+    XCTAssertTrue(config.retryableStatusCodes.contains(408))
     XCTAssertTrue(config.retryableStatusCodes.contains(429))
     XCTAssertTrue(config.retryableStatusCodes.contains(500))
     XCTAssertTrue(config.retryableStatusCodes.contains(502))
     XCTAssertTrue(config.retryableStatusCodes.contains(503))
     XCTAssertTrue(config.retryableStatusCodes.contains(504))
+    XCTAssertTrue(config.retryableStatusCodes.contains(509))
     XCTAssertFalse(config.retryableStatusCodes.contains(404))
     XCTAssertFalse(config.retryableStatusCodes.contains(599))
   }
@@ -62,18 +64,20 @@ class AwsExporterConfigTests: XCTestCase {
     let config = AwsExporterConfig.default
 
     // Test that retryable status codes are properly configured for AWS standard backoff
+    XCTAssertTrue(config.retryableStatusCodes.contains(408)) // Request timeout
     XCTAssertTrue(config.retryableStatusCodes.contains(429)) // Rate limiting
     XCTAssertTrue(config.retryableStatusCodes.contains(500)) // Internal server error
     XCTAssertTrue(config.retryableStatusCodes.contains(502)) // Bad gateway
     XCTAssertTrue(config.retryableStatusCodes.contains(503)) // Service unavailable
     XCTAssertTrue(config.retryableStatusCodes.contains(504)) // Gateway timeout
+    XCTAssertTrue(config.retryableStatusCodes.contains(509)) // Bandwidth limit exceeded
   }
 
   func testInitializationWithDefaults() {
     let config = AwsExporterConfig()
 
     XCTAssertEqual(config.maxRetries, 3)
-    XCTAssertEqual(config.retryableStatusCodes, Set([429, 500, 502, 503, 504]))
+    XCTAssertEqual(config.retryableStatusCodes, Set([408, 429, 500, 502, 503, 504, 509]))
     XCTAssertEqual(config.maxBatchSize, 100)
     XCTAssertEqual(config.maxQueueSize, 1048)
     XCTAssertEqual(config.batchInterval, 5.0)
