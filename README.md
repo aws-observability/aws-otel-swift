@@ -261,7 +261,7 @@ You can create custom span and log events using the OpenTelemetry APIs. The SDK 
 
 ### Custom Span Example
 
-Use spans for events with durations and tracing support ([read more](https://opentelemetry.io/docs/concepts/signals/traces/)). **Warning:** AWS RUM OTLP endpoint requires `spanName` for successful ingestion.
+Use spans for events with durations and tracing support ([read more](https://opentelemetry.io/docs/concepts/signals/traces/)). **Warning:** AWS RUM OTLP endpoint requires `spanName` to be set for successful ingestion.
 
 ```swift
 // Example: a database query can be recorded as a span
