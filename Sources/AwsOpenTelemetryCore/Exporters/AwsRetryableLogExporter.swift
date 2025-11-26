@@ -20,7 +20,7 @@ import OpenTelemetryProtocolExporterHttp
 import OpenTelemetryProtocolExporterCommon
 
 /**
- * Log record exporter using OTLP exporter with custom HTTP client.
+ * Log record exporter using OTLP exporter with custom AWS HTTP client.
  */
 public class AwsRetryableLogExporter: LogRecordExporter {
   private let otlpExporter: OtlpHttpLogExporter
@@ -29,7 +29,7 @@ public class AwsRetryableLogExporter: LogRecordExporter {
     let httpClient = AwsHttpClient(config: config)
     otlpExporter = OtlpHttpLogExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .gzip),
+      config: OtlpConfiguration(compression: config.compression),
       httpClient: httpClient
     )
   }
@@ -37,7 +37,7 @@ public class AwsRetryableLogExporter: LogRecordExporter {
   public init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
     otlpExporter = OtlpHttpLogExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .gzip),
+      config: OtlpConfiguration(compression: config.compression),
       httpClient: httpClient
     )
   }

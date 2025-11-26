@@ -20,7 +20,7 @@ import OpenTelemetryProtocolExporterHttp
 import OpenTelemetryProtocolExporterCommon
 
 /**
- * Span exporter using OTLP exporter with custom HTTP client.
+ * Span exporter using OTLP exporter with custom AWS HTTP client.
  */
 public class AwsRetryableSpanExporter: SpanExporter {
   private let otlpExporter: OtlpHttpTraceExporter
@@ -29,7 +29,7 @@ public class AwsRetryableSpanExporter: SpanExporter {
     let httpClient = AwsHttpClient(config: config)
     otlpExporter = OtlpHttpTraceExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .gzip),
+      config: OtlpConfiguration(compression: config.compression),
       httpClient: httpClient
     )
   }
@@ -37,7 +37,7 @@ public class AwsRetryableSpanExporter: SpanExporter {
   public init(endpoint: URL, config: AwsExporterConfig, httpClient: AwsHttpClient) {
     otlpExporter = OtlpHttpTraceExporter(
       endpoint: endpoint,
-      config: OtlpConfiguration(compression: .gzip),
+      config: OtlpConfiguration(compression: config.compression),
       httpClient: httpClient
     )
   }

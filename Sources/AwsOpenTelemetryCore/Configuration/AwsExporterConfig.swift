@@ -14,6 +14,7 @@
  */
 
 import Foundation
+import OpenTelemetryProtocolExporterCommon
 
 /**
  * Configuration for AWS OpenTelemetry exporters with retry and batching capabilities.
@@ -37,27 +38,33 @@ public struct AwsExporterConfig {
   /// Export timeout in seconds (default: 30.0)
   public let exportTimeout: TimeInterval
 
+  /// Compression type for OTLP exports (default: .gzip)
+  public let compression: CompressionType
+
   /// Default configuration with AWS-optimized settings
   public static let `default` = AwsExporterConfig(
     maxRetries: 3,
-    retryableStatusCodes: Set([429, 500, 502, 503, 504]),
+    retryableStatusCodes: Set([408, 429, 500, 502, 503, 504, 509]),
     maxBatchSize: 100,
     maxQueueSize: 1048,
     batchInterval: 5.0,
-    exportTimeout: 30.0
+    exportTimeout: 30.0,
+    compression: .gzip
   )
 
   public init(maxRetries: Int = 3,
-              retryableStatusCodes: Set<Int> = Set([429, 500, 502, 503, 504]),
+              retryableStatusCodes: Set<Int> = [408, 429, 500, 502, 503, 504, 509],
               maxBatchSize: Int = 100,
               maxQueueSize: Int = 1048,
               batchInterval: TimeInterval = 5.0,
-              exportTimeout: TimeInterval = 30.0) {
+              exportTimeout: TimeInterval = 30.0,
+              compression: CompressionType = .gzip) {
     self.maxRetries = maxRetries
     self.retryableStatusCodes = retryableStatusCodes
     self.maxBatchSize = maxBatchSize
     self.maxQueueSize = maxQueueSize
     self.batchInterval = batchInterval
     self.exportTimeout = exportTimeout
+    self.compression = compression
   }
 }
