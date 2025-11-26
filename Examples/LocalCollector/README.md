@@ -91,3 +91,4 @@ Note: If you would like to use the OpenTelemetry Collector for local development
     <key>com.apple.security.network.client</key>
     <true/>
     ```
+- test
