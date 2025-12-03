@@ -49,13 +49,13 @@ struct PetClinicApp: App {
     print("Setting up OpenTelemetry with AppMonitorId: \(appMonitorId), Region: \(region)")
 
     // Set global attributes to filter CW Logs
-    let manager = GlobalAttributesProvider.getInstance()
+    let manager = AwsGlobalAttributesProvider.getInstance()
     manager.setAttribute(key: "appMonitorId", value: AttributeValue.string(appMonitorId))
     manager.setAttribute(key: "appMonitorRegion", value: AttributeValue.string(region))
     manager.setAttribute(key: "deviceFarmJobId", value: AttributeValue.string(deviceFarmJobId))
 
     let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
-    let exportOverride = ExportOverride(
+    let exportOverride = AwsExportOverride(
       logs: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum",
       traces: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
     )
@@ -66,14 +66,7 @@ struct PetClinicApp: App {
       debug: true
     )
 
-    do {
-      try AwsOpenTelemetryRumBuilder.create(config: config)
-        .build()
-      print("✅ OpenTelemetry SDK initialized successfully")
-    } catch AwsOpenTelemetryConfigError.alreadyInitialized {
-      print("⚠️ SDK is already initialized")
-    } catch {
-      print("❌ Error initializing SDK: \(error)")
-    }
+    AwsOpenTelemetryRumBuilder.create(config: config)?.build()
+    print("✅ OpenTelemetry SDK initialized successfully")
   }
 }
