@@ -66,8 +66,8 @@ struct PetClinicApp: App {
 
     let awsConfig = AwsConfig(region: appMonitorRegion, rumAppMonitorId: appMonitorId)
     let exportOverride = AwsExportOverride(
-      logs: "https://dataplane.rum\\(environmentSuffix).\\(appMonitorRegion).amazonaws.com/v1/rum",
-      traces: "https://dataplane.rum\\(environmentSuffix).\\(appMonitorRegion).amazonaws.com/v1/rum"
+      logs: "https://dataplane.rum\(environmentSuffix).\(appMonitorRegion).amazonaws.com/v1/rum",
+      traces: "https://dataplane.rum\(environmentSuffix).\(appMonitorRegion).amazonaws.com/v1/rum"
     )
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
