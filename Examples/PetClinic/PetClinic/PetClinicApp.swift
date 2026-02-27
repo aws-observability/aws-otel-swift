@@ -12,17 +12,17 @@ struct PetClinicApp: App {
        index + 1 < arguments.count {
       return arguments[index + 1]
     }
-    return "6a3cc818-40fa-4266-9561-9ccf2de54567" // rum-mobile-e2e-ios
+    return "app-monitor-id-uuid" // Replace
   }()
 
-  private let region: String = {
+  private let appMonitorRegion: String = {
     let arguments = ProcessInfo.processInfo.arguments
     if arguments.contains("-appMonitorRegion"),
        let index = arguments.firstIndex(of: "-appMonitorRegion"),
        index + 1 < arguments.count {
       return arguments[index + 1]
     }
-    return "us-west-2"
+    return "us-west-2" // Replace
   }()
 
   private let deviceFarmJobId: String = {
@@ -32,7 +32,17 @@ struct PetClinicApp: App {
        index + 1 < arguments.count {
       return arguments[index + 1]
     }
-    return "test-device-farm-job-id"
+    return "test-device-farm-job-id" // Replace
+  }()
+
+  private let environmentSuffix: String = {
+    let arguments = ProcessInfo.processInfo.arguments
+    if arguments.contains("-environmentSuffix"),
+       let index = arguments.firstIndex(of: "-environmentSuffix"),
+       index + 1 < arguments.count {
+      return arguments[index + 1]
+    }
+    return "" // Replace
   }()
 
   init() {
@@ -46,18 +56,18 @@ struct PetClinicApp: App {
   }
 
   private func setupOpenTelemetry() {
-    print("Setting up OpenTelemetry with AppMonitorId: \(appMonitorId), Region: \(region)")
+    print("Setting up OpenTelemetry with AppMonitorId: \(appMonitorId), Region: \(appMonitorRegion)")
 
     // Set global attributes to filter CW Logs
     let manager = AwsGlobalAttributesProvider.getInstance()
     manager.setAttribute(key: "appMonitorId", value: AttributeValue.string(appMonitorId))
-    manager.setAttribute(key: "appMonitorRegion", value: AttributeValue.string(region))
+    manager.setAttribute(key: "appMonitorRegion", value: AttributeValue.string(appMonitorRegion))
     manager.setAttribute(key: "deviceFarmJobId", value: AttributeValue.string(deviceFarmJobId))
 
-    let awsConfig = AwsConfig(region: region, rumAppMonitorId: appMonitorId)
+    let awsConfig = AwsConfig(region: appMonitorRegion, rumAppMonitorId: appMonitorId)
     let exportOverride = AwsExportOverride(
-      logs: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum",
-      traces: "https://dataplane.rum-gamma.us-west-2.amazonaws.com/v1/rum"
+      logs: "https://dataplane.rum\\(environmentSuffix).\\(appMonitorRegion).amazonaws.com/v1/rum",
+      traces: "https://dataplane.rum\\(environmentSuffix).\\(appMonitorRegion).amazonaws.com/v1/rum"
     )
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
