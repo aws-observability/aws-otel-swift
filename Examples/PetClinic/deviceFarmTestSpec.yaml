@@ -32,8 +32,10 @@ phases:
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:1 string '6a3cc818-40fa-4266-9561-9ccf2de54567'" $MODIFIED_XCUITESTRUN_FILE
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:2 string '-appMonitorRegion'" $MODIFIED_XCUITESTRUN_FILE
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:3 string 'us-west-2'" $MODIFIED_XCUITESTRUN_FILE
-        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:4 string '-deviceFarmJobId'" $MODIFIED_XCUITESTRUN_FILE
-        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:5 string '<PASTE_JOB_ID>'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:4 string '-environmentSuffix'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:5 string '-gamma'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:6 string '-deviceFarmJobId'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:7 string '<PASTE_JOB_ID>'" $MODIFIED_XCUITESTRUN_FILE
         
         # Fix paths to use absolute paths
         /usr/libexec/PlistBuddy -c "Set :TestConfigurations:0:TestTargets:0:UITargetAppPath /tmp/root/Debug-iphoneos/PetClinic.app" $MODIFIED_XCUITESTRUN_FILE
