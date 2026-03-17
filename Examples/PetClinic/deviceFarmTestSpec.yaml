@@ -29,7 +29,7 @@ phases:
       - |
         # Add arguments and fix paths
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:0 string '-appMonitorId'" $MODIFIED_XCUITESTRUN_FILE
-        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:1 string '6a3cc818-40fa-4266-9561-9ccf2de54567'" $MODIFIED_XCUITESTRUN_FILE
+        /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:1 string '710405d5-2b9e-4bea-8c1c-d25df40b621d'" $MODIFIED_XCUITESTRUN_FILE
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:2 string '-appMonitorRegion'" $MODIFIED_XCUITESTRUN_FILE
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:3 string 'us-west-2'" $MODIFIED_XCUITESTRUN_FILE
         /usr/libexec/PlistBuddy -c "Add :TestConfigurations:0:TestTargets:0:UITargetAppCommandLineArguments:4 string '-environmentSuffix'" $MODIFIED_XCUITESTRUN_FILE
