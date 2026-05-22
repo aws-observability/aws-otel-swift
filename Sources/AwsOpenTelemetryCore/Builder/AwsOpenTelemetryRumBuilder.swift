@@ -14,7 +14,6 @@
  */
 
 import Foundation
-
 import OpenTelemetryApi
 import OpenTelemetryProtocolExporterCommon
 import OpenTelemetryProtocolExporterHttp
@@ -250,9 +249,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return This builder instance for method chaining
    */
   @discardableResult
-  public func addSpanExporterCustomizer(
-    _ customizer: @escaping (SpanExporter) -> SpanExporter
-  ) -> Self {
+  public func addSpanExporterCustomizer(_ customizer: @escaping (SpanExporter) -> SpanExporter) -> Self {
     let existing = spanExporterCustomizer
     spanExporterCustomizer = { exporter in
       let intermediate = existing(exporter)
@@ -277,9 +274,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return This builder instance for method chaining
    */
   @discardableResult
-  public func addLogRecordExporterCustomizer(
-    _ customizer: @escaping (LogRecordExporter) -> LogRecordExporter
-  ) -> Self {
+  public func addLogRecordExporterCustomizer(_ customizer: @escaping (LogRecordExporter) -> LogRecordExporter) -> Self {
     let existing = logRecordExporterCustomizer
     logRecordExporterCustomizer = { exporter in
       let intermediate = existing(exporter)
@@ -306,9 +301,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return This builder instance for method chaining
    */
   @discardableResult
-  public func addTracerProviderCustomizer(
-    _ customizer: @escaping (TracerProviderBuilder) -> TracerProviderBuilder
-  ) -> Self {
+  public func addTracerProviderCustomizer(_ customizer: @escaping (TracerProviderBuilder) -> TracerProviderBuilder) -> Self {
     tracerProviderCustomizers.append(customizer)
     return self
   }
@@ -329,9 +322,7 @@ public class AwsOpenTelemetryRumBuilder {
    * @return This builder instance for method chaining
    */
   @discardableResult
-  public func addLoggerProviderCustomizer(
-    _ customizer: @escaping (LoggerProviderBuilder) -> LoggerProviderBuilder
-  ) -> Self {
+  public func addLoggerProviderCustomizer(_ customizer: @escaping (LoggerProviderBuilder) -> LoggerProviderBuilder) -> Self {
     loggerProviderCustomizers.append(customizer)
     return self
   }

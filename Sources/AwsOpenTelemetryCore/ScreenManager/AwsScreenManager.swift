@@ -68,7 +68,7 @@ public class AwsScreenManager {
     }
   }
 
-  // constructor
+  /// constructor
   init(queue: DispatchQueue = DispatchQueue(label: queueLabel, qos: .utility)) {
     self.queue = queue
   }

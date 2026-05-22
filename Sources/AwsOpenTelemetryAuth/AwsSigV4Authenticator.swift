@@ -143,9 +143,7 @@ public class AwsSigV4Authenticator {
       guard let signedRequest = await signer.sigV4SignedRequest(requestBuilder: requestBuilder, signingConfig: config) else {
         return urlRequest
       }
-      let request = try await SmithyHTTPAPI.HTTPRequest.makeURLRequest(from: signedRequest)
-
-      return request
+      return try await SmithyHTTPAPI.HTTPRequest.makeURLRequest(from: signedRequest)
     } catch {
       AwsInternalLogger.error("Error signing request: \(error)")
       return urlRequest

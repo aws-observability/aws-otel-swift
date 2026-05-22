@@ -73,8 +73,8 @@ public protocol LiveStackTraceReporter {
       return StackTrace(message: message, stacktrace: stacktrace)
     }
 
-    // For simplicity, we only do library name + offset to help with grouping. If we include the full first frame, then
-    // unfortunately every exception message becomes unique.
+    /// For simplicity, we only do library name + offset to help with grouping. If we include the full first frame, then
+    /// unfortunately every exception message becomes unique.
     func getFirstFrameOfMain(stacktrace: String) -> String? {
       guard let firstFrameLine = stacktrace.components(separatedBy: "Thread 0:\n0").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces) else {
         return nil
@@ -94,7 +94,7 @@ public protocol LiveStackTraceReporter {
   }
 #endif
 
-// Noop implementation for platforms where PLCrashReporter is not available
+/// Noop implementation for platforms where PLCrashReporter is not available
 public class NoopLiveStackTraceReporter: LiveStackTraceReporter {
   public let maxStackTraceLength: Int
 
