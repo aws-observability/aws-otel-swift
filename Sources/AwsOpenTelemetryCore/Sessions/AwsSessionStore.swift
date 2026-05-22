@@ -29,8 +29,8 @@ class AwsSessionStore {
   /// UserDefaults key for storing session timeout
   static let sessionTimeoutKey = "aws-rum-session-timeout"
 
-  /// To avoid writing to disk too often, SessionStore only keeps the current session
-  /// in memory and saves to disk on an interval (every 30 seconds).
+  // To avoid writing to disk too often, SessionStore only keeps the current session
+  // in memory and saves to disk on an interval (every 30 seconds).
 
   /// The most recent session to be saved to disk
   private static var pendingSession: AwsSession?

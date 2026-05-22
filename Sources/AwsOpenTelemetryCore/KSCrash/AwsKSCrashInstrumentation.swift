@@ -183,7 +183,7 @@ public class AwsKSCrashInstrumentation: CrashProtocol {
     AwsInternalLogger.debug("AwsKSCrashInstrumentation processed \(reportIDs.count) stored crashes")
   }
 
-  // Report a KSCrash report in Apple format
+  /// Report a KSCrash report in Apple format
   private static func reportCrash(crashReport: CrashReportDictionary) {
     let rawCrash: [String: Any] = crashReport.value
     let log: any LogRecordBuilder = logger.logRecordBuilder()

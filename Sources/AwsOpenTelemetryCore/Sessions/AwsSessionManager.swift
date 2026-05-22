@@ -97,7 +97,7 @@ public class AwsSessionManager {
       sessionTimeout: configuration.sessionTimeout
     )
 
-    /// Queue the previous session for a `session.end` event
+    // Queue the previous session for a `session.end` event
     if let previousSession {
       AwsSessionEventInstrumentation.addSession(session: previousSession, eventType: .end)
     }

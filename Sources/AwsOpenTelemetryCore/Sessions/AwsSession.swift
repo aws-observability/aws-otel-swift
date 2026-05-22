@@ -64,15 +64,6 @@ public struct AwsSession: Equatable {
     self.sessionTimeout = sessionTimeout
   }
 
-  /// Two sessions are considered equal if they have the same ID, prevID, startTime, and expiry timestamp
-  public static func == (lhs: AwsSession, rhs: AwsSession) -> Bool {
-    return lhs.expireTime == rhs.expireTime &&
-      lhs.id == rhs.id &&
-      lhs.previousId == rhs.previousId &&
-      lhs.startTime == rhs.startTime &&
-      lhs.sessionTimeout == rhs.sessionTimeout
-  }
-
   /// Checks if the session has expired
   /// - Returns: True if the current time is past the session's expireTime time
   public func isExpired() -> Bool {

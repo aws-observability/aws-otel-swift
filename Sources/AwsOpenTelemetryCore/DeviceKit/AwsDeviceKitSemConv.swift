@@ -22,10 +22,10 @@ import Foundation
 /// typically recorded as metrics, but we will record them as log/span attributes
 /// given that metrics are typically not individually recorded client-side.
 public class AwsDeviceKitSemConv {
-  // battery - https://opentelemetry.io/docs/specs/semconv/hardware/battery/
+  /// battery - https://opentelemetry.io/docs/specs/semconv/hardware/battery/
   public static let batteryCharge = "hw.battery.charge"
-  // cpu - https://opentelemetry.io/docs/specs/semconv/system/process-metrics/
+  /// cpu - https://opentelemetry.io/docs/specs/semconv/system/process-metrics/
   public static let cpuUtilization = "process.cpu.utilization"
-  // mem - https://opentelemetry.io/docs/specs/semconv/system/process-metrics/#metric-processmemoryusage
+  /// mem - https://opentelemetry.io/docs/specs/semconv/system/process-metrics/#metric-processmemoryusage
   public static let memoryUsage = "process.memory.usage"
 }

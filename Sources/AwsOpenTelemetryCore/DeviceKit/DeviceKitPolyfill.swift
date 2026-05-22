@@ -47,11 +47,10 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
     uname(&systemInfo)
     let mirror = Mirror(reflecting: systemInfo.machine)
 
-    let identifier = mirror.children.reduce("") { identifier, element in
+    return mirror.children.reduce("") { identifier, element in
       guard let value = element.value as? Int8, value != 0 else { return identifier }
       return identifier + String(UnicodeScalar(UInt8(value)))
     }
-    return identifier
   }()
 
   /// Maps device identifier to human-readable device name
@@ -362,7 +361,7 @@ public class DeviceKitPolyfill: DeviceKitPolyfillProtocol {
       var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size) / 4
 
       // Get RSS memory via `task_info` API
-      /// https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_info.html
+      // https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_info.html
       let result = withUnsafeMutablePointer(to: &info) { structPointer in
         // See https://developer.apple.com/documentation/swift/unsafemutablepointer/withmemoryrebound(to:capacity:_:)
         structPointer.withMemoryRebound(

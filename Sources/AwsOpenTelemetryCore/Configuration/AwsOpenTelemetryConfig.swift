@@ -83,7 +83,7 @@ import Foundation
     return AwsOpenTelemetryConfigBuilder()
   }
 
-  // Custom decoder implementation to handle default values
+  /// Custom decoder implementation to handle default values
   public required init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     aws = try container.decode(AwsConfig.self, forKey: .aws)

@@ -72,10 +72,14 @@
    */
   public extension AwsViewControllerCustomization where Self: UIViewController {
     /// Default: Use the class name for telemetry
-    var customScreenName: String? { nil }
+    var customScreenName: String? {
+      nil
+    }
 
     /// Default: Enable instrumentation for all view controllers
-    var shouldCaptureView: Bool { true }
+    var shouldCaptureView: Bool {
+      true
+    }
   }
 
 #endif
