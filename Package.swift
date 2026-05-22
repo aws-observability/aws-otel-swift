@@ -18,8 +18,8 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift-core.git", exact: "2.2.0"),
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", exact: "2.2.0"),
-    .package(url: "https://github.com/awslabs/aws-sdk-swift", from: "1.3.32"),
-    .package(url: "https://github.com/smithy-lang/smithy-swift", from: "0.134.0"),
+    .package(url: "https://github.com/awslabs/aws-sdk-swift", exact: "1.3.32"),
+    .package(url: "https://github.com/smithy-lang/smithy-swift", exact: "0.134.0"),
     .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
     .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2") // only used for live stack trace collection, not crash reporting
   ],
