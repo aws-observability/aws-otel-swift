@@ -14,9 +14,7 @@
  */
 
 import Foundation
-#if !os(watchOS)
-  import CrashReporter
-#endif
+import KSCrashRecordingCore
 
 public struct StackTrace {
   let message: String
@@ -30,71 +28,68 @@ public protocol LiveStackTraceReporter {
   init(maxStackTraceLength: Int)
 }
 
-#if !os(watchOS)
-  public class PLLiveStackTraceReporter: LiveStackTraceReporter {
-    let reporter: PLCrashReporter
-    public let maxStackTraceLength: Int
+public class KSCrashLiveStackTraceReporter: LiveStackTraceReporter {
+  public let maxStackTraceLength: Int
+  private let maxFrames = 128
+  private var targetThread: pthread_t?
 
-    public required init(maxStackTraceLength: Int = 10 * 1000) {
-      self.maxStackTraceLength = maxStackTraceLength
-      let config = PLCrashReporterConfig(
-        signalHandlerType: .BSD,
-        symbolicationStrategy: [] // empty list means no symbolication, and implies a ~20 ms fetch time
-        // To get on-device symbolication during development, set symbolicationStrategy to
-        // - `.all` (2 sec blocking delay)
-        // - `.symbolTable` (1 sec blocking delay)
-      )
-      // PLCrashReporter is designed for crash reports but we are able to take advantage of its live report feature,
-      // which is perfect for collecting stack traces associated with app hangs. This does not interfere with other
-      // crash reporters because we are not using the crash report feature.
-      reporter = PLCrashReporter(configuration: config)
-    }
-
-    public func generateLiveStackTrace() -> Data? {
-      return reporter.generateLiveReport()
-    }
-
-    public func formatStackTrace(rawStackTrace: Data) -> StackTrace {
-      var stacktrace = "Failed to collect stack trace"
-      var message = "Hang detected at unknown location"
-      do {
-        let crashReport = try PLCrashReport(data: rawStackTrace)
-        if let fullStacktrace = PLCrashReportTextFormatter.stringValue(for: crashReport, with: PLCrashReportTextFormatiOS) {
-          stacktrace = String(fullStacktrace.prefix(maxStackTraceLength))
-          let firstFrame = getFirstFrameOfMain(stacktrace: stacktrace) ?? "unknown location"
-          message = "Hang detected at \(firstFrame)"
-        } else {
-          AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to format crash report to string")
-        }
-      } catch {
-        AwsInternalLogger.error("PLLiveStackTraceReporter: Failed to parse crash report: \(error)")
-        stacktrace = "Failed to parse stack trace: \(error)"
-      }
-      return StackTrace(message: message, stacktrace: stacktrace)
-    }
-
-    /// For simplicity, we only do library name + offset to help with grouping. If we include the full first frame, then
-    /// unfortunately every exception message becomes unique.
-    func getFirstFrameOfMain(stacktrace: String) -> String? {
-      guard let firstFrameLine = stacktrace.components(separatedBy: "Thread 0:\n0").dropFirst().first?.components(separatedBy: "\n").first?.trimmingCharacters(in: .whitespaces) else {
-        return nil
-      }
-
-      // Extract library name and offset from frame like:
-      // "   libsystem_kernel.dylib              0x00000001dccb1658 0x1dccab000 + 26200"
-      let components = firstFrameLine.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-      guard components.count >= 4,
-            let libraryName = components.first,
-            let offsetString = components.last else {
-        return "unknown location"
-      }
-
-      return "\(libraryName) + \(offsetString)"
-    }
+  public required init(maxStackTraceLength: Int = 10 * 1000) {
+    self.maxStackTraceLength = maxStackTraceLength
   }
-#endif
 
-/// Noop implementation for platforms where PLCrashReporter is not available
+  public func setTargetThread(_ thread: pthread_t) {
+    targetThread = thread
+  }
+
+  public func generateLiveStackTrace() -> Data? {
+    guard let thread = targetThread else {
+      return nil
+    }
+    var addresses = [UInt](repeating: 0, count: maxFrames)
+    let count = captureBacktrace(thread: thread, addresses: &addresses, count: Int32(maxFrames))
+    guard count > 0 else {
+      return nil
+    }
+    let captured = Array(addresses.prefix(Int(count)))
+    return try? JSONEncoder().encode(captured)
+  }
+
+  public func formatStackTrace(rawStackTrace: Data) -> StackTrace {
+    guard let addresses = try? JSONDecoder().decode([UInt].self, from: rawStackTrace), !addresses.isEmpty else {
+      return StackTrace(message: "Hang detected at unknown location", stacktrace: "Failed to parse stack trace")
+    }
+
+    var lines: [String] = []
+    var firstFrameDescription: String?
+
+    for (index, address) in addresses.enumerated() {
+      var info = SymbolInformation()
+      let success = symbolicate(address: address, result: &info)
+
+      let line: String
+      if success {
+        let imageName = info.imageName.map { String(cString: $0).components(separatedBy: "/").last ?? String(cString: $0) } ?? "???"
+        let symbolName = info.symbolName.map { String(cString: $0) } ?? "0x\(String(address, radix: 16))"
+        let offset = address - info.symbolAddress
+        line = "\(index)\t\(imageName)\t\(symbolName) + \(offset)"
+
+        if index == 0 {
+          firstFrameDescription = "\(imageName) + \(offset)"
+        }
+      } else {
+        line = "\(index)\t???\t0x\(String(address, radix: 16))"
+      }
+      lines.append(line)
+    }
+
+    let fullTrace = "Thread 0:\n" + lines.joined(separator: "\n")
+    let stacktrace = String(fullTrace.prefix(maxStackTraceLength))
+    let message = "Hang detected at \(firstFrameDescription ?? "unknown location")"
+    return StackTrace(message: message, stacktrace: stacktrace)
+  }
+}
+
+/// Noop implementation for platforms where live stack trace collection is unavailable
 public class NoopLiveStackTraceReporter: LiveStackTraceReporter {
   public let maxStackTraceLength: Int
 

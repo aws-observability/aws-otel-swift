@@ -44,17 +44,12 @@ public class AwsHangInstrumentation {
   static let shared = AwsHangInstrumentation()
 
   public init(stackTraceCollector: LiveStackTraceReporter? = nil) {
-    let collector: LiveStackTraceReporter
-    if let stackTraceCollector {
-      collector = stackTraceCollector
+    let collector: LiveStackTraceReporter = if let stackTraceCollector {
+      stackTraceCollector
     } else {
-      #if !os(watchOS)
-        collector = PLLiveStackTraceReporter()
-      #else
-        collector = NoopLiveStackTraceReporter()
-      #endif
+      KSCrashLiveStackTraceReporter()
     }
-    hangPredetectionThreshold = hangThreshold * 2 / 3 // lower threshold to collect stacktrace during ongoing hangs
+    hangPredetectionThreshold = hangThreshold * 2 / 3
     tracer = OpenTelemetry.instance.tracerProvider.get(instrumentationName: AwsInstrumentationScopes.HANG)
     logger = OpenTelemetry.instance.loggerProvider.get(instrumentationScopeName: AwsInstrumentationScopes.HANG)
     self.stackTraceCollector = collector
@@ -63,6 +58,9 @@ public class AwsHangInstrumentation {
 
   func startWatchdog() {
     DispatchQueue.main.async {
+      if let ksReporter = self.stackTraceCollector as? KSCrashLiveStackTraceReporter {
+        ksReporter.setTargetThread(pthread_self())
+      }
       self.setupRunLoopObserver()
     }
 
