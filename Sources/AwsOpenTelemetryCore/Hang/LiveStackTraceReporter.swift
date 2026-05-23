@@ -38,7 +38,7 @@ public class KSCrashLiveStackTraceReporter: LiveStackTraceReporter {
   }
 
   public func setTargetThread(_ thread: pthread_t) {
-    self.targetThread = thread
+    targetThread = thread
   }
 
   public func generateLiveStackTrace() -> Data? {
@@ -105,4 +105,3 @@ public class NoopLiveStackTraceReporter: LiveStackTraceReporter {
     return StackTrace(message: "Stack trace collection not available", stacktrace: "Stack trace collection not supported on this platform")
   }
 }
-

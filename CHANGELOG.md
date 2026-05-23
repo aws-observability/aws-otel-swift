@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Changed
+- Replace PLCrashReporter with KSCrash backtrace for live stack trace collection in hang detection ([#104](https://github.com/aws-observability/aws-otel-swift/pull/104))
+
 ### Fixed
 - Pin `opentelemetry-swift-core`, `opentelemetry-swift`, `aws-sdk-swift`, and `smithy-swift` to exact versions to prevent SPM from resolving to incompatible newer releases ([#103](https://github.com/aws-observability/aws-otel-swift/pull/103))
 
