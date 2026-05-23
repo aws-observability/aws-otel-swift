@@ -63,7 +63,5 @@ public func buildOtlpEndpoints(region: String, exportOverride: AwsExportOverride
   let logsEndpoint = buildLogsEndpoint(region: region, exportOverride: exportOverride)
 
   // Use Set to automatically handle duplicates when traces and logs use the same endpoint
-  let endpoints = Set([tracesEndpoint, logsEndpoint])
-
-  return endpoints
+  return Set([tracesEndpoint, logsEndpoint])
 }

@@ -18,20 +18,17 @@
   import OpenTelemetryApi
   import ObjectiveC.runtime
 
-  /**
-   * Main orchestrator for automatic UIKit view controller lifecycle instrumentation.
-   * AwsUIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
-   * is initialized with UIKit instrumentation enabled (default behavior).
-   *
-   * This class provides comprehensive instrumentation of UIViewController lifecycle events,
-   * automatically creating OpenTelemetry spans to track view performance and user navigation
-   * patterns without requiring manual instrumentation code.
-   *
-   * For advanced use cases, you can create and configure the instrumentation manually.
-   * View controllers can implement `AwsViewControllerCustomization`
-   * to control instrumentation.
-   */
-
+  /// Main orchestrator for automatic UIKit view controller lifecycle instrumentation.
+  /// AwsUIKitViewInstrumentation is automatically created and installed when the AWS OpenTelemetry SDK
+  /// is initialized with UIKit instrumentation enabled (default behavior).
+  ///
+  /// This class provides comprehensive instrumentation of UIViewController lifecycle events,
+  /// automatically creating OpenTelemetry spans to track view performance and user navigation
+  /// patterns without requiring manual instrumentation code.
+  ///
+  /// For advanced use cases, you can create and configure the instrumentation manually.
+  /// View controllers can implement `AwsViewControllerCustomization`
+  /// to control instrumentation.
   public final class AwsUIKitViewInstrumentation {
     /// The handler responsible for processing view controller lifecycle events
     /// This component manages the actual span creation and lifecycle tracking

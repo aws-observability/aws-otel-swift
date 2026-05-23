@@ -36,7 +36,7 @@ public protocol AppLaunchProvider {
   /// Threshold above which a launch is considered pre-warm
   var preWarmFallbackThreshold: TimeInterval { get }
 
-  // Notification after which warm launches are allowed to be reported
+  /// Notification after which warm launches are allowed to be reported
   var hiddenNotification: Notification.Name { get }
 
   /// Additional lifecycle events to record as log events

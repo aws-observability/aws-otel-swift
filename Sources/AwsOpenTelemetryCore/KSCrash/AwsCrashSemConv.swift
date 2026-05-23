@@ -27,13 +27,13 @@ public class AwsExceptionSemConv {
   static let type = "exception.type"
   static let stacktrace = "exception.stacktrace"
 
-  // in-house utility field for context recovery
-  // when true, then the following fields are recovered
-  // 1. `session.id`
-  // 2. `session.previous_id`
-  // 3. `screen.name`
-  // 4. `user.id`
-  // 5. original timestamp
+  /// in-house utility field for context recovery
+  /// when true, then the following fields are recovered
+  /// 1. `session.id`
+  /// 2. `session.previous_id`
+  /// 3. `screen.name`
+  /// 4. `user.id`
+  /// 5. original timestamp
   static let recoveredContext = "recovered_context"
 }
 

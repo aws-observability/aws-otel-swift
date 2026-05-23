@@ -20,8 +20,8 @@ import OpenTelemetryApi
   import UIKit
 #endif
 
-// We want to capture active prewarm flag as early as possible, since it allegedly gets cleared
-// after `UIApplication.didFinishLaunchingNotification`
+/// We want to capture active prewarm flag as early as possible, since it allegedly gets cleared
+/// after `UIApplication.didFinishLaunchingNotification`
 let isActivePrewarm: Bool = ProcessInfo.processInfo.environment["ActivePrewarm"] != nil
 
 protocol AppLaunchProtocol {
@@ -35,7 +35,7 @@ public class AwsAppLaunchInstrumentation: NSObject, AppLaunchProtocol {
   static var provider: AppLaunchProvider?
   private static let lock: NSLock = .init()
 
-  // We need static reference to persist the observers
+  /// We need static reference to persist the observers
   static var shared: AwsAppLaunchInstrumentation?
 
   // Observer references for cleanup

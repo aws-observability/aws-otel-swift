@@ -58,8 +58,7 @@ public class AwsURLSessionInstrumentation {
 
     let urlSessionConfig = URLSessionInstrumentationConfiguration(
       shouldInstrument: { request in
-        let shouldInstrument = !self.shouldExcludeURL(request)
-        return shouldInstrument
+        return !self.shouldExcludeURL(request)
       }
     )
     _ = URLSessionInstrumentation(configuration: urlSessionConfig)

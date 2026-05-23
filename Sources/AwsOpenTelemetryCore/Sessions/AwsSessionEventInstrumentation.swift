@@ -118,8 +118,8 @@ public class AwsSessionEventInstrumentation {
       attributes[AwsSessionSemConv.previousId] = AttributeValue.string(previousId)
     }
 
-    /// Create `session.start` log record according to otel semantic convention
-    /// https://opentelemetry.io/docs/specs/semconv/general/session/
+    // Create `session.start` log record according to otel semantic convention
+    // https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setEventName(AwsSessionStartSemConv.name)
       .setAttributes(attributes)
@@ -146,8 +146,8 @@ public class AwsSessionEventInstrumentation {
       attributes[AwsSessionSemConv.previousId] = AttributeValue.string(previousId)
     }
 
-    /// Create `session.end`` log record according to otel semantic convention
-    /// https://opentelemetry.io/docs/specs/semconv/general/session/
+    // Create `session.end`` log record according to otel semantic convention
+    // https://opentelemetry.io/docs/specs/semconv/general/session/
     logger.logRecordBuilder()
       .setEventName(AwsSessionEndSemConv.name)
       .setAttributes(attributes)
@@ -166,8 +166,8 @@ public class AwsSessionEventInstrumentation {
     if isApplied {
       createSessionEvent(session: session, eventType: eventType)
     } else {
-      /// SessionManager creates sessions before SessionEventInstrumentation is applied,
-      /// which the notification observer cannot see. So we need to keep the sessions in a queue.
+      // SessionManager creates sessions before SessionEventInstrumentation is applied,
+      // which the notification observer cannot see. So we need to keep the sessions in a queue.
       if queue.count >= maxQueueSize {
         AwsInternalLogger.debug("Queue at max capacity (\(maxQueueSize)), dropping latest session event: \(session.id)")
         return

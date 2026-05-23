@@ -21,7 +21,6 @@ import Foundation
 /// semantic conventions for session tracking.
 ///
 /// Reference: https://opentelemetry.io/docs/specs/semconv/general/session/
-
 public class AwsSessionSemConv {
   public static let id = "session.id"
   public static let previousId = "session.previous_id"

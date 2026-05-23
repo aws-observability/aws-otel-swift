@@ -71,8 +71,8 @@ public class AwsHangInstrumentation {
     }
   }
 
-  // We use run loop hang to report hangs because of its precision and ability to
-  // handle edge cases without much hassle (e.g. when application is moved to background)
+  /// We use run loop hang to report hangs because of its precision and ability to
+  /// handle edge cases without much hassle (e.g. when application is moved to background)
   func setupRunLoopObserver() {
     let observer = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue | CFRunLoopActivity.afterWaiting.rawValue, true, 0) { [weak self] _, activity in
       guard let self else { return }
@@ -98,9 +98,9 @@ public class AwsHangInstrumentation {
     CFRunLoopAddObserver(CFRunLoopGetMain(), observer, CFRunLoopMode.commonModes)
   }
 
-  // We need to use the "background ping" strategy to preemptively collect the live stack
-  // trace before the main thread has recovered. This must be done from a background thread
-  // because the main thread is obviously unavailable during a hang.
+  /// We need to use the "background ping" strategy to preemptively collect the live stack
+  /// trace before the main thread has recovered. This must be done from a background thread
+  /// because the main thread is obviously unavailable during a hang.
   func startBackgroundMonitoring() {
     monitoringTimer = DispatchSource.makeTimerSource(queue: watchdogQueue)
     monitoringTimer?.schedule(deadline: .now(), repeating: .milliseconds(100))

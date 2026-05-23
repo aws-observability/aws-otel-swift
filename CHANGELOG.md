@@ -6,5 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+- Pin `opentelemetry-swift-core`, `opentelemetry-swift`, `aws-sdk-swift`, and `smithy-swift` to exact versions to prevent SPM from resolving to incompatible newer releases ([#103](https://github.com/aws-observability/aws-otel-swift/pull/103))
 
 
