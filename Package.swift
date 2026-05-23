@@ -20,8 +20,7 @@ let package = Package(
     .package(url: "https://github.com/open-telemetry/opentelemetry-swift.git", exact: "2.2.0"),
     .package(url: "https://github.com/awslabs/aws-sdk-swift", exact: "1.3.32"),
     .package(url: "https://github.com/smithy-lang/smithy-swift", exact: "0.134.0"),
-    .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0")),
-    .package(url: "https://github.com/microsoft/plcrashreporter.git", from: "1.11.2") // only used for live stack trace collection, not crash reporting
+    .package(url: "https://github.com/kstenerud/KSCrash.git", .upToNextMajor(from: "2.4.0"))
   ],
   targets: [
     .target(
@@ -32,7 +31,7 @@ let package = Package(
         .product(name: "OpenTelemetryProtocolExporterHTTP", package: "opentelemetry-swift"),
         .product(name: "URLSessionInstrumentation", package: "opentelemetry-swift"),
         .product(name: "Installations", package: "KSCrash"),
-        .product(name: "CrashReporter", package: "plcrashreporter", condition: .when(platforms: [.iOS, .macOS, .tvOS, .visionOS]))
+        .product(name: "Recording", package: "KSCrash")
       ],
       exclude: ["Sessions/README.md", "Network/README.md", "User/README.md", "GlobalAttributes/README.md", "UIKit/README.md", "AppLaunch/README.md", "SwiftUI/README.md"]
     ),
