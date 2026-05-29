@@ -130,7 +130,7 @@ import XCTest
 
     func testParentSpanDelegation() {
       let instrumentation = AwsUIKitViewInstrumentation()
-      let _ = UIViewController()
+      _ = UIViewController()
 
       // Test that instrumentation works with view controllers
       XCTAssertNotNil(instrumentation.handler)
