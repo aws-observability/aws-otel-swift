@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## v1.1.0 - 2026-08-19
+
+### Removed
+- Removed `static-code-checks` job (CHANGELOG enforcement) from Build and Test workflow — it was broken on push events and caused spurious CI failures ([#103](https://github.com/aws-observability/aws-otel-swift/pull/108))
+
 ### Fixed
 - Pin `opentelemetry-swift-core`, `opentelemetry-swift`, `aws-sdk-swift`, and `smithy-swift` to exact versions to prevent SPM from resolving to incompatible newer releases ([#103](https://github.com/aws-observability/aws-otel-swift/pull/103))
 
