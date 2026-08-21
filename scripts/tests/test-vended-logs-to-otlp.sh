@@ -168,6 +168,30 @@ print(all(isinstance(lr['timeUnixNano'], str) and isinstance(lr['observedTimeUni
 check "log records are not misrouted into traces.jsonl" "True" "$PRELUDE
 print(all('eventName' not in sp for _, _, sp in spans))"
 
+echo "--- input shapes ---"
+
+# The fetch step queries with `--query 'events[*].message' --output json`, which yields a bare
+# JSON array of message strings rather than the full filter-log-events document. That projection
+# is deliberate: `--output text` is tab-delimited, and vended messages may contain newlines, so
+# rows cannot be split reliably. Both shapes must be accepted.
+MESSAGES_FILE="$WORK_DIR/messages.json"
+python3 - "$FIXTURE" "$MESSAGES_FILE" <<'PYMSG'
+import json, sys
+with open(sys.argv[1]) as handle:
+    document = json.load(handle)
+with open(sys.argv[2], "w") as handle:
+    json.dump([event["message"] for event in document["events"]], handle)
+PYMSG
+
+LOGS_OUT="$WORK_DIR/m-logs.jsonl"
+TRACES_OUT="$WORK_DIR/m-traces.jsonl"
+"$TRANSFORM" --run-id run-a-1 --logs-out "$LOGS_OUT" --traces-out "$TRACES_OUT" "$MESSAGES_FILE" \
+  > /dev/null 2>&1
+check_status "accepts a bare array of message strings" 0 "$?"
+
+check "an array of messages yields the same records as the full document" "3 2" "$PRELUDE
+print(len(spans), len(records))"
+
 echo "--- failure modes ---"
 
 # A silent success on no data is the dangerous case: the contract tests would then run against
