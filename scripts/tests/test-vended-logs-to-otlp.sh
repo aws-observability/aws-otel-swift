@@ -419,6 +419,20 @@ with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
 text = captured.getvalue()
 print(status, '2 span(s), 2 log record(s)' in text, '1 event(s) could not be used' in text)"
 
+# The write boundary is the same kind of unreachable second layer, for the same reason: `to_any_value`
+# already converts a non-finite float to a string, so no input can now put one in front of
+# `json.dumps`. What `allow_nan=False` buys is that if that guard is ever narrowed, the failure is a
+# skipped record here rather than a bare `NaN` in the file — which Python re-reads happily and Swift
+# rejects, printing the first 200 chars of the offending line, where the app monitor id sits. Reached
+# directly, because there is no input that reaches it and an uncovered belt gets removed.
+check "refuses to render a document Swift's JSONDecoder would reject" "None True" "
+import importlib.util, os, sys
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location('transform', os.environ['TRANSFORM'])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+print(module.serialize({'v': float('nan')}), module.serialize({'v': 1.5}) == '{\"v\": 1.5}')"
+
 echo "--- failure modes ---"
 
 # A silent success on no data is the dangerous case: the contract tests would then run against

@@ -326,6 +326,34 @@ for SCENARIO in "full full" "partial" "none" "denied" "notfound" "transient tran
     "$SECRET_LOG_GROUP" "$OUTPUT"
 done
 
+# A structural check, not a behavioural one, and deliberately so. The rebuild step's stdout is the
+# one channel in this script that forwards text it did not compose itself, but the transform is never
+# handed the log group and a Python traceback carries no data values — so there is no input to this
+# suite that makes a bare `cat` of it leak. The assertion above ("never echoes the log group name",
+# scenarios `junk` and `poison`) therefore passes either way and cannot hold the routing in place.
+# Asserting on the code shape can: it fails the moment someone reintroduces the unredacted print.
+if grep -qE '^\s*cat "\$WORK_DIR/transform.txt"' "$VERIFY"; then
+  fail "routes the rebuild step's own output through redaction" \
+    "found an unredacted \`cat\` of transform.txt; use redacted_transform_output"
+else
+  pass "routes the rebuild step's own output through redaction"
+fi
+
+# Structural for the same reason. The final gate re-parses the two rebuilt files to confirm Swift will
+# be able to read them, and Python is more permissive than Swift in exactly one way that matters:
+# it accepts bare `NaN` / `Infinity`, which JSONDecoder rejects. A rejected *trace* line makes
+# OtlpFileParser print its first 200 characters, and the resource attributes are sorted, so the app
+# monitor id is inside that window — a lenient gate here turns a lost record into a leaked secret.
+# The transform can no longer emit one (it stringifies non-finite floats and re-checks with
+# `allow_nan=False`), so no input to this suite reaches the gate leniently; only the code shape can
+# hold it in place.
+if grep -qF 'json.loads(line, parse_constant=reject)' "$VERIFY"; then
+  pass "re-parses the rebuilt files as strictly as Swift will"
+else
+  fail "re-parses the rebuilt files as strictly as Swift will" \
+    "the final JSON gate accepts bare NaN/Infinity, which JSONDecoder rejects"
+fi
+
 # The redaction has to survive the CLI's own error text, which quotes the group back at us.
 OUTPUT=$(run_verify "denied")
 assert_contains "redacts the log group out of the CLI's error text" \
@@ -355,6 +383,37 @@ OUTPUT=$(run_verify "full full")
 assert_absent "never prints a fetched event's contents" \
   "00000000-0000-0000-0000-000000000000" "$OUTPUT"
 assert_absent "never prints another run's correlation key" "run-b-7" "$OUTPUT"
+
+echo "--- a failure inside the redaction must not take the run down with it ---"
+
+# The script runs under `set -euo pipefail`, and redaction is a call to a separate interpreter — the
+# one step here with a dependency that can fail on its own. A non-zero status from it on the *poll*
+# path would abort the whole run with the shell's exit status in place of the diagnosis it was in the
+# middle of printing, turning a throttled fetch into an unexplained failure. Losing one error message
+# is a far smaller failure than losing the run, so redaction failure has to degrade to a placeholder.
+#
+# Fails only the redaction invocation. The transform's shebang and the OTLP re-parse also run python3,
+# and both must still work, or this would prove nothing beyond "python3 is required".
+REAL_PYTHON3="$(command -v python3)"
+cat > "$STUB_DIR/python3" <<STUB
+#!/bin/bash
+if [[ "\${2:-}" == *aws-stderr.txt ]]; then
+  echo "simulated interpreter failure" >&2
+  exit 1
+fi
+exec "$REAL_PYTHON3" "\$@"
+STUB
+chmod +x "$STUB_DIR/python3"
+
+OUTPUT=$(run_verify "transient" --timeout-seconds 4)
+assert_status "still reaches its own diagnosis when redaction fails" 1 "$?"
+assert_contains "keeps polling rather than aborting at the failed redaction" \
+  "transient fetch failures: " "$OUTPUT"
+assert_contains "says the error text was withheld instead of printing nothing" \
+  "redaction unavailable" "$OUTPUT"
+assert_absent "does not fall back to the raw, unredacted text" "$SECRET_LOG_GROUP" "$OUTPUT"
+
+rm -f "$STUB_DIR/python3"
 
 echo "--- argument validation ---"
 
