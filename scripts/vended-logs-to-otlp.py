@@ -33,12 +33,20 @@ than ``SPAN_KIND_*``/``STATUS_CODE_*``; and natively-typed attribute values rath
 attribute types all survive the round trip intact, which is what makes running the real
 assertions possible at all.
 
-Filtering. The target app monitor has a public resource-based policy, so anything holding its id
-can write to it and the log group is a shared, untrusted write target. Records are therefore kept
-only when their ``aws.otel.contract.run.id`` resource attribute equals ``--run-id``. Matching no
-records is an error, not an empty success: ``OtlpFileParser`` swallows log decode failures and
-merely prints trace decode failures, so two empty files would surface as a wall of assertion
-failures that read like "the telemetry never arrived".
+Filtering, and why it is a trust boundary rather than noise reduction. The target app monitor has a
+public resource-based policy, so anything holding its id can write to it: the log group is a shared,
+untrusted input. Records are kept only when their ``aws.otel.contract.run.id`` resource attribute
+equals ``--run-id``, which is what stops a third party's records from being counted towards this
+run's totals or asserted against. It follows that no input may be able to *stop* the run either --
+an event this script cannot understand is skipped and counted, never fatal, because one planted
+message would otherwise red every future run of the workflow. Matching no records at all is the one
+exception, and is an error rather than an empty success: ``OtlpFileParser`` swallows log decode
+failures and merely prints trace decode failures, so two empty files would surface as a wall of
+assertion failures that read like "the telemetry never arrived".
+
+Exit codes are part of the interface, because the caller polls: ``0`` rebuilt something, ``1``
+nothing matched the run id *yet*, ``2`` bad usage, ``3`` this script broke. The caller keeps polling
+on ``1`` and stops immediately on ``3``.
 
 Secret handling. Vended events embed the app monitor id and arbitrary third-party content, so
 nothing from a record is ever printed -- only counts, and the correlation key (a GitHub run id).
@@ -60,6 +68,12 @@ def to_any_value(value):
     Python's JSON parser preserves the distinction from the wire text -- RUM vends a zero CPU
     reading as ``0.0``, which parses to a float, so it stays a double rather than collapsing into
     an integer and making SystemMetricsTests' lookup return nil on every record.
+
+    That inference is also the fragile part of this transform, and it is worth being explicit about:
+    the OTLP type is recovered from JSON *spelling*, not from the SDK's declared attribute type. If
+    RUM ever normalised ``0.0`` to ``0`` on the way out, or emitted an integral double without its
+    fraction, this would silently type a double as an int and the failure would land on
+    ``SystemMetricsTests``' ``doubleValue`` lookup, pointing at the SDK instead of at here.
     """
     # bool before int: bool is a subclass of int in Python.
     if isinstance(value, bool):
@@ -75,20 +89,30 @@ def to_any_value(value):
     return {"stringValue": json.dumps(value, sort_keys=True)}
 
 
+def mapping(value):
+    """Treat anything that is not a JSON object as an absent one.
+
+    Every ``.get`` chain below runs on input from a publicly writable log group, so "this field is a
+    list today" has to degrade rather than raise. Dropping the sub-structure loses at most some
+    attributes on one record; raising loses the whole run.
+    """
+    return value if isinstance(value, dict) else {}
+
+
 def to_attribute_list(attributes):
     """Convert a vended attribute map into an OTLP keyed array, ordered for readable diffs."""
     return [
         {"key": key, "value": to_any_value(value)}
-        for key, value in sorted((attributes or {}).items())
+        for key, value in sorted(mapping(attributes).items())
     ]
 
 
 def to_resource(record):
-    return {"attributes": to_attribute_list(record.get("resource", {}).get("attributes"))}
+    return {"attributes": to_attribute_list(mapping(record.get("resource")).get("attributes"))}
 
 
 def to_scope(record):
-    scope = record.get("scope") or {}
+    scope = mapping(record.get("scope"))
     # `name` is what every contract test filters on; the parser requires it to be present.
     return {"name": scope.get("name", ""), "version": scope.get("version", "")}
 
@@ -114,10 +138,17 @@ def to_status(status):
     """
     if status is None:
         return None
+    status = mapping(status)
     converted = {}
     code = status.get("code")
-    if code is not None:
+    if isinstance(code, str):
         converted["code"] = code if code.startswith("STATUS_CODE_") else "STATUS_CODE_" + code
+    elif code is not None:
+        # `SpanStatus.code` is declared `String?`, so a non-string code has to become a string or the
+        # record will not decode. It gets no `STATUS_CODE_` prefix: prefixing an unrecognised value
+        # would dress it up as an enum name the parser could plausibly match. Passed through as-is,
+        # it fails the comparison it deserves to fail, and does so visibly.
+        converted["code"] = str(code)
     if status.get("message") is not None:
         converted["message"] = status["message"]
     return converted
@@ -136,8 +167,15 @@ def is_span(record):
 
     Reading both streams through one code path keeps the caller from having to pair a stream name
     with a record kind -- and a misrouted record would be far more confusing than an unmatched one.
+
+    ``startTimeUnixNano`` alone decides it. It is present on every span and on no log record, which
+    is the whole discriminator; a log record's timestamps are ``timeUnixNano`` and
+    ``observedTimeUnixNano``. Requiring ``name`` as well would send a span vended without one into
+    logs.jsonl, where it would be rebuilt as a log record with an empty ``eventName`` -- a misroute
+    that inflates the log count, deflates the span count, and makes the exact-count assertions in
+    ``Tests/ContractTests`` fail on both signals at once. Nothing guarantees a span has a name.
     """
-    return "startTimeUnixNano" in record and "name" in record
+    return "startTimeUnixNano" in record
 
 
 def to_span(record):
@@ -147,7 +185,7 @@ def to_span(record):
         "parentSpanId": record.get("parentSpanId", ""),
         "name": record.get("name", ""),
         # Vended as the bare enum name ("INTERNAL"); OTLP/JSON spells it out.
-        "kind": "SPAN_KIND_" + record.get("kind", "UNSPECIFIED"),
+        "kind": "SPAN_KIND_" + str(record.get("kind", "UNSPECIFIED")),
         "startTimeUnixNano": nanos(record.get("startTimeUnixNano")),
         "endTimeUnixNano": nanos(record.get("endTimeUnixNano")),
         "attributes": to_attribute_list(record.get("attributes")),
@@ -179,7 +217,13 @@ def to_log_record(record):
 
 
 def run_id_of(record):
-    return (record.get("resource", {}).get("attributes") or {}).get(RUN_ID_ATTRIBUTE)
+    """The correlation key, or None when the record cannot carry one.
+
+    A record whose ``resource`` or ``resource.attributes`` is not an object has no correlation key
+    and so is not ours -- returning None drops it through the filter, which is the same outcome as a
+    record belonging to another run.
+    """
+    return mapping(mapping(record.get("resource")).get("attributes")).get(RUN_ID_ATTRIBUTE)
 
 
 def messages_in(document):
@@ -205,9 +249,10 @@ def read_vended_records(paths):
     """Read the fetched log events and parse each message into a vended record.
 
     Accepts several inputs so the caller can pass one file per log stream (spans and log records
-    are delivered to different streams) or per page. A message that is not JSON is skipped rather
-    than fatal: the app monitor is a public write target, so unparseable content is somebody
-    else's problem, not a reason to fail this run.
+    are delivered to different streams) or per page. A message that is not JSON, or that is JSON but
+    not an object, is skipped rather than fatal: the app monitor is a public write target, so
+    unusable content is somebody else's problem, not a reason to fail this run. ``42`` and
+    ``"hello"`` are both valid JSON and neither is a record.
     """
     records = []
     skipped = 0
@@ -221,8 +266,13 @@ def read_vended_records(paths):
             if not message:
                 continue
             try:
-                records.append(json.loads(message))
+                parsed = json.loads(message)
             except json.JSONDecodeError:
+                skipped += 1
+                continue
+            if isinstance(parsed, dict):
+                records.append(parsed)
+            else:
                 skipped += 1
     return records, skipped
 
@@ -252,17 +302,26 @@ def main(argv=None):
     span_lines = []
     log_lines = []
     for record in records:
-        if run_id_of(record) != args.run_id:
+        try:
+            if run_id_of(record) != args.run_id:
+                continue
+            resource = to_resource(record)
+            scope = to_scope(record)
+            converted = to_span(record) if is_span(record) else to_log_record(record)
+        except Exception:  # noqa: BLE001 - see below
+            # Backstop for a record shaped in a way the guards above do not anticipate. Skipping one
+            # unconvertible record costs at most one assertion; letting it propagate takes the run
+            # down, and a shared publicly writable log group is exactly where an unanticipated shape
+            # will come from. The record is not logged: it may contain third-party content.
+            skipped += 1
             continue
-        resource = to_resource(record)
-        scope = to_scope(record)
         if is_span(record):
             span_lines.append(
                 {
                     "resourceSpans": [
                         {
                             "resource": resource,
-                            "scopeSpans": [{"scope": scope, "spans": [to_span(record)]}],
+                            "scopeSpans": [{"scope": scope, "spans": [converted]}],
                         }
                     ]
                 }
@@ -273,7 +332,7 @@ def main(argv=None):
                     "resourceLogs": [
                         {
                             "resource": resource,
-                            "scopeLogs": [{"scope": scope, "logRecords": [to_log_record(record)]}],
+                            "scopeLogs": [{"scope": scope, "logRecords": [converted]}],
                         }
                     ]
                 }
@@ -291,7 +350,11 @@ def main(argv=None):
         % (len(records), len(span_lines), len(log_lines), RUN_ID_ATTRIBUTE, args.run_id)
     )
     if skipped:
-        print("  (%d event(s) were not JSON and were skipped)" % skipped)
+        print(
+            "  (%d event(s) could not be used and were skipped: not JSON, not a JSON object, or\n"
+            "   not convertible. This log group is a shared, publicly writable target, so this is\n"
+            "   expected and is not a failure. Contents are not printed.)" % skipped
+        )
 
     if not span_lines and not log_lines:
         print(
@@ -313,4 +376,20 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except SystemExit:
+        raise
+    except BaseException:
+        # Exit 3, not 1. The caller polls on 1 ("nothing matched yet") and would spend its whole
+        # budget re-running a broken script, then report the failure as an ingestion problem. The
+        # traceback goes to stderr so the caller can surface the real cause instead.
+        import traceback
+
+        traceback.print_exc()
+        print(
+            "ERROR: this script failed to run (see the traceback above). This is a bug in\n"
+            "       scripts/vended-logs-to-otlp.py or in its input, not a delivery problem.",
+            file=sys.stderr,
+        )
+        sys.exit(3)

@@ -35,6 +35,14 @@ permissions:
   contents: read
   id-token: write
 
+# One live run per branch. Two concurrent runs would both be writing to the same app monitor and
+# reading the same log group; that is safe (each matches on its own correlation key) but it doubles
+# the ingestion load and makes the put-to-queryable latency this measures meaningless. Superseded
+# runs are cancelled rather than queued — a push replaces the commit under test anyway.
+concurrency:
+  group: put-to-get-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   put-to-get:
     # Fork pull requests do not get access to secrets, so this job cannot assume the role from one.
@@ -58,6 +66,11 @@ jobs:
     # instead, the trust policy does not match, and the `Configure AWS credentials` step fails with
     # an opaque STS error ("Not authorized to perform sts:AssumeRoleWithWebIdentity") that looks
     # like a broken role rather than a missing line in this file.
+    #
+    # The `put-to-get` environment must carry no deployment protection rules. A required reviewer or
+    # a wait timer would suspend every pull request on this repository until someone approved it,
+    # which is not what an environment is being used for here — it is being used for secret scoping
+    # and for that one `sub` claim.
     environment: put-to-get
 
     env:
@@ -138,6 +151,11 @@ jobs:
       # The same assertions `ContractTests.yml` and the hermetic path run, reading the same file
       # paths, from unmodified source. If a test passed here but not there (or vice versa) the
       # difference would be the round trip, which is exactly what this workflow exists to detect.
+      #
+      # This step is also what makes an empty or wrong-run rebuild impossible to miss. The suite
+      # asserts exact per-signal counts, so two empty files (or another run's records) fail here on
+      # counts rather than passing quietly — which is why the get step deliberately asserts nothing
+      # about content itself and keeps no second copy of those numbers.
       #
       # One test is skipped, and only one. `ResourceAttributesTests.testResourceAttributes` asserts
       #

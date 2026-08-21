@@ -13,9 +13,15 @@
 # polling loop, and this keeps an AWS SDK dependency out of the `ContractTests` target.
 #
 # Polling to *quiescence*, not to first match. RUM delivers a run's telemetry to CloudWatch Logs in
-# several batches over tens of seconds. The contract tests assert exact counts (2 AppStart spans, 3
-# HTTP spans, 5 screen-appearance spans...), so returning on the first matching event would hand
-# them a partial set and produce a wall of count assertion failures that look like product bugs.
+# several batches over tens of seconds. The contract tests assert exact counts (3 HTTP spans, 4
+# screen-appearance spans, 2 session-start log records...), so returning on the first matching event
+# would hand them a partial set and produce a wall of count assertion failures that look like
+# product bugs.
+#
+# Those same exact-count assertions are also the backstop for the opposite mistake. If this script
+# rebuilt the two files as empty — or with the wrong run's records — the suite would not quietly
+# pass; it would fail on counts. That is why this script deliberately does not assert anything about
+# content: duplicating the counts here would create a second set of numbers to keep in step.
 #
 # Secret handling. The log group name is a CI secret (it embeds the app monitor id) and log contents
 # are untrusted — the target app monitor has a public resource-based policy, so anyone with the id
@@ -23,7 +29,8 @@
 #   * the log group name is never echoed, not even on failure. Failures name the correlation key and
 #     the attempt count instead, and point at the secret that holds the group.
 #   * fetched log events are never printed. Only counts.
-#   * AWS CLI stderr is redacted before it is shown.
+#   * AWS CLI stderr is redacted before it is shown — structurally, not just by substituting the one
+#     value this script happens to know. See redacted_stderr().
 
 set -euo pipefail
 
@@ -52,8 +59,10 @@ STABLE_POLLS_REQUIRED=2
 MIN_RECORDS=18
 
 # Where OTLPResolver looks. Hardcoded there relative to the directory holding Package.swift, which
-# is why nothing about the contract tests needs to change for the real-endpoint path.
-OUT_DIR="$PROJECT_ROOT/Examples/AwsOtelUI/out"
+# is why nothing about the contract tests needs to change for the real-endpoint path. Overridable
+# only so this script's own tests can run without truncating a developer's local artifacts; CI never
+# sets it, because the contract tests read the default path and nothing else.
+OUT_DIR="${AWS_OTEL_CONTRACT_OUT_DIR:-$PROJECT_ROOT/Examples/AwsOtelUI/out}"
 LOGS_OUT="$OUT_DIR/logs.jsonl"
 TRACES_OUT="$OUT_DIR/traces.jsonl"
 
@@ -83,6 +92,9 @@ ContractTests`.
 
 Each flag also reads a matching environment variable: AWS_OTEL_CONTRACT_RUN_ID,
 AWS_OTEL_CONTRACT_LOG_GROUP, AWS_OTEL_CONTRACT_REGION.
+
+AWS_OTEL_CONTRACT_OUT_DIR overrides where the rebuilt files are written. It exists for this
+script's own tests; the contract tests only read Examples/AwsOtelUI/out, so CI must not set it.
 USAGE
 }
 
@@ -198,12 +210,44 @@ STDERR_FILE="$WORK_DIR/aws-stderr.txt"
 FETCHED_FILE="$WORK_DIR/fetched.json"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-# Prints the AWS CLI's stderr with the log group name removed. Nothing else in that stream is
-# secret, and losing the rest of the message would make a real failure undiagnosable.
+# Prints the AWS CLI's stderr with the sensitive parts removed, keeping the rest — losing the whole
+# message would make a real failure undiagnosable.
+#
+# Substituting the log group name is not sufficient, and the AccessDenied path is where that shows.
+# The CLI answers a denial by quoting the caller's own identity back:
+#
+#   User: arn:aws:sts::<account>:assumed-role/<role>/<session> is not authorized to perform:
+#   logs:FilterLogEvents on resource: arn:aws:logs:<region>:<account>:log-group:<group>:*
+#
+# so the account id appears twice and the IAM role name once. Neither is passed to this script, so
+# neither can be matched against a known value — and GitHub's own masking does not cover them
+# either: the registered secret is the whole role ARN, and masking is substring-exact, so a bare
+# account id embedded in a *different* ARN prints in the clear. Redaction therefore has to be
+# structural: any 12-digit run is an account id, and anything after `assumed-role/`, `role/` or
+# `user/` is a principal name. Both are matched by shape, not by value, which is what makes this
+# work on text this script has never seen.
 redacted_stderr() {
-  local message
-  message=$(cat "$STDERR_FILE")
-  printf '%s\n' "${message//"$LOG_GROUP"/<CONTRACT_TEST_LOG_GROUP>}"
+  LOG_GROUP="$LOG_GROUP" python3 - "$STDERR_FILE" <<'PYREDACT'
+import os
+import re
+import sys
+
+with open(sys.argv[1], encoding="utf-8", errors="replace") as handle:
+    text = handle.read()
+
+group = os.environ.get("LOG_GROUP", "")
+if group:
+    text = text.replace(group, "<CONTRACT_TEST_LOG_GROUP>")
+
+# Order matters: redact principals before account ids, so the ARN is still recognisable as an ARN
+# in the output rather than a row of placeholders.
+text = re.sub(r"\b(assumed-role|federated-user|role|user)/[^\s\"'),]+", r"\1/<PRINCIPAL>", text)
+text = re.sub(r"(?<![\d.])\d{12}(?![\d.])", "<ACCOUNT_ID>", text)
+
+if text and not text.endswith("\n"):
+    text += "\n"
+sys.stdout.write(text)
+PYREDACT
 }
 
 # Create the output directory and truncate any previous contents *before* polling. In put-to-get
@@ -219,6 +263,9 @@ ATTEMPT=0
 LAST_COUNT=-1
 STABLE_POLLS=0
 RECORD_COUNT=0
+# Counted so the timeout message can tell "nothing was ever delivered" apart from "every fetch was
+# throttled". Both end with zero records, and only one of them is a payload problem.
+TRANSIENT_FAILURES=0
 
 while true; do
   ATTEMPT=$(( ATTEMPT + 1 ))
@@ -264,6 +311,7 @@ while true; do
         exit 1
         ;;
       *)
+        TRANSIENT_FAILURES=$(( TRANSIENT_FAILURES + 1 ))
         echo "Attempt $ATTEMPT: filter-log-events failed transiently; will retry."
         echo "AWS CLI error (log group redacted):"
         redacted_stderr
@@ -282,16 +330,40 @@ while true; do
     --logs-out "$LOGS_OUT" \
     --traces-out "$TRACES_OUT" \
     "$FETCHED_FILE" > "$WORK_DIR/transform.txt" 2>&1
+  TRANSFORM_EXIT=$?
   set -e
 
+  # Exit 1 is "nothing matched yet" and is expected while polling. Anything else means the transform
+  # itself broke, which is a tooling bug: polling through it would burn the whole budget and then
+  # report a delivery failure for a Python error. Fail immediately and say which side broke.
+  if (( TRANSFORM_EXIT != 0 && TRANSFORM_EXIT != 1 )); then
+    echo "FAIL: the rebuild step failed (scripts/vended-logs-to-otlp.py exited $TRANSFORM_EXIT)."
+    echo "      This is a bug in the rebuild step or an input shape it cannot handle — not a"
+    echo "      delivery problem, and not something retrying will fix."
+    cat "$WORK_DIR/transform.txt"
+    exit 1
+  fi
+
+  # `grep -c ''` prints 0 *and* exits 1 on an empty file, so the `|| true` is load-bearing. The
+  # numeric guard is what stops a future change from feeding an empty string into $(( )), which bash
+  # silently reads as 0 — turning "the counter broke" into "nothing arrived yet".
   SPAN_COUNT=$(grep -c '' < "$TRACES_OUT" || true)
   LOG_COUNT=$(grep -c '' < "$LOGS_OUT" || true)
+  if [[ ! "$SPAN_COUNT" =~ ^[0-9]+$ || ! "$LOG_COUNT" =~ ^[0-9]+$ ]]; then
+    echo "FAIL: could not count the rebuilt records (got spans='$SPAN_COUNT' logs='$LOG_COUNT')."
+    echo "      This is a bug in this script, not a delivery problem."
+    exit 1
+  fi
   RECORD_COUNT=$(( SPAN_COUNT + LOG_COUNT ))
 
+  # STABLE_POLLS counts *comparisons against a previous count*, so it is 0 on the first poll: a
+  # single poll cannot distinguish a complete delivery from the first of several batches. Starting it
+  # at 1 on a change would make STABLE_POLLS_REQUIRED=2 mean one quiet interval rather than two — and
+  # a real run has been observed holding a count for one interval and then growing anyway.
   if (( RECORD_COUNT == LAST_COUNT )); then
     STABLE_POLLS=$(( STABLE_POLLS + 1 ))
   else
-    STABLE_POLLS=1
+    STABLE_POLLS=0
   fi
   LAST_COUNT=$RECORD_COUNT
 
@@ -314,9 +386,13 @@ FAIL: this run's telemetry did not fully arrive in CloudWatch Logs within the bu
   events at/after:  $START_TIME_MS (epoch ms)
   records found:    $RECORD_COUNT ($SPAN_COUNT span(s), $LOG_COUNT log record(s)); needed >= $MIN_RECORDS
   attempts:         $ATTEMPT over ${ELAPSED}s (budget ${TIMEOUT_SECONDS}s)
+  transient fetch failures: $TRANSIENT_FAILURES of $ATTEMPT attempt(s)
 
-This is not a bare timeout: the fetch side worked (no AccessDenied, no ResourceNotFound), so the
-records genuinely were not all in the group for the whole budget. Likely causes, in order:
+This is not a bare timeout. Credentials and the log group are fine — no AccessDenied and no
+ResourceNotFound — so the query ran; the records were simply not all visible in the group before the
+budget ran out. Note that a query returning nothing is not proof that nothing was delivered: if the
+transient-failure count above is close to the attempt count, treat this as a throttled fetch rather
+than a payload problem. Likely causes, in order:
 EOF
     if (( RECORD_COUNT == 0 )); then
       cat <<EOF
@@ -344,11 +420,21 @@ EOF
      hermetic run, then adjust --min-records — do not lower it just to get past this check.
 EOF
     fi
+    # The transform's own summary, on this path too — it is the only place the skipped-event count is
+    # reported, and a run where most events were unusable looks identical to a slow one from here.
+    # The success path prints it below; the WORK_DIR trap would otherwise delete it unread.
+    if [[ -s "$WORK_DIR/transform.txt" ]]; then
+      echo
+      echo "Last rebuild attempt reported:"
+      while IFS= read -r LINE; do
+        echo "  $LINE"
+      done < "$WORK_DIR/transform.txt"
+    fi
     exit 1
   fi
 
   echo "Attempt $ATTEMPT: $RECORD_COUNT record(s) so far ($SPAN_COUNT span(s), $LOG_COUNT log record(s))," \
-    "stable for $STABLE_POLLS poll(s); sleeping ${POLL_INTERVAL_SECONDS}s" \
+    "unchanged over $STABLE_POLLS poll(s); sleeping ${POLL_INTERVAL_SECONDS}s" \
     "($(( DEADLINE - NOW ))s of budget left)."
   sleep "$POLL_INTERVAL_SECONDS"
 done
