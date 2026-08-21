@@ -165,8 +165,12 @@ print(sorted(lr['eventName'] for _, _, lr in records))"
 check "log timestamps are strings" "True" "$PRELUDE
 print(all(isinstance(lr['timeUnixNano'], str) and isinstance(lr['observedTimeUnixNano'], str) for _, _, lr in records))"
 
+# Assert on what actually discriminates the two files. `eventName` is never emitted by the span
+# path under any input, so asserting its absence from spans cannot fail; the real invariant is that
+# everything in traces.jsonl carries the span-only fields and everything in logs.jsonl does not.
 check "log records are not misrouted into traces.jsonl" "True" "$PRELUDE
-print(all('eventName' not in sp for _, _, sp in spans))"
+print(all({'startTimeUnixNano', 'endTimeUnixNano', 'kind'} <= set(sp) for _, _, sp in spans)
+      and not any('startTimeUnixNano' in lr for _, _, lr in records))"
 
 echo "--- input shapes ---"
 
@@ -192,6 +196,93 @@ check_status "accepts a bare array of message strings" 0 "$?"
 check "an array of messages yields the same records as the full document" "3 2" "$PRELUDE
 print(len(spans), len(records))"
 
+echo "--- hostile input: the log group is a publicly writable, shared target ---"
+
+# The target app monitor carries a public resource-based policy, so anyone holding its id can write
+# whatever they like into the log group this reads. None of it may be able to take the run down:
+# a single planted `42` turning every future run red — and blaming ingestion while doing it — is a
+# denial of service on this workflow. The same hardening covers the data plane vending a record
+# shaped differently from the ones this transform was built against.
+HOSTILE_FILE="$WORK_DIR/hostile.json"
+python3 - "$HOSTILE_FILE" <<'PYHOSTILE'
+import json
+import sys
+
+
+def span(**overrides):
+    record = {
+        "resource": {"attributes": {"aws.otel.contract.run.id": "run-a-1"}},
+        "scope": {"name": "software.amazon.opentelemetry.appstart", "version": ""},
+        "traceId": "cb7b84a7d7be05e797a05a41ed10a7ef",
+        "spanId": "31d6cfe0d16ae931",
+        "name": "AppStart",
+        "kind": "INTERNAL",
+        "startTimeUnixNano": 1787340061523443968,
+        "endTimeUnixNano": 1787340064949510144,
+        "attributes": {},
+        "status": {"code": "UNSET"},
+    }
+    record.update(overrides)
+    return record
+
+
+messages = [
+    # Valid JSON, but not an object. Every one of these used to reach `.get` and crash.
+    "42",
+    '"hello"',
+    "null",
+    "[]",
+    "true",
+    # Object-shaped, but with pieces this transform assumes are dicts/strings.
+    json.dumps(span(name="int-status", status={"code": 2})),
+    json.dumps(span(name="list-resource", resource=[])),
+    json.dumps(span(name="string-attributes", attributes="not-a-map")),
+    # A span vended without `name`. The data plane does not guarantee one, and a nameless span
+    # belongs in traces.jsonl regardless of whether it is nameable.
+    json.dumps({key: value for key, value in span().items() if key != "name"}),
+    # And one entirely ordinary record, so a crash cannot hide behind an empty result.
+    json.dumps(span(name="Healthy")),
+]
+with open(sys.argv[1], "w", encoding="utf-8") as handle:
+    json.dump(messages, handle)
+PYHOSTILE
+
+LOGS_OUT="$WORK_DIR/h-logs.jsonl"
+TRACES_OUT="$WORK_DIR/h-traces.jsonl"
+OUT=$("$TRANSFORM" --run-id run-a-1 --logs-out "$LOGS_OUT" --traces-out "$TRACES_OUT" \
+  "$HOSTILE_FILE" 2>&1)
+check_status "survives hostile and unexpected records" 0 "$?"
+
+check "keeps every usable span, including the nameless one" \
+  "['', 'Healthy', 'int-status', 'string-attributes']" "$PRELUDE
+print(sorted(sp['name'] for _, _, sp in spans))"
+
+check "a nameless span still goes to traces.jsonl, not logs.jsonl" "True" "$PRELUDE
+print(len(records) == 0)"
+
+check "stringifies a non-string status code instead of crashing on it" "2" "$PRELUDE
+print(span_named('int-status')[0]['status']['code'])"
+
+# A record whose `resource` is not a map cannot carry the correlation key, so the run-id filter
+# drops it. What matters is that the filter drops it rather than an exception taking the run down.
+check "drops a record whose resource cannot carry the correlation key" "True" "$PRELUDE
+print(not span_named('list-resource'))"
+
+check "treats non-dict attributes as empty rather than dropping a real record" "[]" "$PRELUDE
+print(span_named('string-attributes')[0]['attributes'])"
+
+if grep -q "5 event(s)" <<<"$OUT"; then
+  PASSED=$(( PASSED + 1 )); echo "  PASS  reports how many events it had to skip"
+else
+  FAILED=$(( FAILED + 1 )); echo "  FAIL  reports how many events it had to skip (got: $OUT)"
+fi
+
+if grep -qE "hello|\bnot-a-map\b|cb7b84a7" <<<"$OUT"; then
+  FAILED=$(( FAILED + 1 )); echo "  FAIL  never prints a skipped record's content (got: $OUT)"
+else
+  PASSED=$(( PASSED + 1 )); echo "  PASS  never prints a skipped record's content"
+fi
+
 echo "--- failure modes ---"
 
 # A silent success on no data is the dangerous case: the contract tests would then run against
@@ -205,8 +296,24 @@ else
   FAILED=$(( FAILED + 1 )); echo "  FAIL  names the run id it searched for (got: $OUT)"
 fi
 
+# 2 is argparse's usage code, and it must stay distinct from both 1 ("nothing matched") and 3
+# ("this tool broke"): the caller keys its behaviour off which of the three it gets.
 "$TRANSFORM" --logs-out "$WORK_DIR/x.jsonl" --traces-out "$WORK_DIR/y.jsonl" "$FIXTURE" >/dev/null 2>&1
-check_status "exits non-zero when --run-id is missing" 2 "$?"
+check_status "exits with argparse's usage code when --run-id is missing" 2 "$?"
+
+# An input this script cannot read at all is a bug in the tooling, not slow delivery. It must be
+# distinguishable from "nothing matched yet", which the fetch loop treats as "keep polling" — a
+# crash reported as exit 1 makes a broken transform look like an ingestion outage for the whole
+# budget, and then blames the SDK in the timeout message.
+echo '42' > "$WORK_DIR/unreadable.json"
+OUT=$("$TRANSFORM" --run-id run-a-1 --logs-out "$WORK_DIR/u-logs.jsonl" \
+  --traces-out "$WORK_DIR/u-traces.jsonl" "$WORK_DIR/unreadable.json" 2>&1)
+check_status "exits 3 — not 1 — when the input cannot be read at all" 3 "$?"
+if grep -q "Traceback" <<<"$OUT"; then
+  PASSED=$(( PASSED + 1 )); echo "  PASS  prints the traceback so the caller can surface it"
+else
+  FAILED=$(( FAILED + 1 )); echo "  FAIL  prints the traceback so the caller can surface it (got: $OUT)"
+fi
 
 echo
 echo "=== $PASSED passed, $FAILED failed ==="

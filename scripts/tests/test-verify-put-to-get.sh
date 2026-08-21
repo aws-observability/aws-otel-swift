@@ -32,14 +32,24 @@ FIXTURE_RECORD_COUNT=5
 # A stand-in for the real secret. Every assertion about non-leakage greps for this exact string.
 SECRET_LOG_GROUP="/aws/vendedlogs/RUMService_SECRETMONITORID12345"
 
-OUT_DIR="$PROJECT_ROOT/Examples/AwsOtelUI/out"
-LOGS_OUT="$OUT_DIR/logs.jsonl"
-TRACES_OUT="$OUT_DIR/traces.jsonl"
+# The other two things the AWS CLI quotes back at you in an AccessDenied message. The account id is
+# named as a secret in this workflow's requirements, and GitHub's own masking does not cover it: the
+# registered secret is the whole role ARN, and masking is substring-exact, so a bare account id
+# inside a *different* ARN (the log group's) comes through in the clear.
+SECRET_ACCOUNT_ID="000000000000"
+SECRET_ROLE_NAME="PutToGetContractTestRole"
 
 WORK_DIR=$(mktemp -d)
 STUB_DIR="$WORK_DIR/bin"
 mkdir -p "$STUB_DIR"
 trap 'rm -rf "$WORK_DIR"' EXIT
+
+# Point the script at a scratch output directory. Its default is Examples/AwsOtelUI/out, which is
+# where a local hermetic contract-test run leaves its artifacts — running these tests must not
+# destroy them.
+OUT_DIR="$WORK_DIR/out"
+LOGS_OUT="$OUT_DIR/logs.jsonl"
+TRACES_OUT="$OUT_DIR/traces.jsonl"
 
 PASSED=0
 FAILED=0
@@ -83,6 +93,8 @@ assert_absent() {
 #
 #   full     — every record the fixture holds for this run
 #   partial  — only the first two
+#   poison   — the full delivery plus a planted non-object message
+#   junk     — a response the transform cannot read at all
 #   none     — an empty result
 #   denied / notfound / transient — the corresponding CLI failure
 install_aws_stub() {
@@ -95,11 +107,16 @@ STEP="${STEPS[$(( CALL_NUMBER - 1 ))]:-${STEPS[$(( ${#STEPS[@]} - 1 ))]}}"
 case "$STEP" in
   full)     python3 "$STUB_HELPER" "$FIXTURE_PATH" all ;;
   partial)  python3 "$STUB_HELPER" "$FIXTURE_PATH" 2 ;;
+  poison)   python3 "$STUB_HELPER" "$FIXTURE_PATH" all poison ;;
+  junk)     echo '42' ;;
   none)     echo '[]' ;;
   denied)
+    # Verbatim shape of a real logs:FilterLogEvents denial: the caller's assumed-role ARN, the role
+    # and session names, and the account id twice (once in each ARN).
     echo "An error occurred (AccessDeniedException) when calling the FilterLogEvents operation:" \
-      "User is not authorized to perform: logs:FilterLogEvents on resource:" \
-      "arn:aws:logs:us-east-1:000000000000:log-group:$AWS_OTEL_CONTRACT_LOG_GROUP" >&2
+      "User: arn:aws:sts::000000000000:assumed-role/PutToGetContractTestRole/GitHubActions-PutToGet" \
+      "is not authorized to perform: logs:FilterLogEvents on resource:" \
+      "arn:aws:logs:us-east-1:000000000000:log-group:$AWS_OTEL_CONTRACT_LOG_GROUP:*" >&2
     exit 254
     ;;
   notfound)
@@ -125,6 +142,10 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     messages = [event["message"] for event in json.load(handle)["events"]]
 if sys.argv[2] != "all":
     messages = messages[: int(sys.argv[2])]
+# Anyone holding the app monitor id can write to this log group, so a message that is valid JSON but
+# not an object is reachable input, not a hypothetical.
+if len(sys.argv) > 3 and sys.argv[3] == "poison":
+    messages.insert(0, "42")
 print(json.dumps(messages))
 HELPER
 }
@@ -143,6 +164,7 @@ run_verify() {
   AWS_OTEL_CONTRACT_LOG_GROUP="$SECRET_LOG_GROUP" \
   AWS_OTEL_CONTRACT_REGION="us-east-1" \
   AWS_OTEL_CONTRACT_RUN_ID="$FIXTURE_RUN_ID" \
+  AWS_OTEL_CONTRACT_OUT_DIR="$OUT_DIR" \
     "$VERIFY" --min-records "$FIXTURE_RECORD_COUNT" --poll-interval-seconds 1 "$@" 2>&1
 }
 
@@ -182,13 +204,20 @@ echo "--- quiescence: the suite asserts exact counts, so partial delivery must n
 
 # Everything is already there on the first poll, but one poll cannot distinguish "complete" from
 # "the first of several batches", so the script must poll again and see the count hold.
+#
+# "Unchanged across N consecutive polls" means N *comparisons* against a previous count, so it needs
+# N+1 polls. A first poll has nothing to compare against and must not count as a stable one: with 2
+# required, the real run's attempt 2 showed a count that had held for a single quiet interval and
+# then grew anyway. So `full` repeated must take at least 3 calls, not 2.
 OUTPUT=$(run_verify "full full")
-if [[ "$(aws_call_count)" -ge 2 ]]; then
-  pass "polls again to confirm the count is stable before passing"
+if [[ "$(aws_call_count)" -ge 3 ]]; then
+  pass "counts stability as intervals between polls, not as the first poll itself"
 else
-  fail "polls again to confirm the count is stable before passing" \
+  fail "counts stability as intervals between polls, not as the first poll itself" \
     "only $(aws_call_count) call(s) to filter-log-events"
 fi
+assert_contains "reports zero stable intervals on the first poll, having nothing to compare to" \
+  "Attempt 1: 5 record(s) so far (3 span(s), 2 log record(s)), unchanged over 0 poll(s)" "$OUTPUT"
 
 # Records trickle in. The script must wait for the full set, not return on the first batch.
 OUTPUT=$(run_verify "partial partial full full")
@@ -237,6 +266,34 @@ OUTPUT=$(run_verify "transient transient full full")
 assert_status "retries a transient CLI error and then succeeds" 0 "$?"
 assert_contains "says it will retry" "failed transiently; will retry" "$OUTPUT"
 
+# A run that only ever gets throttled looks identical to a run where nothing was ever delivered:
+# both end with zero records. The timeout message must not diagnose the second when it was the first.
+OUTPUT=$(run_verify "transient" --timeout-seconds 4)
+assert_status "fails when every fetch is throttled" 1 "$?"
+assert_contains "counts the transient failures so a throttled run is not read as no delivery" \
+  "transient fetch failures: " "$OUTPUT"
+
+echo "--- a shared, publicly writable log group cannot be trusted to hold only our records ---"
+
+# The app monitor carries a public resource-based policy, so anyone holding its id can write into the
+# group this reads. A planted non-object message must not be able to red the workflow permanently.
+OUTPUT=$(run_verify "poison poison poison")
+assert_status "succeeds when a third party has planted an unusable message" 0 "$?"
+assert_contains "still rebuilds the run's own records" "3 span(s), 2 log record(s)" "$OUTPUT"
+
+# The other side of the same coin: if the transform itself breaks, that is a tooling bug and must be
+# reported as one immediately. Treating it as "nothing matched yet" burns the whole budget and then
+# blames ingestion for a Python error.
+OUTPUT=$(run_verify "junk" --timeout-seconds 4)
+assert_status "fails when the rebuild step breaks outright" 1 "$?"
+assert_contains "blames the rebuild step rather than delivery" \
+  "rebuild step failed" "$OUTPUT"
+if [[ "$(aws_call_count)" == "1" ]]; then
+  pass "does not keep polling after the rebuild step breaks"
+else
+  fail "does not keep polling after the rebuild step breaks" "$(aws_call_count) call(s)"
+fi
+
 echo "--- the log group name is a secret on every path, including the failure paths ---"
 
 for SCENARIO in "full full" "partial" "none" "denied" "notfound" "transient transient full full"; do
@@ -249,6 +306,16 @@ done
 OUTPUT=$(run_verify "denied")
 assert_contains "redacts the log group out of the CLI's error text" \
   "<CONTRACT_TEST_LOG_GROUP>" "$OUTPUT"
+
+# AccessDenied is the worst case for leakage: the CLI answers with the caller's assumed-role ARN and
+# the resource ARN, so the account id appears twice and the role name once. Substituting the known
+# secret is not enough — the redaction has to be structural, because these values are never passed to
+# this script and so cannot be matched against anything it holds.
+assert_absent "does not leak the account id out of a denial message" \
+  "$SECRET_ACCOUNT_ID" "$OUTPUT"
+assert_absent "does not leak the IAM role name out of a denial message" \
+  "$SECRET_ROLE_NAME" "$OUTPUT"
+assert_contains "still says which operation was denied" "logs:FilterLogEvents" "$OUTPUT"
 
 # Vended events carry the app monitor id and, because the monitor is a public write target,
 # arbitrary third-party content. None of it belongs in a CI log.
