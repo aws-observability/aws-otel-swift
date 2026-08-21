@@ -79,6 +79,18 @@ assert_contains() {
   fi
 }
 
+# Same as assert_contains, but for claims about a *value* the script computed rather than a phrase it
+# always prints. A literal grep for a static label passes whatever the value is, so the assertion
+# survives the computation being deleted — which is exactly how a broken counter stays green.
+assert_matches() {
+  local description="$1" pattern="$2" haystack="$3"
+  if grep -qE -e "$pattern" <<<"$haystack"; then
+    pass "$description"
+  else
+    fail "$description" "output did not match: $pattern"
+  fi
+}
+
 assert_absent() {
   local description="$1" needle="$2" haystack="$3"
   if grep -qF -e "$needle" <<<"$haystack"; then
@@ -270,8 +282,14 @@ assert_contains "says it will retry" "failed transiently; will retry" "$OUTPUT"
 # both end with zero records. The timeout message must not diagnose the second when it was the first.
 OUTPUT=$(run_verify "transient" --timeout-seconds 4)
 assert_status "fails when every fetch is throttled" 1 "$?"
-assert_contains "counts the transient failures so a throttled run is not read as no delivery" \
-  "transient fetch failures: " "$OUTPUT"
+assert_matches "counts the transient failures so a throttled run is not read as no delivery" \
+  "transient fetch failures: [1-9][0-9]* of [1-9][0-9]* attempt" "$OUTPUT"
+
+# And the other direction, which is what makes the count mean anything: a run where every fetch
+# succeeded must report zero, not just "some number".
+OUTPUT=$(run_verify "none" --timeout-seconds 4)
+assert_contains "reports zero transient failures when every fetch succeeded" \
+  "transient fetch failures: 0 of" "$OUTPUT"
 
 echo "--- a shared, publicly writable log group cannot be trusted to hold only our records ---"
 
@@ -296,7 +314,13 @@ fi
 
 echo "--- the log group name is a secret on every path, including the failure paths ---"
 
-for SCENARIO in "full full" "partial" "none" "denied" "notfound" "transient transient full full"; do
+# `junk` and `poison` are in this list because they are the two paths that print the rebuild step's
+# own output (`cat` of the transform's stdout), which is the one channel in this script that forwards
+# text it did not compose itself. No leak has been demonstrated through it — the transform is never
+# handed the log group, and a Python traceback carries no data values — so this is a regression guard
+# on a plausible future one, not a fix for a known leak.
+for SCENARIO in "full full" "partial" "none" "denied" "notfound" "transient transient full full" \
+  "junk" "poison poison poison"; do
   OUTPUT=$(run_verify "$SCENARIO" --timeout-seconds 4)
   assert_absent "never echoes the log group name (scenario: $SCENARIO)" \
     "$SECRET_LOG_GROUP" "$OUTPUT"
@@ -315,7 +339,15 @@ assert_absent "does not leak the account id out of a denial message" \
   "$SECRET_ACCOUNT_ID" "$OUTPUT"
 assert_absent "does not leak the IAM role name out of a denial message" \
   "$SECRET_ROLE_NAME" "$OUTPUT"
-assert_contains "still says which operation was denied" "logs:FilterLogEvents" "$OUTPUT"
+# Redaction must keep the message *actionable*, so the CLI's own diagnosis has to survive it. Do not
+# assert on `logs:FilterLogEvents` here: this script prints that string itself, as static advice,
+# whatever the CLI said — so the assertion passes even if redacted_stderr emits nothing at all. These
+# three phrases exist only in the CLI's stderr, so they can only appear if it was actually printed.
+assert_contains "keeps the CLI's own diagnosis rather than suppressing it" \
+  "is not authorized to perform" "$OUTPUT"
+assert_contains "keeps the error code the CLI reported" "AccessDeniedException" "$OUTPUT"
+assert_contains "leaves a redacted ARN still recognisable as an ARN" \
+  "assumed-role/<PRINCIPAL>" "$OUTPUT"
 
 # Vended events carry the app monitor id and, because the monitor is a public write target,
 # arbitrary third-party content. None of it belongs in a CI log.
@@ -337,6 +369,16 @@ assert_status "requires --log-group" 1 "$?"
 OUTPUT=$(AWS_OTEL_CONTRACT_LOG_GROUP="$SECRET_LOG_GROUP" AWS_OTEL_CONTRACT_RUN_ID='bad key!' \
   AWS_OTEL_CONTRACT_REGION=us-east-1 "$VERIFY" 2>&1)
 assert_status "rejects a run id the put side could not have stamped" 1 "$?"
+
+# The unrecognised-option path echoes the offending argument, and the most likely way to reach it is
+# writing a real invocation with `=` instead of a space: `--log-group=<the secret>` is one token, so
+# the whole secret is what gets echoed. This is a workflow-authoring typo away, and the output of a
+# failed CI step is exactly where nobody expects to find a secret.
+OUTPUT=$(AWS_OTEL_CONTRACT_REGION=us-east-1 AWS_OTEL_CONTRACT_RUN_ID=abc \
+  "$VERIFY" "--log-group=$SECRET_LOG_GROUP" 2>&1)
+assert_status "rejects an unknown option" 1 "$?"
+assert_contains "names the unrecognised option" "Unknown option: --log-group" "$OUTPUT"
+assert_absent "does not echo an option's value while rejecting it" "$SECRET_LOG_GROUP" "$OUTPUT"
 
 rm -rf "$OUT_DIR"
 

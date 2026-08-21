@@ -165,12 +165,16 @@ print(sorted(lr['eventName'] for _, _, lr in records))"
 check "log timestamps are strings" "True" "$PRELUDE
 print(all(isinstance(lr['timeUnixNano'], str) and isinstance(lr['observedTimeUnixNano'], str) for _, _, lr in records))"
 
-# Assert on what actually discriminates the two files. `eventName` is never emitted by the span
-# path under any input, so asserting its absence from spans cannot fail; the real invariant is that
-# everything in traces.jsonl carries the span-only fields and everything in logs.jsonl does not.
-check "log records are not misrouted into traces.jsonl" "True" "$PRELUDE
-print(all({'startTimeUnixNano', 'endTimeUnixNano', 'kind'} <= set(sp) for _, _, sp in spans)
-      and not any('startTimeUnixNano' in lr for _, _, lr in records))"
+# Assert on the *identity* of what landed in each file, not on the key sets the two output builders
+# literally construct. Asserting "every span has startTimeUnixNano" is tautological — the span
+# builder always writes that key, whatever it was handed — and swapping `is_span`'s sense leaves such
+# an assertion passing. What only correct routing can produce is span-shaped input keeping its span
+# identity (the fixture's spans all carry spanId 31d662c216f6574c and its log records carry none) and
+# log-shaped input keeping its eventName.
+check "routes each record by its input shape, not by what the builders emit" "True" "$PRELUDE
+print(len(spans) == 3 and len(records) == 2
+      and all(sp['spanId'] == '31d662c216f6574c' for _, _, sp in spans)
+      and all(lr['eventName'] in ('session.start', 'app.screen.view_did_appear') for _, _, lr in records))"
 
 echo "--- input shapes ---"
 
@@ -233,6 +237,12 @@ messages = [
     "null",
     "[]",
     "true",
+    # Not parseable at all, and specifically not parseable in a way that raises JSONDecodeError:
+    # `json.loads` hits its recursion limit on deeply nested input and raises RecursionError. A guard
+    # that names JSONDecodeError does not cover it, so this 4 KB message escapes the parse, becomes an
+    # exit 3, and is read by the fetch step as "the rebuild step is broken" — permanently, because the
+    # message stays in the log group for its whole retention. One planted write, every future run red.
+    "[" * 2000 + "]" * 2000,
     # Object-shaped, but with pieces this transform assumes are dicts/strings.
     json.dumps(span(name="int-status", status={"code": 2})),
     json.dumps(span(name="list-resource", resource=[])),
@@ -240,6 +250,43 @@ messages = [
     # A span vended without `name`. The data plane does not guarantee one, and a nameless span
     # belongs in traces.jsonl regardless of whether it is nameable.
     json.dumps({key: value for key, value in span().items() if key != "name"}),
+    # A non-finite double. `json.dumps` writes bare `NaN`, which is not JSON: Python's parser accepts
+    # it, Swift's JSONDecoder rejects the whole line, and OtlpFileParser answers a trace decode
+    # failure by printing the line's first 200 chars -- which is where the app monitor id sits, since
+    # resource attributes are sorted. GitHub's masking is substring-exact, so even a truncated secret
+    # prints in the clear. The transform must not be able to emit a line Swift cannot read.
+    json.dumps(span(name="nan-double", attributes={"process.cpu.utilization": float("nan")})),
+    # Every field the Swift parser declares as a non-optional String or Int, vended as something
+    # else. Each one on its own is a whole-line decode failure, i.e. the same 200-char echo.
+    json.dumps(
+        span(
+            name="typed",
+            traceId=1,
+            spanId=2,
+            parentSpanId=3,
+            kind=7,
+            flags="4",
+            droppedAttributesCount="5",
+            status={"code": "ERROR", "message": 404},
+            scope={"name": 5, "version": 6},
+            events=[{"timeUnixNano": 1, "name": 2, "attributes": {}}],
+        )
+    ),
+    json.dumps(span(name=99, spanId="deadbeefdeadbeef")),
+    # The log-record side of the same problem.
+    json.dumps(
+        {
+            "resource": {"attributes": {"aws.otel.contract.run.id": "run-a-1"}},
+            "scope": {"name": "software.amazon.opentelemetry.session", "version": ""},
+            "timeUnixNano": 1787340061523443968,
+            "observedTimeUnixNano": 1787340061523443968,
+            "eventName": 7,
+            "severityText": 8,
+            "severityNumber": "9",
+            "flags": "0",
+            "attributes": {},
+        }
+    ),
     # And one entirely ordinary record, so a crash cannot hide behind an empty result.
     json.dumps(span(name="Healthy")),
 ]
@@ -254,14 +301,58 @@ OUT=$("$TRANSFORM" --run-id run-a-1 --logs-out "$LOGS_OUT" --traces-out "$TRACES
 check_status "survives hostile and unexpected records" 0 "$?"
 
 check "keeps every usable span, including the nameless one" \
-  "['', 'Healthy', 'int-status', 'string-attributes']" "$PRELUDE
+  "['', '99', 'Healthy', 'int-status', 'nan-double', 'string-attributes', 'typed']" "$PRELUDE
 print(sorted(sp['name'] for _, _, sp in spans))"
 
 check "a nameless span still goes to traces.jsonl, not logs.jsonl" "True" "$PRELUDE
-print(len(records) == 0)"
+print(len(records) == 1 and records[0][2]['eventName'] == '7')"
 
 check "stringifies a non-string status code instead of crashing on it" "2" "$PRELUDE
 print(span_named('int-status')[0]['status']['code'])"
+
+# Everything below is about one property: nothing this script writes may fail to decode on the Swift
+# side. OtlpFileParser answers a trace decode failure by printing the line's first 200 chars, and
+# because resource attributes are sorted, the app monitor id is inside that window. A decode failure
+# is therefore a secret leak, not just a lost record — and GitHub's masking will not catch it,
+# because masking is substring-exact and the printed prefix truncates the value.
+
+check "never writes a line Swift's JSONDecoder would reject (no bare NaN/Infinity)" "True" "$PRELUDE
+def strict(path):
+    with open(path) as handle:
+        for line in handle:
+            if line.strip():
+                json.loads(line, parse_constant=lambda name: (_ for _ in ()).throw(ValueError(name)))
+    return True
+print(strict(os.environ['LOGS_OUT']) and strict(os.environ['TRACES_OUT']))"
+
+check "a non-finite double becomes a string rather than invalid JSON" "nan" "$PRELUDE
+print(attr(span_named('nan-double')[0], 'process.cpu.utilization')['stringValue'])"
+
+# The Swift model, field for field: Span.traceId/spanId/name/kind/startTimeUnixNano/endTimeUnixNano
+# are non-optional String; parentSpanId is String?; flags and droppedAttributesCount are Int?;
+# Scope.name is decoded with `decode(String.self)` (required); SpanStatus.code/message are String?.
+# `decodeIfPresent` throws on a type mismatch rather than yielding nil, so any one of these arriving
+# as a number is a whole-line failure.
+check "coerces every field the Swift parser types, on every record" "True" "$PRELUDE
+SPAN_STR = ('traceId', 'spanId', 'parentSpanId', 'name', 'kind', 'startTimeUnixNano', 'endTimeUnixNano')
+SPAN_INT = ('droppedAttributesCount', 'flags')
+LOG_STR = ('timeUnixNano', 'observedTimeUnixNano', 'traceId', 'spanId', 'eventName', 'severityText')
+LOG_INT = ('severityNumber', 'droppedAttributesCount', 'flags')
+def typed(owner, strings, integers):
+    return (all(isinstance(owner.get(f, ''), str) for f in strings)
+            and all(isinstance(owner.get(f, 0), int) and not isinstance(owner.get(f, 0), bool)
+                    for f in integers))
+ok = all(typed(sp, SPAN_STR, SPAN_INT) for _, _, sp in spans)
+ok = ok and all(typed(lr, LOG_STR, LOG_INT) for _, _, lr in records)
+ok = ok and all(isinstance(sc.get(f, ''), str) for _, sc, _ in spans + records for f in ('name', 'version'))
+ok = ok and all(isinstance(sp['status'].get(f, ''), str)
+                for _, _, sp in spans if 'status' in sp for f in ('code', 'message'))
+ok = ok and all(isinstance(ev.get(f, ''), str)
+                for _, _, sp in spans for ev in sp.get('events', []) for f in ('timeUnixNano', 'name'))
+print(ok)"
+
+check "a numeric span name and scope name survive as strings" "99 5" "$PRELUDE
+print(span_named('99')[0]['name'], [sc['name'] for _, sc, sp in spans if sp['name'] == 'typed'][0])"
 
 # A record whose `resource` is not a map cannot carry the correlation key, so the run-id filter
 # drops it. What matters is that the filter drops it rather than an exception taking the run down.
@@ -271,10 +362,22 @@ print(not span_named('list-resource'))"
 check "treats non-dict attributes as empty rather than dropping a real record" "[]" "$PRELUDE
 print(span_named('string-attributes')[0]['attributes'])"
 
-if grep -q "5 event(s)" <<<"$OUT"; then
+if grep -q "6 event(s) could not be used" <<<"$OUT"; then
   PASSED=$(( PASSED + 1 )); echo "  PASS  reports how many events it had to skip"
 else
   FAILED=$(( FAILED + 1 )); echo "  FAIL  reports how many events it had to skip (got: $OUT)"
+fi
+
+# The counts in this line are the only external evidence of *where* each message went, and they are
+# what makes the guards above falsifiable. Nine of the fifteen messages are JSON objects; without the
+# non-object guard in read_vended_records all fifteen would be counted as records (the per-record
+# backstop would then absorb the five `.get` failures, so the skipped count alone stays at 6 and
+# hides the difference). Seven spans and one log record: the eighth object cannot carry a
+# correlation key, so it is filtered rather than skipped.
+if grep -qF "Rebuilt OTLP from 9 vended event(s): 7 span(s), 1 log record(s)" <<<"$OUT"; then
+  PASSED=$(( PASSED + 1 )); echo "  PASS  counts objects as records and non-objects as skipped"
+else
+  FAILED=$(( FAILED + 1 )); echo "  FAIL  counts objects as records and non-objects as skipped (got: $OUT)"
 fi
 
 if grep -qE "hello|\bnot-a-map\b|cb7b84a7" <<<"$OUT"; then
@@ -282,6 +385,39 @@ if grep -qE "hello|\bnot-a-map\b|cb7b84a7" <<<"$OUT"; then
 else
   PASSED=$(( PASSED + 1 )); echo "  PASS  never prints a skipped record's content"
 fi
+
+echo "--- the per-record backstop ---"
+
+# The `except Exception` around each record's conversion is the last line of defence for a vended
+# shape none of the guards above anticipated, and it cannot be reached from the outside: every input
+# that can be written by hand is caught by a specific guard first. Left uncovered, it is free to be
+# narrowed (or deleted) with the suite still green — which is how a fatal parse path survived review
+# once already. So reach it directly: load the transform as a module and make one conversion of one
+# record raise. The healthy records around it must still be rebuilt, and the run must still exit 0.
+export TRANSFORM FIXTURE
+LOGS_OUT="$WORK_DIR/b-logs.jsonl"
+TRACES_OUT="$WORK_DIR/b-traces.jsonl"
+
+check "skips a record whose conversion raises, and keeps the rest" "0 True True" "
+import contextlib, importlib.util, io, os, sys
+sys.dont_write_bytecode = True  # do not leave a scripts/__pycache__ behind in the working tree
+spec = importlib.util.spec_from_file_location('transform', os.environ['TRANSFORM'])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+real = module.to_scope
+def exploding(record):
+    if record.get('name') == 'AppStart':
+        raise RuntimeError('a shape none of the guards anticipated')
+    return real(record)
+module.to_scope = exploding
+captured = io.StringIO()
+with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
+    status = module.main(['--run-id', 'run-a-1',
+                         '--logs-out', os.environ['LOGS_OUT'],
+                         '--traces-out', os.environ['TRACES_OUT'],
+                         os.environ['FIXTURE']])
+text = captured.getvalue()
+print(status, '2 span(s), 2 log record(s)' in text, '1 event(s) could not be used' in text)"
 
 echo "--- failure modes ---"
 
