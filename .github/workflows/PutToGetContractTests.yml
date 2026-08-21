@@ -34,6 +34,19 @@ on:
     branches:
       - main
 
+      # TEMPORARY — delete this entry before merging. `main` is the only branch this belongs on.
+      #
+      # This one branch exists so the workflow can prove itself on every push while it is still
+      # under review. Without a `pull_request` trigger the only alternative is a manual
+      # `workflow_dispatch` after each commit, which is easy to forget and easy to run against the
+      # wrong ref.
+      #
+      # It widens nothing that the `main` trigger does not already: `push` only fires for a branch
+      # in this repository, so a fork still cannot reach the logs-reader role through it, and a
+      # pull request still cannot trigger this workflow at all. The only people who can push here
+      # are the people who can already merge to `main`.
+      - dev/put-to-get-proof
+
   # Nightly, because most of what this workflow can catch is not in this repository. A schema
   # change in what RUM vends, or a regression in put-to-queryable latency, is a property of the
   # *service* and correlates with no commit here — a merge-only trigger would hide either one
@@ -46,9 +59,9 @@ on:
   schedule:
     - cron: '17 8 * * *'
 
-  # Manual. This is now the only way to prove a branch's round trip *before* it lands, since the
-  # workflow no longer runs on pull requests — and it re-measures put-to-queryable latency without
-  # needing a commit to push.
+  # Manual. Once the temporary branch above is gone this is the only way to prove a branch's round
+  # trip *before* it lands, since the workflow no longer runs on pull requests — and it re-measures
+  # put-to-queryable latency without needing a commit to push.
   workflow_dispatch:
 
 # OIDC needs `id-token: write`; without it `aws-actions/configure-aws-credentials` has no token to
