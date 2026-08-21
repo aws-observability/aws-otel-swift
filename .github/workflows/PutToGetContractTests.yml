@@ -26,17 +26,31 @@
 name: Put-to-Get Contract Tests
 
 on:
-  # Post-merge, not pre-merge. This is the only workflow in the repo that touches a live AWS
-  # account, and running it on `pull_request` would mean any same-repo PR branch could assume the
-  # logs-reader role. Triggering on merge instead makes that role unreachable from a pull request
-  # at all, at the cost of catching a regression one merge late rather than one review early.
+  # Pre-merge. Be clear-eyed about what this costs: this is the only workflow in the repo that
+  # touches a live AWS account, and running it here means any same-repo pull request branch can
+  # assume the logs-reader role, where otherwise only `main` could. That is a deliberate trade. The
+  # role carries a single read-only permission (`logs:FilterLogEvents`) on one non-prod log group in
+  # one non-prod account, and what it buys is that a broken round trip is caught in review instead
+  # of one merge later — or instead of relying on somebody remembering to fire a manual run.
+  #
+  # Fork pull requests are a different case and are handled by the job guard below, not here.
+  #
+  # Scoped to `main` to match the `push` trigger. A pull request against a `release/*` branch still
+  # gets the hermetic `ContractTests.yml`; it does not get this one.
+  pull_request:
+    branches:
+      - main
+
+  # Post-merge as well, and not redundantly so: a `pull_request` run tests the merge commit GitHub
+  # synthesises for that one branch, which is not the history that ends up on `main`. Two pull
+  # requests can each be green and still interact. This catches that, one merge later.
   push:
     branches:
       - main
 
   # Nightly, because most of what this workflow can catch is not in this repository. A schema
   # change in what RUM vends, or a regression in put-to-queryable latency, is a property of the
-  # *service* and correlates with no commit here — a merge-only trigger would hide either one
+  # *service* and correlates with no commit here — a commit-driven trigger would hide either one
   # until the next unrelated change happened to land. Deliberately off the hour: schedules at :00
   # queue behind everyone else's.
   #
@@ -46,9 +60,8 @@ on:
   schedule:
     - cron: '17 8 * * *'
 
-  # Manual. This is now the only way to prove a branch's round trip *before* it lands, since the
-  # workflow no longer runs on pull requests — and it re-measures put-to-queryable latency without
-  # needing a commit to push.
+  # Manual. Re-measures put-to-queryable latency without needing a commit to push, and reaches a
+  # branch that has no pull request open against `main` yet.
   workflow_dispatch:
 
 # OIDC needs `id-token: write`; without it `aws-actions/configure-aws-credentials` has no token to
@@ -62,19 +75,35 @@ permissions:
 # the ingestion load and makes the put-to-queryable latency this measures meaningless. Superseded
 # runs are cancelled rather than queued — a newer merge replaces the commit under test anyway.
 #
-# Merges and the nightly run share this group, since both are on `refs/heads/main`. That is
-# intended: whichever started later is the one worth having.
+# Merges and the nightly run share this group, since both are on `refs/heads/main`. Each pull
+# request gets its own, since `github.ref` is `refs/pull/<n>/merge` there — so pushing twice to a
+# branch cancels the first run, but two open pull requests do not cancel each other. That is
+# intended: within a group, whichever started later is the one worth having.
 concurrency:
   group: put-to-get-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   put-to-get:
-    # A fork that syncs `main` would otherwise run this on every merge it pulls in, with no secrets
-    # and therefore no possible outcome but red. Skipping keeps a fork's Actions tab clean. This is
-    # housekeeping, not a security control: none of the three triggers above is reachable from a
-    # pull request, so there is no fork path to the role to guard in the first place.
-    if: github.repository == 'aws-observability/aws-otel-swift'
+    # Two separate concerns, both of which have to hold.
+    #
+    # The repository check is housekeeping: a fork that syncs `main` would otherwise run this on
+    # every merge it pulls in, with no secrets and therefore no possible outcome but red.
+    #
+    # The pull-request clause is the one that matters, now that `pull_request` is a trigger. A fork
+    # pull request gets no access to an environment's secrets, so it could never assume the role
+    # anyway — but skipping is a better outcome than failing, because a red check that no fork
+    # contributor can turn green is just noise on their pull request. Same-repo pull requests run
+    # normally.
+    #
+    # The clause is written as `!= 'pull_request'` rather than as a list of the allowed events on
+    # purpose. `github.event.pull_request` is null on a push, a schedule and a dispatch, so a bare
+    # `head.repo.full_name == github.repository` would evaluate false and silently skip the job on
+    # three of its four triggers — which is exactly the bug this shape avoids.
+    if: >-
+      github.repository == 'aws-observability/aws-otel-swift' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: macos-15-xlarge
 
     # This job will be cancelled after 30 minutes
@@ -91,11 +120,12 @@ jobs:
     # like a broken role rather than a missing line in this file.
     #
     # The `put-to-get` environment should carry no deployment protection rules. Nothing here needs
-    # gating — the triggers above already keep the role out of reach of a pull request — and a
-    # required reviewer would specifically break the nightly run, which by definition has nobody
-    # watching: it would sit pending until someone happened to click approve or it expired, so the
-    # signal this workflow exists to produce would quietly stop arriving. The environment is here
-    # for secret scoping and for that one `sub` claim, not as an approval gate.
+    # gating: the role grants one read-only permission on one non-prod log group, and every trigger
+    # is already limited to this repository. A required reviewer would specifically break the
+    # nightly run, which by definition has nobody watching — it would sit pending until someone
+    # happened to click approve or it expired, so the signal this workflow exists to produce would
+    # quietly stop arriving. The environment is here for secret scoping and for that one `sub`
+    # claim, not as an approval gate.
     environment: put-to-get
 
     env:
