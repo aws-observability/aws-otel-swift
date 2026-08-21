@@ -39,7 +39,10 @@ untrusted input. Records are kept only when their ``aws.otel.contract.run.id`` r
 equals ``--run-id``, which is what stops a third party's records from being counted towards this
 run's totals or asserted against. It follows that no input may be able to *stop* the run either --
 an event this script cannot understand is skipped and counted, never fatal, because one planted
-message would otherwise red every future run of the workflow. Matching no records at all is the one
+message would otherwise red every future run of the workflow for as long as the log group retains it.
+That is a property to keep testing rather than to assume: this script's first version guarded its
+``json.loads`` with ``except json.JSONDecodeError`` alone, and a deeply nested message raises
+``RecursionError``, which escaped the guard and became an exit 3. Matching no records at all is the one
 exception, and is an error rather than an empty success: ``OtlpFileParser`` swallows log decode
 failures and merely prints trace decode failures, so two empty files would surface as a wall of
 assertion failures that read like "the telemetry never arrived".
@@ -49,11 +52,19 @@ nothing matched the run id *yet*, ``2`` bad usage, ``3`` this script broke. The 
 on ``1`` and stops immediately on ``3``.
 
 Secret handling. Vended events embed the app monitor id and arbitrary third-party content, so
-nothing from a record is ever printed -- only counts, and the correlation key (a GitHub run id).
+nothing from a record is ever printed -- only counts, and the correlation key (a GitHub run id). The
+*output* is part of that too, less obviously: a line Swift's ``JSONDecoder`` cannot decode makes
+``OtlpFileParser`` print that line's first 200 characters, and because resource attributes are
+sorted, ``aws.rum.appmonitor.id`` sits inside that window. GitHub's masking will not catch it either,
+being substring-exact on a value the print truncates. So a decode failure downstream is a secret
+leak rather than a lost record, which is why every field the Swift model declares ``String`` or
+``Int`` is coerced here (``decodeIfPresent(String.self, ...)`` *throws* on a type mismatch rather
+than yielding nil) and why every line is rendered with ``allow_nan=False``.
 """
 
 import argparse
 import json
+import math
 import sys
 
 RUN_ID_ATTRIBUTE = "aws.otel.contract.run.id"
@@ -81,7 +92,12 @@ def to_any_value(value):
     if isinstance(value, int):
         return {"intValue": str(value)}
     if isinstance(value, float):
-        return {"doubleValue": value}
+        # A non-finite double cannot be written as JSON. `json.dumps` spells it `NaN`/`Infinity`,
+        # bare and unquoted, which Python's own parser accepts and Swift's JSONDecoder rejects --
+        # taking the whole line with it, and with it the first 200 chars into the log (see the
+        # module docstring). `repr` gives "nan"/"inf"/"-inf"; no assertion reads such a value, and a
+        # string is at least legible to whoever is looking at why it is there.
+        return {"doubleValue": value} if math.isfinite(value) else {"stringValue": repr(value)}
     if isinstance(value, str):
         return {"stringValue": value}
     # Arrays and maps are not produced by this SDK and no assertion reads one. Round-tripping the
@@ -99,6 +115,51 @@ def mapping(value):
     return value if isinstance(value, dict) else {}
 
 
+def items(value):
+    """Treat anything that is not a JSON array as an empty one. See ``mapping``."""
+    return value if isinstance(value, list) else []
+
+
+def text(value, default=""):
+    """Coerce a vended value into the ``String`` the Swift parser declares for this field.
+
+    This is not cosmetic. ``decodeIfPresent(String.self, ...)`` *throws* on a type mismatch rather
+    than yielding nil, and the non-optional fields use plain ``decode``, so a single numeric
+    ``eventName`` or ``traceId`` fails the whole line -- and a failed trace line prints its first 200
+    characters, which is where the app monitor id is (module docstring). Every String-typed field in
+    the Swift model therefore comes through here, whatever the data plane vended.
+    """
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (dict, list)):
+        return json.dumps(value, sort_keys=True)
+    return str(value)
+
+
+def integer(value, default=0):
+    """The same, for the fields the Swift parser declares ``Int?``.
+
+    A numeric string is accepted because OTLP/JSON is entitled to spell an integer that way; a
+    value that is not a number in any spelling falls back to the default rather than failing the
+    line, since none of these fields is read by an assertion.
+    """
+    if isinstance(value, bool):
+        # bool before int: bool is a subclass of int in Python.
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value) if math.isfinite(value) else default
+    if isinstance(value, str):
+        try:
+            return int(value, 10)
+        except ValueError:
+            return default
+    return default
+
+
 def to_attribute_list(attributes):
     """Convert a vended attribute map into an OTLP keyed array, ordered for readable diffs."""
     return [
@@ -113,8 +174,9 @@ def to_resource(record):
 
 def to_scope(record):
     scope = mapping(record.get("scope"))
-    # `name` is what every contract test filters on; the parser requires it to be present.
-    return {"name": scope.get("name", ""), "version": scope.get("version", "")}
+    # `name` is what every contract test filters on, and `Scope.name` is decoded with a plain
+    # `decode(String.self)` -- required, and throwing on a mismatch as well as on absence.
+    return {"name": text(scope.get("name")), "version": text(scope.get("version"))}
 
 
 def nanos(value):
@@ -124,9 +186,7 @@ def nanos(value):
     preserves the nanosecond value rather than rounding it through a float, which HangTests' 4--6
     second duration window would otherwise be at the mercy of.
     """
-    if value is None:
-        return "0"
-    return str(value)
+    return text(value, "0")
 
 
 def to_status(status):
@@ -148,16 +208,17 @@ def to_status(status):
         # record will not decode. It gets no `STATUS_CODE_` prefix: prefixing an unrecognised value
         # would dress it up as an enum name the parser could plausibly match. Passed through as-is,
         # it fails the comparison it deserves to fail, and does so visibly.
-        converted["code"] = str(code)
+        converted["code"] = text(code)
     if status.get("message") is not None:
-        converted["message"] = status["message"]
+        converted["message"] = text(status["message"])
     return converted
 
 
 def to_span_event(event):
+    event = mapping(event)
     return {
         "timeUnixNano": nanos(event.get("timeUnixNano")),
-        "name": event.get("name", ""),
+        "name": text(event.get("name")),
         "attributes": to_attribute_list(event.get("attributes")),
     }
 
@@ -180,18 +241,18 @@ def is_span(record):
 
 def to_span(record):
     span = {
-        "traceId": record.get("traceId", ""),
-        "spanId": record.get("spanId", ""),
-        "parentSpanId": record.get("parentSpanId", ""),
-        "name": record.get("name", ""),
+        "traceId": text(record.get("traceId")),
+        "spanId": text(record.get("spanId")),
+        "parentSpanId": text(record.get("parentSpanId")),
+        "name": text(record.get("name")),
         # Vended as the bare enum name ("INTERNAL"); OTLP/JSON spells it out.
-        "kind": "SPAN_KIND_" + str(record.get("kind", "UNSPECIFIED")),
+        "kind": "SPAN_KIND_" + text(record.get("kind"), "UNSPECIFIED"),
         "startTimeUnixNano": nanos(record.get("startTimeUnixNano")),
         "endTimeUnixNano": nanos(record.get("endTimeUnixNano")),
         "attributes": to_attribute_list(record.get("attributes")),
-        "droppedAttributesCount": record.get("droppedAttributesCount", 0),
-        "flags": record.get("flags", 0),
-        "events": [to_span_event(event) for event in record.get("events", [])],
+        "droppedAttributesCount": integer(record.get("droppedAttributesCount")),
+        "flags": integer(record.get("flags")),
+        "events": [to_span_event(event) for event in items(record.get("events"))],
     }
     status = to_status(record.get("status"))
     if status is not None:
@@ -203,16 +264,16 @@ def to_log_record(record):
     return {
         "timeUnixNano": nanos(record.get("timeUnixNano")),
         "observedTimeUnixNano": nanos(record.get("observedTimeUnixNano")),
-        "severityNumber": record.get("severityNumber", 0),
-        "severityText": record.get("severityText", ""),
+        "severityNumber": integer(record.get("severityNumber")),
+        "severityText": text(record.get("severityText")),
         "attributes": to_attribute_list(record.get("attributes")),
-        "traceId": record.get("traceId", ""),
-        "spanId": record.get("spanId", ""),
+        "traceId": text(record.get("traceId")),
+        "spanId": text(record.get("spanId")),
         # The SDK sets the top-level OTLP eventName, and the data plane requires a non-empty one.
         # Every contract test that looks at a log record matches on it.
-        "eventName": record.get("eventName", ""),
-        "droppedAttributesCount": record.get("droppedAttributesCount", 0),
-        "flags": record.get("flags", 0),
+        "eventName": text(record.get("eventName")),
+        "droppedAttributesCount": integer(record.get("droppedAttributesCount")),
+        "flags": integer(record.get("flags")),
     }
 
 
@@ -267,7 +328,14 @@ def read_vended_records(paths):
                 continue
             try:
                 parsed = json.loads(message)
-            except json.JSONDecodeError:
+            except Exception:  # noqa: BLE001 - deliberately the whole class; see below
+                # NOT `except json.JSONDecodeError`. Deeply nested input makes `json.loads` exhaust
+                # the recursion limit and raise RecursionError, which a JSONDecodeError guard does not
+                # catch: it would escape to the __main__ handler, become exit 3, and be reported by
+                # the fetch step as "the rebuild step is broken" -- for every run, since the message
+                # keeps living in the log group. Anyone holding the (publicly writable) app monitor id
+                # could plant one 7 KB message and red this workflow permanently. Every exception here
+                # means the same thing operationally: this message is not a usable record.
                 skipped += 1
                 continue
             if isinstance(parsed, dict):
@@ -275,6 +343,22 @@ def read_vended_records(paths):
             else:
                 skipped += 1
     return records, skipped
+
+
+def serialize(document):
+    """Render one output line, or None when it cannot be rendered as JSON Swift will accept.
+
+    The write is the last place a bad value can be stopped, and the only one that catches what the
+    guards above did not anticipate. ``allow_nan=False`` is the point: by default ``json.dumps``
+    writes a non-finite float as bare ``NaN``/``Infinity``, which is not JSON -- Python's parser
+    accepts it, Swift's rejects the line, and a rejected trace line prints its first 200 characters
+    into the CI log (module docstring). Returning None rather than raising is deliberate too: raising
+    here would be another way for one planted record to take the whole run down.
+    """
+    try:
+        return json.dumps(document, allow_nan=False)
+    except (TypeError, ValueError):
+        return None
 
 
 def main(argv=None):
@@ -340,23 +424,41 @@ def main(argv=None):
 
     # Truncate unconditionally, before deciding whether there is anything to report. A previous
     # run's files left in place would let the contract tests pass against the wrong telemetry.
+    written = {}
     for path, lines in ((args.logs_out, log_lines), (args.traces_out, span_lines)):
+        rendered = []
+        for document in lines:
+            line = serialize(document)
+            if line is None:
+                skipped += 1
+                continue
+            rendered.append(line)
         with open(path, "w", encoding="utf-8") as handle:
-            for line in lines:
-                handle.write(json.dumps(line) + "\n")
+            for line in rendered:
+                handle.write(line + "\n")
+        written[path] = len(rendered)
 
+    # Report what was *written*, not what was built: the counts the caller polls on and the counts the
+    # contract tests will see have to be the same number.
     print(
         "Rebuilt OTLP from %d vended event(s): %d span(s), %d log record(s) for %s=%s."
-        % (len(records), len(span_lines), len(log_lines), RUN_ID_ATTRIBUTE, args.run_id)
+        % (
+            len(records),
+            written[args.traces_out],
+            written[args.logs_out],
+            RUN_ID_ATTRIBUTE,
+            args.run_id,
+        )
     )
     if skipped:
         print(
-            "  (%d event(s) could not be used and were skipped: not JSON, not a JSON object, or\n"
-            "   not convertible. This log group is a shared, publicly writable target, so this is\n"
-            "   expected and is not a failure. Contents are not printed.)" % skipped
+            "  (%d event(s) could not be used and were skipped: not JSON, not a JSON object, not\n"
+            "   convertible, or not serialisable. This log group is a shared, publicly writable\n"
+            "   target, so this is expected and is not a failure. Contents are not printed.)"
+            % skipped
         )
 
-    if not span_lines and not log_lines:
+    if not written[args.traces_out] and not written[args.logs_out]:
         print(
             "ERROR: none of the %d vended event(s) carried %s=%s, so %s and %s are empty.\n"
             "       Not treating this as success: OtlpFileParser swallows log decode failures and\n"
