@@ -87,6 +87,19 @@ let package = Package(
       dependencies: ["AwsOpenTelemetryCore"],
       path: "Tests/ContractTests",
       exclude: ["MockEndpoint/"]
+    ),
+    // Contract test harness configuration, resolved from the environment. Xcode compiles
+    // these sources into the SimpleAwsDemo app directly (its target is a file-system
+    // synchronized group). The target is declared here only so the resolution rules can be
+    // unit tested without a simulator; it is deliberately not exposed as a product.
+    .target(
+      name: "ContractTestConfig",
+      path: "Examples/SimpleAwsDemo/SimpleAwsDemo/ContractTest"
+    ),
+    .testTarget(
+      name: "ContractTestConfigTests",
+      dependencies: ["ContractTestConfig"],
+      path: "Tests/ContractTestConfigTests"
     )
   ]
 ).addPlatformSpecific()
