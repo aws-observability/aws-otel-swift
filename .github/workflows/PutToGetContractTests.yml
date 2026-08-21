@@ -1,30 +1,33 @@
 # Put-to-get contract test: exports telemetry from the demo app to the *real* CloudWatch RUM data
-# plane, then proves the payload was accepted by finding this run's correlation key in the app
-# monitor's vended CloudWatch Logs group.
+# plane, fetches it back out of the app monitor's vended CloudWatch Logs group, and then runs the
+# very same `Tests/ContractTests` assertions that guard the hermetic run against what came back.
+#
+# That last part is the whole value of this workflow. `OTLPResolver` reads
+# Examples/AwsOtelUI/out/{logs,traces}.jsonl, so the get step rebuilds those two files from the
+# vended events and `swift test --filter ContractTests` runs completely unmodified — no separate
+# real-endpoint assertions to drift out of step with the hermetic ones.
 #
 # This is the only workflow in the repo that touches a live AWS account. `ContractTests.yml` stays
 # hermetic (local AwsOtelUI server) and is unaffected by anything here.
 #
+# iOS only, deliberately. The demo app's contract-test data generation is iOS-only
+# (`scripts/run-contract-tests.sh --destination ios`), and one platform is enough to prove the
+# round trip: the thing under test is the data plane contract, not per-platform instrumentation,
+# which `ContractTests.yml` already covers on every platform.
+#
 # What it does NOT cover: the SigV4 path (`AwsOpenTelemetryAuth`). The target app monitor has a
-# public resource-based policy, so `PutRumEvents` is unsigned. See
-# research/R2-RUM-PUT-TO-GET-CONTRACT.md.
+# public resource-based policy, so `PutRumEvents` is unsigned here. Signed ingestion is exercised
+# only by unit tests.
 name: Put-to-Get Contract Tests
 
 on:
-  # The permanent trigger. Manual only, on purpose: this spends real quota against a real app
-  # monitor, so it runs when someone asks for it, not on every push.
+  # Runs on pull requests so the round trip is proven before a change lands, not after. The fork
+  # guard on the job below is what makes this safe — see the comment there.
+  pull_request:
+
+  # Also dispatchable, for re-running against the live endpoint without pushing a commit (the
+  # put-to-queryable latency this measures is a property of the service, not of the branch).
   workflow_dispatch:
-
-  # TEMPORARY: remove before merge — validation only
-  # `workflow_dispatch` can only be dispatched from the default branch, so this is the only way to
-  # exercise the workflow from the PR branch before it lands.
-  push:
-    branches:
-      - dev/put-to-get-workflow
-
-  # There is deliberately NO `pull_request` trigger, and adding one would be a security bug:
-  # pull requests from forks run without access to secrets, so the job could not assume the role —
-  # and a trigger that fork-authored code can fire is not something to point at a live AWS account.
 
 # OIDC needs `id-token: write`; without it `aws-actions/configure-aws-credentials` has no token to
 # exchange. `contents: read` is for `actions/checkout`. Nothing here writes to the repository.
@@ -34,6 +37,13 @@ permissions:
 
 jobs:
   put-to-get:
+    # Fork pull requests do not get access to secrets, so this job cannot assume the role from one.
+    # Skipping is the correct outcome, not failing: a red check that no fork contributor can ever
+    # turn green is just noise on their PR. Same-repo PRs (including from `dev/*` branches) run
+    # normally.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: macos-15-xlarge
 
     # This job will be cancelled after 30 minutes
@@ -102,6 +112,9 @@ jobs:
 
       # Values are passed through the environment rather than as flags: the harness reads both, and
       # this keeps the endpoint and app monitor id out of the command line that `run:` echoes.
+      #
+      # In this mode the harness exports and stops — it writes nothing to Examples/AwsOtelUI/out,
+      # because AwsOtelUI never runs. The assertions are two steps down.
       - name: Put — export telemetry to the CloudWatch RUM data plane
         env:
           AWS_OTEL_CONTRACT_EXPORT_ENDPOINT: ${{ secrets.CONTRACT_TEST_EXPORT_ENDPOINT }}
@@ -110,10 +123,42 @@ jobs:
           AWS_OTEL_CONTRACT_RUN_ID: ${{ env.CONTRACT_RUN_ID }}
         run: make contract-test-run-ios
 
-      - name: Get — verify the run's telemetry reached CloudWatch Logs
+      # Polls until this run's records stop arriving, then rebuilds
+      # Examples/AwsOtelUI/out/{logs,traces}.jsonl from them in OTLP/JSON. Polling to quiescence
+      # rather than to first match matters: RUM delivers in batches, and the assertions in the next
+      # step check exact counts.
+      - name: Get — fetch the run's telemetry back from CloudWatch Logs
         env:
           AWS_OTEL_CONTRACT_LOG_GROUP: ${{ secrets.CONTRACT_TEST_LOG_GROUP }}
           AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
           AWS_OTEL_CONTRACT_RUN_ID: ${{ env.CONTRACT_RUN_ID }}
         run: |
           ./scripts/verify-put-to-get.sh --start-time-ms "$PUT_STARTED_AT_MS"
+
+      # The same assertions `ContractTests.yml` and the hermetic path run, reading the same file
+      # paths, from unmodified source. If a test passed here but not there (or vice versa) the
+      # difference would be the round trip, which is exactly what this workflow exists to detect.
+      #
+      # One test is skipped, and only one. `ResourceAttributesTests.testResourceAttributes` asserts
+      #
+      #     attributes.first { $0.key == "aws.rum.appmonitor.id" }?.value.stringValue
+      #       == "test-app-monitor-id"
+      #
+      # which is the placeholder id the hermetic run configures. On the round trip that attribute
+      # necessarily holds the *real* app monitor id — it is the field RUM routes on, so it cannot be
+      # anything else, and it is a secret so it cannot be asserted against literally either. The
+      # assertion is left exactly as it is: rewriting the attribute during the rebuild would be
+      # fabricating data to get a green, and relaxing the assertion would weaken the hermetic run
+      # that legitimately depends on it. Skipping the one test that contains it is the honest
+      # option. It costs the five sibling assertions in that test (service.name, service.version,
+      # cloud.region, os.name, device.model.name); all five were checked by hand against real vended
+      # events while this workflow was built, and all five matched.
+      #
+      # 17 of the suite's 18 tests therefore run here. Do not widen this skip.
+      - name: Assert — run Tests/ContractTests against the round-tripped telemetry
+        run: |
+          echo "Running Tests/ContractTests against the telemetry fetched back from CloudWatch Logs."
+          echo "Skipping ResourceAttributesTests/testResourceAttributes only: it asserts"
+          echo "aws.rum.appmonitor.id == \"test-app-monitor-id\", and on a real round trip that"
+          echo "attribute holds the real (secret) app monitor id. Every other test runs."
+          swift test --filter ContractTests --skip ResourceAttributesTests/testResourceAttributes
