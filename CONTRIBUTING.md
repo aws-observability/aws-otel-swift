@@ -80,6 +80,40 @@ make contract-test-run-visionos
 ./scripts/run-contract-tests.sh --destination ios
 ```
 
+### Contract testing against a custom endpoint
+
+By default the contract tests are hermetic: the demo app exports to the local AwsOtelUI server on
+`http://localhost:3000`, and the assertions in `Tests/ContractTests` parse the payloads it dumps to
+`Examples/AwsOtelUI/out`.
+
+The target is configurable, so the same suite can drive telemetry into a real endpoint:
+
+```bash
+./scripts/run-contract-tests.sh --destination ios \
+  --endpoint https://dataplane.rum.us-east-1.amazonaws.com/v1/rum \
+  --region us-east-1 \
+  --app-monitor-id 00000000-0000-0000-0000-000000000000
+```
+
+Each flag also reads an environment variable — `AWS_OTEL_CONTRACT_EXPORT_ENDPOINT`,
+`AWS_OTEL_CONTRACT_REGION`, `AWS_OTEL_CONTRACT_APP_MONITOR_ID` — so CI can supply them as secrets.
+Notes:
+
+- An endpoint with no path (`http://localhost:3000`) gets the standard OTLP per-signal paths
+  appended (`/v1/logs`, `/v1/traces`); an endpoint that already has a path is used verbatim for both
+  signals, which is what CloudWatch RUM's single `/v1/rum` path needs.
+- Supplying any endpoint other than `http://localhost:3000` selects real-endpoint mode: the local
+  `:3000` server is not started and the output assertions are skipped, because nothing is written
+  locally. The MockEndpoint server on `:8181` still runs — the app calls it to generate network
+  telemetry.
+- Leaving the endpoint unset in the app's own environment builds no `AwsExportOverride` at all, so
+  the SDK targets `https://dataplane.rum.<region>.amazonaws.com/v1/rum`. An empty value is treated
+  the same as unset.
+- Values never appear in the logs (the app monitor id and the endpoint are secrets in CI), and they
+  travel to the simulator through the launch *environment*, not launch arguments. The resolution
+  rules live in `Examples/SimpleAwsDemo/SimpleAwsDemo/ContractTest/ContractTestConfig.swift` and are
+  unit tested by `Tests/ContractTestConfigTests`.
+
 **Via Xcode:**
 
 1. Open project in Xcode
