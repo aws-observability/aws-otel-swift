@@ -39,8 +39,9 @@ public enum ContractTestEndpointResolution: Equatable {
 /// secret.
 ///
 /// With nothing set the resolved values are the real regional endpoint plus the placeholder
-/// region/app monitor id the demo app has always shipped; the hermetic localhost endpoint is
-/// supplied by `scripts/run-contract-tests.sh`, which defaults it when no endpoint is given.
+/// region/app monitor id the demo app has always shipped. The hermetic localhost endpoint comes
+/// from the harness, which defaults it at both entry points: `scripts/run-contract-tests.sh` and
+/// `Examples/SimpleAwsDemo/Makefile` (so the make targets stay hermetic when invoked directly).
 public struct ContractTestConfig: Equatable {
   /// Shared prefix for every variable the harness forwards. `UITests/EmptyUITests.swift`
   /// forwards by prefix, so a new variable needs no change there.
@@ -96,19 +97,34 @@ public struct ContractTestConfig: Equatable {
           let scheme = components.scheme?.lowercased(),
           allowedSchemes.contains(scheme),
           let host = components.host,
-          !host.isEmpty else {
+          !host.isEmpty,
+          components.query == nil,
+          components.fragment == nil,
+          components.user == nil,
+          components.password == nil else {
       return .invalid(
-        reason: "\(endpointKey) must be an http(s) URL with a host, e.g. http://localhost:3000 "
-          + "or https://dataplane.rum.<region>.amazonaws.com/v1/rum"
+        reason: "\(endpointKey) must be an http(s) URL with a host and no query, fragment or "
+          + "embedded credentials, e.g. http://localhost:3000 or "
+          + "https://dataplane.rum.<region>.amazonaws.com/v1/rum"
       )
     }
 
     let path = components.path
-    if path.isEmpty || path == "/" {
-      let origin = endpoint.hasSuffix("/") ? String(endpoint.dropLast()) : endpoint
-      return .override(logs: origin + logsPath, traces: origin + tracesPath)
+    guard path.isEmpty || path == "/" else {
+      // Already a per-signal (or single-path) URL: use it as given.
+      return .override(logs: endpoint, traces: endpoint)
     }
 
-    return .override(logs: endpoint, traces: endpoint)
+    // Rebuild the origin from the parsed components rather than slicing the input, so a
+    // trailing slash, an uppercase scheme or any other cosmetic difference cannot produce a
+    // malformed URL once the per-signal path is appended.
+    var originComponents = URLComponents()
+    originComponents.scheme = scheme
+    originComponents.host = host
+    originComponents.port = components.port
+    guard let origin = originComponents.string else {
+      return .invalid(reason: "\(endpointKey) could not be normalized into an origin URL")
+    }
+    return .override(logs: origin + logsPath, traces: origin + tracesPath)
   }
 }

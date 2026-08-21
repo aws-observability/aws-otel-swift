@@ -18,9 +18,11 @@ class EmptyUITests: XCTestCase {
     //
     // Launch *environment*, never launch arguments: the app prints its arguments at startup and
     // the app monitor id is a CI secret.
-    app.launchEnvironment.merge(Self.harnessEnvironment()) { _, forwarded in forwarded }
-    // Key names only. Never log the values — one of them is a secret.
-    print("Forwarding harness environment keys: \(Self.harnessEnvironment().keys.sorted())")
+    let harnessEnvironment = Self.harnessEnvironment()
+    app.launchEnvironment.merge(harnessEnvironment) { _, forwarded in forwarded }
+    // Key names only, and only the ones actually forwarded above. Never log the values — one of
+    // them is a secret.
+    print("Forwarding harness environment keys: \(harnessEnvironment.keys.sorted())")
     app.launch()
   }
 

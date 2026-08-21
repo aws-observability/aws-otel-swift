@@ -109,10 +109,12 @@ Notes:
 - Leaving the endpoint unset in the app's own environment builds no `AwsExportOverride` at all, so
   the SDK targets `https://dataplane.rum.<region>.amazonaws.com/v1/rum`. An empty value is treated
   the same as unset.
-- Values never appear in the logs (the app monitor id and the endpoint are secrets in CI), and they
-  travel to the simulator through the launch *environment*, not launch arguments. The resolution
-  rules live in `Examples/SimpleAwsDemo/SimpleAwsDemo/ContractTest/ContractTestConfig.swift` and are
-  unit tested by `Tests/ContractTestConfigTests`.
+- The harness never echoes the values (the app monitor id and the endpoint are secrets in CI): the
+  script, the Makefile and the UI test log key names only. They travel to the simulator through the
+  launch *environment*, not launch arguments, because the app prints its own launch arguments at
+  startup. The resolution rules live in
+  `Examples/SimpleAwsDemo/SimpleAwsDemo/ContractTest/ContractTestConfig.swift` and are unit tested
+  by `Tests/ContractTestConfigTests`.
 
 **Via Xcode:**
 

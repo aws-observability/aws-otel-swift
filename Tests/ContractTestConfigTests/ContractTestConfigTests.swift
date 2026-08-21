@@ -18,8 +18,13 @@ import XCTest
 
 /// Unit tests for the contract test harness' environment resolution.
 ///
-/// These are pure (no simulator, no network, no files) so they run anywhere
-/// `swift test` runs, including as part of `swift test --filter ContractTests`.
+/// These are pure (no simulator, no network, no files), so they run wherever the package's
+/// ordinary unit tests run: `swift test --skip ContractTests` (hence `make check-coverage`) and
+/// the `make test-*` platform targets, which skip only the `ContractTests` target by name.
+///
+/// They are deliberately *not* reached by the contract test step's
+/// `swift test --filter ContractTests` — that regex does not match `ContractTestConfigTests` —
+/// because they assert resolution rules, not exported payloads.
 class ContractTestConfigTests: XCTestCase {
   // MARK: - No endpoint supplied
 
@@ -71,7 +76,24 @@ class ContractTestConfigTests: XCTestCase {
   /// Given an endpoint that cannot be used, when the config is resolved, then the failure is
   /// reported explicitly instead of silently falling back to the real regional endpoint.
   func testUnusableEndpointIsReportedAsInvalid() {
-    for value in ["not-a-url", "localhost:3000", "ftp://localhost:3000", "http://", "http:///v1/rum"] {
+    let unusable = [
+      "not-a-url",
+      "localhost:3000",
+      "ftp://localhost:3000",
+      "http://",
+      "http:///v1/rum",
+      // A query or fragment cannot be reconciled with appending a per-signal path, so it is
+      // rejected rather than silently mangled into `http://host?x=1/v1/logs`.
+      "http://localhost:3000?x=1",
+      "http://localhost:3000#frag",
+      "https://dataplane.rum.us-east-1.amazonaws.com/v1/rum?x=1",
+      // Embedded credentials would be dropped when the origin is reassembled, silently
+      // retargeting the exporter. Rejected instead.
+      "http://user:pass@localhost:3000",
+      "http://user@localhost:3000/v1/rum"
+    ]
+
+    for value in unusable {
       let config = ContractTestConfig.resolve(environment: [ContractTestConfig.endpointKey: value])
 
       guard case let .invalid(reason) = config.endpoints else {
@@ -83,6 +105,35 @@ class ContractTestConfigTests: XCTestCase {
         "reason should name the offending variable so a failing run is diagnosable: \(reason)"
       )
     }
+  }
+
+  /// The origin is rebuilt from the parsed URL rather than sliced out of the raw string, so
+  /// cosmetic differences in the input cannot produce a malformed export URL. (The
+  /// trailing-slash form is covered by `testOriginOnlyEndpointGetsPerSignalOtlpPaths`.)
+  func testOriginIsNormalizedBeforeThePerSignalPathIsAppended() {
+    let config = ContractTestConfig.resolve(environment: [
+      ContractTestConfig.endpointKey: "HTTP://localhost:3000"
+    ])
+
+    XCTAssertEqual(
+      config.endpoints,
+      .override(logs: "http://localhost:3000/v1/logs", traces: "http://localhost:3000/v1/traces")
+    )
+  }
+
+  /// A host with no port must not gain a stray colon when the origin is reassembled.
+  func testOriginWithoutAPortKeepsItsShape() {
+    let config = ContractTestConfig.resolve(environment: [
+      ContractTestConfig.endpointKey: "https://dataplane.rum.us-east-1.amazonaws.com"
+    ])
+
+    XCTAssertEqual(
+      config.endpoints,
+      .override(
+        logs: "https://dataplane.rum.us-east-1.amazonaws.com/v1/logs",
+        traces: "https://dataplane.rum.us-east-1.amazonaws.com/v1/traces"
+      )
+    )
   }
 
   // MARK: - Region and app monitor id

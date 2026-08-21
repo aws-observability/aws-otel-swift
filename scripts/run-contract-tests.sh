@@ -78,6 +78,19 @@ else
   HERMETIC=false
 fi
 
+# Reject an endpoint the app would refuse, here rather than 10 minutes into an xcodebuild run.
+# In real-endpoint mode there are no output assertions, so an unusable endpoint would otherwise
+# produce a green run that exported nothing. Mirrors ContractTestConfig.resolveEndpoints — http(s),
+# a host, and no query, fragment or embedded credentials — but is deliberately a shade stricter: the
+# scheme must be lowercase, so the literal hermetic comparison above cannot be side-stepped by
+# spelling the local server as HTTP://localhost:3000 (which the app would accept while this script
+# had already decided not to start it).
+if [[ ! "$ENDPOINT" =~ ^https?://[^/?#@[:space:]]+(/[^?#[:space:]]*)?$ ]]; then
+  echo "Error: endpoint must be an http(s) URL with a host and no query, fragment or credentials"
+  echo "       (the value is not echoed: it is a secret in CI). Use --help for examples."
+  exit 1
+fi
+
 # Handed to xcodebuild by Examples/SimpleAwsDemo/Makefile, which re-exports them with the
 # TEST_RUNNER_ prefix xcodebuild needs to reach the UI test runner (and from there the app).
 export AWS_OTEL_CONTRACT_EXPORT_ENDPOINT="$ENDPOINT"
