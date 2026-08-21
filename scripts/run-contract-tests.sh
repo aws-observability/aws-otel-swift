@@ -195,10 +195,13 @@ case $DESTINATION in
     ;;
 esac
 
-# Verify contracts. The assertions in Tests/ContractTests parse the OTLP payloads AwsOtelUI
-# dumped to Examples/AwsOtelUI/out, so they only mean something in hermetic mode. Against a real
-# data plane nothing is written locally: the put side only has to export, and verification is the
-# job of whoever reads the telemetry back out of the destination.
+# Verify contracts. The assertions in Tests/ContractTests parse the OTLP payloads AwsOtelUI dumped
+# to Examples/AwsOtelUI/out, and against a real data plane nothing is written locally — so this
+# script cannot run them itself in that mode. It does not follow that they are skipped: the
+# put-to-get workflow runs the *same* assertions a step later, after
+# scripts/verify-put-to-get.sh has fetched this run's telemetry back out of the app monitor's
+# vended CloudWatch Logs group and rebuilt those two files from it. The suite is unaware of the
+# difference, which is the point.
 if [[ "$HERMETIC" == true ]]; then
   # List generated files
   echo "Generated files:"
@@ -207,7 +210,9 @@ if [[ "$HERMETIC" == true ]]; then
   cd "$PROJECT_ROOT"
   swift test --filter ContractTests
 else
-  echo "Skipping output assertions: they parse Examples/AwsOtelUI/out, which is only written in hermetic mode."
+  echo "Export complete. The assertions run separately in this mode: nothing is written to"
+  echo "Examples/AwsOtelUI/out locally, so the caller fetches the telemetry back from the"
+  echo "destination (scripts/verify-put-to-get.sh) and runs Tests/ContractTests against that."
 fi
 
 echo "Contract tests completed successfully!"

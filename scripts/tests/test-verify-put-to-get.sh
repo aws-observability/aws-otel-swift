@@ -205,7 +205,7 @@ fi
 OUTPUT=$(run_verify "partial" --timeout-seconds 4)
 assert_status "fails when delivery stalls below the completeness floor" 1 "$?"
 assert_contains "names the shortfall rather than reporting a bare timeout" \
-  "records found:    2 (1 span(s), 1 log record(s)); needed >= 5" "$OUTPUT"
+  "records found:    2 (2 span(s), 0 log record(s)); needed >= 5" "$OUTPUT"
 assert_contains "explains that a partial delivery means records were accepted" \
   "Delivery is partial" "$OUTPUT"
 
