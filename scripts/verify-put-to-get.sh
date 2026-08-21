@@ -29,8 +29,11 @@
 #   * the log group name is never echoed, not even on failure. Failures name the correlation key and
 #     the attempt count instead, and point at the secret that holds the group.
 #   * fetched log events are never printed. Only counts.
-#   * AWS CLI stderr is redacted before it is shown — structurally, not just by substituting the one
-#     value this script happens to know. See redacted_stderr().
+#   * every channel that forwards text this script did not compose itself — the AWS CLI's stderr and
+#     the rebuild step's stdout — is redacted before it is shown, structurally rather than by
+#     substituting the one value this script happens to know. See redact_file().
+#   * an option this script does not recognise is reported by *name*, never as the whole token:
+#     `--log-group=<secret>` is one argument.
 
 set -euo pipefail
 
@@ -133,7 +136,11 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      echo "Unknown option $1"
+      # Print the option *name* only. The likeliest way to reach this branch is writing a real
+      # invocation with `=` instead of a space — `--log-group=<the secret>` is a single token, so
+      # echoing "$1" would put the whole log group into the output of a failed CI step, which is
+      # precisely where nobody thinks to look for a leaked secret.
+      echo "Unknown option: ${1%%=*}"
       usage
       exit 1
       ;;
@@ -226,8 +233,14 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 # structural: any 12-digit run is an account id, and anything after `assumed-role/`, `role/` or
 # `user/` is a principal name. Both are matched by shape, not by value, which is what makes this
 # work on text this script has never seen.
-redacted_stderr() {
-  LOG_GROUP="$LOG_GROUP" python3 - "$STDERR_FILE" <<'PYREDACT'
+#
+# Takes a path so it can be pointed at anything this script did not compose itself. Two channels
+# qualify: the AWS CLI's stderr, and the rebuild step's own stdout. The rebuild step is never handed
+# the log group and a Python traceback carries no data values, so no leak has been *demonstrated*
+# through the second one — routing it through here is defence in depth against a future change that
+# starts echoing its input, not a fix for a known leak.
+redact_file() {
+  LOG_GROUP="$LOG_GROUP" python3 - "$1" <<'PYREDACT'
 import os
 import re
 import sys
@@ -248,6 +261,18 @@ if text and not text.endswith("\n"):
     text += "\n"
 sys.stdout.write(text)
 PYREDACT
+}
+
+# The two call-site wrappers. Both swallow a redaction failure into a placeholder line rather than
+# letting it propagate: this script runs under `set -e`, and on the poll path a non-zero status here
+# would abort the whole run with the shell's exit code in place of the diagnosis it was printing.
+# Losing one error message is a far smaller failure than losing the run.
+redacted_stderr() {
+  redact_file "$STDERR_FILE" || echo "(AWS CLI error withheld — redaction unavailable)"
+}
+
+redacted_transform_output() {
+  redact_file "$WORK_DIR/transform.txt" || echo "(rebuild step output withheld — redaction unavailable)"
 }
 
 # Create the output directory and truncate any previous contents *before* polling. In put-to-get
@@ -340,7 +365,7 @@ while true; do
     echo "FAIL: the rebuild step failed (scripts/vended-logs-to-otlp.py exited $TRANSFORM_EXIT)."
     echo "      This is a bug in the rebuild step or an input shape it cannot handle — not a"
     echo "      delivery problem, and not something retrying will fix."
-    cat "$WORK_DIR/transform.txt"
+    redacted_transform_output
     exit 1
   fi
 
@@ -449,10 +474,23 @@ echo "      put -> fully queryable: at most $(( NOW - (START_TIME_MS / 1000) ))s
 # than trusting the line count. A malformed rebuild would otherwise reach the contract tests as
 # empty arrays: OtlpFileParser swallows log decode failures and only *prints* trace decode
 # failures, so the suite would fail on counts and look like the telemetry never arrived.
-cat "$WORK_DIR/transform.txt"
+redacted_transform_output
 python3 - "$LOGS_OUT" "$TRACES_OUT" <<'PYCHECK'
 import json
 import sys
+
+
+def reject(name):
+    """Make json.loads strict about the tokens Python invented.
+
+    Python accepts bare `NaN`, `Infinity` and `-Infinity` and round-trips them happily; Swift's
+    JSONDecoder rejects all three. Without this, an OTLP file holding one would sail through this
+    gate and fail over in Swift instead — and a trace decode failure there *prints the first 200
+    chars of the line*, which is where the app monitor id sits once the resource attributes are
+    sorted. So a lenient check here turns a lost record into a leaked secret.
+    """
+    raise ValueError("bare %s is not valid JSON" % name)
+
 
 for path, root, group, leaf in (
     (sys.argv[1], "resourceLogs", "scopeLogs", "logRecords"),
@@ -463,10 +501,12 @@ for path, root, group, leaf in (
     total = 0
     for number, line in enumerate(lines, start=1):
         try:
-            document = json.loads(line)
-        except json.JSONDecodeError as error:
-            # Report the position only. The line itself holds the app monitor id.
-            sys.exit("FAIL: %s line %d is not valid JSON (%s)" % (path, number, error.msg))
+            document = json.loads(line, parse_constant=reject)
+        except ValueError as error:
+            # ValueError, not json.JSONDecodeError: it is the parent class, so it covers both a
+            # malformed line and the strictness above. Report the position only — the line itself
+            # holds the app monitor id.
+            sys.exit("FAIL: %s line %d is not valid JSON (%s)" % (path, number, error))
         for resource in document[root]:
             for scope in resource[group]:
                 total += len(scope[leaf])
