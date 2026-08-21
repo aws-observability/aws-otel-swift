@@ -169,6 +169,67 @@ class ContractTestConfigTests: XCTestCase {
     XCTAssertEqual(config.appMonitorId, ContractTestConfig.defaultAppMonitorId)
   }
 
+  // MARK: - Run id (the put-to-get correlation key)
+
+  /// Given no run id, when the config is resolved, then there is no correlation key and the
+  /// resource attributes are exactly the two the demo app has always shipped. The hermetic
+  /// default path must not gain an attribute.
+  func testUnsetRunIdLeavesResourceAttributesUnchanged() {
+    let config = ContractTestConfig.resolve(environment: [:])
+
+    XCTAssertNil(config.runId)
+    XCTAssertEqual(
+      config.otelResourceAttributes,
+      ["service.name": "SimpleAwsDemo", "service.version": "1.0.0"]
+    )
+  }
+
+  /// An unset CI value arrives as an empty string once it has been threaded through `make`.
+  func testEmptyRunIdIsTreatedAsUnset() {
+    for value in ["", " ", "\n", "  \n\t "] {
+      let config = ContractTestConfig.resolve(environment: [ContractTestConfig.runIdKey: value])
+
+      XCTAssertNil(config.runId, "expected \(value.debugDescription) to be treated as unset")
+      XCTAssertNil(
+        config.otelResourceAttributes[ContractTestConfig.runIdAttributeKey],
+        "expected \(value.debugDescription) not to become a resource attribute"
+      )
+    }
+  }
+
+  func testRunIdIsTrimmed() {
+    let config = ContractTestConfig.resolve(environment: [
+      ContractTestConfig.runIdKey: " 32515418069-2\n"
+    ])
+
+    XCTAssertEqual(config.runId, "32515418069-2")
+  }
+
+  /// Given a run id, when the config is resolved, then it is carried as a resource attribute so
+  /// it reaches the exported payload — that is what the put-to-get workflow greps CloudWatch
+  /// Logs for. The pre-existing attributes must survive alongside it.
+  func testRunIdBecomesAResourceAttribute() {
+    let config = ContractTestConfig.resolve(environment: [
+      ContractTestConfig.runIdKey: "32515418069-2"
+    ])
+
+    XCTAssertEqual(
+      config.otelResourceAttributes,
+      [
+        "service.name": "SimpleAwsDemo",
+        "service.version": "1.0.0",
+        ContractTestConfig.runIdAttributeKey: "32515418069-2"
+      ]
+    )
+  }
+
+  /// The attribute key is a cross-language contract: `scripts/verify-put-to-get.sh` searches the
+  /// log group for the *value*, but a human debugging a failed run looks for this key. Pin it so
+  /// renaming it is a deliberate, reviewed change.
+  func testRunIdAttributeKeyIsStable() {
+    XCTAssertEqual(ContractTestConfig.runIdAttributeKey, "aws.otel.contract.run.id")
+  }
+
   // MARK: - Regression guards
 
   /// The hermetic contract test assertions pin these exact values
@@ -186,12 +247,21 @@ class ContractTestConfigTests: XCTestCase {
       config.endpoints,
       .override(logs: "http://localhost:3000/v1/logs", traces: "http://localhost:3000/v1/traces")
     )
+    XCTAssertEqual(
+      config.otelResourceAttributes,
+      ["service.name": "SimpleAwsDemo", "service.version": "1.0.0"]
+    )
   }
 
   /// `UITests/EmptyUITests.swift` forwards harness variables into the simulator by prefix
   /// rather than by name, so every key this type reads must carry that prefix.
   func testEveryEnvironmentKeySharesTheForwardingPrefix() {
-    for key in [ContractTestConfig.endpointKey, ContractTestConfig.regionKey, ContractTestConfig.appMonitorIdKey] {
+    for key in [
+      ContractTestConfig.endpointKey,
+      ContractTestConfig.regionKey,
+      ContractTestConfig.appMonitorIdKey,
+      ContractTestConfig.runIdKey
+    ] {
       XCTAssertTrue(key.hasPrefix(ContractTestConfig.environmentKeyPrefix), "\(key) is not forwardable")
     }
   }
