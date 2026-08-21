@@ -24,6 +24,11 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VERIFY="$PROJECT_ROOT/scripts/verify-put-to-get.sh"
 FIXTURE="$SCRIPT_DIR/fixtures/vended-log-events.json"
 
+# Set to a derived copy of the fixture for the scenarios that need one. The shared fixture is read by
+# test-vended-logs-to-otlp.sh too, so variants are built into the scratch directory rather than
+# edited in place.
+FIXTURE_OVERRIDE=""
+
 # The fixture holds 3 spans and 2 log records for run-a-1 (plus another run's records and a
 # third-party record, which must be filtered out), so a complete "delivery" here is 5 records.
 FIXTURE_RUN_ID="run-a-1"
@@ -172,7 +177,7 @@ run_verify() {
   SCHEDULE="$schedule" \
   AWS_CALL_LOG="$WORK_DIR/aws-calls.txt" \
   STUB_HELPER="$WORK_DIR/project.py" \
-  FIXTURE_PATH="$FIXTURE" \
+  FIXTURE_PATH="${FIXTURE_OVERRIDE:-$FIXTURE}" \
   AWS_OTEL_CONTRACT_LOG_GROUP="$SECRET_LOG_GROUP" \
   AWS_OTEL_CONTRACT_REGION="us-east-1" \
   AWS_OTEL_CONTRACT_RUN_ID="$FIXTURE_RUN_ID" \
@@ -311,6 +316,125 @@ if [[ "$(aws_call_count)" == "1" ]]; then
 else
   fail "does not keep polling after the rebuild step breaks" "$(aws_call_count) call(s)"
 fi
+
+echo "--- exception.stacktrace: measured, because it is the one value a cap can shorten ---"
+
+# Every other attribute the contract tests read is checked by equality, so a round trip that altered
+# one fails loudly. `exception.stacktrace` is read *positionally*: HangTests looks for a
+# `Thread N Crashed:` header, which PLCrashReportTextFormatter puts on a non-zero thread, well into
+# the report — while the `Thread 0:` header it also asserts on sits on the first line. So a length cap
+# anywhere on the path breaks exactly one of the three assertions and leaves the other two green,
+# which is indistinguishable from a flake. Two of nine real runs have failed that way.
+#
+# The gate therefore measures the value on every run: length, thread-header count, whether the text
+# ends mid-line, and which markers survived. That turns the next occurrence into a number instead of
+# an argument. It reports rather than judges — a short value is evidence for the next reader, not a
+# reason to fail the fetch step, which has no idea what length is correct.
+
+# A frame that exists only in these fixtures. Vended events come from a publicly writable log group,
+# so the measurement has to describe the value without reproducing any of it, and it is placed near
+# the top of the report so that it is still present after the truncation below.
+SECRET_STACKTRACE_FRAME="0x000000010deadbee SecretlySymbolicatedFrame + 42"
+
+python3 - "$FIXTURE" "$WORK_DIR" "$FIXTURE_RUN_ID" "$SECRET_STACKTRACE_FRAME" <<'PYSTACK'
+import json
+import sys
+
+source, work_dir, run_id, secret_frame = sys.argv[1:5]
+
+# The shape PLCrashReportTextFormatter emits, shortened: `Thread 0:` on the first line, the crashed
+# thread's header much later, and libsystem_kernel.dylib near the top. Those are the three strings
+# HangTests asserts on, and their positions are the whole point.
+FULL = (
+    "Thread 0:\n"
+    "0   libsystem_kernel.dylib   0x00000001f0a1b2c3 mach_msg2_trap + 8\n"
+    "1   SimpleAwsDemo            %s\n"
+    "2   CoreFoundation           0x0000000180112233 __CFRunLoopServiceMachPort + 160\n"
+    "Thread 1:\n"
+    "0   libsystem_pthread.dylib  0x00000001f0b2c3d4 start_wqthread + 8\n"
+    "Thread 4 Crashed:\n"
+    "0   SimpleAwsDemo            0x0000000104001234 main + 24\n"
+) % secret_frame
+
+# Exactly what a cap applied during the round trip leaves behind: the crashed-thread header gone, the
+# two markers that bracket it still present, and the cut landing mid-line. This is the CI signature.
+CUT = FULL[: FULL.index("Thread 4 Crashed:") - 12]
+
+# And the degenerate end of the same failure, where nothing recognisable survives at all.
+STUB = FULL[:5]
+
+
+def written(name, *stacktraces):
+    """Copy the fixture, attaching one stacktrace to each of this run's log records in turn."""
+    with open(source, encoding="utf-8") as handle:
+        document = json.load(handle)
+    remaining = list(stacktraces)
+    for event in document["events"]:
+        if not remaining:
+            break
+        message = json.loads(event["message"])
+        resource = (message.get("resource") or {}).get("attributes") or {}
+        if resource.get("aws.otel.contract.run.id") != run_id:
+            continue
+        # The discriminator the transform itself uses. Log records carry a spanId too, so keying on
+        # that would put the attribute on a span and measure nothing HangTests reads.
+        if "startTimeUnixNano" in message:
+            continue
+        message["attributes"]["exception.stacktrace"] = remaining.pop(0)
+        event["message"] = json.dumps(message)
+    if remaining:
+        sys.exit("fixture holds too few log records for %s" % run_id)
+    path = "%s/%s.json" % (work_dir, name)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(document, handle)
+    return path
+
+
+# Hand the lengths back rather than restating them in the shell: an assertion that quoted its own
+# hardcoded character count would pass while measuring the wrong string.
+with open("%s/stacktrace-vars.sh" % work_dir, "w", encoding="utf-8") as handle:
+    handle.write("FIXTURE_STACKTRACE_PAIR=%s\n" % written("fixture-stack-pair", FULL, CUT))
+    handle.write("FIXTURE_STACKTRACE_STUB=%s\n" % written("fixture-stack-stub", STUB))
+    handle.write("STACKTRACE_FULL_LEN=%d\n" % len(FULL))
+    handle.write("STACKTRACE_CUT_LEN=%d\n" % len(CUT))
+    handle.write("STACKTRACE_STUB_LEN=%d\n" % len(STUB))
+    handle.write("STACKTRACE_FULL_HEADERS=%d\n" % FULL.count("\nThread "))
+    handle.write("STACKTRACE_CUT_HEADERS=%d\n" % CUT.count("\nThread "))
+PYSTACK
+# shellcheck source=/dev/null
+source "$WORK_DIR/stacktrace-vars.sh"
+
+FIXTURE_OVERRIDE="$FIXTURE_STACKTRACE_PAIR"
+OUTPUT=$(run_verify "full full")
+assert_status "succeeds with stack traces present, whatever their length" 0 "$?"
+
+# Both lines in one run, which is also what pins the ordering: the longer value must be #1. If a cap
+# is in play it is the longest value that is sitting on it, so that is the one worth reading first.
+assert_contains "measures an intact stack trace instead of assuming it survived" \
+  "exception.stacktrace #1: $STACKTRACE_FULL_LEN chars, $STACKTRACE_FULL_HEADERS thread header(s), ends mid-line: no, markers: Thread 0:, Crashed:, libsystem_kernel.dylib" \
+  "$OUTPUT"
+assert_contains "names the missing marker, and the mid-line cut, when a value arrived shortened" \
+  "exception.stacktrace #2: $STACKTRACE_CUT_LEN chars, $STACKTRACE_CUT_HEADERS thread header(s), ends mid-line: yes, markers: Thread 0:, libsystem_kernel.dylib" \
+  "$OUTPUT"
+
+# The measurement is derived from third-party-writable content, which makes it a new channel out of
+# this script. Numbers and the fixed marker names are all that may cross it.
+assert_absent "never reproduces any of a stack trace's content" "$SECRET_STACKTRACE_FRAME" "$OUTPUT"
+assert_absent "does not print a stack trace frame's symbol" "SecretlySymbolicatedFrame" "$OUTPUT"
+
+FIXTURE_OVERRIDE="$FIXTURE_STACKTRACE_STUB"
+OUTPUT=$(run_verify "full full")
+assert_contains "says so explicitly when no marker survived, rather than printing an empty list" \
+  "exception.stacktrace #1: $STACKTRACE_STUB_LEN chars, 0 thread header(s), ends mid-line: yes, markers: none" \
+  "$OUTPUT"
+
+FIXTURE_OVERRIDE=""
+
+# And the other direction, which is what stops the measurement from being decorative: a run whose
+# records carry no stacktrace at all must report nothing, not a zero-length entry that would read as
+# "the value came back empty".
+OUTPUT=$(run_verify "full full")
+assert_absent "reports nothing when no record carries a stack trace" "exception.stacktrace #" "$OUTPUT"
 
 echo "--- the log group name is a secret on every path, including the failure paths ---"
 

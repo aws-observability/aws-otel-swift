@@ -492,6 +492,18 @@ def reject(name):
     raise ValueError("bare %s is not valid JSON" % name)
 
 
+# `exception.stacktrace` is the one attribute whose *length* the round trip can plausibly change,
+# and the only one an assertion reads positionally rather than by equality: HangTests looks for a
+# `Thread N Crashed:` header that sits on a non-zero thread, well into the report. If anything on
+# the path caps a long attribute value, that header is what disappears first — while the `Thread 0:`
+# header near the start keeps passing, which is exactly the shape of a flake.
+#
+# So measure it here, every run. Lengths, marker names and header counts only: the value itself is
+# third-party-writable content and is never printed.
+STACKTRACE_KEY = "exception.stacktrace"
+MARKERS = ("Thread 0:", "Crashed:", "libsystem_kernel.dylib")
+stacktraces = []
+
 for path, root, group, leaf in (
     (sys.argv[1], "resourceLogs", "scopeLogs", "logRecords"),
     (sys.argv[2], "resourceSpans", "scopeSpans", "spans"),
@@ -510,7 +522,30 @@ for path, root, group, leaf in (
         for resource in document[root]:
             for scope in resource[group]:
                 total += len(scope[leaf])
+                for item in scope[leaf]:
+                    for attribute in item.get("attributes") or []:
+                        if attribute.get("key") != STACKTRACE_KEY:
+                            continue
+                        text = (attribute.get("value") or {}).get("stringValue")
+                        if isinstance(text, str):
+                            stacktraces.append(text)
     print("      %s: %d line(s), %d %s" % (path, len(lines), total, leaf))
+
+# Longest first: if a cap is in play, the longest value is the one sitting on it, and a run where
+# every value lands on the same round number is a cap rather than a coincidence.
+for rank, text in enumerate(sorted(stacktraces, key=len, reverse=True), start=1):
+    present = [marker for marker in MARKERS if marker in text] or ["none"]
+    print(
+        "      %s #%d: %d chars, %d thread header(s), ends mid-line: %s, markers: %s"
+        % (
+            STACKTRACE_KEY,
+            rank,
+            len(text),
+            text.count("\nThread "),
+            "no" if text.endswith("\n") else "yes",
+            ", ".join(present),
+        )
+    )
 PYCHECK
 
 echo
