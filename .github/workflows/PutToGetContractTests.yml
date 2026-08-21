@@ -26,12 +26,29 @@
 name: Put-to-Get Contract Tests
 
 on:
-  # Runs on pull requests so the round trip is proven before a change lands, not after. The fork
-  # guard on the job below is what makes this safe — see the comment there.
-  pull_request:
+  # Post-merge, not pre-merge. This is the only workflow in the repo that touches a live AWS
+  # account, and running it on `pull_request` would mean any same-repo PR branch could assume the
+  # logs-reader role. Triggering on merge instead makes that role unreachable from a pull request
+  # at all, at the cost of catching a regression one merge late rather than one review early.
+  push:
+    branches:
+      - main
 
-  # Also dispatchable, for re-running against the live endpoint without pushing a commit (the
-  # put-to-queryable latency this measures is a property of the service, not of the branch).
+  # Nightly, because most of what this workflow can catch is not in this repository. A schema
+  # change in what RUM vends, or a regression in put-to-queryable latency, is a property of the
+  # *service* and correlates with no commit here — a merge-only trigger would hide either one
+  # until the next unrelated change happened to land. Deliberately off the hour: schedules at :00
+  # queue behind everyone else's.
+  #
+  # Note that `schedule` only ever runs on the default branch, so this trigger does nothing until
+  # this workflow is on `main`. GitHub also disables scheduled workflows in repositories with no
+  # activity for 60 days.
+  schedule:
+    - cron: '17 8 * * *'
+
+  # Manual. This is now the only way to prove a branch's round trip *before* it lands, since the
+  # workflow no longer runs on pull requests — and it re-measures put-to-queryable latency without
+  # needing a commit to push.
   workflow_dispatch:
 
 # OIDC needs `id-token: write`; without it `aws-actions/configure-aws-credentials` has no token to
@@ -40,23 +57,24 @@ permissions:
   contents: read
   id-token: write
 
-# One live run per branch. Two concurrent runs would both be writing to the same app monitor and
+# One live run per ref. Two concurrent runs would both be writing to the same app monitor and
 # reading the same log group; that is safe (each matches on its own correlation key) but it doubles
 # the ingestion load and makes the put-to-queryable latency this measures meaningless. Superseded
-# runs are cancelled rather than queued — a push replaces the commit under test anyway.
+# runs are cancelled rather than queued — a newer merge replaces the commit under test anyway.
+#
+# Merges and the nightly run share this group, since both are on `refs/heads/main`. That is
+# intended: whichever started later is the one worth having.
 concurrency:
   group: put-to-get-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   put-to-get:
-    # Fork pull requests do not get access to secrets, so this job cannot assume the role from one.
-    # Skipping is the correct outcome, not failing: a red check that no fork contributor can ever
-    # turn green is just noise on their PR. Same-repo PRs (including from `dev/*` branches) run
-    # normally.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    # A fork that syncs `main` would otherwise run this on every merge it pulls in, with no secrets
+    # and therefore no possible outcome but red. Skipping keeps a fork's Actions tab clean. This is
+    # housekeeping, not a security control: none of the three triggers above is reachable from a
+    # pull request, so there is no fork path to the role to guard in the first place.
+    if: github.repository == 'aws-observability/aws-otel-swift'
     runs-on: macos-15-xlarge
 
     # This job will be cancelled after 30 minutes
@@ -72,10 +90,12 @@ jobs:
     # an opaque STS error ("Not authorized to perform sts:AssumeRoleWithWebIdentity") that looks
     # like a broken role rather than a missing line in this file.
     #
-    # The `put-to-get` environment must carry no deployment protection rules. A required reviewer or
-    # a wait timer would suspend every pull request on this repository until someone approved it,
-    # which is not what an environment is being used for here — it is being used for secret scoping
-    # and for that one `sub` claim.
+    # The `put-to-get` environment should carry no deployment protection rules. Nothing here needs
+    # gating — the triggers above already keep the role out of reach of a pull request — and a
+    # required reviewer would specifically break the nightly run, which by definition has nobody
+    # watching: it would sit pending until someone happened to click approve or it expired, so the
+    # signal this workflow exists to produce would quietly stop arriving. The environment is here
+    # for secret scoping and for that one `sub` claim, not as an approval gate.
     environment: put-to-get
 
     env:
