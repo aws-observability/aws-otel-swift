@@ -4,8 +4,13 @@
 #
 # That last part is the whole value of this workflow. `OTLPResolver` reads
 # Examples/AwsOtelUI/out/{logs,traces}.jsonl, so the get step rebuilds those two files from the
-# vended events and `swift test --filter ContractTests` runs completely unmodified — no separate
-# real-endpoint assertions to drift out of step with the hermetic ones.
+# vended events and `swift test --filter ContractTests` runs the whole suite as-is — no separate
+# real-endpoint assertions to drift out of step with the hermetic ones, and nothing skipped.
+#
+# The suite is shared, not forked: the only mode-dependent values in it are the app monitor id and
+# region, which `ContractExpectations` resolves from the same environment variables that configured
+# the put step and which default to the hermetic literals. `ContractTests.yml` therefore needs no
+# change and its behaviour is byte-for-byte what it was.
 #
 # This is the only workflow in the repo that touches a live AWS account. `ContractTests.yml` stays
 # hermetic (local AwsOtelUI server) and is unaffected by anything here.
@@ -157,26 +162,25 @@ jobs:
       # counts rather than passing quietly — which is why the get step deliberately asserts nothing
       # about content itself and keeps no second copy of those numbers.
       #
-      # One test is skipped, and only one. `ResourceAttributesTests.testResourceAttributes` asserts
+      # Nothing is skipped. The whole suite runs against the round-tripped telemetry.
       #
-      #     attributes.first { $0.key == "aws.rum.appmonitor.id" }?.value.stringValue
-      #       == "test-app-monitor-id"
+      # Two of the attributes `ResourceAttributesTests` checks are properties of *where the harness
+      # was pointed*, not of the SDK: `aws.rum.appmonitor.id` and `cloud.region`. So the same two
+      # variables that configured the put step are passed to the assert step, and
+      # `ContractExpectations` resolves them (defaulting to the hermetic literals when unset, which
+      # is why `ContractTests.yml` needs no change). That is a stronger assertion than a literal, not
+      # a relaxed one: it requires the id the harness asked for to be the id that came back, so a
+      # round trip that silently landed in a different app monitor now fails here.
       #
-      # which is the placeholder id the hermetic run configures. On the round trip that attribute
-      # necessarily holds the *real* app monitor id — it is the field RUM routes on, so it cannot be
-      # anything else, and it is a secret so it cannot be asserted against literally either. The
-      # assertion is left exactly as it is: rewriting the attribute during the rebuild would be
-      # fabricating data to get a green, and relaxing the assertion would weaken the hermetic run
-      # that legitimately depends on it. Skipping the one test that contains it is the honest
-      # option. It costs the five sibling assertions in that test (service.name, service.version,
-      # cloud.region, os.name, device.model.name); all five were checked by hand against real vended
-      # events while this workflow was built, and all five matched.
-      #
-      # 17 of the suite's 18 tests therefore run here. Do not widen this skip.
+      # The alternative — rewriting the attribute during the rebuild to make a literal match — would
+      # have been fabricating data to get a green. This asserts the real value instead, and the test
+      # compares it without printing it, because against a real endpoint it is a secret.
       - name: Assert — run Tests/ContractTests against the round-tripped telemetry
+        env:
+          AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
+          AWS_OTEL_CONTRACT_APP_MONITOR_ID: ${{ secrets.CONTRACT_TEST_APP_MONITOR_ID }}
         run: |
           echo "Running Tests/ContractTests against the telemetry fetched back from CloudWatch Logs."
-          echo "Skipping ResourceAttributesTests/testResourceAttributes only: it asserts"
-          echo "aws.rum.appmonitor.id == \"test-app-monitor-id\", and on a real round trip that"
-          echo "attribute holds the real (secret) app monitor id. Every other test runs."
-          swift test --filter ContractTests --skip ResourceAttributesTests/testResourceAttributes
+          echo "The full suite runs — aws.rum.appmonitor.id and cloud.region are asserted against the"
+          echo "values this run configured, not against the hermetic placeholders."
+          swift test --filter ContractTests
