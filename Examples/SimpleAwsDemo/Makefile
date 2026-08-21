@@ -5,7 +5,38 @@ CONTRACT_TEST_PLAN="UITests"
 
 PERFORMANCE_TEST_PLAN="PerformanceTests"
 
-### START CONTRACT TEST - DATA GENERATION OPTIONS 
+### START CONTRACT TEST - HARNESS CONFIGURATION
+#
+# Endpoint / region / app monitor id for the app under test. `scripts/run-contract-tests.sh`
+# supplies them (defaulting the endpoint to the local AwsOtelUI server); they can also be set
+# directly in the environment.
+#
+# `xcodebuild` copies `TEST_RUNNER_`-prefixed variables into the UI test runner's environment
+# with the prefix stripped, and `UITests/EmptyUITests.swift` re-injects them into the app's
+# launch environment — the runner and the app are different processes.
+#
+# These are `export`ed rather than written into the recipe so make never echoes their values:
+# the app monitor id is a secret in CI. Unset variables export as empty, which the app treats
+# exactly like unset (no `AwsExportOverride` is built).
+#
+# The endpoint is defaulted to the local AwsOtelUI server so that these targets stay hermetic even
+# when invoked directly rather than through `scripts/run-contract-tests.sh`. Without it an unset
+# endpoint would make the app export to the real regional data plane with a placeholder app monitor
+# id. Region and app monitor id are left empty on purpose: the app defaults those itself.
+ifeq ($(strip $(AWS_OTEL_CONTRACT_EXPORT_ENDPOINT)),)
+AWS_OTEL_CONTRACT_EXPORT_ENDPOINT = http://localhost:3000
+endif
+
+TEST_RUNNER_AWS_OTEL_CONTRACT_EXPORT_ENDPOINT = $(AWS_OTEL_CONTRACT_EXPORT_ENDPOINT)
+TEST_RUNNER_AWS_OTEL_CONTRACT_REGION = $(AWS_OTEL_CONTRACT_REGION)
+TEST_RUNNER_AWS_OTEL_CONTRACT_APP_MONITOR_ID = $(AWS_OTEL_CONTRACT_APP_MONITOR_ID)
+export TEST_RUNNER_AWS_OTEL_CONTRACT_EXPORT_ENDPOINT
+export TEST_RUNNER_AWS_OTEL_CONTRACT_REGION
+export TEST_RUNNER_AWS_OTEL_CONTRACT_APP_MONITOR_ID
+
+### END CONTRACT TEST - HARNESS CONFIGURATION
+
+### START CONTRACT TEST - DATA GENERATION OPTIONS
 
 XCODEBUILD_OPTIONS_IOS_CONTRACT=\
 	-project $(CONTRACT_TEST_WORKSPACE) \

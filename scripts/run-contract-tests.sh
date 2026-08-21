@@ -9,6 +9,16 @@ set -e
 DESTINATION=""
 MOCK_ENDPOINT_PORT=8181
 
+# The local AwsOtelUI server. Exporting here is what makes the default run hermetic; the app
+# itself has no localhost fallback (with nothing set it targets the real regional endpoint).
+HERMETIC_ENDPOINT="http://localhost:3000"
+
+# Harness configuration. Flags win over the environment; anything still empty is defaulted by
+# the app (region/app monitor id) or below (endpoint).
+ENDPOINT="${AWS_OTEL_CONTRACT_EXPORT_ENDPOINT:-}"
+REGION="${AWS_OTEL_CONTRACT_REGION:-}"
+APP_MONITOR_ID="${AWS_OTEL_CONTRACT_APP_MONITOR_ID:-}"
+
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -16,9 +26,31 @@ while [[ $# -gt 0 ]]; do
       DESTINATION="$2"
       shift 2
       ;;
+    --endpoint)
+      ENDPOINT="$2"
+      shift 2
+      ;;
+    --region)
+      REGION="$2"
+      shift 2
+      ;;
+    --app-monitor-id)
+      APP_MONITOR_ID="$2"
+      shift 2
+      ;;
     -h|--help)
-      echo "Usage: $0 --destination <platform>"
-      echo "  --destination  Platform (e.g., ios, tvos, watchos, visionos)"
+      echo "Usage: $0 --destination <platform> [--endpoint <url>] [--region <region>] [--app-monitor-id <id>]"
+      echo "  --destination     Platform (e.g., ios, tvos, watchos, visionos)"
+      echo "  --endpoint        Export endpoint. Defaults to $HERMETIC_ENDPOINT (hermetic mode:"
+      echo "                    starts the local AwsOtelUI server and verifies the dumped output)."
+      echo "                    Any other endpoint selects real-endpoint mode: no local :3000"
+      echo "                    server and no output assertions (nothing is written locally)."
+      echo "  --region          AWS region for AwsConfig. Defaults to the app's built-in default."
+      echo "  --app-monitor-id  RUM app monitor id (a UUID) for AwsConfig. Secret in CI."
+      echo ""
+      echo "Each flag also reads a matching environment variable:"
+      echo "  AWS_OTEL_CONTRACT_EXPORT_ENDPOINT, AWS_OTEL_CONTRACT_REGION,"
+      echo "  AWS_OTEL_CONTRACT_APP_MONITOR_ID"
       exit 0
       ;;
     *)
@@ -35,7 +67,43 @@ if [[ -z "$DESTINATION" ]]; then
   exit 1
 fi
 
+# Hermetic mode is the default: no endpoint supplied, or the local AwsOtelUI server supplied
+# explicitly (with or without a trailing slash).
+if [[ -z "$ENDPOINT" ]]; then
+  ENDPOINT="$HERMETIC_ENDPOINT"
+fi
+if [[ "${ENDPOINT%/}" == "$HERMETIC_ENDPOINT" ]]; then
+  HERMETIC=true
+else
+  HERMETIC=false
+fi
+
+# Reject an endpoint the app would refuse, here rather than 10 minutes into an xcodebuild run.
+# In real-endpoint mode there are no output assertions, so an unusable endpoint would otherwise
+# produce a green run that exported nothing. Mirrors ContractTestConfig.resolveEndpoints — http(s),
+# a host, and no query, fragment or embedded credentials — but is deliberately a shade stricter: the
+# scheme must be lowercase, so the literal hermetic comparison above cannot be side-stepped by
+# spelling the local server as HTTP://localhost:3000 (which the app would accept while this script
+# had already decided not to start it).
+if [[ ! "$ENDPOINT" =~ ^https?://[^/?#@[:space:]]+(/[^?#[:space:]]*)?$ ]]; then
+  echo "Error: endpoint must be an http(s) URL with a host and no query, fragment or credentials"
+  echo "       (the value is not echoed: it is a secret in CI). Use --help for examples."
+  exit 1
+fi
+
+# Handed to xcodebuild by Examples/SimpleAwsDemo/Makefile, which re-exports them with the
+# TEST_RUNNER_ prefix xcodebuild needs to reach the UI test runner (and from there the app).
+export AWS_OTEL_CONTRACT_EXPORT_ENDPOINT="$ENDPOINT"
+export AWS_OTEL_CONTRACT_REGION="$REGION"
+export AWS_OTEL_CONTRACT_APP_MONITOR_ID="$APP_MONITOR_ID"
+
 echo "Running contract tests for $DESTINATION"
+# Values are deliberately not echoed: the endpoint and app monitor id are secrets in CI.
+if [[ "$HERMETIC" == true ]]; then
+  echo "Mode: hermetic (local AwsOtelUI server, output assertions enabled)"
+else
+  echo "Mode: real endpoint (no local AwsOtelUI server, output assertions skipped)"
+fi
 
 # Get the project root directory
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -79,13 +147,17 @@ if ! bash test.sh; then
 fi
 echo "MockEndpoint server verified successfully"
 
-# Start AwsOtelUI server
-echo "Starting AwsOtelUI server..."
-cd "$PROJECT_ROOT/Examples/AwsOtelUI"
-npm i
-npm start &
-SERVER_PID=$!
-sleep 5
+# Start AwsOtelUI server (hermetic mode only — in real-endpoint mode nothing exports to :3000)
+if [[ "$HERMETIC" == true ]]; then
+  echo "Starting AwsOtelUI server..."
+  cd "$PROJECT_ROOT/Examples/AwsOtelUI"
+  npm i
+  npm start &
+  SERVER_PID=$!
+  sleep 5
+else
+  echo "Skipping AwsOtelUI server: telemetry is exported to the supplied endpoint."
+fi
 
 # Generate spans and logs
 echo "Generating spans and logs for $DESTINATION..."
@@ -98,12 +170,19 @@ case $DESTINATION in
     ;;
 esac
 
-# List generated files
-echo "Generated files:"
-ls -al "$PROJECT_ROOT/Examples/AwsOtelUI/out"
+# Verify contracts. The assertions in Tests/ContractTests parse the OTLP payloads AwsOtelUI
+# dumped to Examples/AwsOtelUI/out, so they only mean something in hermetic mode. Against a real
+# data plane nothing is written locally: the put side only has to export, and verification is the
+# job of whoever reads the telemetry back out of the destination.
+if [[ "$HERMETIC" == true ]]; then
+  # List generated files
+  echo "Generated files:"
+  ls -al "$PROJECT_ROOT/Examples/AwsOtelUI/out"
 
-# Verify contracts
-cd "$PROJECT_ROOT"
-swift test --filter ContractTests
+  cd "$PROJECT_ROOT"
+  swift test --filter ContractTests
+else
+  echo "Skipping output assertions: they parse Examples/AwsOtelUI/out, which is only written in hermetic mode."
+fi
 
 echo "Contract tests completed successfully!"
