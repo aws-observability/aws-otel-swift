@@ -60,10 +60,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
       aws: awsConfig,
       exportOverride: exportOverride,
       sessionTimeout: 5,
-      otelResourceAttributes: [
-        "service.version": "1.0.0",
-        "service.name": "SimpleAwsDemo"
-      ],
+      // Carries the harness' run-scoped correlation key when one is supplied, so the put-to-get
+      // workflow can find this run's events in CloudWatch Logs. Unchanged from the app's
+      // historical attributes when it is not.
+      otelResourceAttributes: contractTestConfig.otelResourceAttributes,
       debug: true
     )
     AwsOpenTelemetryRumBuilder.create(config: config)?.build()

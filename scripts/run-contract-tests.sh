@@ -18,6 +18,7 @@ HERMETIC_ENDPOINT="http://localhost:3000"
 ENDPOINT="${AWS_OTEL_CONTRACT_EXPORT_ENDPOINT:-}"
 REGION="${AWS_OTEL_CONTRACT_REGION:-}"
 APP_MONITOR_ID="${AWS_OTEL_CONTRACT_APP_MONITOR_ID:-}"
+RUN_ID="${AWS_OTEL_CONTRACT_RUN_ID:-}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -38,8 +39,12 @@ while [[ $# -gt 0 ]]; do
       APP_MONITOR_ID="$2"
       shift 2
       ;;
+    --run-id)
+      RUN_ID="$2"
+      shift 2
+      ;;
     -h|--help)
-      echo "Usage: $0 --destination <platform> [--endpoint <url>] [--region <region>] [--app-monitor-id <id>]"
+      echo "Usage: $0 --destination <platform> [--endpoint <url>] [--region <region>] [--app-monitor-id <id>] [--run-id <key>]"
       echo "  --destination     Platform (e.g., ios, tvos, watchos, visionos)"
       echo "  --endpoint        Export endpoint. Defaults to $HERMETIC_ENDPOINT (hermetic mode:"
       echo "                    starts the local AwsOtelUI server and verifies the dumped output)."
@@ -47,10 +52,14 @@ while [[ $# -gt 0 ]]; do
       echo "                    server and no output assertions (nothing is written locally)."
       echo "  --region          AWS region for AwsConfig. Defaults to the app's built-in default."
       echo "  --app-monitor-id  RUM app monitor id (a UUID) for AwsConfig. Secret in CI."
+      echo "  --run-id          Run-scoped correlation key. Becomes the"
+      echo "                    aws.otel.contract.run.id resource attribute on every exported"
+      echo "                    signal, so scripts/verify-put-to-get.sh can find this run's"
+      echo "                    events. Optional; omitted in hermetic mode."
       echo ""
       echo "Each flag also reads a matching environment variable:"
       echo "  AWS_OTEL_CONTRACT_EXPORT_ENDPOINT, AWS_OTEL_CONTRACT_REGION,"
-      echo "  AWS_OTEL_CONTRACT_APP_MONITOR_ID"
+      echo "  AWS_OTEL_CONTRACT_APP_MONITOR_ID, AWS_OTEL_CONTRACT_RUN_ID"
       exit 0
       ;;
     *)
@@ -91,11 +100,20 @@ if [[ ! "$ENDPOINT" =~ ^https?://[^/?#@[:space:]]+(/[^?#[:space:]]*)?$ ]]; then
   exit 1
 fi
 
+# Reject a correlation key that the fetch step could not search for verbatim. Keep this in step
+# with the same check in scripts/verify-put-to-get.sh: if the two disagree, the put side stamps a
+# key the get side never looks for and the job fails as a timeout with no explanation.
+if [[ -n "$RUN_ID" && ! "$RUN_ID" =~ ^[A-Za-z0-9._:-]+$ ]]; then
+  echo "Error: --run-id must be non-empty and match ^[A-Za-z0-9._:-]+$ (got ${#RUN_ID} chars)"
+  exit 1
+fi
+
 # Handed to xcodebuild by Examples/SimpleAwsDemo/Makefile, which re-exports them with the
 # TEST_RUNNER_ prefix xcodebuild needs to reach the UI test runner (and from there the app).
 export AWS_OTEL_CONTRACT_EXPORT_ENDPOINT="$ENDPOINT"
 export AWS_OTEL_CONTRACT_REGION="$REGION"
 export AWS_OTEL_CONTRACT_APP_MONITOR_ID="$APP_MONITOR_ID"
+export AWS_OTEL_CONTRACT_RUN_ID="$RUN_ID"
 
 echo "Running contract tests for $DESTINATION"
 # Values are deliberately not echoed: the endpoint and app monitor id are secrets in CI.
@@ -103,6 +121,13 @@ if [[ "$HERMETIC" == true ]]; then
   echo "Mode: hermetic (local AwsOtelUI server, output assertions enabled)"
 else
   echo "Mode: real endpoint (no local AwsOtelUI server, output assertions skipped)"
+fi
+# The run id is not a secret (it is a GitHub run id) and printing it is what lets a human match a
+# failed fetch step back to the put step, so it is echoed on purpose.
+if [[ -n "$RUN_ID" ]]; then
+  echo "Correlation key: aws.otel.contract.run.id=$RUN_ID"
+else
+  echo "Correlation key: none (no --run-id supplied)"
 fi
 
 # Get the project root directory

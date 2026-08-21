@@ -58,11 +58,38 @@ public struct ContractTestConfig: Equatable {
   /// RUM app monitor **id** (a UUID, not the monitor name) passed to `AwsConfig`. A secret in CI.
   public static let appMonitorIdKey = environmentKeyPrefix + "APP_MONITOR_ID"
 
+  /// Run-scoped correlation key. Optional, and unset in the hermetic default path.
+  ///
+  /// `.github/workflows/PutToGetContractTests.yml` sets this to
+  /// `<github.run_id>-<github.run_attempt>` and `scripts/verify-put-to-get.sh` then searches the
+  /// RUM log group for that literal value. It is what makes the put-to-get assertion specific to
+  /// one run: the target app monitor has a public resource-based policy, so anything else in the
+  /// log group may not be ours, and a re-run must not match the previous attempt's events.
+  ///
+  /// Not a secret — a GitHub run id is public — but it is still forwarded as an environment
+  /// variable rather than a launch argument, because the app prints its launch arguments.
+  public static let runIdKey = environmentKeyPrefix + "RUN_ID"
+
+  /// Resource attribute the run id is carried on.
+  ///
+  /// Deliberately *not* under `aws.rum.` — that namespace belongs to attributes the SDK itself
+  /// sets (`Sources/AwsOpenTelemetryCore/Builder/AwsAttributes.swift`), and this one is a test
+  /// harness concern. Pinned by `ContractTestConfigTests` because the value is grepped for out of
+  /// band, in shell, by the workflow's fetch step.
+  public static let runIdAttributeKey = "aws.otel.contract.run.id"
+
   /// Region used when none is supplied. Pinned by `Tests/ContractTests/ResourceAttributesTests.swift`.
   public static let defaultRegion = "us-east-1"
 
   /// App monitor id used when none is supplied. Pinned by `Tests/ContractTests/ResourceAttributesTests.swift`.
   public static let defaultAppMonitorId = "test-app-monitor-id"
+
+  /// Resource attributes the demo app has always shipped. Pinned by
+  /// `Tests/ContractTests/ResourceAttributesTests.swift`.
+  public static let baseOtelResourceAttributes = [
+    "service.name": "SimpleAwsDemo",
+    "service.version": "1.0.0"
+  ]
 
   private static let logsPath = "/v1/logs"
   private static let tracesPath = "/v1/traces"
@@ -72,6 +99,19 @@ public struct ContractTestConfig: Equatable {
   public let appMonitorId: String
   public let endpoints: ContractTestEndpointResolution
 
+  /// Run-scoped correlation key, or `nil` when none was supplied (the hermetic default).
+  public let runId: String?
+
+  /// Resource attributes to hand `AwsOpenTelemetryConfig`: the app's own two, plus the run id
+  /// when there is one. With no run id this is byte-for-byte what the app shipped before, so the
+  /// hermetic contract test assertions are unaffected.
+  public var otelResourceAttributes: [String: String] {
+    guard let runId else { return Self.baseOtelResourceAttributes }
+    var attributes = Self.baseOtelResourceAttributes
+    attributes[Self.runIdAttributeKey] = runId
+    return attributes
+  }
+
   /// Resolves the harness configuration from an environment dictionary.
   ///
   /// Every value is trimmed — CI secrets routinely arrive with a trailing newline — and an
@@ -80,7 +120,8 @@ public struct ContractTestConfig: Equatable {
     ContractTestConfig(
       region: value(for: regionKey, in: environment) ?? defaultRegion,
       appMonitorId: value(for: appMonitorIdKey, in: environment) ?? defaultAppMonitorId,
-      endpoints: resolveEndpoints(value(for: endpointKey, in: environment))
+      endpoints: resolveEndpoints(value(for: endpointKey, in: environment)),
+      runId: value(for: runIdKey, in: environment)
     )
   }
 

@@ -1,0 +1,119 @@
+# Put-to-get contract test: exports telemetry from the demo app to the *real* CloudWatch RUM data
+# plane, then proves the payload was accepted by finding this run's correlation key in the app
+# monitor's vended CloudWatch Logs group.
+#
+# This is the only workflow in the repo that touches a live AWS account. `ContractTests.yml` stays
+# hermetic (local AwsOtelUI server) and is unaffected by anything here.
+#
+# What it does NOT cover: the SigV4 path (`AwsOpenTelemetryAuth`). The target app monitor has a
+# public resource-based policy, so `PutRumEvents` is unsigned. See
+# research/R2-RUM-PUT-TO-GET-CONTRACT.md.
+name: Put-to-Get Contract Tests
+
+on:
+  # The permanent trigger. Manual only, on purpose: this spends real quota against a real app
+  # monitor, so it runs when someone asks for it, not on every push.
+  workflow_dispatch:
+
+  # TEMPORARY: remove before merge — validation only
+  # `workflow_dispatch` can only be dispatched from the default branch, so this is the only way to
+  # exercise the workflow from the PR branch before it lands.
+  push:
+    branches:
+      - dev/put-to-get-workflow
+
+  # There is deliberately NO `pull_request` trigger, and adding one would be a security bug:
+  # pull requests from forks run without access to secrets, so the job could not assume the role —
+  # and a trigger that fork-authored code can fire is not something to point at a live AWS account.
+
+# OIDC needs `id-token: write`; without it `aws-actions/configure-aws-credentials` has no token to
+# exchange. `contents: read` is for `actions/checkout`. Nothing here writes to the repository.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  put-to-get:
+    runs-on: macos-15-xlarge
+
+    # This job will be cancelled after 30 minutes
+    timeout-minutes: 30
+
+    # DO NOT REMOVE THIS LINE. It is not just about which secrets are visible.
+    #
+    # The IAM role's trust policy pins the OIDC subject with `StringEquals` on
+    # `repo:aws-observability/aws-otel-swift:environment:put-to-get`. GitHub only puts
+    # `environment:put-to-get` in the `sub` claim of the token it mints for a job that declares
+    # this environment. Without this line the token's `sub` is `repo:...:ref:refs/heads/<branch>`
+    # instead, the trust policy does not match, and the `Configure AWS credentials` step fails with
+    # an opaque STS error ("Not authorized to perform sts:AssumeRoleWithWebIdentity") that looks
+    # like a broken role rather than a missing line in this file.
+    environment: put-to-get
+
+    env:
+      # The correlation key. Includes the attempt number so re-running a failed run cannot pass by
+      # matching the *previous* attempt's events. Not a secret.
+      CONTRACT_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Cache Swift Package Manager
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      # Deliberately before the put step. Assuming the role takes seconds; the put step takes most
+      # of the job. A misconfigured trust policy should fail in the first minute, not the fifteenth.
+      # The 1-hour default session comfortably outlives the 30-minute job cap.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 #v5.0.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PUT_TO_GET }}
+          role-session-name: GitHubActions-PutToGet
+          aws-region: ${{ secrets.CONTRACT_TEST_REGION }}
+          audience: sts.amazonaws.com
+
+      # The get step shells out to the AWS CLI. Fail here, in a step whose name says why, rather
+      # than 15 minutes later inside the polling loop. Prints only the CLI version — no identity
+      # call, because the account id is a secret.
+      - name: Check the AWS CLI is available
+        run: aws --version
+
+      - name: Record the put start time
+        run: |
+          # Lower bound for the CloudWatch Logs query, so the get step never has to consider events
+          # older than this run. Backdated 5 minutes to absorb clock skew between the runner, the
+          # simulator and the RUM service. Being generous is safe: the match is on a key unique to
+          # this run, so a wider window cannot produce a false positive, only a slower query.
+          echo "PUT_STARTED_AT_MS=$(( ($(date +%s) - 300) * 1000 ))" >> "$GITHUB_ENV"
+
+      # Values are passed through the environment rather than as flags: the harness reads both, and
+      # this keeps the endpoint and app monitor id out of the command line that `run:` echoes.
+      - name: Put — export telemetry to the CloudWatch RUM data plane
+        env:
+          AWS_OTEL_CONTRACT_EXPORT_ENDPOINT: ${{ secrets.CONTRACT_TEST_EXPORT_ENDPOINT }}
+          AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
+          AWS_OTEL_CONTRACT_APP_MONITOR_ID: ${{ secrets.CONTRACT_TEST_APP_MONITOR_ID }}
+          AWS_OTEL_CONTRACT_RUN_ID: ${{ env.CONTRACT_RUN_ID }}
+        run: make contract-test-run-ios
+
+      - name: Get — verify the run's telemetry reached CloudWatch Logs
+        env:
+          AWS_OTEL_CONTRACT_LOG_GROUP: ${{ secrets.CONTRACT_TEST_LOG_GROUP }}
+          AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
+          AWS_OTEL_CONTRACT_RUN_ID: ${{ env.CONTRACT_RUN_ID }}
+        run: |
+          ./scripts/verify-put-to-get.sh --start-time-ms "$PUT_STARTED_AT_MS"
