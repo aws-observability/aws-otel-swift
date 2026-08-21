@@ -23,7 +23,7 @@
 # What it does NOT cover: the SigV4 path (`AwsOpenTelemetryAuth`). The target app monitor has a
 # public resource-based policy, so `PutRumEvents` is unsigned here. Signed ingestion is exercised
 # only by unit tests.
-name: Put-to-Get Contract Tests
+name: PutToGet
 
 on:
   # Pre-merge. Be clear-eyed about what this costs: this is the only workflow in the repo that
@@ -80,11 +80,15 @@ permissions:
 # branch cancels the first run, but two open pull requests do not cancel each other. That is
 # intended: within a group, whichever started later is the one worth having.
 concurrency:
-  group: put-to-get-${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  put-to-get:
+  # Named `ios` to match `ContractTests.yml` and `PerformanceTests.yml`, which name their single job
+  # the same way. The platform is the job; the workflow name says what is being done to it, so the
+  # check reads `PutToGet / ios` next to `Contract Tests / ios`. iOS is the only platform here for
+  # the reason given at the top of this file.
+  ios:
     # Two separate concerns, both of which have to hold.
     #
     # The repository check is housekeeping: a fork that syncs `main` would otherwise run this on
@@ -118,6 +122,10 @@ jobs:
     # instead, the trust policy does not match, and the `Configure AWS credentials` step fails with
     # an opaque STS error ("Not authorized to perform sts:AssumeRoleWithWebIdentity") that looks
     # like a broken role rather than a missing line in this file.
+    #
+    # For the same reason, do not rename this environment to match the workflow name. The string
+    # `put-to-get` is pinned in the trust policy, not chosen for readability here; changing it breaks
+    # the round trip until someone edits IAM to match.
     #
     # The `put-to-get` environment should carry no deployment protection rules. Nothing here needs
     # gating: the role grants one read-only permission on one non-prod log group, and every trigger
