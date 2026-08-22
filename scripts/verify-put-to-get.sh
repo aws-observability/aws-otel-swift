@@ -492,13 +492,16 @@ def reject(name):
     raise ValueError("bare %s is not valid JSON" % name)
 
 
-# `exception.stacktrace` is the one attribute whose *length* the round trip can plausibly change,
-# and the only one an assertion reads positionally rather than by equality: HangTests looks for a
-# `Thread N Crashed:` header that sits on a non-zero thread, well into the report. If anything on
-# the path caps a long attribute value, that header is what disappears first — while the `Thread 0:`
-# header near the start keeps passing, which is exactly the shape of a flake.
+# `exception.stacktrace` is the only attribute an assertion reads positionally rather than by
+# equality: HangTests looks for a `Thread N Crashed:` header that sits on a non-zero thread, well
+# into the report. It is also the only one long enough to be cut — LiveStackTraceReporter applies
+# `prefix(10_000)`, a fixed character count over content whose length varies with thread count and
+# frame widths. So whether that header lands inside the cut is luck, and when it falls outside, the
+# `Thread 0:` header near the start still passes: exactly the shape of a flake.
 #
-# So measure it here, every run. Lengths, marker names and header counts only: the value itself is
+# Measured here because this is where the rebuilt files are already open. The offsets are the point:
+# a marker at 9,900 of 10,000 chars is one thread away from vanishing, which a bare present/absent
+# list would report as fine. Lengths, offsets, marker names and header counts only — the value is
 # third-party-writable content and is never printed.
 STACKTRACE_KEY = "exception.stacktrace"
 MARKERS = ("Thread 0:", "Crashed:", "libsystem_kernel.dylib")
@@ -534,7 +537,11 @@ for path, root, group, leaf in (
 # Longest first: if a cap is in play, the longest value is the one sitting on it, and a run where
 # every value lands on the same round number is a cap rather than a coincidence.
 for rank, text in enumerate(sorted(stacktraces, key=len, reverse=True), start=1):
-    present = [marker for marker in MARKERS if marker in text] or ["none"]
+    # `marker@offset` against the char count is the headroom. Read `Crashed:@9900` of 10000 as a
+    # pass that was one longer thread away from failing.
+    present = [
+        "%s@%d" % (marker, text.index(marker)) for marker in MARKERS if marker in text
+    ] or ["none"]
     print(
         "      %s #%d: %d chars, %d thread header(s), ends mid-line: %s, markers: %s"
         % (

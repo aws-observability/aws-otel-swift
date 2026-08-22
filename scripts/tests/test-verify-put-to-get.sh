@@ -390,8 +390,10 @@ def written(name, *stacktraces):
     return path
 
 
-# Hand the lengths back rather than restating them in the shell: an assertion that quoted its own
-# hardcoded character count would pass while measuring the wrong string.
+# Hand the lengths and offsets back rather than restating them in the shell: an assertion that
+# quoted its own hardcoded character count would pass while measuring the wrong string. Only the
+# numbers come from here — the assertions spell out the marker order and separators themselves, so
+# that reordering or re-punctuating the report still fails.
 with open("%s/stacktrace-vars.sh" % work_dir, "w", encoding="utf-8") as handle:
     handle.write("FIXTURE_STACKTRACE_PAIR=%s\n" % written("fixture-stack-pair", FULL, CUT))
     handle.write("FIXTURE_STACKTRACE_STUB=%s\n" % written("fixture-stack-stub", STUB))
@@ -400,6 +402,11 @@ with open("%s/stacktrace-vars.sh" % work_dir, "w", encoding="utf-8") as handle:
     handle.write("STACKTRACE_STUB_LEN=%d\n" % len(STUB))
     handle.write("STACKTRACE_FULL_HEADERS=%d\n" % FULL.count("\nThread "))
     handle.write("STACKTRACE_CUT_HEADERS=%d\n" % CUT.count("\nThread "))
+    handle.write("STACKTRACE_FULL_AT_THREAD0=%d\n" % FULL.index("Thread 0:"))
+    handle.write("STACKTRACE_FULL_AT_CRASHED=%d\n" % FULL.index("Crashed:"))
+    handle.write("STACKTRACE_FULL_AT_LIBSYSTEM=%d\n" % FULL.index("libsystem_kernel.dylib"))
+    handle.write("STACKTRACE_CUT_AT_THREAD0=%d\n" % CUT.index("Thread 0:"))
+    handle.write("STACKTRACE_CUT_AT_LIBSYSTEM=%d\n" % CUT.index("libsystem_kernel.dylib"))
 PYSTACK
 # shellcheck source=/dev/null
 source "$WORK_DIR/stacktrace-vars.sh"
@@ -411,11 +418,17 @@ assert_status "succeeds with stack traces present, whatever their length" 0 "$?"
 # Both lines in one run, which is also what pins the ordering: the longer value must be #1. If a cap
 # is in play it is the longest value that is sitting on it, so that is the one worth reading first.
 assert_contains "measures an intact stack trace instead of assuming it survived" \
-  "exception.stacktrace #1: $STACKTRACE_FULL_LEN chars, $STACKTRACE_FULL_HEADERS thread header(s), ends mid-line: no, markers: Thread 0:, Crashed:, libsystem_kernel.dylib" \
+  "exception.stacktrace #1: $STACKTRACE_FULL_LEN chars, $STACKTRACE_FULL_HEADERS thread header(s), ends mid-line: no, markers: Thread 0:@$STACKTRACE_FULL_AT_THREAD0, Crashed:@$STACKTRACE_FULL_AT_CRASHED, libsystem_kernel.dylib@$STACKTRACE_FULL_AT_LIBSYSTEM" \
   "$OUTPUT"
 assert_contains "names the missing marker, and the mid-line cut, when a value arrived shortened" \
-  "exception.stacktrace #2: $STACKTRACE_CUT_LEN chars, $STACKTRACE_CUT_HEADERS thread header(s), ends mid-line: yes, markers: Thread 0:, libsystem_kernel.dylib" \
+  "exception.stacktrace #2: $STACKTRACE_CUT_LEN chars, $STACKTRACE_CUT_HEADERS thread header(s), ends mid-line: yes, markers: Thread 0:@$STACKTRACE_CUT_AT_THREAD0, libsystem_kernel.dylib@$STACKTRACE_CUT_AT_LIBSYSTEM" \
   "$OUTPUT"
+
+# The offset is the headroom, so it has to be the marker's own position and not a placeholder that
+# happens to render. `Crashed:` sits late in the report; a report that always said `@0` would call a
+# value one thread from failing indistinguishable from one with the whole report to spare.
+assert_absent "does not flatten every marker offset to the start of the value" \
+  "Crashed:@0," "$OUTPUT"
 
 # The measurement is derived from third-party-writable content, which makes it a new channel out of
 # this script. Numbers and the fixed marker names are all that may cross it.
