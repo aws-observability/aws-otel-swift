@@ -500,10 +500,10 @@ def reject(name):
 # header outright while `Thread 0:` near the start still passes: exactly the shape of a flake.
 #
 # Measured here because this is where the rebuilt files are already open, and measured rather than
-# argued: the offsets have already refuted one plausible-sounding version of the above (that long
-# frames were pushing the header out — green runs put it at char 2,860 of 10,000, nowhere near the
-# cut). What this vantage point *cannot* settle is a truncated header versus a report that never
-# marked a thread crashed at all; both look identical once cut. That needs the product side.
+# argued — two consecutive *green* runs put `Crashed:` at char 2,860 and then 9,360 of 10,000. A
+# 6,500-character swing against a 10,000-character ceiling crosses it sooner or later, and the second
+# of those passed with 640 characters to spare. So the header's position is the flake, and nothing
+# else needs to be true for the observed failures to happen.
 #
 # Lengths, offsets, marker names and header counts only — the value is third-party-writable content
 # and is never printed.
@@ -541,10 +541,10 @@ for path, root, group, leaf in (
 # Longest first: if a cap is in play, the longest value is the one sitting on it, and a run where
 # every value lands on the same round number is a cap rather than a coincidence.
 for rank, text in enumerate(sorted(stacktraces, key=len, reverse=True), start=1):
-    # `marker@offset` against the char count says how close the marker came to the cut, which is what
-    # distinguishes a comfortable pass from a lucky one. Absence is the informative case for
-    # `Crashed:`, so read the header count alongside it: at the cut ceiling, absence is consistent
-    # with the header having been truncated rather than never written.
+    # `marker@offset` against the char count is what distinguishes a comfortable pass from a lucky
+    # one, and for `Crashed:` that gap is the whole story: it has been seen at both 2,860 and 9,360 of
+    # 10,000 on runs that passed identically. A green run is not evidence the cut is safe; the offset
+    # is.
     present = [
         "%s@%d" % (marker, text.index(marker)) for marker in MARKERS if marker in text
     ] or ["none"]
