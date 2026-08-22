@@ -493,16 +493,20 @@ def reject(name):
 
 
 # `exception.stacktrace` is the only attribute an assertion reads positionally rather than by
-# equality: HangTests looks for a `Thread N Crashed:` header that sits on a non-zero thread, well
-# into the report. It is also the only one long enough to be cut — LiveStackTraceReporter applies
-# `prefix(10_000)`, a fixed character count over content whose length varies with thread count and
-# frame widths. So whether that header lands inside the cut is luck, and when it falls outside, the
-# `Thread 0:` header near the start still passes: exactly the shape of a flake.
+# equality: HangTests looks for a `Thread N Crashed:` header, and that header belongs to whichever
+# thread called `generateLiveReport()` — the hang detector's own, off a GCD pool, so its index among
+# the process's threads is not fixed. LiveStackTraceReporter then applies `prefix(10_000)`, which on
+# measured runs admits about 16 thread headers. A run whose calling thread lands past that loses the
+# header outright while `Thread 0:` near the start still passes: exactly the shape of a flake.
 #
-# Measured here because this is where the rebuilt files are already open. The offsets are the point:
-# a marker at 9,900 of 10,000 chars is one thread away from vanishing, which a bare present/absent
-# list would report as fine. Lengths, offsets, marker names and header counts only — the value is
-# third-party-writable content and is never printed.
+# Measured here because this is where the rebuilt files are already open, and measured rather than
+# argued: the offsets have already refuted one plausible-sounding version of the above (that long
+# frames were pushing the header out — green runs put it at char 2,860 of 10,000, nowhere near the
+# cut). What this vantage point *cannot* settle is a truncated header versus a report that never
+# marked a thread crashed at all; both look identical once cut. That needs the product side.
+#
+# Lengths, offsets, marker names and header counts only — the value is third-party-writable content
+# and is never printed.
 STACKTRACE_KEY = "exception.stacktrace"
 MARKERS = ("Thread 0:", "Crashed:", "libsystem_kernel.dylib")
 stacktraces = []
@@ -537,8 +541,10 @@ for path, root, group, leaf in (
 # Longest first: if a cap is in play, the longest value is the one sitting on it, and a run where
 # every value lands on the same round number is a cap rather than a coincidence.
 for rank, text in enumerate(sorted(stacktraces, key=len, reverse=True), start=1):
-    # `marker@offset` against the char count is the headroom. Read `Crashed:@9900` of 10000 as a
-    # pass that was one longer thread away from failing.
+    # `marker@offset` against the char count says how close the marker came to the cut, which is what
+    # distinguishes a comfortable pass from a lucky one. Absence is the informative case for
+    # `Crashed:`, so read the header count alongside it: at the cut ceiling, absence is consistent
+    # with the header having been truncated rather than never written.
     present = [
         "%s@%d" % (marker, text.index(marker)) for marker in MARKERS if marker in text
     ] or ["none"]
