@@ -34,19 +34,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
   /** Unauthenticated Example */
   private func setupOpenTelemetry() {
-    let awsConfig = AwsConfig(region: "us-east-1", rumAppMonitorId: "test-app-monitor-id")
-    let exportOverride = AwsExportOverride(
-      logs: "http://localhost:3000/v1/logs",
-      traces: "http://localhost:3000/v1/traces"
+    // Region, app monitor id and export endpoint come from the launch environment so the
+    // contract test harness can point this app at either the local AwsOtelUI server or a real
+    // RUM data plane. See ContractTest/ContractTestConfig.swift for the defaults.
+    let contractTestConfig = ContractTestConfig.resolve()
+
+    let exportOverride: AwsExportOverride?
+    switch contractTestConfig.endpoints {
+    case .unset:
+      // No override: the SDK targets https://dataplane.rum.<region>.amazonaws.com/v1/rum.
+      exportOverride = nil
+    case let .override(logs, traces):
+      exportOverride = AwsExportOverride(logs: logs, traces: traces)
+    case let .invalid(reason):
+      // Refuse to initialize rather than quietly exporting somewhere unintended.
+      print("Not initializing OpenTelemetry: \(reason)")
+      return
+    }
+
+    let awsConfig = AwsConfig(
+      region: contractTestConfig.region,
+      rumAppMonitorId: contractTestConfig.appMonitorId
     )
     let config = AwsOpenTelemetryConfig(
       aws: awsConfig,
       exportOverride: exportOverride,
       sessionTimeout: 5,
-      otelResourceAttributes: [
-        "service.version": "1.0.0",
-        "service.name": "SimpleAwsDemo"
-      ],
+      // Carries the harness' run-scoped correlation key when one is supplied, so the put-to-get
+      // workflow can find this run's events in CloudWatch Logs. Unchanged from the app's
+      // historical attributes when it is not.
+      otelResourceAttributes: contractTestConfig.otelResourceAttributes,
       debug: true
     )
     AwsOpenTelemetryRumBuilder.create(config: config)?.build()

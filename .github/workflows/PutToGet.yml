@@ -1,0 +1,244 @@
+# Put-to-get contract test: exports telemetry from the demo app to the *real* CloudWatch RUM data
+# plane, fetches it back out of the app monitor's vended CloudWatch Logs group, and then runs the
+# very same `Tests/ContractTests` assertions that guard the hermetic run against what came back.
+#
+# That last part is the whole value of this workflow. `OTLPResolver` reads
+# Examples/AwsOtelUI/out/{logs,traces}.jsonl, so the get step rebuilds those two files from the
+# vended events and `swift test --filter ContractTests` runs the whole suite as-is — no separate
+# real-endpoint assertions to drift out of step with the hermetic ones, and nothing skipped.
+#
+# The suite is shared, not forked: the only mode-dependent values in it are the app monitor id and
+# region, which `ContractExpectations` resolves from the same environment variables that configured
+# the put step and which default to the hermetic literals. `ContractTests.yml` therefore needs no
+# change and its behaviour is byte-for-byte what it was.
+#
+# This is the only workflow in the repo that touches a live AWS account. `ContractTests.yml` stays
+# hermetic (local AwsOtelUI server) and is unaffected by anything here.
+#
+# iOS only, deliberately. The demo app's contract-test data generation is iOS-only
+# (`scripts/run-contract-tests.sh --destination ios`), and one platform is enough to prove the
+# round trip: the thing under test is the data plane contract, not per-platform instrumentation,
+# which `ContractTests.yml` already covers on every platform.
+#
+# What it does NOT cover: the SigV4 path (`AwsOpenTelemetryAuth`). The target app monitor has a
+# public resource-based policy, so `PutRumEvents` is unsigned here. Signed ingestion is exercised
+# only by unit tests.
+name: PutToGet
+
+on:
+  # Pre-merge. Be clear-eyed about what this costs: this is the only workflow in the repo that
+  # touches a live AWS account, and running it here means any same-repo pull request branch can
+  # assume the logs-reader role, where otherwise only `main` could. That is a deliberate trade. The
+  # role carries a single read-only permission (`logs:FilterLogEvents`) on one non-prod log group in
+  # one non-prod account, and what it buys is that a broken round trip is caught in review instead
+  # of one merge later — or instead of relying on somebody remembering to fire a manual run.
+  #
+  # Fork pull requests are a different case and are handled by the job guard below, not here.
+  #
+  # Scoped to `main` to match the `push` trigger. A pull request against a `release/*` branch still
+  # gets the hermetic `ContractTests.yml`; it does not get this one.
+  pull_request:
+    branches:
+      - main
+
+  # Post-merge as well, and not redundantly so: a `pull_request` run tests the merge commit GitHub
+  # synthesises for that one branch, which is not the history that ends up on `main`. Two pull
+  # requests can each be green and still interact. This catches that, one merge later.
+  push:
+    branches:
+      - main
+
+  # Nightly, because most of what this workflow can catch is not in this repository. A schema
+  # change in what RUM vends, or a regression in put-to-queryable latency, is a property of the
+  # *service* and correlates with no commit here — a commit-driven trigger would hide either one
+  # until the next unrelated change happened to land. Deliberately off the hour: schedules at :00
+  # queue behind everyone else's.
+  #
+  # Note that `schedule` only ever runs on the default branch, so this trigger does nothing until
+  # this workflow is on `main`. GitHub also disables scheduled workflows in repositories with no
+  # activity for 60 days.
+  schedule:
+    - cron: '17 8 * * *'
+
+  # Manual. Re-measures put-to-queryable latency without needing a commit to push, and reaches a
+  # branch that has no pull request open against `main` yet.
+  workflow_dispatch:
+
+# OIDC needs `id-token: write`; without it `aws-actions/configure-aws-credentials` has no token to
+# exchange. `contents: read` is for `actions/checkout`. Nothing here writes to the repository.
+permissions:
+  contents: read
+  id-token: write
+
+# One live run per ref. Two concurrent runs would both be writing to the same app monitor and
+# reading the same log group; that is safe (each matches on its own correlation key) but it doubles
+# the ingestion load and makes the put-to-queryable latency this measures meaningless. Superseded
+# runs are cancelled rather than queued — a newer merge replaces the commit under test anyway.
+#
+# Merges and the nightly run share this group, since both are on `refs/heads/main`. Each pull
+# request gets its own, since `github.ref` is `refs/pull/<n>/merge` there — so pushing twice to a
+# branch cancels the first run, but two open pull requests do not cancel each other. That is
+# intended: within a group, whichever started later is the one worth having.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Named `ios` to match `ContractTests.yml` and `PerformanceTests.yml`, which name their single job
+  # the same way. The platform is the job; the workflow name says what is being done to it, so the
+  # check reads `PutToGet / ios` next to `Contract Tests / ios`. iOS is the only platform here for
+  # the reason given at the top of this file.
+  ios:
+    # Two separate concerns, both of which have to hold.
+    #
+    # The repository check is housekeeping: a fork that syncs `main` would otherwise run this on
+    # every merge it pulls in, with no secrets and therefore no possible outcome but red.
+    #
+    # The pull-request clause is the one that matters, now that `pull_request` is a trigger. A fork
+    # pull request gets no access to an environment's secrets, so it could never assume the role
+    # anyway — but skipping is a better outcome than failing, because a red check that no fork
+    # contributor can turn green is just noise on their pull request. Same-repo pull requests run
+    # normally.
+    #
+    # The clause is written as `!= 'pull_request'` rather than as a list of the allowed events on
+    # purpose. `github.event.pull_request` is null on a push, a schedule and a dispatch, so a bare
+    # `head.repo.full_name == github.repository` would evaluate false and silently skip the job on
+    # three of its four triggers — which is exactly the bug this shape avoids.
+    if: >-
+      github.repository == 'aws-observability/aws-otel-swift' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: macos-15-xlarge
+
+    # This job will be cancelled after 30 minutes
+    timeout-minutes: 30
+
+    # DO NOT REMOVE THIS LINE. It is not just about which secrets are visible.
+    #
+    # The IAM role's trust policy pins the OIDC subject with `StringEquals` on
+    # `repo:aws-observability/aws-otel-swift:environment:put-to-get`. GitHub only puts
+    # `environment:put-to-get` in the `sub` claim of the token it mints for a job that declares
+    # this environment. Without this line the token's `sub` is `repo:...:ref:refs/heads/<branch>`
+    # instead, the trust policy does not match, and the `Configure AWS credentials` step fails with
+    # an opaque STS error ("Not authorized to perform sts:AssumeRoleWithWebIdentity") that looks
+    # like a broken role rather than a missing line in this file.
+    #
+    # For the same reason, do not rename this environment to match the workflow name. The string
+    # `put-to-get` is pinned in the trust policy, not chosen for readability here; changing it breaks
+    # the round trip until someone edits IAM to match.
+    #
+    # The `put-to-get` environment should carry no deployment protection rules. Nothing here needs
+    # gating: the role grants one read-only permission on one non-prod log group, and every trigger
+    # is already limited to this repository. A required reviewer would specifically break the
+    # nightly run, which by definition has nobody watching — it would sit pending until someone
+    # happened to click approve or it expired, so the signal this workflow exists to produce would
+    # quietly stop arriving. The environment is here for secret scoping and for that one `sub`
+    # claim, not as an approval gate.
+    environment: put-to-get
+
+    env:
+      # The correlation key. Includes the attempt number so re-running a failed run cannot pass by
+      # matching the *previous* attempt's events. Not a secret.
+      CONTRACT_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 #v5.0.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 #v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Cache Swift Package Manager
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 #v4.3.0
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      # Deliberately before the put step. Assuming the role takes seconds; the put step takes most
+      # of the job. A misconfigured trust policy should fail in the first minute, not the fifteenth.
+      # The 1-hour default session comfortably outlives the 30-minute job cap.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 #v5.0.0
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PUT_TO_GET }}
+          role-session-name: GitHubActions-PutToGet
+          aws-region: ${{ secrets.CONTRACT_TEST_REGION }}
+          audience: sts.amazonaws.com
+
+      # The get step shells out to the AWS CLI. Fail here, in a step whose name says why, rather
+      # than 15 minutes later inside the polling loop. Prints only the CLI version — no identity
+      # call, because the account id is a secret.
+      - name: Check the AWS CLI is available
+        run: aws --version
+
+      - name: Record the put start time
+        run: |
+          # Lower bound for the CloudWatch Logs query, so the get step never has to consider events
+          # older than this run. Backdated 5 minutes to absorb clock skew between the runner, the
+          # simulator and the RUM service. Being generous is safe: the match is on a key unique to
+          # this run, so a wider window cannot produce a false positive, only a slower query.
+          echo "PUT_STARTED_AT_MS=$(( ($(date +%s) - 300) * 1000 ))" >> "$GITHUB_ENV"
+
+      # Values are passed through the environment rather than as flags: the harness reads both, and
+      # this keeps the endpoint and app monitor id out of the command line that `run:` echoes.
+      #
+      # In this mode the harness exports and stops — it writes nothing to Examples/AwsOtelUI/out,
+      # because AwsOtelUI never runs. The assertions are two steps down.
+      - name: Put — export telemetry to the CloudWatch RUM data plane
+        env:
+          AWS_OTEL_CONTRACT_EXPORT_ENDPOINT: ${{ secrets.CONTRACT_TEST_EXPORT_ENDPOINT }}
+          AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
+          AWS_OTEL_CONTRACT_APP_MONITOR_ID: ${{ secrets.CONTRACT_TEST_APP_MONITOR_ID }}
+          AWS_OTEL_CONTRACT_RUN_ID: ${{ env.CONTRACT_RUN_ID }}
+        run: make contract-test-run-ios
+
+      # Polls until this run's records stop arriving, then rebuilds
+      # Examples/AwsOtelUI/out/{logs,traces}.jsonl from them in OTLP/JSON. Polling to quiescence
+      # rather than to first match matters: RUM delivers in batches, and the assertions in the next
+      # step check exact counts.
+      - name: Get — fetch the run's telemetry back from CloudWatch Logs
+        env:
+          AWS_OTEL_CONTRACT_LOG_GROUP: ${{ secrets.CONTRACT_TEST_LOG_GROUP }}
+          AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
+          AWS_OTEL_CONTRACT_RUN_ID: ${{ env.CONTRACT_RUN_ID }}
+        run: |
+          ./scripts/verify-put-to-get.sh --start-time-ms "$PUT_STARTED_AT_MS"
+
+      # The same assertions `ContractTests.yml` and the hermetic path run, reading the same file
+      # paths, from unmodified source. If a test passed here but not there (or vice versa) the
+      # difference would be the round trip, which is exactly what this workflow exists to detect.
+      #
+      # This step is also what makes an empty or wrong-run rebuild impossible to miss. The suite
+      # asserts exact per-signal counts, so two empty files (or another run's records) fail here on
+      # counts rather than passing quietly — which is why the get step deliberately asserts nothing
+      # about content itself and keeps no second copy of those numbers.
+      #
+      # Nothing is skipped. The whole suite runs against the round-tripped telemetry.
+      #
+      # Two of the attributes `ResourceAttributesTests` checks are properties of *where the harness
+      # was pointed*, not of the SDK: `aws.rum.appmonitor.id` and `cloud.region`. So the same two
+      # variables that configured the put step are passed to the assert step, and
+      # `ContractExpectations` resolves them (defaulting to the hermetic literals when unset, which
+      # is why `ContractTests.yml` needs no change). That is a stronger assertion than a literal, not
+      # a relaxed one: it requires the id the harness asked for to be the id that came back, so a
+      # round trip that silently landed in a different app monitor now fails here.
+      #
+      # The alternative — rewriting the attribute during the rebuild to make a literal match — would
+      # have been fabricating data to get a green. This asserts the real value instead, and the test
+      # compares it without printing it, because against a real endpoint it is a secret.
+      - name: Assert — run Tests/ContractTests against the round-tripped telemetry
+        env:
+          AWS_OTEL_CONTRACT_REGION: ${{ secrets.CONTRACT_TEST_REGION }}
+          AWS_OTEL_CONTRACT_APP_MONITOR_ID: ${{ secrets.CONTRACT_TEST_APP_MONITOR_ID }}
+        run: |
+          echo "Running Tests/ContractTests against the telemetry fetched back from CloudWatch Logs."
+          echo "The full suite runs — aws.rum.appmonitor.id and cloud.region are asserted against the"
+          echo "values this run configured, not against the hermetic placeholders."
+          swift test --filter ContractTests
